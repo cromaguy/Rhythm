@@ -3,28 +3,33 @@
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/icon.png">
   <source media="(prefers-color-scheme: light)" srcset="assets/icon.png">
-  <img src="assets/icon_full.png" alt="Rhythm Music Player" width="180" style="border-radius: 24px; margin: 20px 0;">
+  <img src="assets/icon_full.png" alt="Rhythm Music Player" width="180" style="border-radius: 24px; margin: 24px 0;">
 </picture>
 
-### **Project Rhythm**
+# 🎵 Project Rhythm
 
-*Your Music, Your Rhythm*
+*Your Music, Your Rhythm*  
+A modern, open-source Android music player focused on Material You design and premium audio playback.
 
 ---
 
 [![Platform](https://img.shields.io/badge/Platform-Android-34A853?style=for-the-badge&logo=android&logoColor=white&labelColor=1a73e8)](https://android.com)
-[![API Level](https://img.shields.io/badge/API-26%2B-4285f4?style=for-the-badge&logo=android&logoColor=white)](https://android-arsenal.com/api?level=26)
-[![Kotlin](https://img.shields.io/badge/Kotlin-100%25-7c4dff?style=for-the-badge&logo=kotlin&logoColor=white)](https://kotlinlang.org/)
-[![License](https://img.shields.io/badge/License-GPL%20v3-4285f4?style=for-the-badge)](docs/LICENSE)
+[![API Level](https://img.shields.io/badge/API-26%2B-1a73e8?style=for-the-badge&logo=android&logoColor=white)](https://android-arsenal.com/api?level=26)
+[![Kotlin](https://img.shields.io/badge/Kotlin-100%25-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white)](https://kotlinlang.org/)
+[![Compose](https://img.shields.io/badge/Jetpack%20Compose-UI-4285F4?style=for-the-badge&logo=jetpackcompose&logoColor=white)](https://developer.android.com/jetpack/compose)
+[![Material You](https://img.shields.io/badge/Material%20You-Dynamic-6750A4?style=for-the-badge)](https://m3.material.io/)
+[![Open Source](https://img.shields.io/badge/FOSS-Open%20Source-4CAF50?style=for-the-badge)](https://opensource.org/)
+[![License](https://img.shields.io/badge/License-MIT-FF9800?style=for-the-badge)](LICENSE)
 
-[![Release](https://img.shields.io/github/v/release/cromaguy/Rhythm?style=for-the-badge&logo=github&color=673ab7&logoColor=white)](https://github.com/cromaguy/Rhythm/releases/latest)
-[![Downloads](https://img.shields.io/github/downloads/cromaguy/Rhythm/total?style=for-the-badge&logo=download&color=00bcd4&logoColor=white)](https://github.com/cromaguy/Rhythm/releases)
-[![Stars](https://img.shields.io/github/stars/cromaguy/Rhythm?style=for-the-badge&logo=star&color=ffc107&logoColor=white)](https://github.com/cromaguy/Rhythm/stargazers)
+
+[![Release](https://img.shields.io/github/v/release/cromaguy/Rhythm?style=for-the-badge&logo=github&color=24292E&logoColor=white)](https://github.com/cromaguy/Rhythm/releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/cromaguy/Rhythm/total?style=for-the-badge&logo=download&color=0097A7&logoColor=white)](https://github.com/cromaguy/Rhythm/releases)
+[![Stars](https://img.shields.io/github/stars/cromaguy/Rhythm?style=for-the-badge&logo=star&color=F9A825&logoColor=white)](https://github.com/cromaguy/Rhythm/stargazers)
 [<img src="https://shields.rbtlog.dev/simple/chromahub.rhythm.app?style=for-the-badge" alt="RB shield">](https://shields.rbtlog.dev/chromahub.rhythm.app)
 
 ---
 
-### 🌐 [Website](https://rhythmweb.vercel.app/) | 📥 [Download](https://github.com/cromaguy/Rhythm/releases/latest) | 💬 [Telegram](https://t.me/RhythmSupport) | 📖 [Wiki](https://github.com/cromaguy/Rhythm/wiki)
+🌐 [Website](https://rhythmweb.vercel.app/) . 📥 [Download](https://github.com/cromaguy/Rhythm/releases/latest) . 💬 [Telegram](https://t.me/RhythmSupport) . 📖 [Wiki](https://github.com/cromaguy/Rhythm/wiki)
 
 </div>
 
