@@ -162,7 +162,7 @@ class MusicRepository(context: Context) {
     // Apple Music API service removed - can be re-added in future
     private val genericHttpClient = NetworkClient.genericHttpClient
     
-    // Note: API services can be null if disabled via BuildConfig (e.g., Google Play variant)
+    // Note: API services can be null if disabled via BuildConfig
 
     /**
      * Register ContentObserver to monitor MediaStore changes

@@ -8,7 +8,6 @@ Rhythm uses Android build variants (product flavors) to create different builds 
 
 ```bash
 # Build commands
-./gradlew assembleGoogleplayRelease  # For Google Play Store
 ./gradlew assembleFdroidRelease      # For F-Droid
 ./gradlew assembleGithubRelease      # For GitHub Releases
 
@@ -24,30 +23,7 @@ All flavors belong to the `distribution` dimension, ensuring they're mutually ex
 
 ### Product Flavors
 
-#### 1. `googleplay`
-**Purpose:** Google Play Store compliance  
-**Package:** `chromahub.rhythm.app`  
-**Version Suffix:** `-gp`
-
-**BuildConfig Flags:**
-```kotlin
-ENABLE_YOUTUBE_MUSIC = false    // Unofficial API - disabled
-ENABLE_SPOTIFY_CANVAS = false   // Custom proxy - disabled
-ENABLE_APPLE_MUSIC = false      // Custom proxy - disabled
-ENABLE_DEEZER = true            // Official public API
-ENABLE_LRCLIB = true            // Open-source, no ToS issues
-ENABLE_SPOTIFY_SEARCH = true    // Official API (user credentials)
-```
-
-**Why these choices?**
-- YouTube Music API uses unofficial scraping (violates Google ToS)
-- Spotify Canvas uses custom proxy server (potential policy violation)
-- Apple Music proxy may infringe IP rights
-- Deezer, LRCLib, and Spotify Search use official/sanctioned methods
-
----
-
-#### 2. `fdroid`
+#### 1. `fdroid`
 **Purpose:** F-Droid repository distribution  
 **Package:** `chromahub.rhythm.app`  
 **Version Suffix:** `-fdroid`
@@ -62,11 +38,13 @@ ENABLE_LRCLIB = true
 ENABLE_SPOTIFY_SEARCH = true
 ```
 
-**Philosophy:** FOSS users expect maximum functionality. F-Droid isn't bound by corporate app store policies.
+**Default Settings:** APIs and auto-updates disabled by default (opt-in for F-Droid compliance)
+
+**Philosophy:** FOSS users expect maximum functionality. F-Droid isn't bound by corporate app store policies, but opt-in defaults ensure compliance.
 
 ---
 
-#### 3. `github`
+#### 2. `github`
 **Purpose:** Direct GitHub releases  
 **Package:** `chromahub.rhythm.app`  
 **Version Suffix:** `-gh`
@@ -80,6 +58,8 @@ ENABLE_DEEZER = true
 ENABLE_LRCLIB = true
 ENABLE_SPOTIFY_SEARCH = true
 ```
+
+**Default Settings:** APIs and auto-updates enabled by default (opt-out available)
 
 **Use Case:** Users who download directly from GitHub releases get the full-featured experience.
 
@@ -124,9 +104,14 @@ fun isYTMusicApiEnabled(): Boolean =
     BuildConfig.ENABLE_YOUTUBE_MUSIC && (appSettings?.ytMusicApiEnabled?.value ?: false)
 ```
 
+**Default Settings by Variant:**
+- **F-Droid:** APIs and auto-updates disabled by default (opt-in for compliance)
+- **GitHub:** APIs and auto-updates enabled by default (opt-out available)
+
 **This ensures:**
-- Google Play builds can't accidentally enable risky APIs
-- F-Droid/GitHub users can toggle features on/off
+- Build variants properly control feature availability
+- Users can toggle features on/off within allowed limits
+- F-Droid compliance through opt-in defaults
 - Single codebase maintains all variants
 
 ---
@@ -138,12 +123,6 @@ fun isYTMusicApiEnabled(): Boolean =
 ```
 app/src/
 ├── main/                      # Shared code and resources
-├── googleplay/
-│   ├── assets/
-│   │   └── privacy_policy.html   # Google Play-specific policy
-│   └── res/
-│       └── values/
-│           └── config.xml        # Feature flags
 ├── fdroid/
 │   └── res/
 │       └── values/
@@ -158,18 +137,18 @@ app/src/
 
 Each variant has a `config.xml` with boolean resources:
 
-**googleplay/res/values/config.xml:**
-```xml
-<bool name="feature_youtube_music_available">false</bool>
-<bool name="feature_spotify_canvas_available">false</bool>
-<string name="distribution_channel">Google Play</string>
-```
-
 **fdroid/res/values/config.xml:**
 ```xml
 <bool name="feature_youtube_music_available">true</bool>
 <bool name="feature_spotify_canvas_available">true</bool>
 <string name="distribution_channel">F-Droid</string>
+```
+
+**github/res/values/config.xml:**
+```xml
+<bool name="feature_youtube_music_available">true</bool>
+<bool name="feature_spotify_canvas_available">true</bool>
+<string name="distribution_channel">GitHub</string>
 ```
 
 ---
@@ -184,7 +163,6 @@ Rhythm-{versionName}-{suffix}-{flavor}-{buildType}.apk
 
 **Examples:**
 ```
-Rhythm-4.0.312.858-gp-googleplay-release.apk
 Rhythm-4.0.312.858-fdroid-fdroid-release.apk
 Rhythm-4.0.312.858-gh-github-release.apk
 ```
@@ -193,14 +171,14 @@ Rhythm-4.0.312.858-gh-github-release.apk
 
 **APKs:**
 ```
-app/build/outputs/apk/googleplay/release/
 app/build/outputs/apk/fdroid/release/
 app/build/outputs/apk/github/release/
 ```
 
 **App Bundles (AAB):**
 ```
-app/build/outputs/bundle/googleplayRelease/app-googleplay-release.aab
+app/build/outputs/bundle/fdroidRelease/app-fdroid-release.aab
+app/build/outputs/bundle/githubRelease/app-github-release.aab
 ```
 
 ---
@@ -217,37 +195,37 @@ app/build/outputs/bundle/googleplayRelease/app-googleplay-release.aab
 ./gradlew assembleDebug
 
 # Specific variant
-./gradlew assembleGoogleplayDebug
+./gradlew assembleFdroidDebug
 ```
 
 ### Install Specific Variant
 
 ```bash
-# Install and run Google Play debug
-./gradlew installGoogleplayDebug
+# Install F-Droid debug
+./gradlew installFdroidDebug
 
-# Install F-Droid release
-adb install app/build/outputs/apk/fdroid/release/Rhythm-*.apk
+# Install GitHub release
+adb install app/build/outputs/apk/github/release/Rhythm-*.apk
 ```
 
 ### Verify BuildConfig Values
 
 After building, check generated BuildConfig:
 
-**Google Play:**
+**F-Droid:**
 ```
-app/build/generated/source/buildConfig/googleplay/release/chromahub/rhythm/app/BuildConfig.java
+app/build/generated/source/buildConfig/fdroid/release/chromahub/rhythm/app/BuildConfig.java
 ```
 
 Should contain:
 ```java
-public static final boolean ENABLE_YOUTUBE_MUSIC = false;
-public static final boolean ENABLE_SPOTIFY_CANVAS = false;
+public static final boolean ENABLE_YOUTUBE_MUSIC = true;
+public static final boolean ENABLE_SPOTIFY_CANVAS = true;
 ```
 
-**F-Droid:**
+**GitHub:**
 ```
-app/build/generated/source/buildConfig/fdroid/release/chromahub/rhythm/app/BuildConfig.java
+app/build/generated/source/buildConfig/github/release/chromahub/rhythm/app/BuildConfig.java
 ```
 
 Should contain:
@@ -280,9 +258,6 @@ jobs:
         with:
           java-version: '17'
           
-      - name: Build Google Play variant
-        run: ./gradlew assembleGoogleplayRelease
-        
       - name: Build F-Droid variant
         run: ./gradlew assembleFdroidRelease
         
@@ -316,8 +291,8 @@ Builds:
 
 ### Issue: Wrong variant built
 
-**Symptom:** Google Play APK has YouTube Music enabled  
-**Solution:** Verify you ran `./gradlew assembleGoogleplayRelease` (not `assembleRelease`)
+**Symptom:** APK has unexpected features enabled/disabled  
+**Solution:** Verify you ran the correct assemble task (e.g., `./gradlew assembleFdroidRelease`)
 
 ### Issue: UI shows disabled features
 
@@ -336,8 +311,8 @@ if (ytmusicApiService != null) {
 
 ### Issue: Build fails with variant not found
 
-**Symptom:** `Task 'assembleGoogleplay' not found`  
-**Solution:** Use full variant name: `assembleGoogleplayRelease` or `assembleGoogleplayDebug`
+**Symptom:** `Task 'assembleFdroid' not found`  
+**Solution:** Use full variant name: `assembleFdroidRelease` or `assembleFdroidDebug`
 
 ---
 
@@ -389,7 +364,6 @@ mkdir -p app/src/newvariant/res/values
 
 ### 2. Feature Parity
 - F-Droid and GitHub should always have identical features
-- Google Play is the "reduced" variant for policy compliance
 
 ### 3. Testing
 - Test each variant separately before release
@@ -399,7 +373,6 @@ mkdir -p app/src/newvariant/res/values
 ### 4. Documentation
 - Keep this README updated when adding/removing features
 - Document any variant-specific behavior
-- Update Google Play submission guide when policies change
 
 ---
 
@@ -418,13 +391,12 @@ A: Check Settings → About → Build Info or check version suffix in logs.
 A: No, they must uninstall and reinstall a different variant. Data won't transfer.
 
 **Q: Why not use separate apps with different package names?**  
-A: Single package name allows seamless migration from GitHub/F-Droid to Google Play.
+A: Single package name simplifies distribution across different channels.
 
 ---
 
 ## Related Documentation
 
-- [Google Play Submission Guide](GOOGLE_PLAY_SUBMISSION.md)
 - [Build Instructions](../wiki/Build-Instructions.md)
 - [Contributing Guide](CONTRIBUTING.md)
 

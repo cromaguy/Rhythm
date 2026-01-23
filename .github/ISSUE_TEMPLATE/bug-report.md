@@ -29,7 +29,7 @@ If applicable, add screenshots to help explain your problem.
 - **App Version**: [e.g., 3.7.291]
 - **Android Version**: [e.g., Android 13]
 - **Device**: [e.g., Samsung Galaxy S23]
-- **Installation Method**: [e.g., GitHub Releases, IzzyOnDroid, Google Play]
+- **Installation Method**: [e.g., GitHub Releases, IzzyOnDroid, F-Droid]
 
 ## Additional Context
 Add any other context about the problem here, such as:

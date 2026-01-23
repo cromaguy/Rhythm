@@ -14,6 +14,7 @@ import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import chromahub.rhythm.app.worker.BackupWorker
 import chromahub.rhythm.app.worker.UpdateNotificationWorker
+import chromahub.rhythm.app.BuildConfig
 import java.util.Date // Import Date for timestamp
 import java.util.concurrent.TimeUnit
 
@@ -791,19 +792,19 @@ class AppSettings private constructor(context: Context) {
     val lastPlayedTimestamp: StateFlow<Long> = _lastPlayedTimestamp.asStateFlow()
     
     // API Enable/Disable States
-    private val _deezerApiEnabled = MutableStateFlow(prefs.getBoolean(KEY_DEEZER_API_ENABLED, false))
+    private val _deezerApiEnabled = MutableStateFlow(prefs.getBoolean(KEY_DEEZER_API_ENABLED, BuildConfig.FLAVOR != "fdroid"))
     val deezerApiEnabled: StateFlow<Boolean> = _deezerApiEnabled.asStateFlow()
     
-    private val _canvasApiEnabled = MutableStateFlow(prefs.getBoolean(KEY_CANVAS_API_ENABLED, false))
+    private val _canvasApiEnabled = MutableStateFlow(prefs.getBoolean(KEY_CANVAS_API_ENABLED, BuildConfig.FLAVOR != "fdroid"))
     val canvasApiEnabled: StateFlow<Boolean> = _canvasApiEnabled.asStateFlow()
     
-    private val _lrclibApiEnabled = MutableStateFlow(prefs.getBoolean(KEY_LRCLIB_API_ENABLED, false))
+    private val _lrclibApiEnabled = MutableStateFlow(prefs.getBoolean(KEY_LRCLIB_API_ENABLED, BuildConfig.FLAVOR != "fdroid"))
     val lrclibApiEnabled: StateFlow<Boolean> = _lrclibApiEnabled.asStateFlow()
     
-    private val _ytMusicApiEnabled = MutableStateFlow(prefs.getBoolean(KEY_YTMUSIC_API_ENABLED, false))
+    private val _ytMusicApiEnabled = MutableStateFlow(prefs.getBoolean(KEY_YTMUSIC_API_ENABLED, BuildConfig.FLAVOR != "fdroid"))
     val ytMusicApiEnabled: StateFlow<Boolean> = _ytMusicApiEnabled.asStateFlow()
     
-    private val _spotifyApiEnabled = MutableStateFlow(prefs.getBoolean(KEY_SPOTIFY_API_ENABLED, false))
+    private val _spotifyApiEnabled = MutableStateFlow(prefs.getBoolean(KEY_SPOTIFY_API_ENABLED, BuildConfig.FLAVOR != "fdroid"))
     val spotifyApiEnabled: StateFlow<Boolean> = _spotifyApiEnabled.asStateFlow()
     
     private val _spotifyClientId = MutableStateFlow(prefs.getString(KEY_SPOTIFY_CLIENT_ID, "") ?: "")
@@ -906,19 +907,19 @@ class AppSettings private constructor(context: Context) {
     val genreDetectionCompleted: StateFlow<Boolean> = _genreDetectionCompleted.asStateFlow()
 
     // App Updater Settings
-    private val _autoCheckForUpdates = MutableStateFlow(prefs.getBoolean(KEY_AUTO_CHECK_FOR_UPDATES, false))
+private val _autoCheckForUpdates = MutableStateFlow(prefs.getBoolean(KEY_AUTO_CHECK_FOR_UPDATES, BuildConfig.FLAVOR != "fdroid"))
     val autoCheckForUpdates: StateFlow<Boolean> = _autoCheckForUpdates.asStateFlow()
-
+    
     private val _updateChannel = MutableStateFlow(prefs.getString(KEY_UPDATE_CHANNEL, "stable") ?: "stable")
     val updateChannel: StateFlow<String> = _updateChannel.asStateFlow()
-
-    private val _updatesEnabled = MutableStateFlow(prefs.getBoolean(KEY_UPDATES_ENABLED, false))
+    
+    private val _updatesEnabled = MutableStateFlow(prefs.getBoolean(KEY_UPDATES_ENABLED, BuildConfig.FLAVOR != "fdroid"))
     val updatesEnabled: StateFlow<Boolean> = _updatesEnabled.asStateFlow()
-
-    private val _updateNotificationsEnabled = MutableStateFlow(prefs.getBoolean(KEY_UPDATE_NOTIFICATIONS_ENABLED, false))
+    
+    private val _updateNotificationsEnabled = MutableStateFlow(prefs.getBoolean(KEY_UPDATE_NOTIFICATIONS_ENABLED, BuildConfig.FLAVOR != "fdroid"))
     val updateNotificationsEnabled: StateFlow<Boolean> = _updateNotificationsEnabled.asStateFlow()
-
-    private val _useSmartUpdatePolling = MutableStateFlow(prefs.getBoolean(KEY_USE_SMART_UPDATE_POLLING, false))
+    
+    private val _useSmartUpdatePolling = MutableStateFlow(prefs.getBoolean(KEY_USE_SMART_UPDATE_POLLING, BuildConfig.FLAVOR != "fdroid"))
     val useSmartUpdatePolling: StateFlow<Boolean> = _useSmartUpdatePolling.asStateFlow()
 
     // Media Scan Mode
@@ -2861,11 +2862,11 @@ class AppSettings private constructor(context: Context) {
         _lastPlayedTimestamp.value = safeLong(KEY_LAST_PLAYED_TIMESTAMP, 0L)
         
         // API Enable/Disable States
-        _deezerApiEnabled.value = prefs.getBoolean(KEY_DEEZER_API_ENABLED, false)
-        _canvasApiEnabled.value = prefs.getBoolean(KEY_CANVAS_API_ENABLED, false)
-        _lrclibApiEnabled.value = prefs.getBoolean(KEY_LRCLIB_API_ENABLED, false)
-        _ytMusicApiEnabled.value = prefs.getBoolean(KEY_YTMUSIC_API_ENABLED, false)
-        _spotifyApiEnabled.value = prefs.getBoolean(KEY_SPOTIFY_API_ENABLED, false)
+        _deezerApiEnabled.value = prefs.getBoolean(KEY_DEEZER_API_ENABLED, BuildConfig.FLAVOR != "fdroid")
+        _canvasApiEnabled.value = prefs.getBoolean(KEY_CANVAS_API_ENABLED, BuildConfig.FLAVOR != "fdroid")
+        _lrclibApiEnabled.value = prefs.getBoolean(KEY_LRCLIB_API_ENABLED, BuildConfig.FLAVOR != "fdroid")
+        _ytMusicApiEnabled.value = prefs.getBoolean(KEY_YTMUSIC_API_ENABLED, BuildConfig.FLAVOR != "fdroid")
+        _spotifyApiEnabled.value = prefs.getBoolean(KEY_SPOTIFY_API_ENABLED, BuildConfig.FLAVOR != "fdroid")
         _spotifyClientId.value = prefs.getString(KEY_SPOTIFY_CLIENT_ID, "") ?: ""
         _spotifyClientSecret.value = prefs.getString(KEY_SPOTIFY_CLIENT_SECRET, "") ?: ""
         
@@ -2879,11 +2880,11 @@ class AppSettings private constructor(context: Context) {
         _broadcastStatusEnabled.value = prefs.getBoolean(KEY_BROADCAST_STATUS_ENABLED, false)
         
         // App Updates
-        _autoCheckForUpdates.value = prefs.getBoolean(KEY_AUTO_CHECK_FOR_UPDATES, false)
+        _autoCheckForUpdates.value = prefs.getBoolean(KEY_AUTO_CHECK_FOR_UPDATES, BuildConfig.FLAVOR != "fdroid")
         _updateChannel.value = prefs.getString(KEY_UPDATE_CHANNEL, "stable") ?: "stable"
-        _updatesEnabled.value = prefs.getBoolean(KEY_UPDATES_ENABLED, false)
-        _updateNotificationsEnabled.value = prefs.getBoolean(KEY_UPDATE_NOTIFICATIONS_ENABLED, false)
-        _useSmartUpdatePolling.value = prefs.getBoolean(KEY_USE_SMART_UPDATE_POLLING, false)
+        _updatesEnabled.value = prefs.getBoolean(KEY_UPDATES_ENABLED, BuildConfig.FLAVOR != "fdroid")
+        _updateNotificationsEnabled.value = prefs.getBoolean(KEY_UPDATE_NOTIFICATIONS_ENABLED, BuildConfig.FLAVOR != "fdroid")
+        _useSmartUpdatePolling.value = prefs.getBoolean(KEY_USE_SMART_UPDATE_POLLING, BuildConfig.FLAVOR != "fdroid")
         _mediaScanMode.value = prefs.getString(KEY_MEDIA_SCAN_MODE, "blacklist") ?: "blacklist"
         _updateCheckIntervalHours.value = prefs.getInt(KEY_UPDATE_CHECK_INTERVAL_HOURS, 24)
         

@@ -26,25 +26,6 @@ android {
     flavorDimensions += "distribution"
     
     productFlavors {
-        create("googleplay") {
-            dimension = "distribution"
-            // Keep same package name for migration
-            applicationId = "chromahub.rhythm.app"
-            
-            // Disable risky APIs for Google Play compliance
-            buildConfigField("boolean", "ENABLE_YOUTUBE_MUSIC", "false")
-            buildConfigField("boolean", "ENABLE_SPOTIFY_CANVAS", "false")
-            buildConfigField("boolean", "ENABLE_APPLE_MUSIC", "false")
-            
-            // Keep safe APIs enabled
-            buildConfigField("boolean", "ENABLE_DEEZER", "true")
-            buildConfigField("boolean", "ENABLE_LRCLIB", "true")
-            buildConfigField("boolean", "ENABLE_SPOTIFY_SEARCH", "true")
-            
-            // Version suffix to differentiate in logs
-            versionNameSuffix = "-gp"
-        }
-        
         create("fdroid") {
             dimension = "distribution"
             applicationId = "chromahub.rhythm.app"
@@ -56,6 +37,7 @@ android {
             buildConfigField("boolean", "ENABLE_DEEZER", "true")
             buildConfigField("boolean", "ENABLE_LRCLIB", "true")
             buildConfigField("boolean", "ENABLE_SPOTIFY_SEARCH", "true")
+            buildConfigField("String", "FLAVOR", "\"fdroid\"")
             
             versionNameSuffix = "-fdroid"
         }
@@ -71,6 +53,7 @@ android {
             buildConfigField("boolean", "ENABLE_DEEZER", "true")
             buildConfigField("boolean", "ENABLE_LRCLIB", "true")
             buildConfigField("boolean", "ENABLE_SPOTIFY_SEARCH", "true")
+            buildConfigField("String", "FLAVOR", "\"github\"")
             
             versionNameSuffix = "-gh"
         }
@@ -139,7 +122,7 @@ android {
     dependenciesInfo {
         // Disables dependency metadata when building APKs (for IzzyOnDroid/F-Droid)
         includeInApk = false
-        // Disables dependency metadata when building Android App Bundles (for Google Play)
+        // Disables dependency metadata when building Android App Bundles
         includeInBundle = false
     }
 

@@ -37,7 +37,7 @@ class CanvasRepository(context: Context, private val appSettings: AppSettings) {
     
     private val canvasApiService = NetworkClient.canvasApiService
     private val spotifyService = SpotifyService(appSettings)
-    // Note: canvasApiService can be null if disabled via BuildConfig (e.g., Google Play variant)
+    // Note: canvasApiService can be null if disabled via BuildConfig
     private val prefs: SharedPreferences = this.context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
     private val gson = Gson()
     
