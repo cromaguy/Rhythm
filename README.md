@@ -29,7 +29,7 @@ A modern, open-source Android music player focused on Material You design and pr
 
 ---
 
-🌐 [Website](https://rhythmweb.vercel.app/) . 📥 [Download](https://github.com/cromaguy/Rhythm/releases/latest) . 💬 [Telegram](https://t.me/RhythmSupport) . 📖 [Wiki](https://github.com/cromaguy/Rhythm/wiki)
+### 🌐 [Website](https://rhythmweb.vercel.app/) · 📥 [Download](https://github.com/cromaguy/Rhythm/releases/latest) · 💬 [Telegram](https://t.me/RhythmSupport) · 📖 [Wiki](https://github.com/cromaguy/Rhythm/wiki)
 
 </div>
 
@@ -60,38 +60,38 @@ Android 8.0+ (API 26) • 2GB RAM • 50MB Storage
 <div align="center">
 <table>
 <tr>
-<td align="center" width="25%">
-<img src="assets/ScreenShots/Home.png" alt="Home" width="180" style="border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);"/>
+<td align="center">
+<img src="assets/ScreenShots/Home.png" alt="Home" width="180" style="border-radius:12px;"/>
 <br/><b>🏠 Smart Home</b>
 </td>
-<td align="center" width="25%">
-<img src="assets/ScreenShots/Player.png" alt="Player" width="180" style="border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);"/>
+<td align="center">
+<img src="assets/ScreenShots/Player.png" alt="Player" width="180" style="border-radius:12px"/>
 <br/><b>▶️ Beautiful Player</b>
 </td>
-<td align="center" width="25%">
-<img src="assets/ScreenShots/Player_Lyrics.png" alt="Lyrics" width="180" style="border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);"/>
+<td align="center">
+<img src="assets/ScreenShots/Player_Lyrics.png" alt="Lyrics" width="180" style="border-radius:12px"/>
 <br/><b>🎤 Synced Lyrics</b>
 </td>
-<td align="center" width="25%">
-<img src="assets/ScreenShots/Library_Songs.png" alt="Library" width="180" style="border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);"/>
+<td align="center">
+<img src="assets/ScreenShots/Library_Songs.png" alt="Library" width="180" style="border-radius: 12px"/>
 <br/><b>📚 Rich Library</b>
 </td>
 </tr>
 <tr>
 <td align="center">
-<img src="assets/ScreenShots/Queue.png" alt="Queue" width="180" style="border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);"/>
+<img src="assets/ScreenShots/Queue.png" alt="Queue" width="180" style="border-radius: 12px"/>
 <br/><b>📋 Smart Queue</b>
 </td>
 <td align="center">
-<img src="assets/ScreenShots/Search.png" alt="Search" width="180" style="border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);"/>
+<img src="assets/ScreenShots/Search.png" alt="Search" width="180" style="border-radius: 12px"/>
 <br/><b>🔍 Instant Search</b>
 </td>
 <td align="center">
-<img src="assets/ScreenShots/Settings.png" alt="Settings" width="180" style="border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);"/>
+<img src="assets/ScreenShots/Settings.png" alt="Settings" width="180" style="border-radius: 12px"/>
 <br/><b>⚙️ Deep Settings</b>
 </td>
 <td align="center">
-<img src="assets/ScreenShots/Artist.png" alt="Artist" width="180" style="border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);"/>
+<img src="assets/ScreenShots/Artist.png" alt="Artist" width="180" style="border-radius: 12px"/>
 <br/><b>🎤 Artist Pages</b>
 </td>
 </tr>
