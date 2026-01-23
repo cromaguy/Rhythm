@@ -35,22 +35,23 @@ A modern, open-source Android music player focused on Material You design and pr
 
 ---
 
-## 🎵 About Rhythm
+## 🎵 About Rhythm  
 
-Rhythm is a modern, open-source music player for Android built with Material 3 design and powered by Media3 ExoPlayer. Experience professional-grade audio playback with beautiful UI, intelligent features, and complete privacy.
+Rhythm is a modern, open-source music player for Android, built with Material 3 design principles and powered by Media3 ExoPlayer. It focuses on high-quality audio playback, a clean and expressive UI, and complete user privacy.
 
-### ✨ Key Features
+### ✨ Highlights
 
-- 🎨 **Material You** - Dynamic theming with wallpaper colors (Android 12+)
-- 🎵 **Professional Audio** - Media3 ExoPlayer 1.9.0 with gapless playback
-- 🎤 **Synced Lyrics** - LRCLib integration with word-by-word highlighting
-- 🎛️ **10-Band EQ** - Professional equalizer with 6032+ AutoEQ device presets
-- 📊 **Playback Stats** - Comprehensive listening statistics and insights
-- 📱 **Modern Widgets** - Multiple responsive layouts with Material 3 design
-- 🎯 **Format Support** - FLAC, ALAC, MP3, AAC, Opus, WAV, and more
-- 🔒 **Privacy First** - 100% FOSS, no tracking, offline-capable
+- 🎨 **Material You** - wallpaper-based theming (Android 12+)
+- 🎵 **Professional Audio** - Media3 ExoPlayer with gapless playback
+- 🎤 **Synced Lyrics** - LRCLib integration with real-time lyric highlighting
+- 🎛️ **10-Band EQ** - 10-band EQ with AutoEQ device presets
+- 📊 **Playback Stats** - Listening statistics and playback insights
+- 📱 **Modern Widgets** - Multiple responsive layouts with Material 3 styling
+- 🎯 **Wide Format Support** - FLAC, ALAC, MP3, AAC, Opus, WAV, and more
+- 🔒 **Privacy First** - 100% FOSS, no tracking, fully offline-capable
 
-**System Requirements:** Android 8.0+ (API 26) • 2GB RAM • 50MB Storage
+**System Requirements:** 
+Android 8.0+ (API 26) • 2GB RAM • 50MB Storage  
 
 ---
 
