@@ -138,7 +138,8 @@ class BitPerfectRenderersFactory(
         return try {
             val dolbyDecoderNames = setOf(
                 "c2.dolby.eac3.decoder",
-                "c2.dolby.eac3.decoder.ac3"
+                "c2.dolby.eac3.decoder.ac3",
+                "c2.dolby.eac3.decoder.eac3-joc"
             )
 
             val hasDecoder = MediaCodecList(MediaCodecList.ALL_CODECS)
