@@ -5519,7 +5519,7 @@ class MusicRepository(context: Context) {
         }
 
         Log.d(TAG, "Starting background audio metadata extraction for ${songsWithoutMetadata.size} songs")
-        val updatedSongs = mutableListOf<Song>()
+        val updatedSongsMap = mutableMapOf<String, Song>()
         val batchSize = 20 // Smaller batches for metadata extraction (more expensive operation)
         var processedCount = 0
 
@@ -5530,29 +5530,34 @@ class MusicRepository(context: Context) {
                 try {
                     // Use AudioFormatDetector for more accurate metadata extraction
                     val formatInfo = AudioFormatDetector.detectFormat(context, song.uri, song)
-                    
-                    Log.d(TAG, "Extracted metadata for ${song.title}: codec=${formatInfo.codec}, bitrate=${formatInfo.bitrateKbps}kbps, sampleRate=${formatInfo.sampleRateHz}Hz, channels=${formatInfo.channelCount}, bitDepth=${formatInfo.bitDepth}")
-                    
                     val updatedSong = song.copy(
                         bitrate = if (formatInfo.bitrateKbps > 0) formatInfo.bitrateKbps * 1000 else -1,
                         sampleRate = if (formatInfo.sampleRateHz > 0) formatInfo.sampleRateHz else -1,
                         channels = if (formatInfo.channelCount > 0) formatInfo.channelCount else -1,
                         codec = if (formatInfo.codec != "Unknown") formatInfo.codec else "-"
                     )
-                    updatedSongs.add(updatedSong)
-                    
-                    processedCount++
-                    onProgress?.invoke(processedCount, songsWithoutMetadata.size)
 
+                    Log.d(TAG, "Extracted metadata for ${song.title}: $formatInfo")
+
+                    updatedSongsMap[song.id] = updatedSong
                 } catch (e: Exception) {
                     Log.w(TAG, "Error extracting audio metadata for song ${song.title}", e)
+
                     // Save sentinels so we don't infinitely retry failed songs in the background on next startup
-                    val failedSong = song.copy(bitrate = -1, sampleRate = -1, channels = -1, codec = "-")
-                    updatedSongs.add(failedSong) // Assign sentinels
-                    processedCount++
-                    onProgress?.invoke(processedCount, songsWithoutMetadata.size)
+                    updatedSongsMap[song.id] = song.copy(
+                        bitrate = -1,
+                        sampleRate = -1,
+                        channels = -1,
+                        codec = "-"
+                    )
                 }
+
+                processedCount++
+                onProgress?.invoke(processedCount, songsWithoutMetadata.size)
             }
+
+            // Should we save partial batches to avoid progress lost?
+            // updateAndPersistSongs(songs.map { updatedSongsMap[it.id] ?: it })
 
             val batchEndTime = System.currentTimeMillis()
             val batchDuration = batchEndTime - batchStartTime
@@ -5563,15 +5568,15 @@ class MusicRepository(context: Context) {
 
             // Small delay between batches to prevent overwhelming the system
             if (batchDuration < 200) { // If batch processed quickly, add a small delay
-                delay(100)
+                delay(50)
             }
         }
 
         val finalSongs = songs.map { originalSong ->
-            updatedSongs.find { it.id == originalSong.id } ?: originalSong
+            updatedSongsMap[originalSong.id] ?: originalSong
         }
 
-        Log.d(TAG, "Background audio metadata extraction complete. Updated ${updatedSongs.size} songs")
+        Log.d(TAG, "Background audio metadata extraction complete. Updated ${updatedSongsMap.size} songs")
         onComplete?.invoke(finalSongs)
     }
     

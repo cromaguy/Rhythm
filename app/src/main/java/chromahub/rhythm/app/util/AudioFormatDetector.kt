@@ -58,11 +58,13 @@ object AudioFormatDetector {
         try {
             // Try MediaExtractor first for codec details
             formatInfo = detectUsingMediaExtractor(context, uri) ?: formatInfo
-            
-            // Fallback to MediaMetadataRetriever for additional metadata
-            val retrieverInfo = detectUsingMetadataRetriever(context, uri)
-            formatInfo = mergeFormatInfo(formatInfo, retrieverInfo)
-            
+
+            if (formatInfo.bitrateKbps <= 0 || formatInfo.sampleRateHz <= 0 || formatInfo.codec == "Unknown") {
+                // Fallback to MediaMetadataRetriever for additional metadata
+                val retrieverInfo = detectUsingMetadataRetriever(context, uri)
+                formatInfo = mergeFormatInfo(formatInfo, retrieverInfo)
+            }
+
             // Always recalculate bit depth from Song metadata if available for lossless
             // This is more accurate than MediaExtractor/MediaMetadataRetriever
             // MediaExtractor often returns PCM decoding format (16-bit) instead of source bit depth
