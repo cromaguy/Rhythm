@@ -1,0 +1,30 @@
+Tu música, tu ritmo
+
+Disfruta de tu colección musical como nunca antes. Rhythm es un reproductor de música Material You de código abierto y elegante, diseñado para audiófilos, compatible con reproducción local y en streaming. Disfruta de audio de alta calidad sin interrupciones ni anuncios.
+
+🔊 Sonido de calidad audiófila
+• Audio de alta resolución: Conserva las frecuencias de muestreo y profundidades de bits nativas para un sonido puro e inalterado.
+• Ecualizador avanzado: Perfecciona tu audio con un ecualizador de 10 bandas y más de 6000 preajustes AutoEQ adaptados a tus auriculares.
+• Reproducción premium: Disfruta de una reproducción sin pausas y compatibilidad con los principales formatos (FLAC, ALAC, Opus, WAV, MP3, OGG y Dolby Atmos/EAC3-JOC).
+
+🎨 Diseño Material 3 espectacular
+• Colores dinámicos: El tema de la app se adapta perfectamente a tu fondo de pantalla (Android 12+) y a la carátula del álbum.
+• Interfaz fluida: Disfruta de formas expresivas, animaciones suaves y una vista de letras inmersiva y sin distracciones.
+• Widgets adaptables: Controla tu música directamente desde la pantalla de inicio con modernos diseños Material 3.
+
+📚 Biblioteca y letras inteligentes
+• Reproducción en modo dual: Cambia fácilmente entre tu biblioteca de música local y los servidores de streaming.
+• Letras sincronizadas: Canta con el resaltado palabra por palabra mediante LRCLib o usa el editor local para personalizar el desfase.
+• Organización óptima: Explora tu música por canciones, álbumes, artistas, géneros, listas de reproducción o carpetas.
+• Selección múltiple: Gestiona tu cola, comparte o elimina varias pistas a la vez con acciones por lotes.
+• Escaneo fiable: Un escáner multimedia de escaneo completo garantiza que no te pierdas ninguna canción.
+
+⚙️ Repleto de funciones
+• Rhythm Guard: Sistema integrado de protección auditiva con control de volumen adaptado a la edad.
+• Editor de metadatos integrado con integración de carátulas de Deezer y YouTube Music.
+• Temporizador de apagado, estadísticas de reproducción y herramientas de estabilidad para una experiencia sin interrupciones.
+• Gestión sencilla de la cola de reproducción e importación/exportación de listas M3U.
+• Actualizaciones automáticas integradas directamente desde GitHub.
+
+🔒 100% privado
+Rhythm respeta tus datos. No tiene anuncios, ni análisis, ni requiere cuenta. Funciona completamente sin conexión y es de código abierto (GPL v3).
