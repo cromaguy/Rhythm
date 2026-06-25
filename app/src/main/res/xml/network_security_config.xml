@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <network-security-config xmlns:tools="http://schemas.android.com/tools">
-	<base-config cleartextTrafficPermitted="true" tools:ignore="InsecureBaseConfiguration">
+	<base-config cleartextTrafficPermitted="true" tools:ignore="InsecureBaseConfiguration"><!--allows http traffic. i assume this is desired for maximum compatibility-->
 		<trust-anchors>
-			<certificates src="system" />
-			<certificates src="user" tools:ignore="AcceptsUserCertificates" />
+			<certificates src="system" /><!--default system-installed certificates-->
+			<certificates src="user" tools:ignore="AcceptsUserCertificates" /><!--user-installed certificates(surpressing warning about them)-->
 		</trust-anchors>
 	</base-config>
 </network-security-config>
