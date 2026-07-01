@@ -187,6 +187,9 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
         currentLyricTimestamps = longArrayOf()
         currentPlainLyricsLines = emptyList()
         currentLyricIndex = -1
+        // Force the service-side fallback to re-evaluate lyrics for the next song.
+        serviceLyricsLoadedSongId = null
+        serviceLyricsLoadJob?.cancel()
         chromahub.rhythm.app.infrastructure.widget.glance.GlanceWidgetUpdater.updateLyrics(this, emptyList(), -1)
     }
 
@@ -1180,6 +1183,14 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
                 }
             }
         }
+
+        // Re-apply Bluetooth-lyrics queue exposure to the notification/AVRCP controller whenever
+        // the setting toggles, so it takes effect without restarting the app.
+        serviceScope.launch {
+            appSettings.bluetoothLyricsEnabled.collect {
+                refreshNotificationControllerQueueExposure()
+            }
+        }
     }
 
     private inline fun <T> withEqualizerSafe(
@@ -1414,7 +1425,48 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
         ).setSessionActivity(pendingIntent)
             .build()
     }
-    
+
+    /**
+     * Player commands granted to Media3's media-notification controller (which drives the
+     * platform/AVRCP session). When Bluetooth lyrics is active we withhold COMMAND_GET_TIMELINE
+     * so no multi-song queue is published to the car — that makes every track behave like a
+     * single-song session, which is the only case where car displays reliably refresh the title
+     * (lyric line) on every change instead of only on real track skips.
+     */
+    private fun playerCommandsForNotificationController(): Player.Commands {
+        val base = MediaSession.ConnectionResult.DEFAULT_PLAYER_COMMANDS
+        return if (::appSettings.isInitialized && appSettings.bluetoothLyricsEnabled.value) {
+            base.buildUpon().remove(Player.COMMAND_GET_TIMELINE).build()
+        } else {
+            base
+        }
+    }
+
+    /**
+     * Re-applies [playerCommandsForNotificationController] to the already-connected
+     * media-notification controller so toggling Bluetooth lyrics takes effect without an app
+     * restart. Session commands are rebuilt to match what onConnect grants that controller.
+     */
+    private fun refreshNotificationControllerQueueExposure() {
+        val session = mediaSession ?: return
+        val playerCommands = playerCommandsForNotificationController()
+        session.connectedControllers.forEach { controller ->
+            if (session.isMediaNotificationController(controller)) {
+                val sessionCommands = MediaSession.ConnectionResult.DEFAULT_SESSION_AND_LIBRARY_COMMANDS
+                    .buildUpon()
+                    .also { builder ->
+                        for (commandButton in customCommands) {
+                            commandButton.sessionCommand?.let { builder.add(it) }
+                        }
+                        builder.add(SessionCommand("UPDATE_ACTIVE_LYRIC", Bundle.EMPTY))
+                        builder.add(SessionCommand("UPDATE_LYRICS_DATA", Bundle.EMPTY))
+                    }
+                    .build()
+                session.setAvailableCommands(controller, sessionCommands, playerCommands)
+            }
+        }
+    }
+
     private fun isCurrentSongFavorite(): Boolean {
         val currentMediaItem = player.currentMediaItem
         return if (currentMediaItem != null) {
@@ -1937,31 +1989,61 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
         return super.onStartCommand(intent, flags, startId)
     }
     
-    private fun wrapPlayer(rawPlayer: Player): Player {
-        return object : ForwardingPlayer(rawPlayer) {
-            override fun seekToNext() {
-                if (!skipWithCrossfade(toNext = true)) {
-                    super.seekToNext()
-                }
-            }
+    private fun wrapPlayer(rawPlayer: Player): Player = RhythmForwardingPlayer(rawPlayer)
 
-            override fun seekToNextMediaItem() {
-                if (!skipWithCrossfade(toNext = true)) {
-                    super.seekToNextMediaItem()
-                }
-            }
+    private inner class RhythmForwardingPlayer(rawPlayer: Player) : ForwardingPlayer(rawPlayer) {
+        private val injectionListeners = java.util.concurrent.CopyOnWriteArrayList<Player.Listener>()
+        @Volatile private var injectedTitle: CharSequence? = null
+        @Volatile private var injectedArtist: CharSequence? = null
 
-            override fun seekToPrevious() {
-                if (!skipWithCrossfade(toNext = false)) {
-                    super.seekToPrevious()
-                }
-            }
+        override fun addListener(listener: Player.Listener) {
+            injectionListeners.add(listener)
+            super.addListener(listener)
+        }
 
-            override fun seekToPreviousMediaItem() {
-                if (!skipWithCrossfade(toNext = false)) {
-                    super.seekToPreviousMediaItem()
-                }
-            }
+        override fun removeListener(listener: Player.Listener) {
+            injectionListeners.remove(listener)
+            super.removeListener(listener)
+        }
+
+        override fun getMediaMetadata(): androidx.media3.common.MediaMetadata {
+            val base = super.getMediaMetadata()
+            val title = injectedTitle ?: return base
+            return base.buildUpon()
+                .setTitle(title)
+                .setArtist(injectedArtist ?: base.artist)
+                .build()
+        }
+
+        fun injectLyricMetadata(title: CharSequence?, artist: CharSequence?) {
+            injectedTitle = title
+            injectedArtist = artist
+            val md = getMediaMetadata()
+            injectionListeners.forEach { it.onMediaMetadataChanged(md) }
+        }
+
+        fun clearLyricMetadata() {
+            if (injectedTitle == null && injectedArtist == null) return
+            injectedTitle = null
+            injectedArtist = null
+            val md = getMediaMetadata()
+            injectionListeners.forEach { it.onMediaMetadataChanged(md) }
+        }
+
+        override fun seekToNext() {
+            if (!skipWithCrossfade(toNext = true)) super.seekToNext()
+        }
+
+        override fun seekToNextMediaItem() {
+            if (!skipWithCrossfade(toNext = true)) super.seekToNextMediaItem()
+        }
+
+        override fun seekToPrevious() {
+            if (!skipWithCrossfade(toNext = false)) super.seekToPrevious()
+        }
+
+        override fun seekToPreviousMediaItem() {
+            if (!skipWithCrossfade(toNext = false)) super.seekToPreviousMediaItem()
         }
     }
 
@@ -2271,9 +2353,18 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
             }
             availableCommands.add(SessionCommand("UPDATE_ACTIVE_LYRIC", Bundle.EMPTY))
             availableCommands.add(SessionCommand("UPDATE_LYRICS_DATA", Bundle.EMPTY))
-            return MediaSession.ConnectionResult.AcceptedResultBuilder(session)
+            val resultBuilder = MediaSession.ConnectionResult.AcceptedResultBuilder(session)
                 .setAvailableSessionCommands(availableCommands.build())
-                .build()
+            // Bluetooth-lyrics fix (queue axis): the media-notification controller is what Media3
+            // uses to drive the platform/legacy MediaSession that AVRCP (car displays) reads. When
+            // a multi-song queue is published, the car keys "current track" on the queue-item id —
+            // which only changes on real skips — so per-line title rewrites never refresh on the car
+            // (only the first song works). Hiding the timeline/queue from this controller makes every
+            // track look like a single-song session, so the car keys on metadata and refreshes each line.
+            if (session.isMediaNotificationController(controller)) {
+                resultBuilder.setAvailablePlayerCommands(playerCommandsForNotificationController())
+            }
+            return resultBuilder.build()
         }
 
         @OptIn(UnstableApi::class)
@@ -2307,8 +2398,12 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
                         } else {
                             emptyList()
                         }
-                        
+
                         currentLyricIndex = -1
+                        // The UI (ViewModel) is alive and authoritative for the current song's lyrics,
+                        // so suppress the service-side fallback fetch for it.
+                        serviceLyricsLoadedSongId = player.currentMediaItem?.mediaId
+                        serviceLyricsLoadJob?.cancel()
                         chromahub.rhythm.app.infrastructure.widget.glance.GlanceWidgetUpdater.updateLyrics(this@MediaPlaybackService, getProcessedLyricTexts(), -1)
                         SessionResult(SessionResult.RESULT_SUCCESS)
                     }
@@ -2327,6 +2422,9 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
                             if (currentMediaItem != null) {
                                 val song = convertMediaItemToSong(currentMediaItem)
                                 if (song != null) {
+                                    val coalescedLine = if (lyricIndex >= 0 && currentLyricTimestamps.isNotEmpty())
+                                        coalesceBtLyricGroup(lyricIndex, currentLyricTimestamps, currentLyricTexts) ?: lyricLine
+                                    else lyricLine
                                     statusBroadcaster.broadcastNowPlaying(
                                         song = song,
                                         isPlaying = player.isPlaying,
@@ -2334,7 +2432,7 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
                                         queueSize = player.mediaItemCount,
                                         queuePosition = player.currentMediaItemIndex,
                                         bluetoothLyricsMode = true,
-                                        currentLyricLine = lyricLine
+                                        currentLyricLine = coalescedLine
                                     )
                                 }
                             }
@@ -2547,6 +2645,217 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
         Log.d(TAG, "Is playing changed: $isPlaying")
         // Update widget when play/pause state changes
         updateWidgetFromMediaItem(player.currentMediaItem)
+        if (isPlaying) startBluetoothLyricsLoop() else stopBluetoothLyricsLoop()
+    }
+
+    private val USE_FORWARDING_METADATA = true
+    private val BT_LYRIC_MIN_HOLD_MS = 1500L
+    private val BT_LYRIC_MERGE_MAX_LINES = 3
+    private val BT_LYRIC_MERGE_MAX_CHARS = 96
+    private val BT_LYRIC_SEPARATOR_ASCII = false
+    private fun btLyricSeparator(): String = if (BT_LYRIC_SEPARATOR_ASCII) " / " else " — "
+    private var bluetoothLyricsLoopJob: kotlinx.coroutines.Job? = null
+    private var lastServiceBtLyricLine: String? = null
+    private var lastServiceBtLyricSongId: String? = null
+    private var lastServiceBtAppliedSongId: String? = null
+
+    // Service-side lyric loading: lets the Bluetooth lyrics loop keep working for NEW songs
+    // even when the Activity/ViewModel has been destroyed (backgrounded on aggressive ROMs),
+    // which is when the UI can no longer push lyric data via the UPDATE_LYRICS_DATA command.
+    private val serviceMusicRepository by lazy {
+        chromahub.rhythm.app.features.local.data.repository.MusicRepository(applicationContext)
+    }
+    @Volatile private var serviceLyricsLoadedSongId: String? = null
+    private var serviceLyricsLoadJob: kotlinx.coroutines.Job? = null
+
+    private fun startBluetoothLyricsLoop() {
+        if (bluetoothLyricsLoopJob?.isActive == true) return
+        bluetoothLyricsLoopJob = serviceScope.launch {
+            while (isActive) {
+                try {
+                    tickBluetoothLyrics()
+                } catch (e: Exception) {
+                    Log.w(TAG, "Bluetooth lyrics tick failed", e)
+                }
+                delay(350)
+            }
+        }
+    }
+
+    private fun stopBluetoothLyricsLoop() {
+        bluetoothLyricsLoopJob?.cancel()
+        bluetoothLyricsLoopJob = null
+    }
+
+    /**
+     * Loads synced lyrics for [song] directly from the repository when no lyric data is present
+     * for it yet. Normally the ViewModel feeds lyrics via UPDATE_LYRICS_DATA, but when the app is
+     * backgrounded and the Activity destroyed, a new song would otherwise leave the Bluetooth
+     * lyrics loop with stale/empty data. This closes that gap. The ViewModel keeps priority: the
+     * fetch is delayed briefly and aborts if the UI provides data (or the song changes) first.
+     */
+    private fun ensureServiceLyricsLoaded(song: Song) {
+        if (serviceLyricsLoadedSongId == song.id) return
+        if (serviceLyricsLoadJob?.isActive == true) return
+        serviceLyricsLoadJob = serviceScope.launch {
+            // Give the ViewModel (if alive) a head start to provide lyrics itself.
+            delay(1200)
+            if (serviceLyricsLoadedSongId == song.id) return@launch
+            if (player.currentMediaItem?.mediaId != song.id) return@launch
+            try {
+                val data = serviceMusicRepository.fetchLyrics(
+                    artist = song.artist,
+                    title = song.title,
+                    songId = song.id,
+                    songUri = song.uri,
+                    sourcePreference = appSettings.lyricsSourcePreference.value
+                )
+                // Bail if the ViewModel filled it in or the track changed while fetching.
+                if (serviceLyricsLoadedSongId == song.id) return@launch
+                if (player.currentMediaItem?.mediaId != song.id) return@launch
+
+                val synced = data?.syncedLyrics
+                if (!synced.isNullOrBlank()) {
+                    val parsed = chromahub.rhythm.app.util.LyricsParser.parseLyrics(synced)
+                    currentLyricTexts = parsed.map { it.text }
+                    currentLyricTranslations = parsed.map { it.translation ?: "" }
+                    currentLyricRomanizations = parsed.map { it.romanization ?: "" }
+                    currentLyricTimestamps = parsed.map { it.timestamp }.toLongArray()
+                    currentPlainLyricsLines = data.plainLyrics
+                        ?.split("\n")?.map { it.trim() }?.filter { it.isNotEmpty() } ?: emptyList()
+                    currentLyricIndex = -1
+                    chromahub.rhythm.app.infrastructure.widget.glance.GlanceWidgetUpdater
+                        .updateLyrics(this@MediaPlaybackService, getProcessedLyricTexts(), -1)
+                    Log.d(TAG, "Service-loaded synced lyrics for '${song.title}' (${parsed.size} lines)")
+                } else {
+                    Log.d(TAG, "Service lyric load: no synced lyrics for '${song.title}'")
+                }
+                serviceLyricsLoadedSongId = song.id
+            } catch (e: Exception) {
+                Log.w(TAG, "Service lyric load failed for '${song.title}'", e)
+            }
+        }
+    }
+
+    private fun tickBluetoothLyrics() {
+        if (!::player.isInitialized || !::appSettings.isInitialized) return
+        val item = player.currentMediaItem ?: return
+        val song = convertMediaItemToSong(item) ?: return
+        val enabled = appSettings.broadcastStatusEnabled.value && appSettings.bluetoothLyricsEnabled.value
+        if (!enabled) {
+            if (lastServiceBtAppliedSongId != null) restoreServiceBtMetadata(song)
+            lastServiceBtLyricLine = null
+            lastServiceBtLyricSongId = null
+            return
+        }
+        ensureServiceLyricsLoaded(song)
+        val line = resolveServiceBtLyricLine(player.currentPosition)
+        if (song.id == lastServiceBtLyricSongId && line == lastServiceBtLyricLine) return
+        lastServiceBtLyricSongId = song.id
+        lastServiceBtLyricLine = line
+        statusBroadcaster.broadcastMetadataChanged(
+            song = song,
+            position = player.currentPosition,
+            queueSize = player.mediaItemCount,
+            queuePosition = player.currentMediaItemIndex,
+            bluetoothLyricsMode = true,
+            currentLyricLine = line
+        )
+        applyServiceBtMetadata(song, line)
+    }
+
+    private fun resolveServiceBtLyricLine(positionMs: Long): String? {
+        val ts = currentLyricTimestamps
+        if (ts.isEmpty() || currentLyricTexts.isEmpty()) return null
+        val pos = positionMs.coerceAtLeast(0L)
+        var idx = -1
+        for (i in ts.indices) {
+            if (ts[i] <= pos) idx = i else break
+        }
+        if (idx < 0) return null
+        currentLyricIndex = idx
+        return coalesceBtLyricGroup(idx, ts, currentLyricTexts)
+    }
+
+    private fun coalesceBtLyricGroup(idx: Int, ts: LongArray, texts: List<String>): String? {
+        val floor = BT_LYRIC_MIN_HOLD_MS
+        val maxLines = BT_LYRIC_MERGE_MAX_LINES.coerceAtLeast(1)
+        var runStart = idx
+        while (runStart > 0 && ts[runStart] - ts[runStart - 1] < floor) runStart--
+        var runEnd = idx
+        while (runEnd + 1 < ts.size && ts[runEnd + 1] - ts[runEnd] < floor) runEnd++
+        if (runEnd == runStart) {
+            return texts.getOrNull(idx)?.trim()?.takeIf { it.isNotEmpty() }
+        }
+        val chunkIdx = (idx - runStart) / maxLines
+        val chunkStart = runStart + chunkIdx * maxLines
+        val chunkEnd = minOf(chunkStart + maxLines - 1, runEnd)
+        val merged = (chunkStart..chunkEnd)
+            .mapNotNull { texts.getOrNull(it)?.trim()?.takeIf { s -> s.isNotEmpty() } }
+            .joinToString(btLyricSeparator())
+            .takeIf { it.isNotEmpty() } ?: return null
+        return if (merged.length > BT_LYRIC_MERGE_MAX_CHARS) {
+            merged.take(BT_LYRIC_MERGE_MAX_CHARS - 1).trimEnd() + "…"
+        } else merged
+    }
+
+    private fun applyServiceBtMetadata(song: Song, line: String?) {
+        try {
+            val idx = player.currentMediaItemIndex
+            if (idx < 0 || idx >= player.mediaItemCount) return
+            val current = player.getMediaItemAt(idx)
+            if (current.mediaId != song.id) return
+            val merged = listOf(song.title, song.artist)
+                .map { it.trim() }
+                .filter { it.isNotBlank() }
+                .joinToString(" - ")
+                .ifBlank { song.title }
+            // On instrumental gaps / before the first line, fall back to the real song title
+            // rather than a bare "No lyrics" — so a car that only refreshes on track change
+            // never ends up stuck showing "No lyrics".
+            val title = line?.takeIf { it.isNotBlank() } ?: song.title.ifBlank { merged }
+            val forwarding = player as? RhythmForwardingPlayer
+            if (USE_FORWARDING_METADATA && forwarding != null) {
+                forwarding.injectLyricMetadata(title, merged)
+            } else {
+                val updated = current.mediaMetadata.buildUpon()
+                    .setTitle(title)
+                    .setArtist(merged)
+                    .build()
+                player.replaceMediaItem(idx, current.buildUpon().setMediaMetadata(updated).build())
+            }
+            lastServiceBtAppliedSongId = song.id
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to apply Bluetooth lyric metadata", e)
+        }
+    }
+
+    private fun restoreServiceBtMetadata(song: Song) {
+        try {
+            val forwarding = player as? RhythmForwardingPlayer
+            if (USE_FORWARDING_METADATA && forwarding != null) {
+                forwarding.clearLyricMetadata()
+                lastServiceBtAppliedSongId = null
+                return
+            }
+            val idx = player.currentMediaItemIndex
+            if (idx < 0 || idx >= player.mediaItemCount) return
+            val current = player.getMediaItemAt(idx)
+            val md = current.mediaMetadata
+            if (md.title?.toString() == song.title && md.artist?.toString() == song.artist) {
+                lastServiceBtAppliedSongId = null
+                return
+            }
+            val restored = md.buildUpon()
+                .setTitle(song.title)
+                .setArtist(song.artist)
+                .build()
+            player.replaceMediaItem(idx, current.buildUpon().setMediaMetadata(restored).build())
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to restore standard metadata", e)
+        } finally {
+            lastServiceBtAppliedSongId = null
+        }
     }
     
     /**

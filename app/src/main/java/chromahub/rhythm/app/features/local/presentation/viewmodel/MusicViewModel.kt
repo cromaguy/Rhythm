@@ -3788,29 +3788,6 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
             }
         }
 
-        val bluetoothLyricsActive = appSettings.broadcastStatusEnabled.value && appSettings.bluetoothLyricsEnabled.value
-        if (!bluetoothLyricsActive) {
-            if (lastAppliedBluetoothLyricSongId != null || lastAppliedBluetoothLyricLine != null) {
-                restoreStandardNowPlayingMetadata(controller, _currentSong.value)
-            }
-            lastBroadcastLyricSongId = null
-            lastBroadcastLyricLine = lyricLine
-            return
-        }
-
-        if (song.id == lastBroadcastLyricSongId && lyricLine == lastBroadcastLyricLine) {
-            return
-        }
-
-        statusBroadcaster.broadcastMetadataChanged(
-            song = song,
-            position = controller.currentPosition,
-            queueSize = controller.mediaItemCount,
-            queuePosition = controller.currentMediaItemIndex,
-            bluetoothLyricsMode = true,
-            currentLyricLine = lyricLine
-        )
-        applyBluetoothLyricsNowPlayingMetadata(controller, song, lyricLine)
         lastBroadcastLyricSongId = song.id
         lastBroadcastLyricLine = lyricLine
     }
