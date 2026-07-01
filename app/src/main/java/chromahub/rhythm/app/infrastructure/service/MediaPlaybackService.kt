@@ -982,9 +982,15 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
                     }
                     preloadController.addOrUpdateQueue(mediaItems)
                 }
+                // Collapse new queues after the selected index settles.
+                scheduleCollapseForBtLyrics()
             }
 
             override fun onPlaybackStateChanged(playbackState: Int) {
+                // ExoPlayer cannot auto-advance a queue that has been collapsed for AVRCP.
+                if (playbackState == Player.STATE_ENDED) {
+                    btVirtualAdvance()
+                }
                 if (playbackState == Player.STATE_READY && getPlayerAudioSessionId() != 0) {
                     // Reinitialize audio effects with valid session ID
                     val previouslyEnabled = getEqualizerEnabledSafe()
@@ -1184,10 +1190,12 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
             }
         }
 
-        // Re-apply Bluetooth-lyrics queue exposure to the notification/AVRCP controller whenever
-        // the setting toggles, so it takes effect without restarting the app.
+        // Enter or leave the single-item player queue when Bluetooth lyrics is toggled.
         serviceScope.launch {
-            appSettings.bluetoothLyricsEnabled.collect {
+            appSettings.bluetoothLyricsEnabled.collect { enabled ->
+                if (::player.isInitialized) {
+                    if (enabled) collapseQueueForBtLyrics() else restoreQueueFromBtVirtual()
+                }
                 refreshNotificationControllerQueueExposure()
             }
         }
@@ -1426,20 +1434,9 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
             .build()
     }
 
-    /**
-     * Player commands granted to Media3's media-notification controller (which drives the
-     * platform/AVRCP session). When Bluetooth lyrics is active we withhold COMMAND_GET_TIMELINE
-     * so no multi-song queue is published to the car — that makes every track behave like a
-     * single-song session, which is the only case where car displays reliably refresh the title
-     * (lyric line) on every change instead of only on real track skips.
-     */
+    /** Player commands granted to Media3's notification controller, which drives AVRCP metadata. */
     private fun playerCommandsForNotificationController(): Player.Commands {
-        val base = MediaSession.ConnectionResult.DEFAULT_PLAYER_COMMANDS
-        return if (::appSettings.isInitialized && appSettings.bluetoothLyricsEnabled.value) {
-            base.buildUpon().remove(Player.COMMAND_GET_TIMELINE).build()
-        } else {
-            base
-        }
+        return MediaSession.ConnectionResult.DEFAULT_PLAYER_COMMANDS
     }
 
     /**
@@ -2030,19 +2027,48 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
             injectionListeners.forEach { it.onMediaMetadataChanged(md) }
         }
 
+        // Keep next/previous available while the service owns the hidden queue.
+        override fun getAvailableCommands(): Player.Commands {
+            val base = super.getAvailableCommands()
+            if (!btVirtualQueueActive()) return base
+            val builder = base.buildUpon()
+            if (btVirtualUpcoming.isNotEmpty()) {
+                builder.add(Player.COMMAND_SEEK_TO_NEXT)
+                builder.add(Player.COMMAND_SEEK_TO_NEXT_MEDIA_ITEM)
+            }
+            if (btVirtualHistory.isNotEmpty()) {
+                builder.add(Player.COMMAND_SEEK_TO_PREVIOUS)
+                builder.add(Player.COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM)
+            }
+            return builder.build()
+        }
+
+        fun notifyBtCommandsChanged() {
+            val cmds = getAvailableCommands()
+            injectionListeners.forEach { it.onAvailableCommandsChanged(cmds) }
+        }
+
         override fun seekToNext() {
+            if (btVirtualQueueActive() && btVirtualAdvance()) return
             if (!skipWithCrossfade(toNext = true)) super.seekToNext()
         }
 
         override fun seekToNextMediaItem() {
+            if (btVirtualQueueActive() && btVirtualAdvance()) return
             if (!skipWithCrossfade(toNext = true)) super.seekToNextMediaItem()
         }
 
         override fun seekToPrevious() {
+            // Match the standard "restart if past threshold, else previous track" behaviour.
+            if (btVirtualQueueActive() && btVirtualHistory.isNotEmpty()) {
+                if (currentPosition > 3000L) { seekTo(0); return }
+                if (btVirtualPrevious()) return
+            }
             if (!skipWithCrossfade(toNext = false)) super.seekToPrevious()
         }
 
         override fun seekToPreviousMediaItem() {
+            if (btVirtualQueueActive() && btVirtualPrevious()) return
             if (!skipWithCrossfade(toNext = false)) super.seekToPreviousMediaItem()
         }
     }
@@ -2355,12 +2381,7 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
             availableCommands.add(SessionCommand("UPDATE_LYRICS_DATA", Bundle.EMPTY))
             val resultBuilder = MediaSession.ConnectionResult.AcceptedResultBuilder(session)
                 .setAvailableSessionCommands(availableCommands.build())
-            // Bluetooth-lyrics fix (queue axis): the media-notification controller is what Media3
-            // uses to drive the platform/legacy MediaSession that AVRCP (car displays) reads. When
-            // a multi-song queue is published, the car keys "current track" on the queue-item id —
-            // which only changes on real skips — so per-line title rewrites never refresh on the car
-            // (only the first song works). Hiding the timeline/queue from this controller makes every
-            // track look like a single-song session, so the car keys on metadata and refreshes each line.
+            // Keep notification/AVRCP command filtering centralized.
             if (session.isMediaNotificationController(controller)) {
                 resultBuilder.setAvailablePlayerCommands(playerCommandsForNotificationController())
             }
@@ -2614,6 +2635,124 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
         } else {
             mutePlayer()
         }
+    }
+
+    // Bluetooth-lyrics virtual queue. Some AVRCP stacks only refresh lyric titles when the
+    // player exposes a single current item, so the service keeps the rest of the queue here.
+    private val btVirtualUpcoming = java.util.concurrent.CopyOnWriteArrayList<MediaItem>()
+    private val btVirtualHistory = java.util.concurrent.CopyOnWriteArrayList<MediaItem>()
+    @Volatile private var isMutatingBtVirtualQueue = false
+    private var btCollapseJob: kotlinx.coroutines.Job? = null
+
+    private fun btVirtualQueueActive(): Boolean =
+        ::appSettings.isInitialized && appSettings.bluetoothLyricsEnabled.value
+
+    /** Re-publish transport-command availability after the virtual queue's next/prev state changes. */
+    private fun notifyBtVirtualCommands() {
+        (player as? RhythmForwardingPlayer)?.notifyBtCommandsChanged()
+    }
+
+    /**
+     * The app often sets a full queue and then seeks to the tapped index in a separate call, so wait
+     * briefly before collapsing the player timeline.
+     */
+    private fun scheduleCollapseForBtLyrics() {
+        if (!btVirtualQueueActive()) return
+        btCollapseJob?.cancel()
+        btCollapseJob = serviceScope.launch {
+            kotlinx.coroutines.delay(450)
+            collapseQueueForBtLyrics()
+        }
+    }
+
+    /** Collapse a multi-item player queue down to the current item, stashing the rest for later. */
+    private fun collapseQueueForBtLyrics() {
+        if (!::player.isInitialized || !btVirtualQueueActive() || isMutatingBtVirtualQueue) return
+        val count = player.mediaItemCount
+        val idx = player.currentMediaItemIndex
+        if (count <= 1 || idx == androidx.media3.common.C.INDEX_UNSET) return
+        isMutatingBtVirtualQueue = true
+        try {
+            btVirtualHistory.clear()
+            for (i in 0 until idx) btVirtualHistory.add(player.getMediaItemAt(i))
+            btVirtualUpcoming.clear()
+            for (i in idx + 1 until count) btVirtualUpcoming.add(player.getMediaItemAt(i))
+            if (idx + 1 < count) player.removeMediaItems(idx + 1, count)
+            if (idx > 0) player.removeMediaItems(0, idx)
+            // A single item must not repeat, or STATE_ENDED never fires and we can't auto-advance.
+            player.repeatMode = Player.REPEAT_MODE_OFF
+            Log.d(TAG, "BT-lyrics: collapsed to single item, ${btVirtualUpcoming.size} upcoming / ${btVirtualHistory.size} history")
+        } catch (e: Exception) {
+            Log.w(TAG, "BT-lyrics collapse failed", e)
+        } finally {
+            isMutatingBtVirtualQueue = false
+        }
+        notifyBtVirtualCommands()
+    }
+
+    /** Load the next stashed song into the single-item player. Returns false if none. */
+    private fun btVirtualAdvance(): Boolean {
+        if (!::player.isInitialized || !btVirtualQueueActive() || btVirtualUpcoming.isEmpty()) return false
+        val next = btVirtualUpcoming.removeAt(0)
+        player.currentMediaItem?.let { btVirtualHistory.add(it) }
+        isMutatingBtVirtualQueue = true
+        try {
+            player.setMediaItem(next)
+            player.repeatMode = Player.REPEAT_MODE_OFF
+            player.prepare()
+            player.playWhenReady = true
+            Log.d(TAG, "BT-lyrics: advanced virtual queue, ${btVirtualUpcoming.size} remaining")
+        } finally {
+            isMutatingBtVirtualQueue = false
+        }
+        notifyBtVirtualCommands()
+        return true
+    }
+
+    /** Load the previous stashed song into the single-item player. Returns false if none. */
+    private fun btVirtualPrevious(): Boolean {
+        if (!::player.isInitialized || !btVirtualQueueActive() || btVirtualHistory.isEmpty()) return false
+        val prev = btVirtualHistory.removeAt(btVirtualHistory.size - 1)
+        player.currentMediaItem?.let { btVirtualUpcoming.add(0, it) }
+        isMutatingBtVirtualQueue = true
+        try {
+            player.setMediaItem(prev)
+            player.repeatMode = Player.REPEAT_MODE_OFF
+            player.prepare()
+            player.playWhenReady = true
+            Log.d(TAG, "BT-lyrics: stepped back virtual queue, ${btVirtualHistory.size} history left")
+        } finally {
+            isMutatingBtVirtualQueue = false
+        }
+        notifyBtVirtualCommands()
+        return true
+    }
+
+    /** Rebuild the full player queue (history + current + upcoming) when the mode turns off. */
+    private fun restoreQueueFromBtVirtual() {
+        if (!::player.isInitialized) return
+        if (btVirtualUpcoming.isEmpty() && btVirtualHistory.isEmpty()) return
+        isMutatingBtVirtualQueue = true
+        try {
+            val rebuilt = ArrayList<MediaItem>(btVirtualHistory)
+            val current = player.currentMediaItem
+            if (current != null) rebuilt.add(current)
+            val currentIdx = (rebuilt.size - 1).coerceAtLeast(0)
+            rebuilt.addAll(btVirtualUpcoming)
+            val pos = player.currentPosition
+            btVirtualHistory.clear()
+            btVirtualUpcoming.clear()
+            if (rebuilt.isNotEmpty()) {
+                player.setMediaItems(rebuilt, currentIdx, pos)
+                player.prepare()
+            }
+            Log.d(TAG, "BT-lyrics: restored full queue (${rebuilt.size} items) on mode off")
+        } catch (e: Exception) {
+            Log.w(TAG, "BT-lyrics restore failed", e)
+        } finally {
+            isMutatingBtVirtualQueue = false
+        }
+        notifyBtVirtualCommands()
     }
 
     override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
