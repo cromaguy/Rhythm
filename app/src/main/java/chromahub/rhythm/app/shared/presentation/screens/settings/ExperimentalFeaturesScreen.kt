@@ -93,6 +93,7 @@ import chromahub.rhythm.app.shared.data.model.Playlist
 import chromahub.rhythm.app.shared.data.model.Song
 import chromahub.rhythm.app.shared.data.repository.PlaybackStatsRepository
 import chromahub.rhythm.app.shared.data.repository.StatsTimeRange
+import chromahub.rhythm.app.util.BluetoothLyricsFormatter
 import chromahub.rhythm.app.util.GsonUtils
 import chromahub.rhythm.app.util.HapticUtils
 import chromahub.rhythm.app.util.HapticType
@@ -177,6 +178,11 @@ fun ExperimentalFeaturesScreen(
     // Third-party integrations states
     val broadcastStatusEnabled by appSettings.broadcastStatusEnabled.collectAsState()
     val bluetoothLyricsEnabled by appSettings.bluetoothLyricsEnabled.collectAsState()
+    val bluetoothLyricsLegacyCarModeEnabled by appSettings.bluetoothLyricsLegacyCarModeEnabled.collectAsState()
+    val bluetoothLyricsOffsetMs by appSettings.bluetoothLyricsOffsetMs.collectAsState()
+    val bluetoothLyricsMaxChunkChars by appSettings.bluetoothLyricsMaxChunkChars.collectAsState()
+    val bluetoothLyricsScrollCharsPerSecond by appSettings.bluetoothLyricsScrollCharsPerSecond.collectAsState()
+    val bluetoothLyricsMinChunkHoldMs by appSettings.bluetoothLyricsMinChunkHoldMs.collectAsState()
     
     val forcePlayerCompactMode by appSettings.forcePlayerCompactMode.collectAsState()
     val useExperimentalPlayerUi by appSettings.useExperimentalPlayerUi.collectAsState()
@@ -186,6 +192,7 @@ fun ExperimentalFeaturesScreen(
 
     var showRestartDialog by remember { mutableStateOf(false) }
     var restartDialogMessage by remember { mutableStateOf("") }
+    var showBluetoothLyricsTuningDialog by remember { mutableStateOf(false) }
 
     CollapsibleHeaderScreen(
         title = context.getString(R.string.settings_experimental),
@@ -307,6 +314,26 @@ fun ExperimentalFeaturesScreen(
                                     appSettings.setBroadcastStatusEnabled(true)
                                 }
                             }
+                        ),
+                        SettingItem(
+                            MaterialSymbolIcon("directions_car"),
+                            context.getString(R.string.bluetooth_lyrics_legacy_car_mode),
+                            context.getString(R.string.bluetooth_lyrics_legacy_car_mode_desc),
+                            enabled = bluetoothLyricsEnabled,
+                            toggleState = bluetoothLyricsLegacyCarModeEnabled,
+                            onToggleChange = { appSettings.setBluetoothLyricsLegacyCarModeEnabled(it) }
+                        ),
+                        SettingItem(
+                            MaterialSymbolIcon("sync_alt"),
+                            context.getString(R.string.bluetooth_lyrics_tuning_title),
+                            context.getString(
+                                R.string.bluetooth_lyrics_tuning_summary,
+                                formatBluetoothLyricsOffsetValue(bluetoothLyricsOffsetMs),
+                                bluetoothLyricsMaxChunkChars,
+                                bluetoothLyricsScrollCharsPerSecond
+                            ),
+                            enabled = bluetoothLyricsEnabled,
+                            onClick = { showBluetoothLyricsTuningDialog = true }
                         )
                     )
                 )
@@ -486,9 +513,317 @@ fun ExperimentalFeaturesScreen(
         )
     }
 
+    if (showBluetoothLyricsTuningDialog) {
+        BluetoothLyricsTuningDialog(
+            currentOffsetMs = bluetoothLyricsOffsetMs,
+            currentMaxChunkChars = bluetoothLyricsMaxChunkChars,
+            currentScrollCharsPerSecond = bluetoothLyricsScrollCharsPerSecond,
+            currentMinChunkHoldMs = bluetoothLyricsMinChunkHoldMs,
+            onApply = { offsetMs, maxChunkChars, scrollCharsPerSecond, minChunkHoldMs ->
+                appSettings.setBluetoothLyricsOffsetMs(offsetMs)
+                appSettings.setBluetoothLyricsMaxChunkChars(maxChunkChars)
+                appSettings.setBluetoothLyricsScrollCharsPerSecond(scrollCharsPerSecond)
+                appSettings.setBluetoothLyricsMinChunkHoldMs(minChunkHoldMs)
+            },
+            onDismiss = { showBluetoothLyricsTuningDialog = false }
+        )
+    }
+
     // Show update bottomsheet - removed, now handled globally in LocalNavigation
 }
 
+
+@Composable
+private fun BluetoothLyricsTuningDialog(
+    currentOffsetMs: Int,
+    currentMaxChunkChars: Int,
+    currentScrollCharsPerSecond: Int,
+    currentMinChunkHoldMs: Int,
+    onApply: (Int, Int, Int, Int) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var draftOffsetMs by remember(currentOffsetMs) { mutableIntStateOf(currentOffsetMs) }
+    var draftMaxChunkChars by remember(currentMaxChunkChars) { mutableIntStateOf(currentMaxChunkChars) }
+    var draftScrollCharsPerSecond by remember(currentScrollCharsPerSecond) { mutableIntStateOf(currentScrollCharsPerSecond) }
+    var draftMinChunkHoldMs by remember(currentMinChunkHoldMs) { mutableIntStateOf(currentMinChunkHoldMs) }
+    val minOffset = AppSettings.BLUETOOTH_LYRICS_OFFSET_MIN_MS
+    val maxOffset = AppSettings.BLUETOOTH_LYRICS_OFFSET_MAX_MS
+    val presets = listOf(-1000, -500, -200, 0, 200, 500, 1000)
+    val tuningPresets = listOf(
+        BluetoothLyricsTuningPreset(
+            label = stringResource(R.string.bluetooth_lyrics_preset_fast),
+            maxChunkChars = 22,
+            scrollCharsPerSecond = 0,
+            minChunkHoldMs = 700
+        ),
+        BluetoothLyricsTuningPreset(
+            label = stringResource(R.string.bluetooth_lyrics_preset_short),
+            maxChunkChars = 26,
+            scrollCharsPerSecond = 1,
+            minChunkHoldMs = 900
+        ),
+        BluetoothLyricsTuningPreset(
+            label = stringResource(R.string.bluetooth_lyrics_preset_scroll),
+            maxChunkChars = 38,
+            scrollCharsPerSecond = 6,
+            minChunkHoldMs = 1200
+        )
+    )
+
+    fun resetDrafts() {
+        draftOffsetMs = 0
+        draftMaxChunkChars = BluetoothLyricsFormatter.DEFAULT_MAX_CHUNK_CHARS
+        draftScrollCharsPerSecond = BluetoothLyricsFormatter.DEFAULT_SCROLL_CHARS_PER_SECOND
+        draftMinChunkHoldMs = BluetoothLyricsFormatter.DEFAULT_MIN_CHUNK_HOLD_MS
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = {
+            Icon(
+                imageVector = MaterialSymbolIcon("sync_alt"),
+                contentDescription = null
+            )
+        },
+        title = { Text(stringResource(R.string.bluetooth_lyrics_tuning_title)) },
+        text = {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Text(
+                    text = stringResource(R.string.bluetooth_lyrics_tuning_desc),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                BluetoothLyricsGuidance()
+
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = stringResource(R.string.bluetooth_lyrics_presets_title),
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        tuningPresets.forEach { preset ->
+                            FilterChip(
+                                selected = draftMaxChunkChars == preset.maxChunkChars &&
+                                    draftScrollCharsPerSecond == preset.scrollCharsPerSecond &&
+                                    draftMinChunkHoldMs == preset.minChunkHoldMs,
+                                onClick = {
+                                    draftMaxChunkChars = preset.maxChunkChars
+                                    draftScrollCharsPerSecond = preset.scrollCharsPerSecond
+                                    draftMinChunkHoldMs = preset.minChunkHoldMs
+                                },
+                                label = { Text(preset.label) }
+                            )
+                        }
+                    }
+                }
+
+                BluetoothLyricsTuningSlider(
+                    title = stringResource(R.string.bluetooth_lyrics_offset_title),
+                    description = stringResource(R.string.bluetooth_lyrics_offset_help),
+                    valueLabel = formatBluetoothLyricsOffsetValue(draftOffsetMs),
+                    value = draftOffsetMs,
+                    valueRange = minOffset..maxOffset,
+                    step = AppSettings.BLUETOOTH_LYRICS_OFFSET_STEP_MS,
+                    onValueChange = { draftOffsetMs = it }
+                )
+
+                BluetoothLyricsTuningSlider(
+                    title = stringResource(R.string.bluetooth_lyrics_max_chunk_title),
+                    description = stringResource(R.string.bluetooth_lyrics_max_chunk_help),
+                    valueLabel = stringResource(
+                        R.string.bluetooth_lyrics_max_chunk_value,
+                        draftMaxChunkChars
+                    ),
+                    value = draftMaxChunkChars,
+                    valueRange = BluetoothLyricsFormatter.MIN_MAX_CHUNK_CHARS..
+                        BluetoothLyricsFormatter.MAX_MAX_CHUNK_CHARS,
+                    step = 1,
+                    onValueChange = { draftMaxChunkChars = BluetoothLyricsFormatter.coerceMaxChunkChars(it) }
+                )
+
+                BluetoothLyricsTuningSlider(
+                    title = stringResource(R.string.bluetooth_lyrics_scroll_title),
+                    description = stringResource(R.string.bluetooth_lyrics_scroll_help),
+                    valueLabel = stringResource(
+                        R.string.bluetooth_lyrics_scroll_value,
+                        draftScrollCharsPerSecond
+                    ),
+                    value = draftScrollCharsPerSecond,
+                    valueRange = BluetoothLyricsFormatter.MIN_SCROLL_CHARS_PER_SECOND..
+                        BluetoothLyricsFormatter.MAX_SCROLL_CHARS_PER_SECOND,
+                    step = 1,
+                    onValueChange = {
+                        draftScrollCharsPerSecond = BluetoothLyricsFormatter.coerceScrollCharsPerSecond(it)
+                    }
+                )
+
+                BluetoothLyricsTuningSlider(
+                    title = stringResource(R.string.bluetooth_lyrics_min_chunk_hold_title),
+                    description = stringResource(R.string.bluetooth_lyrics_min_chunk_hold_help),
+                    valueLabel = formatBluetoothLyricsHoldValue(draftMinChunkHoldMs),
+                    value = draftMinChunkHoldMs,
+                    valueRange = BluetoothLyricsFormatter.MIN_MIN_CHUNK_HOLD_MS..
+                        BluetoothLyricsFormatter.MAX_MIN_CHUNK_HOLD_MS,
+                    step = 100,
+                    onValueChange = { draftMinChunkHoldMs = BluetoothLyricsFormatter.coerceMinChunkHoldMs(it) }
+                )
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    presets.forEach { preset ->
+                        FilterChip(
+                            selected = draftOffsetMs == preset,
+                            onClick = { draftOffsetMs = preset },
+                            label = { Text(formatBluetoothLyricsOffsetValue(preset)) }
+                        )
+                    }
+                }
+
+                TextButton(onClick = ::resetDrafts) {
+                    Text(stringResource(R.string.ui_reset))
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    onApply(
+                        draftOffsetMs,
+                        draftMaxChunkChars,
+                        draftScrollCharsPerSecond,
+                        draftMinChunkHoldMs
+                    )
+                    onDismiss()
+                }
+            ) {
+                Text(stringResource(R.string.ui_apply))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.ui_cancel))
+            }
+        }
+    )
+}
+
+private data class BluetoothLyricsTuningPreset(
+    val label: String,
+    val maxChunkChars: Int,
+    val scrollCharsPerSecond: Int,
+    val minChunkHoldMs: Int
+)
+
+@Composable
+private fun BluetoothLyricsGuidance() {
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
+        shape = RoundedCornerShape(12.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            Text(
+                text = stringResource(R.string.bluetooth_lyrics_how_to_title),
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.SemiBold
+            )
+            Text(
+                text = stringResource(R.string.bluetooth_lyrics_how_to_body),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
+private fun BluetoothLyricsTuningSlider(
+    title: String,
+    description: String,
+    valueLabel: String,
+    value: Int,
+    valueRange: IntRange,
+    step: Int,
+    onValueChange: (Int) -> Unit
+) {
+    val safeStep = step.coerceAtLeast(1)
+    val sliderSteps = ((valueRange.last - valueRange.first) / safeStep - 1).coerceAtLeast(0)
+
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.SemiBold
+            )
+            Text(
+                text = valueLabel,
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary
+            )
+        }
+        Text(
+            text = description,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Slider(
+            value = value.toFloat(),
+            onValueChange = { rawValue ->
+                onValueChange(roundBluetoothLyricsSliderValue(rawValue, valueRange, safeStep))
+            },
+            valueRange = valueRange.first.toFloat()..valueRange.last.toFloat(),
+            steps = sliderSteps,
+            modifier = Modifier.fillMaxWidth()
+        )
+    }
+}
+
+private fun roundBluetoothLyricsSliderValue(
+    rawValue: Float,
+    valueRange: IntRange,
+    step: Int
+): Int {
+    val min = valueRange.first
+    val roundedSteps = kotlin.math.round((rawValue - min) / step).toInt()
+    return (min + roundedSteps * step).coerceIn(valueRange.first, valueRange.last)
+}
+
+private fun formatBluetoothLyricsOffsetValue(offsetMs: Int): String {
+    return when {
+        offsetMs > 0 -> "+${offsetMs}ms"
+        else -> "${offsetMs}ms"
+    }
+}
+
+private fun formatBluetoothLyricsHoldValue(holdMs: Int): String {
+    return if (holdMs >= 1000 && holdMs % 1000 == 0) {
+        "${holdMs / 1000}s"
+    } else {
+        "${holdMs}ms"
+    }
+}
 
 
 fun getUpdateSourceLabel(context: Context, source: String): String {

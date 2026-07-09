@@ -52,6 +52,7 @@ import androidx.core.app.NotificationCompat
 import androidx.media3.common.AudioAttributes as ExoAudioAttributes
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import chromahub.rhythm.app.util.BluetoothLyricsFormatter
 import chromahub.rhythm.app.util.GsonUtils
 import chromahub.rhythm.app.shared.data.model.Playlist
 import kotlinx.coroutines.sync.Mutex
@@ -187,7 +188,6 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
         currentLyricTimestamps = longArrayOf()
         currentPlainLyricsLines = emptyList()
         currentLyricIndex = -1
-        // Force the service-side fallback to re-evaluate lyrics for the next song.
         serviceLyricsLoadedSongId = null
         serviceLyricsLoadJob?.cancel()
         chromahub.rhythm.app.infrastructure.widget.glance.GlanceWidgetUpdater.updateLyrics(this, emptyList(), -1)
@@ -982,12 +982,11 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
                     }
                     preloadController.addOrUpdateQueue(mediaItems)
                 }
-                // Collapse new queues after the selected index settles.
                 scheduleCollapseForBtLyrics()
             }
 
             override fun onPlaybackStateChanged(playbackState: Int) {
-                // ExoPlayer cannot auto-advance a queue that has been collapsed for AVRCP.
+                // Collapsed legacy queues need service-owned advancement.
                 if (playbackState == Player.STATE_ENDED) {
                     btVirtualAdvance()
                 }
@@ -1190,11 +1189,15 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
             }
         }
 
-        // Enter or leave the single-item player queue when Bluetooth lyrics is toggled.
         serviceScope.launch {
-            appSettings.bluetoothLyricsEnabled.collect { enabled ->
+            kotlinx.coroutines.flow.combine(
+                appSettings.bluetoothLyricsEnabled,
+                appSettings.bluetoothLyricsLegacyCarModeEnabled
+            ) { bluetoothLyricsEnabled, legacyCarModeEnabled ->
+                bluetoothLyricsEnabled && legacyCarModeEnabled
+            }.collect { legacyQueueEnabled ->
                 if (::player.isInitialized) {
-                    if (enabled) collapseQueueForBtLyrics() else restoreQueueFromBtVirtual()
+                    if (legacyQueueEnabled) collapseQueueForBtLyrics() else restoreQueueFromBtVirtual()
                 }
                 refreshNotificationControllerQueueExposure()
             }
@@ -1434,16 +1437,10 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
             .build()
     }
 
-    /** Player commands granted to Media3's notification controller, which drives AVRCP metadata. */
     private fun playerCommandsForNotificationController(): Player.Commands {
         return MediaSession.ConnectionResult.DEFAULT_PLAYER_COMMANDS
     }
 
-    /**
-     * Re-applies [playerCommandsForNotificationController] to the already-connected
-     * media-notification controller so toggling Bluetooth lyrics takes effect without an app
-     * restart. Session commands are rebuilt to match what onConnect grants that controller.
-     */
     private fun refreshNotificationControllerQueueExposure() {
         val session = mediaSession ?: return
         val playerCommands = playerCommandsForNotificationController()
@@ -2027,7 +2024,6 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
             injectionListeners.forEach { it.onMediaMetadataChanged(md) }
         }
 
-        // Keep next/previous available while the service owns the hidden queue.
         override fun getAvailableCommands(): Player.Commands {
             val base = super.getAvailableCommands()
             if (!btVirtualQueueActive()) return base
@@ -2059,7 +2055,6 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
         }
 
         override fun seekToPrevious() {
-            // Match the standard "restart if past threshold, else previous track" behaviour.
             if (btVirtualQueueActive() && btVirtualHistory.isNotEmpty()) {
                 if (currentPosition > 3000L) { seekTo(0); return }
                 if (btVirtualPrevious()) return
@@ -2381,7 +2376,6 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
             availableCommands.add(SessionCommand("UPDATE_LYRICS_DATA", Bundle.EMPTY))
             val resultBuilder = MediaSession.ConnectionResult.AcceptedResultBuilder(session)
                 .setAvailableSessionCommands(availableCommands.build())
-            // Keep notification/AVRCP command filtering centralized.
             if (session.isMediaNotificationController(controller)) {
                 resultBuilder.setAvailablePlayerCommands(playerCommandsForNotificationController())
             }
@@ -2421,8 +2415,6 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
                         }
 
                         currentLyricIndex = -1
-                        // The UI (ViewModel) is alive and authoritative for the current song's lyrics,
-                        // so suppress the service-side fallback fetch for it.
                         serviceLyricsLoadedSongId = player.currentMediaItem?.mediaId
                         serviceLyricsLoadJob?.cancel()
                         chromahub.rhythm.app.infrastructure.widget.glance.GlanceWidgetUpdater.updateLyrics(this@MediaPlaybackService, getProcessedLyricTexts(), -1)
@@ -2443,9 +2435,16 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
                             if (currentMediaItem != null) {
                                 val song = convertMediaItemToSong(currentMediaItem)
                                 if (song != null) {
-                                    val coalescedLine = if (lyricIndex >= 0 && currentLyricTimestamps.isNotEmpty())
-                                        coalesceBtLyricGroup(lyricIndex, currentLyricTimestamps, currentLyricTexts) ?: lyricLine
-                                    else lyricLine
+                                    val bluetoothPosition = player.currentPosition +
+                                        appSettings.bluetoothLyricsOffsetMs.value.toLong()
+                                    val bluetoothLine = if (currentLyricTimestamps.isNotEmpty()) {
+                                        resolveServiceBtLyricLine(
+                                            positionMs = bluetoothPosition,
+                                            updateCurrentIndex = false
+                                        )
+                                    } else {
+                                        lyricLine
+                                    }
                                     statusBroadcaster.broadcastNowPlaying(
                                         song = song,
                                         isPlaying = player.isPlaying,
@@ -2453,7 +2452,7 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
                                         queueSize = player.mediaItemCount,
                                         queuePosition = player.currentMediaItemIndex,
                                         bluetoothLyricsMode = true,
-                                        currentLyricLine = coalescedLine
+                                        currentLyricLine = bluetoothLine
                                     )
                                 }
                             }
@@ -2637,25 +2636,21 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
         }
     }
 
-    // Bluetooth-lyrics virtual queue. Some AVRCP stacks only refresh lyric titles when the
-    // player exposes a single current item, so the service keeps the rest of the queue here.
+    // AVRCP legacy workaround state.
     private val btVirtualUpcoming = java.util.concurrent.CopyOnWriteArrayList<MediaItem>()
     private val btVirtualHistory = java.util.concurrent.CopyOnWriteArrayList<MediaItem>()
     @Volatile private var isMutatingBtVirtualQueue = false
     private var btCollapseJob: kotlinx.coroutines.Job? = null
 
     private fun btVirtualQueueActive(): Boolean =
-        ::appSettings.isInitialized && appSettings.bluetoothLyricsEnabled.value
+        ::appSettings.isInitialized &&
+            appSettings.bluetoothLyricsEnabled.value &&
+            appSettings.bluetoothLyricsLegacyCarModeEnabled.value
 
-    /** Re-publish transport-command availability after the virtual queue's next/prev state changes. */
     private fun notifyBtVirtualCommands() {
         (player as? RhythmForwardingPlayer)?.notifyBtCommandsChanged()
     }
 
-    /**
-     * The app often sets a full queue and then seeks to the tapped index in a separate call, so wait
-     * briefly before collapsing the player timeline.
-     */
     private fun scheduleCollapseForBtLyrics() {
         if (!btVirtualQueueActive()) return
         btCollapseJob?.cancel()
@@ -2665,7 +2660,6 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
         }
     }
 
-    /** Collapse a multi-item player queue down to the current item, stashing the rest for later. */
     private fun collapseQueueForBtLyrics() {
         if (!::player.isInitialized || !btVirtualQueueActive() || isMutatingBtVirtualQueue) return
         val count = player.mediaItemCount
@@ -2679,18 +2673,16 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
             for (i in idx + 1 until count) btVirtualUpcoming.add(player.getMediaItemAt(i))
             if (idx + 1 < count) player.removeMediaItems(idx + 1, count)
             if (idx > 0) player.removeMediaItems(0, idx)
-            // A single item must not repeat, or STATE_ENDED never fires and we can't auto-advance.
             player.repeatMode = Player.REPEAT_MODE_OFF
-            Log.d(TAG, "BT-lyrics: collapsed to single item, ${btVirtualUpcoming.size} upcoming / ${btVirtualHistory.size} history")
+            Log.d(TAG, "Legacy car mode: collapsed to single item, ${btVirtualUpcoming.size} upcoming / ${btVirtualHistory.size} history")
         } catch (e: Exception) {
-            Log.w(TAG, "BT-lyrics collapse failed", e)
+            Log.w(TAG, "Legacy car mode collapse failed", e)
         } finally {
             isMutatingBtVirtualQueue = false
         }
         notifyBtVirtualCommands()
     }
 
-    /** Load the next stashed song into the single-item player. Returns false if none. */
     private fun btVirtualAdvance(): Boolean {
         if (!::player.isInitialized || !btVirtualQueueActive() || btVirtualUpcoming.isEmpty()) return false
         val next = btVirtualUpcoming.removeAt(0)
@@ -2701,7 +2693,7 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
             player.repeatMode = Player.REPEAT_MODE_OFF
             player.prepare()
             player.playWhenReady = true
-            Log.d(TAG, "BT-lyrics: advanced virtual queue, ${btVirtualUpcoming.size} remaining")
+            Log.d(TAG, "Legacy car mode: advanced virtual queue, ${btVirtualUpcoming.size} remaining")
         } finally {
             isMutatingBtVirtualQueue = false
         }
@@ -2709,7 +2701,6 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
         return true
     }
 
-    /** Load the previous stashed song into the single-item player. Returns false if none. */
     private fun btVirtualPrevious(): Boolean {
         if (!::player.isInitialized || !btVirtualQueueActive() || btVirtualHistory.isEmpty()) return false
         val prev = btVirtualHistory.removeAt(btVirtualHistory.size - 1)
@@ -2720,7 +2711,7 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
             player.repeatMode = Player.REPEAT_MODE_OFF
             player.prepare()
             player.playWhenReady = true
-            Log.d(TAG, "BT-lyrics: stepped back virtual queue, ${btVirtualHistory.size} history left")
+            Log.d(TAG, "Legacy car mode: stepped back virtual queue, ${btVirtualHistory.size} history left")
         } finally {
             isMutatingBtVirtualQueue = false
         }
@@ -2728,7 +2719,6 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
         return true
     }
 
-    /** Rebuild the full player queue (history + current + upcoming) when the mode turns off. */
     private fun restoreQueueFromBtVirtual() {
         if (!::player.isInitialized) return
         if (btVirtualUpcoming.isEmpty() && btVirtualHistory.isEmpty()) return
@@ -2746,9 +2736,9 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
                 player.setMediaItems(rebuilt, currentIdx, pos)
                 player.prepare()
             }
-            Log.d(TAG, "BT-lyrics: restored full queue (${rebuilt.size} items) on mode off")
+            Log.d(TAG, "Legacy car mode: restored full queue (${rebuilt.size} items) on mode off")
         } catch (e: Exception) {
-            Log.w(TAG, "BT-lyrics restore failed", e)
+            Log.w(TAG, "Legacy car mode restore failed", e)
         } finally {
             isMutatingBtVirtualQueue = false
         }
@@ -2788,19 +2778,11 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
     }
 
     private val USE_FORWARDING_METADATA = true
-    private val BT_LYRIC_MIN_HOLD_MS = 1500L
-    private val BT_LYRIC_MERGE_MAX_LINES = 3
-    private val BT_LYRIC_MERGE_MAX_CHARS = 96
-    private val BT_LYRIC_SEPARATOR_ASCII = false
-    private fun btLyricSeparator(): String = if (BT_LYRIC_SEPARATOR_ASCII) " / " else " — "
     private var bluetoothLyricsLoopJob: kotlinx.coroutines.Job? = null
     private var lastServiceBtLyricLine: String? = null
     private var lastServiceBtLyricSongId: String? = null
     private var lastServiceBtAppliedSongId: String? = null
 
-    // Service-side lyric loading: lets the Bluetooth lyrics loop keep working for NEW songs
-    // even when the Activity/ViewModel has been destroyed (backgrounded on aggressive ROMs),
-    // which is when the UI can no longer push lyric data via the UPDATE_LYRICS_DATA command.
     private val serviceMusicRepository by lazy {
         chromahub.rhythm.app.features.local.data.repository.MusicRepository(applicationContext)
     }
@@ -2826,18 +2808,10 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
         bluetoothLyricsLoopJob = null
     }
 
-    /**
-     * Loads synced lyrics for [song] directly from the repository when no lyric data is present
-     * for it yet. Normally the ViewModel feeds lyrics via UPDATE_LYRICS_DATA, but when the app is
-     * backgrounded and the Activity destroyed, a new song would otherwise leave the Bluetooth
-     * lyrics loop with stale/empty data. This closes that gap. The ViewModel keeps priority: the
-     * fetch is delayed briefly and aborts if the UI provides data (or the song changes) first.
-     */
     private fun ensureServiceLyricsLoaded(song: Song) {
         if (serviceLyricsLoadedSongId == song.id) return
         if (serviceLyricsLoadJob?.isActive == true) return
         serviceLyricsLoadJob = serviceScope.launch {
-            // Give the ViewModel (if alive) a head start to provide lyrics itself.
             delay(1200)
             if (serviceLyricsLoadedSongId == song.id) return@launch
             if (player.currentMediaItem?.mediaId != song.id) return@launch
@@ -2849,7 +2823,6 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
                     songUri = song.uri,
                     sourcePreference = appSettings.lyricsSourcePreference.value
                 )
-                // Bail if the ViewModel filled it in or the track changed while fetching.
                 if (serviceLyricsLoadedSongId == song.id) return@launch
                 if (player.currentMediaItem?.mediaId != song.id) return@launch
 
@@ -2888,7 +2861,9 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
             return
         }
         ensureServiceLyricsLoaded(song)
-        val line = resolveServiceBtLyricLine(player.currentPosition)
+        val line = resolveServiceBtLyricLine(
+            player.currentPosition + appSettings.bluetoothLyricsOffsetMs.value.toLong()
+        )
         if (song.id == lastServiceBtLyricSongId && line == lastServiceBtLyricLine) return
         lastServiceBtLyricSongId = song.id
         lastServiceBtLyricLine = line
@@ -2903,7 +2878,10 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
         applyServiceBtMetadata(song, line)
     }
 
-    private fun resolveServiceBtLyricLine(positionMs: Long): String? {
+    private fun resolveServiceBtLyricLine(
+        positionMs: Long,
+        updateCurrentIndex: Boolean = true
+    ): String? {
         val ts = currentLyricTimestamps
         if (ts.isEmpty() || currentLyricTexts.isEmpty()) return null
         val pos = positionMs.coerceAtLeast(0L)
@@ -2912,30 +2890,21 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
             if (ts[i] <= pos) idx = i else break
         }
         if (idx < 0) return null
-        currentLyricIndex = idx
-        return coalesceBtLyricGroup(idx, ts, currentLyricTexts)
-    }
-
-    private fun coalesceBtLyricGroup(idx: Int, ts: LongArray, texts: List<String>): String? {
-        val floor = BT_LYRIC_MIN_HOLD_MS
-        val maxLines = BT_LYRIC_MERGE_MAX_LINES.coerceAtLeast(1)
-        var runStart = idx
-        while (runStart > 0 && ts[runStart] - ts[runStart - 1] < floor) runStart--
-        var runEnd = idx
-        while (runEnd + 1 < ts.size && ts[runEnd + 1] - ts[runEnd] < floor) runEnd++
-        if (runEnd == runStart) {
-            return texts.getOrNull(idx)?.trim()?.takeIf { it.isNotEmpty() }
+        val effectiveTexts = currentLyricTexts.mapIndexed { i, text ->
+            currentLyricRomanizations.getOrNull(i)?.takeIf { it.isNotBlank() } ?: text
         }
-        val chunkIdx = (idx - runStart) / maxLines
-        val chunkStart = runStart + chunkIdx * maxLines
-        val chunkEnd = minOf(chunkStart + maxLines - 1, runEnd)
-        val merged = (chunkStart..chunkEnd)
-            .mapNotNull { texts.getOrNull(it)?.trim()?.takeIf { s -> s.isNotEmpty() } }
-            .joinToString(btLyricSeparator())
-            .takeIf { it.isNotEmpty() } ?: return null
-        return if (merged.length > BT_LYRIC_MERGE_MAX_CHARS) {
-            merged.take(BT_LYRIC_MERGE_MAX_CHARS - 1).trimEnd() + "…"
-        } else merged
+        val resolved = BluetoothLyricsFormatter.resolveLine(
+            positionMs = pos,
+            timestamps = ts,
+            texts = effectiveTexts,
+            tuning = BluetoothLyricsFormatter.Tuning(
+                maxChunkChars = appSettings.bluetoothLyricsMaxChunkChars.value,
+                scrollCharsPerSecond = appSettings.bluetoothLyricsScrollCharsPerSecond.value,
+                minChunkHoldMs = appSettings.bluetoothLyricsMinChunkHoldMs.value
+            )
+        ) ?: return null
+        if (updateCurrentIndex) currentLyricIndex = resolved.sourceLineIndex
+        return resolved.text
     }
 
     private fun applyServiceBtMetadata(song: Song, line: String?) {
@@ -2949,9 +2918,7 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
                 .filter { it.isNotBlank() }
                 .joinToString(" - ")
                 .ifBlank { song.title }
-            // On instrumental gaps / before the first line, fall back to the real song title
-            // rather than a bare "No lyrics" — so a car that only refreshes on track change
-            // never ends up stuck showing "No lyrics".
+            // Avoid leaving AVRCP displays stuck on "No lyrics" during instrumental gaps.
             val title = line?.takeIf { it.isNotBlank() } ?: song.title.ifBlank { merged }
             val forwarding = player as? RhythmForwardingPlayer
             if (USE_FORWARDING_METADATA && forwarding != null) {

@@ -3918,7 +3918,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
         val effectivePosition = (currentPositionMs + syncOffsetMs).coerceAtLeast(0L)
         return cachedParsedSyncedLyrics
             .lastOrNull { it.timestamp <= effectivePosition }
-            ?.text
+            ?.let { line -> line.romanization?.takeIf { it.isNotBlank() } ?: line.text }
             ?.trim()
             ?.takeIf { it.isNotEmpty() }
     }
@@ -5304,10 +5304,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                 
                 // Now perform the actual seek operation
                 controller.seekToNext()
-            } else if (appSettings.bluetoothLyricsEnabled.value) {
-                // Bluetooth-lyrics virtual queue: the player holds only the current song, so
-                // hasNextMediaItem() is false. The service owns the real queue and advances on
-                // seekToNext (the command is re-advertised while upcoming songs remain).
+            } else if (isBluetoothLyricsLegacyCarModeActive()) {
                 _progress.value = 0f
                 controller.seekToNext()
             } else {
@@ -5374,9 +5371,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
 
                     // Now perform the actual seek operation
                     controller.seekToPrevious()
-                } else if (appSettings.bluetoothLyricsEnabled.value) {
-                    // Bluetooth-lyrics virtual queue: player holds only the current song, so
-                    // hasPreviousMediaItem() is false. The service steps back through its history.
+                } else if (isBluetoothLyricsLegacyCarModeActive()) {
                     _progress.value = 0f
                     controller.seekToPrevious()
                 } else {
@@ -5401,6 +5396,10 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
             _isSeeking.value = false
         }
     }
+
+    private fun isBluetoothLyricsLegacyCarModeActive(): Boolean =
+        appSettings.bluetoothLyricsEnabled.value &&
+            appSettings.bluetoothLyricsLegacyCarModeEnabled.value
 
     fun seekTo(progress: Float) {
         mediaController?.let { controller ->

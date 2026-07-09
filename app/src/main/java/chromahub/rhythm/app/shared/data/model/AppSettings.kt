@@ -17,6 +17,7 @@ import chromahub.rhythm.app.worker.BackupWorker
 import chromahub.rhythm.app.worker.RhythmPulseNotificationWorker
 import chromahub.rhythm.app.worker.UpdateNotificationWorker
 import chromahub.rhythm.app.BuildConfig
+import chromahub.rhythm.app.util.BluetoothLyricsFormatter
 import java.io.File
 import java.util.Date // Import Date for timestamp
 import java.util.concurrent.TimeUnit
@@ -281,6 +282,14 @@ class AppSettings private constructor(context: Context) {
         // General Broadcast Status Settings (for Tasker, KWGT, etc.)
         private const val KEY_BROADCAST_STATUS_ENABLED = "broadcast_status_enabled"
         private const val KEY_BLUETOOTH_LYRICS_ENABLED = "bluetooth_lyrics_enabled"
+        private const val KEY_BLUETOOTH_LYRICS_LEGACY_CAR_MODE_ENABLED = "bluetooth_lyrics_legacy_car_mode_enabled"
+        private const val KEY_BLUETOOTH_LYRICS_OFFSET_MS = "bluetooth_lyrics_offset_ms"
+        private const val KEY_BLUETOOTH_LYRICS_MAX_CHUNK_CHARS = "bluetooth_lyrics_max_chunk_chars"
+        private const val KEY_BLUETOOTH_LYRICS_SCROLL_CHARS_PER_SECOND = "bluetooth_lyrics_scroll_chars_per_second"
+        private const val KEY_BLUETOOTH_LYRICS_MIN_CHUNK_HOLD_MS = "bluetooth_lyrics_min_chunk_hold_ms"
+        const val BLUETOOTH_LYRICS_OFFSET_MIN_MS = -5000
+        const val BLUETOOTH_LYRICS_OFFSET_MAX_MS = 5000
+        const val BLUETOOTH_LYRICS_OFFSET_STEP_MS = 100
         
         // Enhanced User Preferences
         private const val KEY_FAVORITE_GENRES = "favorite_genres"
@@ -1445,6 +1454,48 @@ class AppSettings private constructor(context: Context) {
 
     private val _bluetoothLyricsEnabled = MutableStateFlow(prefs.getBoolean(KEY_BLUETOOTH_LYRICS_ENABLED, false))
     val bluetoothLyricsEnabled: StateFlow<Boolean> = _bluetoothLyricsEnabled.asStateFlow()
+
+    private val _bluetoothLyricsLegacyCarModeEnabled = MutableStateFlow(
+        prefs.getBoolean(KEY_BLUETOOTH_LYRICS_LEGACY_CAR_MODE_ENABLED, false)
+    )
+    val bluetoothLyricsLegacyCarModeEnabled: StateFlow<Boolean> =
+        _bluetoothLyricsLegacyCarModeEnabled.asStateFlow()
+
+    private val _bluetoothLyricsOffsetMs = MutableStateFlow(
+        prefs.getInt(KEY_BLUETOOTH_LYRICS_OFFSET_MS, 0)
+            .coerceIn(BLUETOOTH_LYRICS_OFFSET_MIN_MS, BLUETOOTH_LYRICS_OFFSET_MAX_MS)
+    )
+    val bluetoothLyricsOffsetMs: StateFlow<Int> = _bluetoothLyricsOffsetMs.asStateFlow()
+
+    private val _bluetoothLyricsMaxChunkChars = MutableStateFlow(
+        BluetoothLyricsFormatter.coerceMaxChunkChars(
+            prefs.getInt(
+                KEY_BLUETOOTH_LYRICS_MAX_CHUNK_CHARS,
+                BluetoothLyricsFormatter.DEFAULT_MAX_CHUNK_CHARS
+            )
+        )
+    )
+    val bluetoothLyricsMaxChunkChars: StateFlow<Int> = _bluetoothLyricsMaxChunkChars.asStateFlow()
+
+    private val _bluetoothLyricsScrollCharsPerSecond = MutableStateFlow(
+        BluetoothLyricsFormatter.coerceScrollCharsPerSecond(
+            prefs.getInt(
+                KEY_BLUETOOTH_LYRICS_SCROLL_CHARS_PER_SECOND,
+                BluetoothLyricsFormatter.DEFAULT_SCROLL_CHARS_PER_SECOND
+            )
+        )
+    )
+    val bluetoothLyricsScrollCharsPerSecond: StateFlow<Int> = _bluetoothLyricsScrollCharsPerSecond.asStateFlow()
+
+    private val _bluetoothLyricsMinChunkHoldMs = MutableStateFlow(
+        BluetoothLyricsFormatter.coerceMinChunkHoldMs(
+            prefs.getInt(
+                KEY_BLUETOOTH_LYRICS_MIN_CHUNK_HOLD_MS,
+                BluetoothLyricsFormatter.DEFAULT_MIN_CHUNK_HOLD_MS
+            )
+        )
+    )
+    val bluetoothLyricsMinChunkHoldMs: StateFlow<Int> = _bluetoothLyricsMinChunkHoldMs.asStateFlow()
 
     // Enhanced User Preferences
     private val _favoriteGenres = MutableStateFlow<Map<String, Int>>(
@@ -3169,6 +3220,38 @@ private val _autoCheckForUpdates = MutableStateFlow(prefs.getBoolean(KEY_AUTO_CH
         _bluetoothLyricsEnabled.value = enabled
     }
 
+    fun setBluetoothLyricsLegacyCarModeEnabled(enabled: Boolean) {
+        prefs.edit().putBoolean(KEY_BLUETOOTH_LYRICS_LEGACY_CAR_MODE_ENABLED, enabled).apply()
+        _bluetoothLyricsLegacyCarModeEnabled.value = enabled
+    }
+
+    fun setBluetoothLyricsOffsetMs(offsetMs: Int) {
+        val safeOffset = offsetMs.coerceIn(
+            BLUETOOTH_LYRICS_OFFSET_MIN_MS,
+            BLUETOOTH_LYRICS_OFFSET_MAX_MS
+        )
+        prefs.edit().putInt(KEY_BLUETOOTH_LYRICS_OFFSET_MS, safeOffset).apply()
+        _bluetoothLyricsOffsetMs.value = safeOffset
+    }
+
+    fun setBluetoothLyricsMaxChunkChars(maxChunkChars: Int) {
+        val safeValue = BluetoothLyricsFormatter.coerceMaxChunkChars(maxChunkChars)
+        prefs.edit().putInt(KEY_BLUETOOTH_LYRICS_MAX_CHUNK_CHARS, safeValue).apply()
+        _bluetoothLyricsMaxChunkChars.value = safeValue
+    }
+
+    fun setBluetoothLyricsScrollCharsPerSecond(charsPerSecond: Int) {
+        val safeValue = BluetoothLyricsFormatter.coerceScrollCharsPerSecond(charsPerSecond)
+        prefs.edit().putInt(KEY_BLUETOOTH_LYRICS_SCROLL_CHARS_PER_SECOND, safeValue).apply()
+        _bluetoothLyricsScrollCharsPerSecond.value = safeValue
+    }
+
+    fun setBluetoothLyricsMinChunkHoldMs(minChunkHoldMs: Int) {
+        val safeValue = BluetoothLyricsFormatter.coerceMinChunkHoldMs(minChunkHoldMs)
+        prefs.edit().putInt(KEY_BLUETOOTH_LYRICS_MIN_CHUNK_HOLD_MS, safeValue).apply()
+        _bluetoothLyricsMinChunkHoldMs.value = safeValue
+    }
+
     // Enhanced User Preferences Methods
     fun updateFavoriteGenres(genres: Map<String, Int>) {
         val json = Gson().toJson(genres)
@@ -4869,6 +4952,28 @@ private val _autoCheckForUpdates = MutableStateFlow(prefs.getBoolean(KEY_AUTO_CH
         // General Broadcast Status Settings
         _broadcastStatusEnabled.value = prefs.getBoolean(KEY_BROADCAST_STATUS_ENABLED, false)
         _bluetoothLyricsEnabled.value = prefs.getBoolean(KEY_BLUETOOTH_LYRICS_ENABLED, false)
+        _bluetoothLyricsLegacyCarModeEnabled.value =
+            prefs.getBoolean(KEY_BLUETOOTH_LYRICS_LEGACY_CAR_MODE_ENABLED, false)
+        _bluetoothLyricsOffsetMs.value = prefs.getInt(KEY_BLUETOOTH_LYRICS_OFFSET_MS, 0)
+            .coerceIn(BLUETOOTH_LYRICS_OFFSET_MIN_MS, BLUETOOTH_LYRICS_OFFSET_MAX_MS)
+        _bluetoothLyricsMaxChunkChars.value = BluetoothLyricsFormatter.coerceMaxChunkChars(
+            prefs.getInt(
+                KEY_BLUETOOTH_LYRICS_MAX_CHUNK_CHARS,
+                BluetoothLyricsFormatter.DEFAULT_MAX_CHUNK_CHARS
+            )
+        )
+        _bluetoothLyricsScrollCharsPerSecond.value = BluetoothLyricsFormatter.coerceScrollCharsPerSecond(
+            prefs.getInt(
+                KEY_BLUETOOTH_LYRICS_SCROLL_CHARS_PER_SECOND,
+                BluetoothLyricsFormatter.DEFAULT_SCROLL_CHARS_PER_SECOND
+            )
+        )
+        _bluetoothLyricsMinChunkHoldMs.value = BluetoothLyricsFormatter.coerceMinChunkHoldMs(
+            prefs.getInt(
+                KEY_BLUETOOTH_LYRICS_MIN_CHUNK_HOLD_MS,
+                BluetoothLyricsFormatter.DEFAULT_MIN_CHUNK_HOLD_MS
+            )
+        )
         
         // App Updates
         _autoCheckForUpdates.value = prefs.getBoolean(KEY_AUTO_CHECK_FOR_UPDATES, BuildConfig.FLAVOR != "fdroid")

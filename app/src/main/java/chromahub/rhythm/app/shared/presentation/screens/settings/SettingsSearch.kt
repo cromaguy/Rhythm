@@ -1486,6 +1486,26 @@ fun buildSettingsSearchIndex(context: Context): List<SearchableSettingItem> {
             settingKey = "bluetoothLyricsEnabled"
         ))
         add(SearchableSettingItem(
+            id = "bluetooth_lyrics_legacy_car_mode",
+            title = context.getString(R.string.settings_bluetooth_lyrics_legacy_car_mode),
+            description = context.getString(R.string.settings_bluetooth_lyrics_legacy_car_mode_desc),
+            keywords = listOf("bluetooth", "lyrics", "legacy", "car", "avrcp", "queue", "freeze", "old unit"),
+            icon = MaterialSymbolIcon("directions_car"),
+            route = SettingsRoutes.EXPERIMENTAL_FEATURES,
+            parentScreen = "Experimental",
+            settingKey = "bluetoothLyricsLegacyCarMode"
+        ))
+        add(SearchableSettingItem(
+            id = "bluetooth_lyrics_tuning",
+            title = context.getString(R.string.settings_bluetooth_lyrics_tuning),
+            description = context.getString(R.string.settings_bluetooth_lyrics_tuning_desc),
+            keywords = listOf("bluetooth", "lyrics", "avrcp", "metadata", "offset", "delay", "car", "split", "scroll"),
+            icon = MaterialSymbolIcon("sync_alt"),
+            route = SettingsRoutes.EXPERIMENTAL_FEATURES,
+            parentScreen = "Experimental",
+            settingKey = "bluetoothLyricsTuning"
+        ))
+        add(SearchableSettingItem(
             id = "enable_album_editing",
             title = context.getString(R.string.settings_enable_album_editing),
             description = context.getString(R.string.settings_enable_album_editing_desc),
@@ -1896,5 +1916,3 @@ fun SettingsSearchResults(
         }
     }
 }
-
-

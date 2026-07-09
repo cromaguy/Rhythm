@@ -748,8 +748,37 @@
 <string name="broadcast_status_enabled">Enable Status Broadcasting</string>
     <string name="broadcast_status_desc">Send playback info to Tasker, KWGT, and automation apps</string>
     <string name="bluetooth_lyrics_enabled">Bluetooth Lyrics Mode</string>
-    <string name="bluetooth_lyrics_desc">Send synced lyric line as Bluetooth track title and move Song - Artist into artist metadata</string>
-<string name="equalizer">Equalizer</string>
+    <string name="bluetooth_lyrics_desc">Send synced lyric lines as Bluetooth track titles while keeping the normal playback queue</string>
+    <string name="bluetooth_lyrics_legacy_car_mode">Legacy car mode</string>
+    <string name="bluetooth_lyrics_legacy_car_mode_desc">For older car units that freeze on queued songs. Uses an experimental one-song Bluetooth queue while Rhythm keeps the real queue internally.</string>
+    <string name="bluetooth_lyrics_tuning_title">Bluetooth Lyrics Tuning</string>
+    <string name="bluetooth_lyrics_tuning_desc">These sliders only change the lyrics shown on your car or Bluetooth screen. Your phone\'s synced lyrics stay exactly the same.</string>
+    <string name="bluetooth_lyrics_tuning_summary">Timing %1$s · %2$d chars · +%3$d/s scroll</string>
+
+    <string name="bluetooth_lyrics_how_to_title">How the sliders work</string>
+    <string name="bluetooth_lyrics_how_to_body">Car screens fit only a little text at a time, so each lyric line is cut into small pieces that show one after another. The sliders below decide how big each piece is and how quickly they change. Fast, wordy songs like small pieces that flip quickly; slower songs can hold bigger pieces for longer. Pick a preset to start, then fine-tune.</string>
+
+    <string name="bluetooth_lyrics_presets_title">Quick presets</string>
+    <string name="bluetooth_lyrics_preset_fast">Fast lyrics</string>
+    <string name="bluetooth_lyrics_preset_short">Short lines</string>
+    <string name="bluetooth_lyrics_preset_scroll">Let it scroll</string>
+
+    <string name="bluetooth_lyrics_offset_title">Line timing</string>
+    <string name="bluetooth_lyrics_offset_help">Fixes lyrics that reach the car too early or too late. Slide right if lines show up behind the music, so each one is sent a little earlier. Slide left if they jump ahead of the song. Your phone lyrics are not touched.</string>
+
+    <string name="bluetooth_lyrics_max_chunk_title">Text per piece</string>
+    <string name="bluetooth_lyrics_max_chunk_value">%1$d chars</string>
+    <string name="bluetooth_lyrics_max_chunk_help">How much of a line to show at once. Keep it small so each piece is short and easy to read at a glance on a small screen. Make it larger to fit more words per piece, so long lines get split apart less often.</string>
+
+    <string name="bluetooth_lyrics_scroll_title">Scroll tolerance</string>
+    <string name="bluetooth_lyrics_scroll_value">+%1$d chars/s</string>
+    <string name="bluetooth_lyrics_scroll_help">How much long text you let scroll past instead of splitting it up. Raise it if your car scrolls smoothly and you can keep up with fast-moving text, so long lines stay in one piece. Lower it toward zero if text slides away before you finish reading, so long lines are chopped into smaller pieces.</string>
+
+    <string name="bluetooth_lyrics_min_chunk_hold_title">Time per piece</string>
+    <string name="bluetooth_lyrics_min_chunk_hold_help">The shortest time each piece stays before the next one replaces it. Raise it to hold every piece longer so you get more time to read, even if the lyrics fall a little behind fast lines. Lower it to let pieces flip by quickly and keep pace with rapid songs.</string>
+    
+    <!-- Equalizer -->
+    <string name="equalizer">Equalizer</string>
     <string name="frequency_bands">Frequency Bands</string>
     <string name="audio_effects">Audio Effects</string>
     <string name="audio_normalization">Audio Normalization</string>
@@ -1622,7 +1651,11 @@
     <string name="settings_broadcast_status_enabled">Enable Status Broadcasting</string>
     <string name="settings_broadcast_status_enabled_desc">Broadcast play status</string>
     <string name="settings_bluetooth_lyrics_enabled">Bluetooth Lyrics Mode</string>
-    <string name="settings_bluetooth_lyrics_enabled_desc">Broadcast current lyric line via Bluetooth metadata</string>
+    <string name="settings_bluetooth_lyrics_enabled_desc">Broadcast current lyric line via Bluetooth metadata with the normal queue</string>
+    <string name="settings_bluetooth_lyrics_legacy_car_mode">Legacy car mode</string>
+    <string name="settings_bluetooth_lyrics_legacy_car_mode_desc">Experimental one-song Bluetooth queue for older car units that freeze lyrics in queued playback</string>
+    <string name="settings_bluetooth_lyrics_tuning">Bluetooth Lyrics Tuning</string>
+    <string name="settings_bluetooth_lyrics_tuning_desc">Tune Bluetooth/AVRCP lyric timing and line splitting without changing phone lyrics sync</string>
     <string name="exp_go_mode">Go Mode</string>
     <string name="exp_go_mode_desc">Switch to Rhythm Go streaming mode</string>
 <string name="settings_home_section_order">Section Order</string>
@@ -2618,4 +2651,3 @@
     <string name="duration_minutes_format">%1$dm</string>
     <string name="error_no_document_app">No system document picker found to select a folder.</string>
 </resources>
-
