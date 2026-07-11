@@ -525,6 +525,11 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
         const val ACTION_UNMUTE = "chromahub.rhythm.app.action.UNMUTE"
         const val ACTION_TOGGLE_MUTE = "chromahub.rhythm.app.action.TOGGLE_MUTE"
 
+        const val SESSION_COMMAND_BT_VIRTUAL_SKIP_NEXT =
+            "chromahub.rhythm.app.command.BT_VIRTUAL_SKIP_NEXT"
+        const val SESSION_COMMAND_BT_VIRTUAL_SKIP_PREVIOUS =
+            "chromahub.rhythm.app.command.BT_VIRTUAL_SKIP_PREVIOUS"
+
         // Zero-volume pause/resume broadcasts — sent by service, received by UI to show/dismiss dialog
         const val ACTION_ZERO_VOLUME_PAUSE = "chromahub.rhythm.app.action.ZERO_VOLUME_PAUSE"
         const val ACTION_ZERO_VOLUME_RESUME = "chromahub.rhythm.app.action.ZERO_VOLUME_RESUME"
@@ -1454,6 +1459,8 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
                         }
                         builder.add(SessionCommand("UPDATE_ACTIVE_LYRIC", Bundle.EMPTY))
                         builder.add(SessionCommand("UPDATE_LYRICS_DATA", Bundle.EMPTY))
+                        builder.add(SessionCommand(SESSION_COMMAND_BT_VIRTUAL_SKIP_NEXT, Bundle.EMPTY))
+                        builder.add(SessionCommand(SESSION_COMMAND_BT_VIRTUAL_SKIP_PREVIOUS, Bundle.EMPTY))
                     }
                     .build()
                 session.setAvailableCommands(controller, sessionCommands, playerCommands)
@@ -2374,6 +2381,8 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
             }
             availableCommands.add(SessionCommand("UPDATE_ACTIVE_LYRIC", Bundle.EMPTY))
             availableCommands.add(SessionCommand("UPDATE_LYRICS_DATA", Bundle.EMPTY))
+            availableCommands.add(SessionCommand(SESSION_COMMAND_BT_VIRTUAL_SKIP_NEXT, Bundle.EMPTY))
+            availableCommands.add(SessionCommand(SESSION_COMMAND_BT_VIRTUAL_SKIP_PREVIOUS, Bundle.EMPTY))
             val resultBuilder = MediaSession.ConnectionResult.AcceptedResultBuilder(session)
                 .setAvailableSessionCommands(availableCommands.build())
             if (session.isMediaNotificationController(controller)) {
@@ -2458,6 +2467,22 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
                             }
                         }
                         SessionResult(SessionResult.RESULT_SUCCESS)
+                    }
+
+                    SESSION_COMMAND_BT_VIRTUAL_SKIP_NEXT -> {
+                        if (btVirtualAdvance()) {
+                            SessionResult(SessionResult.RESULT_SUCCESS)
+                        } else {
+                            SessionResult(SessionError.ERROR_NOT_SUPPORTED)
+                        }
+                    }
+
+                    SESSION_COMMAND_BT_VIRTUAL_SKIP_PREVIOUS -> {
+                        if (btVirtualPrevious()) {
+                            SessionResult(SessionResult.RESULT_SUCCESS)
+                        } else {
+                            SessionResult(SessionError.ERROR_NOT_SUPPORTED)
+                        }
                     }
 
                     SHUFFLE_MODE_ON -> {
@@ -2891,7 +2916,11 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
         }
         if (idx < 0) return null
         val effectiveTexts = currentLyricTexts.mapIndexed { i, text ->
-            currentLyricRomanizations.getOrNull(i)?.takeIf { it.isNotBlank() } ?: text
+            if (appSettings.bluetoothLyricsPreferRomanization.value) {
+                currentLyricRomanizations.getOrNull(i)?.takeIf { it.isNotBlank() } ?: text
+            } else {
+                text
+            }
         }
         val resolved = BluetoothLyricsFormatter.resolveLine(
             positionMs = pos,

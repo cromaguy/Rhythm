@@ -283,6 +283,7 @@ class AppSettings private constructor(context: Context) {
         private const val KEY_BROADCAST_STATUS_ENABLED = "broadcast_status_enabled"
         private const val KEY_BLUETOOTH_LYRICS_ENABLED = "bluetooth_lyrics_enabled"
         private const val KEY_BLUETOOTH_LYRICS_LEGACY_CAR_MODE_ENABLED = "bluetooth_lyrics_legacy_car_mode_enabled"
+        private const val KEY_BLUETOOTH_LYRICS_PREFER_ROMANIZATION = "bluetooth_lyrics_prefer_romanization"
         private const val KEY_BLUETOOTH_LYRICS_OFFSET_MS = "bluetooth_lyrics_offset_ms"
         private const val KEY_BLUETOOTH_LYRICS_MAX_CHUNK_CHARS = "bluetooth_lyrics_max_chunk_chars"
         private const val KEY_BLUETOOTH_LYRICS_SCROLL_CHARS_PER_SECOND = "bluetooth_lyrics_scroll_chars_per_second"
@@ -1460,6 +1461,12 @@ class AppSettings private constructor(context: Context) {
     )
     val bluetoothLyricsLegacyCarModeEnabled: StateFlow<Boolean> =
         _bluetoothLyricsLegacyCarModeEnabled.asStateFlow()
+
+    private val _bluetoothLyricsPreferRomanization = MutableStateFlow(
+        prefs.getBoolean(KEY_BLUETOOTH_LYRICS_PREFER_ROMANIZATION, true)
+    )
+    val bluetoothLyricsPreferRomanization: StateFlow<Boolean> =
+        _bluetoothLyricsPreferRomanization.asStateFlow()
 
     private val _bluetoothLyricsOffsetMs = MutableStateFlow(
         prefs.getInt(KEY_BLUETOOTH_LYRICS_OFFSET_MS, 0)
@@ -3225,6 +3232,11 @@ private val _autoCheckForUpdates = MutableStateFlow(prefs.getBoolean(KEY_AUTO_CH
         _bluetoothLyricsLegacyCarModeEnabled.value = enabled
     }
 
+    fun setBluetoothLyricsPreferRomanization(enabled: Boolean) {
+        prefs.edit().putBoolean(KEY_BLUETOOTH_LYRICS_PREFER_ROMANIZATION, enabled).apply()
+        _bluetoothLyricsPreferRomanization.value = enabled
+    }
+
     fun setBluetoothLyricsOffsetMs(offsetMs: Int) {
         val safeOffset = offsetMs.coerceIn(
             BLUETOOTH_LYRICS_OFFSET_MIN_MS,
@@ -4954,6 +4966,8 @@ private val _autoCheckForUpdates = MutableStateFlow(prefs.getBoolean(KEY_AUTO_CH
         _bluetoothLyricsEnabled.value = prefs.getBoolean(KEY_BLUETOOTH_LYRICS_ENABLED, false)
         _bluetoothLyricsLegacyCarModeEnabled.value =
             prefs.getBoolean(KEY_BLUETOOTH_LYRICS_LEGACY_CAR_MODE_ENABLED, false)
+        _bluetoothLyricsPreferRomanization.value =
+            prefs.getBoolean(KEY_BLUETOOTH_LYRICS_PREFER_ROMANIZATION, true)
         _bluetoothLyricsOffsetMs.value = prefs.getInt(KEY_BLUETOOTH_LYRICS_OFFSET_MS, 0)
             .coerceIn(BLUETOOTH_LYRICS_OFFSET_MIN_MS, BLUETOOTH_LYRICS_OFFSET_MAX_MS)
         _bluetoothLyricsMaxChunkChars.value = BluetoothLyricsFormatter.coerceMaxChunkChars(

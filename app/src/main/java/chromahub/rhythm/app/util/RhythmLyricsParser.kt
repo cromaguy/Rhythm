@@ -381,7 +381,7 @@ object RhythmLyricsParser {
      * Convert word-by-word lyrics to LRC format (for compatibility)
      */
     fun toLRCFormat(wordByWordLines: List<WordByWordLyricLine>): String {
-        return wordByWordLines.joinToString("\n") { line ->
+        return wordByWordLines.flatMap { line ->
             val timestamp = formatLRCTimestamp(line.lineTimestamp)
             val text = line.words.joinToString("") { word ->
                 if (word.isPart && word.text.isNotEmpty()) {
@@ -390,8 +390,13 @@ object RhythmLyricsParser {
                     " ${word.text}"
                 }
             }.trim()
-            "[$timestamp]$text"
+            buildList {
+                add("[$timestamp]$text")
+                line.translation?.takeIf { it.isNotBlank() }?.let { add("[$timestamp]($it)") }
+                line.romanization?.takeIf { it.isNotBlank() }?.let { add("[$timestamp][$it]") }
+            }
         }
+            .joinToString("\n")
     }
     
     private fun formatLRCTimestamp(milliseconds: Long): String {

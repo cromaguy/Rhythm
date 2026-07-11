@@ -179,6 +179,7 @@ fun ExperimentalFeaturesScreen(
     val broadcastStatusEnabled by appSettings.broadcastStatusEnabled.collectAsState()
     val bluetoothLyricsEnabled by appSettings.bluetoothLyricsEnabled.collectAsState()
     val bluetoothLyricsLegacyCarModeEnabled by appSettings.bluetoothLyricsLegacyCarModeEnabled.collectAsState()
+    val bluetoothLyricsPreferRomanization by appSettings.bluetoothLyricsPreferRomanization.collectAsState()
     val bluetoothLyricsOffsetMs by appSettings.bluetoothLyricsOffsetMs.collectAsState()
     val bluetoothLyricsMaxChunkChars by appSettings.bluetoothLyricsMaxChunkChars.collectAsState()
     val bluetoothLyricsScrollCharsPerSecond by appSettings.bluetoothLyricsScrollCharsPerSecond.collectAsState()
@@ -322,6 +323,14 @@ fun ExperimentalFeaturesScreen(
                             enabled = bluetoothLyricsEnabled,
                             toggleState = bluetoothLyricsLegacyCarModeEnabled,
                             onToggleChange = { appSettings.setBluetoothLyricsLegacyCarModeEnabled(it) }
+                        ),
+                        SettingItem(
+                            MaterialSymbolIcon("language"),
+                            context.getString(R.string.bluetooth_lyrics_prefer_romanization),
+                            context.getString(R.string.bluetooth_lyrics_prefer_romanization_desc),
+                            enabled = bluetoothLyricsEnabled,
+                            toggleState = bluetoothLyricsPreferRomanization,
+                            onToggleChange = { appSettings.setBluetoothLyricsPreferRomanization(it) }
                         ),
                         SettingItem(
                             MaterialSymbolIcon("sync_alt"),
@@ -582,7 +591,8 @@ private fun BluetoothLyricsTuningDialog(
         icon = {
             Icon(
                 imageVector = MaterialSymbolIcon("sync_alt"),
-                contentDescription = null
+                contentDescription = null,
+                modifier = Modifier.size(18.dp)
             )
         },
         title = { Text(stringResource(R.string.bluetooth_lyrics_tuning_title)) },

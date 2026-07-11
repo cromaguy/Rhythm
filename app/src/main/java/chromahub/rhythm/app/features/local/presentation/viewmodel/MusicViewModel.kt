@@ -3918,7 +3918,13 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
         val effectivePosition = (currentPositionMs + syncOffsetMs).coerceAtLeast(0L)
         return cachedParsedSyncedLyrics
             .lastOrNull { it.timestamp <= effectivePosition }
-            ?.let { line -> line.romanization?.takeIf { it.isNotBlank() } ?: line.text }
+            ?.let { line ->
+                if (appSettings.bluetoothLyricsPreferRomanization.value) {
+                    line.romanization?.takeIf { it.isNotBlank() } ?: line.text
+                } else {
+                    line.text
+                }
+            }
             ?.trim()
             ?.takeIf { it.isNotEmpty() }
     }
@@ -5306,7 +5312,10 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                 controller.seekToNext()
             } else if (isBluetoothLyricsLegacyCarModeActive()) {
                 _progress.value = 0f
-                controller.seekToNext()
+                requestBluetoothVirtualQueueSkip(
+                    controller,
+                    MediaPlaybackService.SESSION_COMMAND_BT_VIRTUAL_SKIP_NEXT
+                )
             } else {
                 Log.d(TAG, "No next song available")
             }
@@ -5373,7 +5382,10 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                     controller.seekToPrevious()
                 } else if (isBluetoothLyricsLegacyCarModeActive()) {
                     _progress.value = 0f
-                    controller.seekToPrevious()
+                    requestBluetoothVirtualQueueSkip(
+                        controller,
+                        MediaPlaybackService.SESSION_COMMAND_BT_VIRTUAL_SKIP_PREVIOUS
+                    )
                 } else {
                     Log.d(TAG, "No previous song available, restarting current song.")
                     // If no previous song, but still within threshold, restart current song
@@ -5400,6 +5412,17 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
     private fun isBluetoothLyricsLegacyCarModeActive(): Boolean =
         appSettings.bluetoothLyricsEnabled.value &&
             appSettings.bluetoothLyricsLegacyCarModeEnabled.value
+
+    private fun requestBluetoothVirtualQueueSkip(controller: MediaController, command: String) {
+        try {
+            controller.sendCustomCommand(
+                androidx.media3.session.SessionCommand(command, Bundle.EMPTY),
+                Bundle.EMPTY
+            )
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to request virtual Bluetooth queue skip", e)
+        }
+    }
 
     fun seekTo(progress: Float) {
         mediaController?.let { controller ->
