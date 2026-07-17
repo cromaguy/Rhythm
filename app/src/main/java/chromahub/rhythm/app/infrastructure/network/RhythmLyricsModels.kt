@@ -93,3 +93,37 @@ data class RhythmLyricsGenericSearchResult(
         return artistName ?: author ?: artist
     }
 }
+
+/**
+ * NetEase keeps its search result and timed lyric tracks in provider-native
+ * envelopes. In particular, `romalrc` is a separately timestamped romaji
+ * track, rather than a field on the normal Lyrically response.
+ */
+data class NeteaseSearchResponse(
+    @SerializedName("result") val result: NeteaseSearchResult? = null
+)
+
+data class NeteaseSearchResult(
+    @SerializedName("songs") val songs: List<NeteaseSearchSong>? = null
+)
+
+data class NeteaseSearchSong(
+    @SerializedName("id") val id: Long,
+    @SerializedName("name") val name: String? = null,
+    @SerializedName("artists") val artists: List<NeteaseArtist>? = null
+)
+
+data class NeteaseArtist(
+    @SerializedName("name") val name: String? = null
+)
+
+data class NeteaseLyricsResponse(
+    @SerializedName("code") val code: Int? = null,
+    @SerializedName("lrc") val lyrics: NeteaseTimedLyrics? = null,
+    @SerializedName("tlyric") val translation: NeteaseTimedLyrics? = null,
+    @SerializedName("romalrc") val romanization: NeteaseTimedLyrics? = null
+)
+
+data class NeteaseTimedLyrics(
+    @SerializedName("lyric") val lyric: String? = null
+)

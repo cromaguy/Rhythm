@@ -752,7 +752,7 @@
     <string name="bluetooth_lyrics_legacy_car_mode">Legacy car mode</string>
     <string name="bluetooth_lyrics_legacy_car_mode_desc">For older car units that freeze on queued songs. Uses an experimental one-song Bluetooth queue while Rhythm keeps the real queue internally.</string>
     <string name="bluetooth_lyrics_prefer_romanization">Use Romanized Bluetooth lyrics</string>
-    <string name="bluetooth_lyrics_prefer_romanization_desc">Use Romaji or other Latin-script lyrics when the source provides them. Turn this off for car screens that support CJK characters.</string>
+    <string name="bluetooth_lyrics_prefer_romanization_desc">Use Romaji or other Latin-script lyrics. If local lyrics have none, Rhythm checks active online lyric sources for a timed Romanized track. Turn this off for car screens that support CJK characters.</string>
     <string name="bluetooth_lyrics_tuning_title">Bluetooth Lyrics Tuning</string>
     <string name="bluetooth_lyrics_tuning_desc">These sliders only change the lyrics shown on your car or Bluetooth screen. Your phone\'s synced lyrics stay exactly the same.</string>
     <string name="bluetooth_lyrics_tuning_summary">Timing %1$s · %2$d chars · +%3$d/s scroll</string>

@@ -17,6 +17,8 @@ import chromahub.rhythm.app.network.RhythmLyricsResponse
 import chromahub.rhythm.app.network.RhythmLyricsLine
 import chromahub.rhythm.app.network.RhythmLyricsWord
 import chromahub.rhythm.app.network.RhythmLyricsGenericSearchResult
+import chromahub.rhythm.app.network.NeteaseLyricsResponse
+import chromahub.rhythm.app.network.NeteaseSearchSong
 import chromahub.rhythm.app.network.DeezerApiService
 import chromahub.rhythm.app.network.DeezerArtist
 import chromahub.rhythm.app.network.DeezerAlbum
@@ -4671,6 +4673,7 @@ class MusicRepository(context: Context) {
      * @param songUri Optional song URI for embedded lyrics extraction
      * @param sourcePreference User's preferred lyrics source order
      * @param forceRefresh If true, bypasses cache and forces fresh extraction
+     * @param requireRomanization If true, keep searching sources until timed romanization is found
      */
     suspend fun fetchLyrics(
         artist: String, 
@@ -4678,7 +4681,8 @@ class MusicRepository(context: Context) {
         songId: String? = null,
         songUri: Uri? = null,
         sourcePreference: LyricsSourcePreference = LyricsSourcePreference.API_FIRST,
-        forceRefresh: Boolean = false
+        forceRefresh: Boolean = false,
+        requireRomanization: Boolean = false
     ): LyricsData? = withContext(Dispatchers.IO) {
         val appSettings = AppSettings.getInstance(context)
         val songSpecificPreference = songId?.let { appSettings.getSongLyricsPreference(it) }
@@ -4689,17 +4693,18 @@ class MusicRepository(context: Context) {
             else -> sourcePreference
         }
 
-        Log.d(TAG, "===== FETCH LYRICS START: $artist - $title (songId=$songId, forceRefresh=$forceRefresh, source=$finalSourcePreference, songSpecificPreference=$songSpecificPreference) =====")
+        Log.d(TAG, "===== FETCH LYRICS START: $artist - $title (songId=$songId, forceRefresh=$forceRefresh, requireRomanization=$requireRomanization, source=$finalSourcePreference, songSpecificPreference=$songSpecificPreference) =====")
         
         if (artist.isBlank() || title.isBlank())
             return@withContext LyricsData("No lyrics available for this song", null, null)
 
         // Use song ID in cache key if available to prevent wrong lyrics for songs with similar metadata
-        val cacheKey = if (songId != null) {
+        val baseCacheKey = if (songId != null) {
             "$songId:$artist:$title".lowercase()
         } else {
             "$artist:$title".lowercase()
         }
+        val cacheKey = if (requireRomanization) "$baseCacheKey:romanized" else baseCacheKey
         
         Log.d(TAG, "===== Cache key: $cacheKey, Cache size: ${lyricsCache.size} =====")
         
@@ -4742,7 +4747,7 @@ class MusicRepository(context: Context) {
         
         val fetchFromAPI: suspend () -> LyricsData? = {
             if (isNetworkAvailable()) {
-                fetchLyricsFromAPIs(artist, title)
+                fetchLyricsFromAPIs(artist, title, requireRomanization)
             } else {
                 null
             }
@@ -4755,7 +4760,10 @@ class MusicRepository(context: Context) {
             LyricsSourcePreference.LOCAL_FIRST -> listOf(fetchFromLocal, fetchFromEmbedded, fetchFromAPI)
         }
         
-        // Try each source in order until we find lyrics
+        var nonRomanizedFallback: LyricsData? = null
+
+        // Try each source in order until we find lyrics, or (for Bluetooth) a
+        // source that also carries a timed romanization track.
         for ((index, fetcher) in sourceFetchers.withIndex()) {
             try {
                 val lyrics = fetcher()
@@ -4775,17 +4783,42 @@ class MusicRepository(context: Context) {
                         lyrics
                     }
                     
-                    lyricsCache[cacheKey] = lyricsWithSource
-                    if (sourceName == "API") {
-                        // Only save API-fetched lyrics to local cache
-                        saveLocalLyrics(artist, title, lyricsWithSource)
+                    if (!requireRomanization || lyricsWithSource.hasTimedRomanization()) {
+                        // Local-first and embedded-first remain the source of truth. In
+                        // Bluetooth romaji mode an online result is only a supplemental
+                        // timed romanization track when local lyrics were already found;
+                        // it must not silently replace the user's selected lyrics source.
+                        val result = if (
+                            requireRomanization &&
+                            sourceName == "API" &&
+                            nonRomanizedFallback != null
+                        ) {
+                            mergeTimedRomanization(nonRomanizedFallback, lyricsWithSource)
+                        } else {
+                            lyricsWithSource
+                        }
+                        lyricsCache[cacheKey] = result
+                        if (sourceName == "API" && !requireRomanization) {
+                            // Only save API-fetched lyrics to local cache
+                            saveLocalLyrics(artist, title, result)
+                        }
+                        return@withContext result
                     }
-                    return@withContext lyricsWithSource
+
+                    if (nonRomanizedFallback == null) {
+                        nonRomanizedFallback = lyricsWithSource
+                    }
+                    Log.d(TAG, "Lyrics from $sourceName have no timed romanization; continuing API search for: $artist - $title")
                 }
             } catch (e: Exception) {
                 Log.w(TAG, "Error fetching from source ${index + 1}: ${e.message}")
                 // Continue to next source
             }
+        }
+
+        if (requireRomanization && nonRomanizedFallback != null) {
+            Log.d(TAG, "No timed romanization found; using the best available lyrics for: $artist - $title")
+            return@withContext nonRomanizedFallback
         }
 
         // No lyrics found from any source
@@ -4807,7 +4840,11 @@ class MusicRepository(context: Context) {
      * Fetches lyrics from online APIs (LRCLib, etc.)
      * Extracted as a separate method for cleaner code
      */
-    private suspend fun fetchLyricsFromAPIs(artist: String, title: String): LyricsData? {
+    private suspend fun fetchLyricsFromAPIs(
+        artist: String,
+        title: String,
+        requireRomanization: Boolean = false
+    ): LyricsData? {
         val cleanArtist = artist.trim().replace(Regex("\\(.*?\\)"), "").trim()
         val cleanTitle = title.trim().replace(Regex("\\(.*?\\)"), "").trim()
 
@@ -4824,14 +4861,31 @@ class MusicRepository(context: Context) {
                     
                     val fallbackLyrics = mutableMapOf<String, LyricsData>()
                     var foundLyrics: LyricsData? = null
+                    var foundRomanizedLyrics: LyricsData? = null
+                    val sourcesToTry = if (requireRomanization) {
+                        // NetEase exposes a separate, timestamp-aligned romalrc
+                        // payload. Trying it first avoids spending the Bluetooth
+                        // startup window on providers that cannot return romaji.
+                        activeSources.sortedBy { if (it == "NETEASE") 0 else 1 }
+                    } else {
+                        activeSources
+                    }
 
                     // Phase 1: Try word-by-word sources first
-                    val wordByWordSources = activeSources.filter { it == "APPLE_MUSIC" || it == "NETEASE" || it == "KUGOU" }
+                    val wordByWordSources = if (requireRomanization) {
+                        emptyList()
+                    } else {
+                        activeSources.filter { it == "APPLE_MUSIC" || it == "NETEASE" || it == "KUGOU" }
+                    }
                     Log.d(TAG, "Lyrically API Phase 1: Trying word-by-word sources: $wordByWordSources")
                     for (source in wordByWordSources) {
                         val result = fetchSourceLyrics(source, artist, title, cleanArtist, cleanTitle, preferWordByWord = true)
                         if (result != null) {
-                            if (!result.wordByWordLyrics.isNullOrBlank()) {
+                            if (requireRomanization && result.hasTimedRomanization()) {
+                                Log.d(TAG, "Lyrically API Phase 1: Found romanized lyrics from $source")
+                                foundRomanizedLyrics = result
+                                break
+                            } else if (!requireRomanization && !result.wordByWordLyrics.isNullOrBlank()) {
                                 Log.d(TAG, "Lyrically API Phase 1: Found word-by-word lyrics from $source")
                                 foundLyrics = result
                                 break
@@ -4843,26 +4897,42 @@ class MusicRepository(context: Context) {
                     }
 
                     // Phase 2: Fall back to synced/plain lyrics in priority order
-                    if (foundLyrics == null) {
+                    if (foundRomanizedLyrics == null && (foundLyrics == null || requireRomanization)) {
                         Log.d(TAG, "Lyrically API Phase 2: Falling back to synced/plain lyrics")
-                        for (source in activeSources) {
-                            // If we already fetched a fallback result for this source, use it
-                            if (fallbackLyrics.containsKey(source)) {
+                        for (source in sourcesToTry) {
+                            // A romanization search must make the normal request even when a
+                            // word-by-word response for this provider was already cached above.
+                            if (!requireRomanization && fallbackLyrics.containsKey(source)) {
                                 Log.d(TAG, "Lyrically API Phase 2: Using cached fallback result for $source")
                                 foundLyrics = fallbackLyrics[source]
                                 break
                             }
-                            // Otherwise, fetch fresh synced/plain lyrics (preferWordByWord = false)
-                            val result = fetchSourceLyrics(source, artist, title, cleanArtist, cleanTitle, preferWordByWord = false)
+
+                            val result = fetchSourceLyrics(
+                                source,
+                                artist,
+                                title,
+                                cleanArtist,
+                                cleanTitle,
+                                preferWordByWord = false
+                            )
                             if (result != null) {
-                                Log.d(TAG, "Lyrically API Phase 2: Found lyrics from $source")
-                                foundLyrics = result
-                                break
+                                if (requireRomanization) {
+                                    if (result.hasTimedRomanization()) {
+                                        Log.d(TAG, "Lyrically API Phase 2: Found romanized lyrics from $source")
+                                        foundRomanizedLyrics = result
+                                        break
+                                    }
+                                } else {
+                                    Log.d(TAG, "Lyrically API Phase 2: Found lyrics from $source")
+                                    foundLyrics = result
+                                    break
+                                }
                             }
                         }
                     }
 
-                    foundLyrics
+                    if (requireRomanization) foundRomanizedLyrics else foundLyrics
                 } catch (e: Exception) {
                     Log.e(TAG, "Lyrically API fetch failed: ${e.message}", e)
                     null
@@ -4928,6 +4998,12 @@ class MusicRepository(context: Context) {
         val fallbackRetry = appSettings.lyricsApiFallbackRetry.value
 
         Log.d(TAG, "fetchLyricsFromAPIs: priority=$apiPriority, fallbackRetry=$fallbackRetry")
+
+        // LRCLib has no companion romanization track. Bluetooth romaji mode
+        // therefore asks every active Lyrically provider before falling back.
+        if (requireRomanization) {
+            return fetchLyrically()
+        }
 
         if (apiPriority == LyricsApiPriority.LYRICALLY_FIRST) {
             val lyricallyResult = fetchLyrically()
@@ -5031,13 +5107,18 @@ class MusicRepository(context: Context) {
             }
             "NETEASE" -> {
                 try {
-                    val results = apiService.searchNetease(term)
-                    val bestTrack = matchGenericResult(results, cleanTitle, cleanArtist)
+                    val results = apiService.searchNetease(term).result?.songs.orEmpty()
+                    val bestTrack = matchNeteaseResult(results, cleanTitle, cleanArtist)
+                        ?: findNeteaseTrackWithITunesTitle(
+                            apiService = apiService,
+                            artist = artist,
+                            title = title,
+                            cleanArtist = cleanArtist,
+                            cleanTitle = cleanTitle
+                        )
                     bestTrack?.let { track ->
-                        track.getCanonicalId()?.let { id ->
-                            val response = apiService.getNeteaseLyrics(id, preferWordByWord)
-                            parseLyricallyResponse(response, "Lyrically (NetEase)")
-                        }
+                        val response = apiService.getNeteaseLyrics(track.id.toString(), preferWordByWord)
+                        parseNeteaseResponse(response, "Lyrically (NetEase)")
                     }
                 } catch (e: Exception) {
                     Log.d(TAG, "NetEase lyrics search/fetch failed: ${e.message}")
@@ -5125,6 +5206,159 @@ class MusicRepository(context: Context) {
             }
             else -> null
         }
+    }
+
+    private suspend fun findNeteaseTrackWithITunesTitle(
+        apiService: RhythmLyricsApiService,
+        artist: String,
+        title: String,
+        cleanArtist: String,
+        cleanTitle: String
+    ): NeteaseSearchSong? {
+        val searchService = NetworkClient.itunesSearchApiService ?: return null
+        val fallbackTitle = try {
+            searchService.searchSongs(term = "$artist $title", limit = 10).results
+                .asSequence()
+                .filter { candidate ->
+                    val candidateArtist = canonicalizeForMatch(candidate.artistName.orEmpty())
+                    val targetArtist = canonicalizeForMatch(cleanArtist)
+                    candidateArtist.contains(targetArtist) || targetArtist.contains(candidateArtist)
+                }
+                .mapNotNull { it.trackName?.trim()?.takeIf(String::isNotEmpty) }
+                .minByOrNull(String::length)
+        } catch (e: Exception) {
+            Log.d(TAG, "iTunes title fallback failed for NetEase: ${e.message}")
+            null
+        } ?: return null
+
+        Log.d(TAG, "NetEase retry using iTunes title '$fallbackTitle' for $artist - $title")
+        val results = apiService.searchNetease("$cleanArtist $fallbackTitle").result?.songs.orEmpty()
+        return matchNeteaseResult(results, fallbackTitle, cleanArtist)
+    }
+
+    private fun matchNeteaseResult(
+        results: List<NeteaseSearchSong>,
+        cleanTitle: String,
+        cleanArtist: String
+    ): NeteaseSearchSong? {
+        val targetTitle = canonicalizeForMatch(cleanTitle)
+        val targetArtist = canonicalizeForMatch(cleanArtist)
+        fun matches(candidate: String, target: String): Boolean =
+            candidate.isNotBlank() && target.isNotBlank() &&
+                (candidate.contains(target) || target.contains(candidate))
+
+        val canonicalResults = results.map { result ->
+            val resultTitle = canonicalizeForMatch(result.name.orEmpty())
+            val resultArtist = canonicalizeForMatch(
+                result.artists.orEmpty().joinToString(" ") { it.name.orEmpty() }
+            )
+            Triple(result, matches(resultTitle, targetTitle), matches(resultArtist, targetArtist))
+        }
+
+        return canonicalResults.firstOrNull { (_, titleMatches, artistMatches) ->
+            titleMatches && artistMatches
+        }?.first
+            // Providers often keep the original CJK title even when the local tag is
+            // romanized. A strong artist match is safer than accepting an unrelated
+            // remix/cover merely because its title contains the search terms.
+            ?: canonicalResults.firstOrNull { (_, _, artistMatches) -> artistMatches }?.first
+            ?: canonicalResults.firstOrNull { (_, titleMatches, _) -> titleMatches }?.first
+    }
+
+    private fun parseNeteaseResponse(
+        response: NeteaseLyricsResponse,
+        sourceName: String
+    ): LyricsData? {
+        val syncedLyrics = response.lyrics?.lyric?.takeIf { it.isNotBlank() } ?: return null
+        val withTranslation = appendTimedSupplementalLrc(
+            lyrics = syncedLyrics,
+            supplementalLyrics = response.translation?.lyric,
+            openingMarker = '(',
+            closingMarker = ')'
+        )
+        val withRomanization = appendTimedSupplementalLrc(
+            lyrics = withTranslation,
+            supplementalLyrics = response.romanization?.lyric,
+            openingMarker = '[',
+            closingMarker = ']'
+        )
+        val plainLyrics = LyricsParser.parseLyrics(syncedLyrics)
+            .joinToString("\n") { it.text }
+            .takeIf { it.isNotBlank() }
+
+        return LyricsData(
+            plainLyrics = plainLyrics,
+            syncedLyrics = withRomanization,
+            source = sourceName
+        )
+    }
+
+    private fun appendTimedSupplementalLrc(
+        lyrics: String,
+        supplementalLyrics: String?,
+        openingMarker: Char,
+        closingMarker: Char
+    ): String {
+        if (supplementalLyrics.isNullOrBlank()) return lyrics
+
+        val timestampedLine = Regex("^((?:\\[\\d{1,3}:\\d{2}(?:[.:]\\d{1,3})?\\])+)(.*)$")
+        val supplementalLines = supplementalLyrics.lineSequence()
+            .mapNotNull { rawLine ->
+                val match = timestampedLine.matchEntire(rawLine.trim()) ?: return@mapNotNull null
+                val text = match.groupValues[2].trim()
+                if (text.isBlank()) null else "${match.groupValues[1]}$openingMarker$text$closingMarker"
+            }
+            .toList()
+
+        return if (supplementalLines.isEmpty()) lyrics else {
+            "$lyrics\n${supplementalLines.joinToString("\n")}"
+        }
+    }
+
+    private fun LyricsData.hasTimedRomanization(): Boolean = syncedLyrics
+        ?.let(LyricsParser::parseLyrics)
+        ?.any { !it.romanization.isNullOrBlank() }
+        ?: false
+
+    /**
+     * Keeps local/embedded lyric text while borrowing only timestamp-aligned romanization
+     * from an online provider. A near-match is allowed because providers commonly round LRC
+     * centiseconds differently; anything further apart is left untouched rather than guessed.
+     */
+    private fun mergeTimedRomanization(
+        baseLyrics: LyricsData,
+        romanizedLyrics: LyricsData
+    ): LyricsData {
+        val baseSynced = baseLyrics.syncedLyrics ?: return romanizedLyrics
+        val onlineRomanization = romanizedLyrics.syncedLyrics
+            ?.let(LyricsParser::parseLyrics)
+            ?.mapNotNull { line -> line.romanization?.takeIf(String::isNotBlank)?.let { line.timestamp to it } }
+            .orEmpty()
+        if (onlineRomanization.isEmpty()) return romanizedLyrics
+
+        val supplemental = LyricsParser.parseLyrics(baseSynced)
+            .mapNotNull { baseLine ->
+                val romanization = onlineRomanization
+                    .minByOrNull { (timestamp, _) -> kotlin.math.abs(timestamp - baseLine.timestamp) }
+                    ?.takeIf { (timestamp, _) -> kotlin.math.abs(timestamp - baseLine.timestamp) <= 250L }
+                    ?.second
+                    ?: return@mapNotNull null
+                "${formatLrcTimestamp(baseLine.timestamp)}[$romanization]"
+            }
+            .distinct()
+        if (supplemental.isEmpty()) return romanizedLyrics
+
+        return baseLyrics.copy(
+            syncedLyrics = "$baseSynced\n${supplemental.joinToString("\n")}",
+            source = "${baseLyrics.source ?: "Local lyrics"} + timed romanization"
+        )
+    }
+
+    private fun formatLrcTimestamp(timestampMs: Long): String {
+        val minutes = timestampMs / 60_000L
+        val seconds = (timestampMs % 60_000L) / 1_000L
+        val centiseconds = (timestampMs % 1_000L) / 10L
+        return "[%02d:%02d.%02d]".format(java.util.Locale.ROOT, minutes, seconds, centiseconds)
     }
 
     private fun parseLyricallyResponse(lyricsResponse: RhythmLyricsResponse, sourceName: String): LyricsData? {
@@ -6613,7 +6847,7 @@ class MusicRepository(context: Context) {
 
         Log.d(TAG, "Starting background audio metadata extraction for ${songsWithoutMetadata.size} songs")
         val updatedSongs = mutableListOf<Song>()
-        val batchSize = 20 // Smaller batches for metadata extraction (more expensive operation)
+        val batchSize = 10 // Keep media-service bursts short on large libraries
         var processedCount = 0
 
         songsWithoutMetadata.chunked(batchSize).forEach { batch ->
@@ -6623,8 +6857,6 @@ class MusicRepository(context: Context) {
                 try {
                     // Use AudioFormatDetector for more accurate metadata extraction
                     val formatInfo = AudioFormatDetector.detectFormat(context, song.uri, song)
-                    
-                    Log.d(TAG, "Extracted metadata for ${song.title}: codec=${formatInfo.codec}, bitrate=${formatInfo.bitrateKbps}kbps, sampleRate=${formatInfo.sampleRateHz}Hz, channels=${formatInfo.channelCount}, bitDepth=${formatInfo.bitDepth}")
                     
                     val updatedSong = song.copy(
                         bitrate = if (formatInfo.bitrateKbps > 0) formatInfo.bitrateKbps * 1000 else -1,
@@ -6654,14 +6886,14 @@ class MusicRepository(context: Context) {
             // Yield control to allow other coroutines to run
             yield()
 
-            // Small delay between batches to prevent overwhelming the system
-            if (batchDuration < 200) { // If batch processed quickly, add a small delay
-                delay(100)
-            }
+            // Always give foreground work a scheduling window. Previously the slowest batches
+            // received no cooldown, exactly when media-service contention was already highest.
+            delay(150)
         }
 
+        val updatedSongsById = updatedSongs.associateBy { it.id }
         val finalSongs = songs.map { originalSong ->
-            updatedSongs.find { it.id == originalSong.id } ?: originalSong
+            updatedSongsById[originalSong.id] ?: originalSong
         }
 
         Log.d(TAG, "Background audio metadata extraction complete. Updated ${updatedSongs.size} songs")

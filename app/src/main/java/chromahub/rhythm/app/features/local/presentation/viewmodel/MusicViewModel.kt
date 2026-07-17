@@ -76,6 +76,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.yield
 import kotlinx.coroutines.withTimeoutOrNull
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import chromahub.rhythm.app.features.local.data.database.entity.PlaylistEntity
 import chromahub.rhythm.app.features.local.data.database.entity.PlaylistSongEntity
 import java.time.Duration
@@ -161,6 +163,10 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
     
     // Job for debouncing ContentObserver-triggered refreshes
     private var mediaStoreRefreshJob: kotlinx.coroutines.Job? = null
+
+    // Media extractors contend for the same device services and storage. Keep only one heavy
+    // local-library extraction active so startup maintenance cannot multiply I/O pressure.
+    private val mediaExtractionMutex = Mutex()
     
     // Playback stats repository for enhanced tracking
     private val playbackStatsRepository = PlaybackStatsRepository.getInstance(application)
@@ -515,6 +521,13 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
     ) { songs, settings ->
         filterSongsAsync(songs, settings.mode, settings.blacklistedIds, settings.blacklistedFolders, settings.whitelistedIds, settings.whitelistedFolders)
     }.flowOn(Dispatchers.IO).stateIn(viewModelScope, kotlinx.coroutines.flow.SharingStarted.Eagerly, emptyList())
+
+    // Search observes this cached model instead of rebuilding and rescanning the whole library
+    // during composition.
+    val genreBrowseSummaries: StateFlow<List<GenreUtils.Summary>> = filteredSongs
+        .map { filtered -> GenreUtils.summarizeGenres(filtered.map { it.genre }) }
+        .flowOn(Dispatchers.Default)
+        .stateIn(viewModelScope, kotlinx.coroutines.flow.SharingStarted.Eagerly, emptyList())
     
     private suspend fun filterSongsAsync(
         songs: List<Song>,
@@ -1106,6 +1119,21 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                 handleInitializationFailure(e)
             }
         }
+
+        // Romanization is supplemental data, so a normal lyrics fetch may legitimately
+        // stop at a local/LRCLib result without it. Enabling the display preference must
+        // actively request a timed romanization track for the song already on screen.
+        viewModelScope.launch {
+            var previous = appSettings.showLyricsRomanization.value
+            appSettings.showLyricsRomanization.collect { enabled ->
+                if (enabled == previous) return@collect
+                previous = enabled
+                resetBluetoothLyricsBroadcastState(clearLastBroadcast = true)
+                if (enabled && currentSong.value != null && showLyrics.value) {
+                    fetchLyricsForCurrentSong()
+                }
+            }
+        }
         
         // Dynamically update library artwork when preferSongArtwork or isLosslessArtworkActive changes.
         viewModelScope.launch {
@@ -1165,7 +1193,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                                 }
                                 if (songsNeedingExtraction > 0) {
                                     Log.d(TAG, "Starting dynamic background embedded artwork extraction for $songsNeedingExtraction songs")
-                                    val updated = repository.extractEmbeddedArtworkForSongs(currentSongs, losslessArtwork)
+                                    val updated = extractEmbeddedArtworkSerialized(currentSongs, losslessArtwork)
                                     withContext(Dispatchers.Main) {
                                         _songs.value = updated
                                     }
@@ -1714,7 +1742,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
         
         // Start artwork fetching in background after a delay
         viewModelScope.launch {
-            delay(1500) // Wait 1.5 seconds for UI to fully settle
+            delay(6000) // Keep launch and initial navigation clear of optional network work
             try {
                 val context = getApplication<Application>()
                 val hasMissingArtists = _artists.value.any { it.artworkUri == null }
@@ -1731,7 +1759,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
 
                 if (shouldFetchArtists || shouldFetchAlbumsAndSongs) {
                     _isFetchingArtwork.value = true
-                    fetchArtworkFromInternet(
+                    fetchArtworkFromInternetSerialized(
                         fetchArtists = shouldFetchArtists,
                         fetchAlbumsAndSongs = shouldFetchAlbumsAndSongs
                     )
@@ -1765,7 +1793,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
         
         // Start background audio metadata extraction after an even longer delay
         viewModelScope.launch {
-            delay(5000) // Wait 5 seconds after app load before starting metadata extraction
+            delay(12000) // Metadata probing is expensive; prioritize interactive startup first
             try {
                 val songsWithMetadata = songs.value.count {
                     it.bitrate != null && it.sampleRate != null && it.channels != null && it.codec != null
@@ -1817,12 +1845,12 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                     }
 
                     Log.d(TAG, "$songsNeedingExtraction/${initialSongs.size} songs need embedded artwork extraction, starting after delay")
-                    delay(1500L) // Allow UI to fully settle before heavy IO
+                    delay(9000L) // Let startup navigation settle before touching every media file
 
                     Log.d(TAG, "Starting background embedded album art extraction (preferSongArtwork=$preferSongArtwork, lossless=$losslessArtwork)")
                     val currentSongs = _songs.value
                     if (currentSongs.isNotEmpty()) {
-                        val updatedSongs = repository.extractEmbeddedArtworkForSongs(currentSongs, losslessArtwork)
+                        val updatedSongs = extractEmbeddedArtworkSerialized(currentSongs, losslessArtwork)
                         kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
                             _songs.value = updatedSongs
                         }
@@ -1887,7 +1915,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
 
                 if (shouldFetchArtists || shouldFetchAlbumsAndSongs) {
                     _isFetchingArtwork.value = true
-                    fetchArtworkFromInternet(
+                    fetchArtworkFromInternetSerialized(
                         fetchArtists = shouldFetchArtists,
                         fetchAlbumsAndSongs = shouldFetchAlbumsAndSongs
                     )
@@ -1952,7 +1980,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                 
                 // Extract embedded artwork for new songs if needed
                 val losslessArtwork = appSettings.isLosslessArtworkActive.value
-                val updatedNewSongs = repository.extractEmbeddedArtworkForSongs(newSongs, losslessArtwork)
+                val updatedNewSongs = extractEmbeddedArtworkSerialized(newSongs, losslessArtwork)
                 
                 val mergedSongs = _songs.value + updatedNewSongs
                 _songs.value = mergedSongs
@@ -2040,27 +2068,30 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
         _isGenreDetectionRunning.value = true
 
         try {
-            repository.detectGenresInBackground(
-                songs = songs.value,
-                onProgress = { current, total ->
-                    // Optional: Could emit progress updates to UI if needed
-                    Log.d(TAG, "Genre detection progress: $current/$total")
-                },
-                onComplete = { updatedSongs ->
-                    // Update the songs state with the new genre information FIRST
-                    _songs.value = updatedSongs
-                    // Persist genre data with the updated snapshot so future launches reuse it.
-                    repository.updateAndPersistSongs(updatedSongs)
-                    // Then mark detection as complete AFTER songs are updated to prevent race condition
-                    viewModelScope.launch {
-                        delay(100) // Small delay to ensure songs state propagates
-                        _isGenreDetectionComplete.value = true
-                        _isGenreDetectionRunning.value = false
-                        appSettings.setGenreDetectionCompleted(true)
-                        Log.d(TAG, "Background genre detection completed, updated ${updatedSongs.count { it.genre != null }} songs with genres")
+            mediaExtractionMutex.withLock {
+                repository.detectGenresInBackground(
+                    songs = songs.value,
+                    onProgress = { current, total ->
+                        if (current == total || current % 10 == 0) {
+                            Log.d(TAG, "Genre detection progress: $current/$total")
+                        }
+                    },
+                    onComplete = { updatedSongs ->
+                        // Update the songs state with the new genre information FIRST
+                        _songs.value = updatedSongs
+                        // Persist genre data with the updated snapshot so future launches reuse it.
+                        repository.updateAndPersistSongs(updatedSongs)
+                        // Then mark detection as complete AFTER songs are updated to prevent race condition
+                        viewModelScope.launch {
+                            delay(100) // Small delay to ensure songs state propagates
+                            _isGenreDetectionComplete.value = true
+                            _isGenreDetectionRunning.value = false
+                            appSettings.setGenreDetectionCompleted(true)
+                            Log.d(TAG, "Background genre detection completed, updated ${updatedSongs.count { it.genre != null }} songs with genres")
+                        }
                     }
-                }
-            )
+                )
+            }
         } catch (e: Exception) {
             Log.e(TAG, "Error during background genre detection", e)
             // Mark as complete even on error to prevent infinite loading
@@ -2073,27 +2104,51 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
      * Extracts audio metadata for songs in background and updates the UI dynamically
      */
     private suspend fun extractAudioMetadataInBackground() {
-        Log.d(TAG, "Starting background audio metadata extraction for ${songs.value.size} songs")
-
-        repository.extractAudioMetadataInBackground(
-            songs = songs.value,
-            onProgress = { current, total ->
-                // Optional: Could emit progress updates to UI if needed
-                Log.d(TAG, "Audio metadata extraction progress: $current/$total")
-            },
-            onComplete = { updatedSongs ->
-                // Update the songs state with the new audio metadata information
-                _songs.value = updatedSongs
-                // Update repository cache and persist metadata to disk cache
-                Log.d(TAG, "Background metadata extraction completed, updating repository cache and persisting ${updatedSongs.size} songs to cache")
-                repository.updateAndPersistSongs(updatedSongs)
-                appSettings.setAudioMetadataExtractionCompleted(true)
-                val songsWithMetadata = updatedSongs.count { 
-                    it.bitrate != null && it.sampleRate != null && it.channels != null && it.codec != null 
-                }
-                Log.d(TAG, "Background audio metadata extraction completed, updated $songsWithMetadata songs")
+        mediaExtractionMutex.withLock {
+            val currentSongs = songs.value
+            val hasMissingMetadata = currentSongs.any {
+                it.bitrate == null || it.sampleRate == null || it.channels == null || it.codec == null
             }
-        )
+            if (!hasMissingMetadata) {
+                appSettings.setAudioMetadataExtractionCompleted(true)
+                Log.d(TAG, "Audio metadata extraction already satisfied by an earlier pass")
+                return@withLock
+            }
+
+            Log.d(TAG, "Starting background audio metadata extraction for ${currentSongs.size} songs")
+            repository.extractAudioMetadataInBackground(
+                songs = currentSongs,
+                onProgress = { current, total ->
+                    if (current == total || current % 10 == 0) {
+                        Log.d(TAG, "Audio metadata extraction progress: $current/$total")
+                    }
+                },
+                onComplete = { updatedSongs ->
+                    _songs.value = updatedSongs
+                    Log.d(TAG, "Background metadata extraction completed, updating repository cache and persisting ${updatedSongs.size} songs to cache")
+                    repository.updateAndPersistSongs(updatedSongs)
+                    appSettings.setAudioMetadataExtractionCompleted(true)
+                    val songsWithMetadata = updatedSongs.count {
+                        it.bitrate != null && it.sampleRate != null && it.channels != null && it.codec != null
+                    }
+                    Log.d(TAG, "Background audio metadata extraction completed, updated $songsWithMetadata songs")
+                }
+            )
+        }
+    }
+
+    private suspend fun extractEmbeddedArtworkSerialized(
+        songs: List<Song>,
+        losslessArtwork: Boolean
+    ): List<Song> = mediaExtractionMutex.withLock {
+        repository.extractEmbeddedArtworkForSongs(songs, losslessArtwork)
+    }
+
+    private suspend fun fetchArtworkFromInternetSerialized(
+        fetchArtists: Boolean,
+        fetchAlbumsAndSongs: Boolean
+    ) = mediaExtractionMutex.withLock {
+        fetchArtworkFromInternet(fetchArtists, fetchAlbumsAndSongs)
     }
     
     private fun startListeningTimeTracking() {
@@ -2213,7 +2268,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
 
                         if (shouldFetchArtists || shouldFetchAlbumsAndSongs) {
                             _isFetchingArtwork.value = true
-                            fetchArtworkFromInternet(
+                            fetchArtworkFromInternetSerialized(
                                 fetchArtists = shouldFetchArtists,
                                 fetchAlbumsAndSongs = shouldFetchAlbumsAndSongs
                             )
@@ -2251,7 +2306,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                             delay(2000)
                             val currentSongs = _songs.value
                             if (currentSongs.isNotEmpty()) {
-                                val updatedSongs = repository.extractEmbeddedArtworkForSongs(currentSongs, losslessArtwork)
+                                val updatedSongs = extractEmbeddedArtworkSerialized(currentSongs, losslessArtwork)
                                 kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
                                     _songs.value = updatedSongs
                                 }
@@ -6999,7 +7054,8 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                     title = song.title, 
                     songId = song.id,
                     songUri = song.uri,
-                    sourcePreference = lyricsPreference
+                    sourcePreference = lyricsPreference,
+                    requireRomanization = appSettings.showLyricsRomanization.value
                 )
                 
                 // Verify the song hasn't changed before updating lyrics
@@ -7077,6 +7133,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                     
                     // Clear in-memory lyrics
                     _currentLyrics.value = null
+                    resetBluetoothLyricsBroadcastState(clearLastBroadcast = true)
                     
                     // Reset time offset
                     _lyricsTimeOffset.value = 0
@@ -7089,7 +7146,8 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                         songId = song.id,
                         songUri = songUri,
                         sourcePreference = appSettings.lyricsSourcePreference.value,
-                        forceRefresh = true // Force bypass cache
+                        forceRefresh = true, // Force bypass cache
+                        requireRomanization = appSettings.showLyricsRomanization.value
                     )
                     
                     withContext(Dispatchers.Main) {

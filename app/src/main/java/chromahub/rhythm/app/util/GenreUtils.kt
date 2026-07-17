@@ -11,6 +11,11 @@ package chromahub.rhythm.app.util
 object GenreUtils {
     private val genreSplitRegex = Regex("[,;\\n\\r]+")
 
+    data class Summary(
+        val name: String,
+        val songCount: Int
+    )
+
     fun splitGenres(rawGenre: String?): List<String> {
         if (rawGenre.isNullOrBlank()) return emptyList()
 
@@ -49,5 +54,27 @@ object GenreUtils {
                 normalizedGenre.startsWith(normalizedQuery) ||
                 normalizedGenre.contains(normalizedQuery)
         }
+    }
+
+    /**
+     * Builds the genre browse model in one pass over the library. Each song is counted at most
+     * once for a normalized genre, while the first spelling/capitalization is kept for display.
+     */
+    fun summarizeGenres(rawGenres: Iterable<String?>): List<Summary> {
+        val summaries = LinkedHashMap<String, Summary>()
+
+        rawGenres.forEach { rawGenre ->
+            splitGenres(rawGenre).forEach { genre ->
+                val key = genre.lowercase()
+                val current = summaries[key]
+                summaries[key] = if (current == null) {
+                    Summary(name = genre, songCount = 1)
+                } else {
+                    current.copy(songCount = current.songCount + 1)
+                }
+            }
+        }
+
+        return summaries.values.sortedBy { it.name.lowercase() }
     }
 }

@@ -18,6 +18,7 @@ import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
@@ -105,17 +106,6 @@ fun UniversalSearchScreen(
     val appMode by appSettings.appMode.collectAsState()
     val showKeyboardOnSearchOpen by appSettings.showKeyboardOnSearchOpen.collectAsState()
 
-    DisposableEffect(context) {
-        val activity = context as? android.app.Activity
-        val originalMode = activity?.window?.attributes?.softInputMode
-        activity?.window?.setSoftInputMode(16 /* WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE */)
-        onDispose {
-            if (originalMode != null) {
-                activity.window?.setSoftInputMode(originalMode)
-            }
-        }
-    }
-
     val focusManager = LocalFocusManager.current
     val haptics = LocalHapticFeedback.current
     val coroutineScope = rememberCoroutineScope()
@@ -198,18 +188,7 @@ fun UniversalSearchScreen(
 
     val isGenreDetectionComplete by localViewModel.isGenreDetectionComplete.collectAsState()
 
-    val genres = remember(localSongs) {
-        localSongs
-            .flatMap { song -> GenreUtils.splitGenres(song.genre) }
-            .distinctBy { it.lowercase() }
-            .sortedBy { it.lowercase() }
-    }
-
-    val genreSongCounts = remember(genres, localSongs) {
-        genres.associateWith { genre ->
-            localSongs.count { song -> GenreUtils.matchesGenre(song.genre, genre) }
-        }
-    }
+    val genreBrowseSummaries by localViewModel.genreBrowseSummaries.collectAsState()
 
     LaunchedEffect(query) {
         if (query.isNotBlank() && streamingQuery != query) {
@@ -422,17 +401,15 @@ fun UniversalSearchScreen(
                             ),
                             verticalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
-                            item(key = "genre_browse") {
-                                UniversalGenreBrowseSection(
-                                    genres = genres,
-                                    genreSongCounts = genreSongCounts,
-                                    isGenreDetectionComplete = isGenreDetectionComplete,
-                                    onGenreClick = { genre ->
-                                        HapticUtils.performHapticFeedback(context, haptics, HapticType.LIGHT)
-                                        query = genre
-                                    }
-                                )
-                            }
+                            universalGenreBrowseItems(
+                                genreSummaries = genreBrowseSummaries,
+                                columnsCount = 3,
+                                isGenreDetectionComplete = isGenreDetectionComplete,
+                                onGenreClick = { genre ->
+                                    HapticUtils.performHapticFeedback(context, haptics, HapticType.LIGHT)
+                                    query = genre
+                                }
+                            )
                         }
                     }
                 } else {
@@ -542,17 +519,15 @@ fun UniversalSearchScreen(
                             }
                         }
 
-                        item(key = "genre_browse") {
-                            UniversalGenreBrowseSection(
-                                genres = genres,
-                                genreSongCounts = genreSongCounts,
-                                isGenreDetectionComplete = isGenreDetectionComplete,
-                                onGenreClick = { genre ->
-                                    HapticUtils.performHapticFeedback(context, haptics, HapticType.LIGHT)
-                                    query = genre
-                                }
-                            )
-                        }
+                        universalGenreBrowseItems(
+                            genreSummaries = genreBrowseSummaries,
+                            columnsCount = 2,
+                            isGenreDetectionComplete = isGenreDetectionComplete,
+                            onGenreClick = { genre ->
+                                HapticUtils.performHapticFeedback(context, haptics, HapticType.LIGHT)
+                                query = genre
+                            }
+                        )
                     }
                 }
             } else {
@@ -2383,25 +2358,21 @@ private fun UniversalSongOptionGridItem(
     }
 }
 
-@Composable
-private fun UniversalGenreBrowseSection(
-    genres: List<String>,
-    genreSongCounts: Map<String, Int>,
+private fun LazyListScope.universalGenreBrowseItems(
+    genreSummaries: List<GenreUtils.Summary>,
+    columnsCount: Int,
     isGenreDetectionComplete: Boolean,
     onGenreClick: (String) -> Unit
 ) {
-    val context = LocalContext.current
-    val isActuallyLoading = !isGenreDetectionComplete && genres.isEmpty()
+    val isActuallyLoading = !isGenreDetectionComplete && genreSummaries.isEmpty()
 
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 12.dp)
-            .animateContentSize(spring(stiffness = Spring.StiffnessMediumLow))
-    ) {
+    item(key = "genre_header") {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(horizontal = 4.dp).padding(bottom = 16.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 4.dp)
+                .padding(top = 12.dp, bottom = 6.dp)
         ) {
             Icon(
                 imageVector = RhythmIcons.AutoAwesome,
@@ -2417,8 +2388,10 @@ private fun UniversalGenreBrowseSection(
                 modifier = Modifier.padding(start = 12.dp)
             )
         }
+    }
 
-        if (isActuallyLoading) {
+    if (isActuallyLoading) {
+        item(key = "genre_loading") {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -2427,32 +2400,31 @@ private fun UniversalGenreBrowseSection(
             ) {
                 WavyLoader(color = MaterialTheme.colorScheme.tertiary)
             }
-        } else if (genres.isNotEmpty()) {
-            val configuration = LocalConfiguration.current
-            val isTablet = configuration.screenWidthDp >= 600
-            val columnsCount = if (isTablet) 3 else 2
-            val rows = remember(genres, columnsCount) { genres.chunked(columnsCount) }
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                rows.forEachIndexed { rowIndex, rowGenres ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        rowGenres.forEachIndexed { colIndex, genre ->
-                            val itemIndex = rowIndex * columnsCount + colIndex
-                            UniversalGenreBrowseItemCard(
-                                genre = genre,
-                                songCount = genreSongCounts[genre] ?: 0,
-                                index = itemIndex,
-                                onClick = { onGenreClick(genre) },
-                                modifier = Modifier.weight(1f)
-                            )
-                        }
-                        if (rowGenres.size < columnsCount) {
-                            repeat(columnsCount - rowGenres.size) {
-                                Spacer(modifier = Modifier.weight(1f))
-                            }
-                        }
+        }
+    } else if (genreSummaries.isNotEmpty()) {
+        val rows = genreSummaries.chunked(columnsCount)
+        items(
+            count = rows.size,
+            key = { rowIndex -> "genre_row_${rows[rowIndex].first().name.lowercase()}" }
+        ) { rowIndex ->
+            val rowGenres = rows[rowIndex]
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                rowGenres.forEachIndexed { colIndex, summary ->
+                    val itemIndex = rowIndex * columnsCount + colIndex
+                    UniversalGenreBrowseItemCard(
+                        genre = summary.name,
+                        songCount = summary.songCount,
+                        index = itemIndex,
+                        onClick = { onGenreClick(summary.name) },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+                if (rowGenres.size < columnsCount) {
+                    repeat(columnsCount - rowGenres.size) {
+                        Spacer(modifier = Modifier.weight(1f))
                     }
                 }
             }

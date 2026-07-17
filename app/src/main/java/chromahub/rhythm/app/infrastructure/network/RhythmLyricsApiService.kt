@@ -38,13 +38,13 @@ interface RhythmLyricsApiService {
     @GET("netease/search")
     suspend fun searchNetease(
         @Query("q") query: String
-    ): List<RhythmLyricsGenericSearchResult>
+    ): NeteaseSearchResponse
 
     @GET("netease/lyrics")
     suspend fun getNeteaseLyrics(
         @Query("id") id: String,
         @Query("word") word: Boolean
-    ): RhythmLyricsResponse
+    ): NeteaseLyricsResponse
 
     // QQ Music
     @GET("qq/search")

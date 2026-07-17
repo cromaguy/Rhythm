@@ -11,6 +11,7 @@ import android.media.AudioManager
 import android.media.AudioMixerAttributes
 import android.net.Uri
 import android.os.Bundle
+import android.os.SystemClock
 import android.util.Log
 import androidx.annotation.OptIn
 import androidx.core.content.ContextCompat
@@ -993,7 +994,7 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
             override fun onPlaybackStateChanged(playbackState: Int) {
                 // Collapsed legacy queues need service-owned advancement.
                 if (playbackState == Player.STATE_ENDED) {
-                    btVirtualAdvance()
+                    handleBtVirtualPlaybackEnded()
                 }
                 if (playbackState == Player.STATE_READY && getPlayerAudioSessionId() != 0) {
                     // Reinitialize audio effects with valid session ID
@@ -1066,6 +1067,30 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
             
             override fun onPlayerError(error: PlaybackException) {
                 handlePlaybackError(error)
+            }
+
+            override fun onRepeatModeChanged(repeatMode: Int) {
+                if (!btVirtualQueueActive() || isMutatingBtVirtualQueue) return
+                // The one-item compatibility player itself must stay non-repeating so
+                // end-of-track can be routed through the saved queue. Remember a live
+                // user choice and restore it when the compatibility mode is switched off.
+                btVirtualOriginalRepeatMode = repeatMode
+                if (repeatMode != Player.REPEAT_MODE_OFF) {
+                    isMutatingBtVirtualQueue = true
+                    try {
+                        player.repeatMode = Player.REPEAT_MODE_OFF
+                    } finally {
+                        isMutatingBtVirtualQueue = false
+                    }
+                }
+            }
+
+            override fun onShuffleModeEnabledChanged(shuffleModeEnabled: Boolean) {
+                if (btVirtualQueueActive() && !isMutatingBtVirtualQueue) {
+                    // Shuffle has no effect on the temporary one-item player, but its
+                    // user-selected value belongs to the original playlist snapshot.
+                    btVirtualOriginalShuffleMode = shuffleModeEnabled
+                }
             }
             
             override fun onIsPlayingChanged(isPlaying: Boolean) {
@@ -1205,6 +1230,27 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
                     if (legacyQueueEnabled) collapseQueueForBtLyrics() else restoreQueueFromBtVirtual()
                 }
                 refreshNotificationControllerQueueExposure()
+            }
+        }
+
+        // This preference is live. If the current service-owned lyrics were loaded before
+        // romanization was requested, invalidate only that lookup and retry immediately;
+        // toggling the switch must not require a song change or an app restart.
+        serviceScope.launch {
+            var previous = appSettings.bluetoothLyricsPreferRomanization.value
+            appSettings.bluetoothLyricsPreferRomanization.collect { enabled ->
+                if (enabled == previous) return@collect
+                previous = enabled
+                lastServiceBtLyricLine = null
+
+                if (enabled && currentLyricRomanizations.none { it.isNotBlank() }) {
+                    serviceLyricsLoadJob?.cancel()
+                    serviceLyricsLoadJob = null
+                    serviceLyricsLoadedSongId = null
+                    player.currentMediaItem
+                        ?.let(::convertMediaItemToSong)
+                        ?.let { ensureServiceLyricsLoaded(it, initialDelayMs = 0L) }
+                }
             }
         }
     }
@@ -1781,6 +1827,15 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Log.d(TAG, "Service started with command: ${intent?.action}")
+
+        // onCreate() acknowledges the first foreground-service start, but Android can
+        // deliver another startForegroundService() intent while this Media3 service is
+        // already bound (or has been demoted after pausing). Each such start owns a fresh
+        // foreground deadline, so acknowledge it before doing any command work.
+        startForegroundWithNotification(
+            getString(chromahub.rhythm.app.R.string.service_rhythm_music),
+            getString(chromahub.rhythm.app.R.string.service_starting)
+        )
         
         when (intent?.action) {
             ACTION_UPDATE_SETTINGS -> {
@@ -2029,6 +2084,102 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
             injectedArtist = null
             val md = getMediaMetadata()
             injectionListeners.forEach { it.onMediaMetadataChanged(md) }
+        }
+
+        /**
+         * Queue edits originate from the app's normal controller. Restore the real playlist
+         * before forwarding one so adding, removing, or reordering while legacy mode is on
+         * never applies to the temporary single-item AVRCP view.
+         */
+        private fun restoreBeforeExternalQueueMutation() {
+            if (btVirtualQueueActive() && !isMutatingBtVirtualQueue && btVirtualOriginalQueue != null) {
+                restoreQueueFromBtVirtual()
+            }
+        }
+
+        override fun setMediaItems(mediaItems: List<MediaItem>) {
+            restoreBeforeExternalQueueMutation()
+            super.setMediaItems(mediaItems)
+        }
+
+        override fun setMediaItems(mediaItems: List<MediaItem>, resetPosition: Boolean) {
+            restoreBeforeExternalQueueMutation()
+            super.setMediaItems(mediaItems, resetPosition)
+        }
+
+        override fun setMediaItems(mediaItems: List<MediaItem>, startIndex: Int, startPositionMs: Long) {
+            restoreBeforeExternalQueueMutation()
+            super.setMediaItems(mediaItems, startIndex, startPositionMs)
+        }
+
+        override fun setMediaItem(mediaItem: MediaItem) {
+            restoreBeforeExternalQueueMutation()
+            super.setMediaItem(mediaItem)
+        }
+
+        override fun setMediaItem(mediaItem: MediaItem, startPositionMs: Long) {
+            restoreBeforeExternalQueueMutation()
+            super.setMediaItem(mediaItem, startPositionMs)
+        }
+
+        override fun setMediaItem(mediaItem: MediaItem, resetPosition: Boolean) {
+            restoreBeforeExternalQueueMutation()
+            super.setMediaItem(mediaItem, resetPosition)
+        }
+
+        override fun addMediaItem(mediaItem: MediaItem) {
+            restoreBeforeExternalQueueMutation()
+            super.addMediaItem(mediaItem)
+        }
+
+        override fun addMediaItem(index: Int, mediaItem: MediaItem) {
+            restoreBeforeExternalQueueMutation()
+            super.addMediaItem(index, mediaItem)
+        }
+
+        override fun addMediaItems(mediaItems: List<MediaItem>) {
+            restoreBeforeExternalQueueMutation()
+            super.addMediaItems(mediaItems)
+        }
+
+        override fun addMediaItems(index: Int, mediaItems: List<MediaItem>) {
+            restoreBeforeExternalQueueMutation()
+            super.addMediaItems(index, mediaItems)
+        }
+
+        override fun moveMediaItem(currentIndex: Int, newIndex: Int) {
+            restoreBeforeExternalQueueMutation()
+            super.moveMediaItem(currentIndex, newIndex)
+        }
+
+        override fun moveMediaItems(fromIndex: Int, toIndex: Int, newIndex: Int) {
+            restoreBeforeExternalQueueMutation()
+            super.moveMediaItems(fromIndex, toIndex, newIndex)
+        }
+
+        override fun replaceMediaItem(index: Int, mediaItem: MediaItem) {
+            restoreBeforeExternalQueueMutation()
+            super.replaceMediaItem(index, mediaItem)
+        }
+
+        override fun replaceMediaItems(fromIndex: Int, toIndex: Int, mediaItems: List<MediaItem>) {
+            restoreBeforeExternalQueueMutation()
+            super.replaceMediaItems(fromIndex, toIndex, mediaItems)
+        }
+
+        override fun removeMediaItem(index: Int) {
+            restoreBeforeExternalQueueMutation()
+            super.removeMediaItem(index)
+        }
+
+        override fun removeMediaItems(fromIndex: Int, toIndex: Int) {
+            restoreBeforeExternalQueueMutation()
+            super.removeMediaItems(fromIndex, toIndex)
+        }
+
+        override fun clearMediaItems() {
+            restoreBeforeExternalQueueMutation()
+            super.clearMediaItems()
         }
 
         override fun getAvailableCommands(): Player.Commands {
@@ -2424,8 +2575,18 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
                         }
 
                         currentLyricIndex = -1
-                        serviceLyricsLoadedSongId = player.currentMediaItem?.mediaId
-                        serviceLyricsLoadJob?.cancel()
+                        val requiresRomanization = appSettings.bluetoothLyricsPreferRomanization.value
+                        val incomingHasRomanization = currentLyricRomanizations.any { it.isNotBlank() }
+                        if (requiresRomanization && !incomingHasRomanization) {
+                            // The main lyrics screen may have just supplied embedded or
+                            // standard API lyrics. Keep the Bluetooth-only lookup alive so
+                            // it can replace that data with a timed romanization track.
+                            serviceLyricsLoadedSongId = null
+                            Log.d(TAG, "Incoming lyrics have no romanization; continuing Bluetooth API lookup")
+                        } else {
+                            serviceLyricsLoadedSongId = player.currentMediaItem?.mediaId
+                            serviceLyricsLoadJob?.cancel()
+                        }
                         chromahub.rhythm.app.infrastructure.widget.glance.GlanceWidgetUpdater.updateLyrics(this@MediaPlaybackService, getProcessedLyricTexts(), -1)
                         SessionResult(SessionResult.RESULT_SUCCESS)
                     }
@@ -2661,9 +2822,17 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
         }
     }
 
-    // AVRCP legacy workaround state.
-    private val btVirtualUpcoming = java.util.concurrent.CopyOnWriteArrayList<MediaItem>()
-    private val btVirtualHistory = java.util.concurrent.CopyOnWriteArrayList<MediaItem>()
+    // AVRCP legacy workaround state. The compatibility view may expose one item to a
+    // problematic car, but the user's actual playlist must survive intact underneath it.
+    private data class BtVirtualQueueItem(val mediaItem: MediaItem, val originalIndex: Int)
+    private val btVirtualUpcoming = java.util.concurrent.CopyOnWriteArrayList<BtVirtualQueueItem>()
+    private val btVirtualHistory = java.util.concurrent.CopyOnWriteArrayList<BtVirtualQueueItem>()
+    private var btVirtualOriginalQueue: List<MediaItem>? = null
+    private var btVirtualOriginalRepeatMode = Player.REPEAT_MODE_OFF
+    private var btVirtualOriginalShuffleMode = false
+    private var btVirtualCurrentOriginalIndex = androidx.media3.common.C.INDEX_UNSET
+    private var lastBtVirtualQueueMoveMs = 0L
+    private val BT_VIRTUAL_QUEUE_MOVE_DEBOUNCE_MS = 400L
     @Volatile private var isMutatingBtVirtualQueue = false
     private var btCollapseJob: kotlinx.coroutines.Job? = null
 
@@ -2692,14 +2861,41 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
         if (count <= 1 || idx == androidx.media3.common.C.INDEX_UNSET) return
         isMutatingBtVirtualQueue = true
         try {
+            btVirtualOriginalQueue = List(count) { player.getMediaItemAt(it) }
+            btVirtualOriginalRepeatMode = player.repeatMode
+            btVirtualOriginalShuffleMode = player.shuffleModeEnabled
+            btVirtualCurrentOriginalIndex = idx
+            lastBtVirtualQueueMoveMs = 0L
+
+            val timeline = player.currentTimeline
+            fun collectNavigationOrder(next: Boolean): List<BtVirtualQueueItem> {
+                val result = mutableListOf<BtVirtualQueueItem>()
+                val visited = mutableSetOf(idx)
+                var cursor = idx
+                while (true) {
+                    val adjacent = if (next) {
+                        timeline.getNextWindowIndex(cursor, Player.REPEAT_MODE_OFF, player.shuffleModeEnabled)
+                    } else {
+                        timeline.getPreviousWindowIndex(cursor, Player.REPEAT_MODE_OFF, player.shuffleModeEnabled)
+                    }
+                    if (adjacent == androidx.media3.common.C.INDEX_UNSET || !visited.add(adjacent)) break
+                    result += BtVirtualQueueItem(player.getMediaItemAt(adjacent), adjacent)
+                    cursor = adjacent
+                }
+                return result
+            }
+
             btVirtualHistory.clear()
-            for (i in 0 until idx) btVirtualHistory.add(player.getMediaItemAt(i))
+            btVirtualHistory.addAll(collectNavigationOrder(next = false).asReversed())
             btVirtualUpcoming.clear()
-            for (i in idx + 1 until count) btVirtualUpcoming.add(player.getMediaItemAt(i))
+            btVirtualUpcoming.addAll(collectNavigationOrder(next = true))
+
             if (idx + 1 < count) player.removeMediaItems(idx + 1, count)
             if (idx > 0) player.removeMediaItems(0, idx)
+            // A one-item player must not repeat by itself; the service emulates the
+            // saved repeat mode below and restores it verbatim when legacy mode ends.
             player.repeatMode = Player.REPEAT_MODE_OFF
-            Log.d(TAG, "Legacy car mode: collapsed to single item, ${btVirtualUpcoming.size} upcoming / ${btVirtualHistory.size} history")
+            Log.d(TAG, "Legacy car mode: exposed one item, preserving $count-item queue; ${btVirtualUpcoming.size} upcoming / ${btVirtualHistory.size} history")
         } catch (e: Exception) {
             Log.w(TAG, "Legacy car mode collapse failed", e)
         } finally {
@@ -2709,15 +2905,30 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
     }
 
     private fun btVirtualAdvance(): Boolean {
-        if (!::player.isInitialized || !btVirtualQueueActive() || btVirtualUpcoming.isEmpty()) return false
+        if (!::player.isInitialized || !btVirtualQueueActive()) return false
+        val now = SystemClock.elapsedRealtime()
+        if (now - lastBtVirtualQueueMoveMs < BT_VIRTUAL_QUEUE_MOVE_DEBOUNCE_MS) {
+            Log.d(TAG, "Legacy car mode: ignored duplicate next command")
+            return true
+        }
+        if (btVirtualUpcoming.isEmpty() && btVirtualOriginalRepeatMode == Player.REPEAT_MODE_ALL) {
+            btVirtualUpcoming.addAll(btVirtualHistory)
+            btVirtualHistory.clear()
+        }
+        if (btVirtualUpcoming.isEmpty()) return false
+        lastBtVirtualQueueMoveMs = now
         val next = btVirtualUpcoming.removeAt(0)
-        player.currentMediaItem?.let { btVirtualHistory.add(it) }
+        player.currentMediaItem?.let {
+            btVirtualHistory.add(BtVirtualQueueItem(it, btVirtualCurrentOriginalIndex))
+        }
         isMutatingBtVirtualQueue = true
         try {
-            player.setMediaItem(next)
+            val playWhenReady = player.playWhenReady
+            player.setMediaItem(next.mediaItem)
+            btVirtualCurrentOriginalIndex = next.originalIndex
             player.repeatMode = Player.REPEAT_MODE_OFF
             player.prepare()
-            player.playWhenReady = true
+            player.playWhenReady = playWhenReady
             Log.d(TAG, "Legacy car mode: advanced virtual queue, ${btVirtualUpcoming.size} remaining")
         } finally {
             isMutatingBtVirtualQueue = false
@@ -2726,16 +2937,49 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
         return true
     }
 
+    private fun handleBtVirtualPlaybackEnded() {
+        if (!btVirtualQueueActive()) return
+        if (btVirtualOriginalRepeatMode == Player.REPEAT_MODE_ONE) {
+            isMutatingBtVirtualQueue = true
+            try {
+                player.seekTo(0)
+                player.playWhenReady = true
+            } finally {
+                isMutatingBtVirtualQueue = false
+            }
+            return
+        }
+        btVirtualAdvance()
+    }
+
     private fun btVirtualPrevious(): Boolean {
-        if (!::player.isInitialized || !btVirtualQueueActive() || btVirtualHistory.isEmpty()) return false
+        if (!::player.isInitialized || !btVirtualQueueActive()) return false
+        val now = SystemClock.elapsedRealtime()
+        if (now - lastBtVirtualQueueMoveMs < BT_VIRTUAL_QUEUE_MOVE_DEBOUNCE_MS) {
+            Log.d(TAG, "Legacy car mode: ignored duplicate previous command")
+            return true
+        }
+        if (btVirtualHistory.isEmpty() && btVirtualOriginalRepeatMode == Player.REPEAT_MODE_ALL) {
+            btVirtualHistory.addAll(btVirtualUpcoming)
+            btVirtualUpcoming.clear()
+            player.currentMediaItem?.let {
+                btVirtualUpcoming.add(BtVirtualQueueItem(it, btVirtualCurrentOriginalIndex))
+            }
+        }
+        if (btVirtualHistory.isEmpty()) return false
+        lastBtVirtualQueueMoveMs = now
         val prev = btVirtualHistory.removeAt(btVirtualHistory.size - 1)
-        player.currentMediaItem?.let { btVirtualUpcoming.add(0, it) }
+        player.currentMediaItem?.let {
+            btVirtualUpcoming.add(0, BtVirtualQueueItem(it, btVirtualCurrentOriginalIndex))
+        }
         isMutatingBtVirtualQueue = true
         try {
-            player.setMediaItem(prev)
+            val playWhenReady = player.playWhenReady
+            player.setMediaItem(prev.mediaItem)
+            btVirtualCurrentOriginalIndex = prev.originalIndex
             player.repeatMode = Player.REPEAT_MODE_OFF
             player.prepare()
-            player.playWhenReady = true
+            player.playWhenReady = playWhenReady
             Log.d(TAG, "Legacy car mode: stepped back virtual queue, ${btVirtualHistory.size} history left")
         } finally {
             isMutatingBtVirtualQueue = false
@@ -2746,22 +2990,27 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
 
     private fun restoreQueueFromBtVirtual() {
         if (!::player.isInitialized) return
-        if (btVirtualUpcoming.isEmpty() && btVirtualHistory.isEmpty()) return
+        val originalQueue = btVirtualOriginalQueue ?: return
         isMutatingBtVirtualQueue = true
         try {
-            val rebuilt = ArrayList<MediaItem>(btVirtualHistory)
-            val current = player.currentMediaItem
-            if (current != null) rebuilt.add(current)
-            val currentIdx = (rebuilt.size - 1).coerceAtLeast(0)
-            rebuilt.addAll(btVirtualUpcoming)
             val pos = player.currentPosition
+            val originalCurrentIndex = btVirtualCurrentOriginalIndex
             btVirtualHistory.clear()
             btVirtualUpcoming.clear()
-            if (rebuilt.isNotEmpty()) {
-                player.setMediaItems(rebuilt, currentIdx, pos)
+            btVirtualOriginalQueue = null
+            btVirtualCurrentOriginalIndex = androidx.media3.common.C.INDEX_UNSET
+            lastBtVirtualQueueMoveMs = 0L
+            if (originalQueue.isNotEmpty()) {
+                val currentIdx = originalCurrentIndex
+                    .takeIf { it != androidx.media3.common.C.INDEX_UNSET }
+                    ?.coerceIn(0, originalQueue.lastIndex)
+                    ?: 0
+                player.setMediaItems(originalQueue, currentIdx, pos)
+                player.shuffleModeEnabled = btVirtualOriginalShuffleMode
+                player.repeatMode = btVirtualOriginalRepeatMode
                 player.prepare()
             }
-            Log.d(TAG, "Legacy car mode: restored full queue (${rebuilt.size} items) on mode off")
+            Log.d(TAG, "Legacy car mode: restored original ${originalQueue.size}-item queue on mode off")
         } catch (e: Exception) {
             Log.w(TAG, "Legacy car mode restore failed", e)
         } finally {
@@ -2772,7 +3021,6 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
 
     override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
         super.onMediaItemTransition(mediaItem, reason)
-        clearLyricsState()
         val transitionMediaId = mediaItem?.mediaId
         if (
             reason == Player.MEDIA_ITEM_TRANSITION_REASON_PLAYLIST_CHANGED &&
@@ -2783,6 +3031,7 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
             return
         }
 
+        clearLyricsState()
         Log.d(TAG, "Media item transitioned: ${mediaItem?.mediaMetadata?.title}, reason=$reason")
         
         // Update custom layout when song changes to reflect correct favorite state
@@ -2833,11 +3082,11 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
         bluetoothLyricsLoopJob = null
     }
 
-    private fun ensureServiceLyricsLoaded(song: Song) {
+    private fun ensureServiceLyricsLoaded(song: Song, initialDelayMs: Long = 1200L) {
         if (serviceLyricsLoadedSongId == song.id) return
         if (serviceLyricsLoadJob?.isActive == true) return
         serviceLyricsLoadJob = serviceScope.launch {
-            delay(1200)
+            if (initialDelayMs > 0L) delay(initialDelayMs)
             if (serviceLyricsLoadedSongId == song.id) return@launch
             if (player.currentMediaItem?.mediaId != song.id) return@launch
             try {
@@ -2846,7 +3095,8 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
                     title = song.title,
                     songId = song.id,
                     songUri = song.uri,
-                    sourcePreference = appSettings.lyricsSourcePreference.value
+                    sourcePreference = appSettings.lyricsSourcePreference.value,
+                    requireRomanization = appSettings.bluetoothLyricsPreferRomanization.value
                 )
                 if (serviceLyricsLoadedSongId == song.id) return@launch
                 if (player.currentMediaItem?.mediaId != song.id) return@launch
