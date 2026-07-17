@@ -172,7 +172,7 @@ object AudioFormatDetector {
             mime.contains("vorbis", ignoreCase = true) -> "Vorbis"
             // Enhanced Dolby detection
             mime.contains("truehd", ignoreCase = true) -> "TrueHD"
-            mime.contains("atmos", ignoreCase = true) -> "Dolby Atmos"
+            mime.contains("eac3-joc", ignoreCase = true) -> "Dolby Atmos"
             mime.contains("mlp", ignoreCase = true) -> "TrueHD" // MLP is TrueHD
             mime.contains("ac4", ignoreCase = true) -> "AC-4"
             mime.contains("eac3", ignoreCase = true) || mime.contains("ec-3", ignoreCase = true) -> "E-AC-3"
