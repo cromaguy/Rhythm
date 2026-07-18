@@ -3795,6 +3795,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
             // Send lyrics data to service for launcher widget
             try {
                 val args = Bundle().apply {
+                    putString("song_id", song.id)
                     putStringArrayList("lyric_texts", ArrayList(cachedParsedSyncedLyrics.map { it.text }))
                     putStringArrayList("lyric_translations", ArrayList(cachedParsedSyncedLyrics.map { it.translation ?: "" }))
                     putStringArrayList("lyric_romanizations", ArrayList(cachedParsedSyncedLyrics.map { it.romanization ?: "" }))
@@ -3831,6 +3832,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
         if (lyricLine != lastBroadcastLyricLine) {
             try {
                 val args = Bundle().apply {
+                    putString("song_id", song.id)
                     putString("lyric_line", lyricLine)
                     putInt("lyric_index", activeIndex)
                 }
@@ -7055,15 +7057,39 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                     songId = song.id,
                     songUri = song.uri,
                     sourcePreference = lyricsPreference,
-                    requireRomanization = appSettings.showLyricsRomanization.value
+                    requireRomanization = false
                 )
                 
                 // Verify the song hasn't changed before updating lyrics
                 if (currentSong.value?.id == fetchingSongId && isActive) {
                     _currentLyrics.value = lyricsData
+                    _isLoadingLyrics.value = false
                     Log.d(TAG, "Successfully fetched lyrics for: ${song.artist} - ${song.title}")
                 } else {
                     Log.d(TAG, "Song changed during lyrics fetch, discarding results for: ${song.title}")
+                    return@launch
+                }
+
+                if (
+                    appSettings.showLyricsRomanization.value &&
+                    lyricsData?.hasTimedRomanizationTrack() != true
+                ) {
+                    val romanizedLyrics = repository.fetchLyrics(
+                        artist = song.artist,
+                        title = song.title,
+                        songId = song.id,
+                        songUri = song.uri,
+                        sourcePreference = lyricsPreference,
+                        requireRomanization = true
+                    )
+                    if (
+                        currentSong.value?.id == fetchingSongId &&
+                        isActive &&
+                        romanizedLyrics?.hasTimedRomanizationTrack() == true
+                    ) {
+                        _currentLyrics.value = romanizedLyrics
+                        Log.d(TAG, "Applied timed romanization for: ${song.artist} - ${song.title}")
+                    }
                 }
             } catch (e: Exception) {
                 // If the job was cancelled, don't log as error
@@ -7107,6 +7133,11 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
             }
         }
     }
+
+    private fun LyricsData.hasTimedRomanizationTrack(): Boolean = syncedLyrics
+        ?.let(LyricsParser::parseLyrics)
+        ?.any { !it.romanization.isNullOrBlank() }
+        ?: false
     
     /**
      * Manually retry fetching lyrics for the current song

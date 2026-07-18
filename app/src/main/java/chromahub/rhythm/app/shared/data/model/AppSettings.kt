@@ -682,6 +682,7 @@ class AppSettings private constructor(context: Context) {
     private val _showLyricsBackgroundArtwork = MutableStateFlow(prefs.getBoolean(KEY_SHOW_LYRICS_BACKGROUND_ARTWORK, true))
     val showLyricsBackgroundArtwork: StateFlow<Boolean> = _showLyricsBackgroundArtwork.asStateFlow()
 
+    // TODO: Replace this boolean with a preferred translation locale, then fall back to app and system locales.
     private val _showLyricsTranslation = MutableStateFlow(prefs.getBoolean(KEY_SHOW_LYRICS_TRANSLATION, true))
     val showLyricsTranslation: StateFlow<Boolean> = _showLyricsTranslation.asStateFlow()
     

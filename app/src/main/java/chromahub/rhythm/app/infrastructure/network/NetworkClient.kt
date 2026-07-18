@@ -33,6 +33,7 @@ object NetworkClient {
     private const val CONNECT_TIMEOUT = 30L
     private const val READ_TIMEOUT = 30L
     private const val WRITE_TIMEOUT = 30L
+    private const val LYRICS_CALL_TIMEOUT = 8L
     private const val MAX_RETRIES = 3
     
     private val connectionPool by lazy { ConnectionPool(5, 30, TimeUnit.SECONDS) }
@@ -91,6 +92,7 @@ object NetworkClient {
                     response.close()
                 }
             } catch (e: IOException) {
+                if (chain.call().isCanceled()) throw e
                 lastException = e
                 Log.e(TAG, "Request error (attempt ${currentRetry + 1}): ${e.javaClass.simpleName} - ${e.message}")
                 
@@ -162,6 +164,7 @@ object NetworkClient {
             .connectTimeout(CONNECT_TIMEOUT, TimeUnit.SECONDS)
             .readTimeout(READ_TIMEOUT, TimeUnit.SECONDS)
             .writeTimeout(WRITE_TIMEOUT, TimeUnit.SECONDS)
+            .callTimeout(LYRICS_CALL_TIMEOUT, TimeUnit.SECONDS)
             .connectionPool(connectionPool)
             .build()
     }
@@ -221,6 +224,7 @@ object NetworkClient {
             .connectTimeout(CONNECT_TIMEOUT, TimeUnit.SECONDS)
             .readTimeout(READ_TIMEOUT, TimeUnit.SECONDS)
             .writeTimeout(WRITE_TIMEOUT, TimeUnit.SECONDS)
+            .callTimeout(LYRICS_CALL_TIMEOUT, TimeUnit.SECONDS)
             .connectionPool(connectionPool)
             .build()
     }
@@ -240,6 +244,7 @@ object NetworkClient {
             .connectTimeout(CONNECT_TIMEOUT, TimeUnit.SECONDS)
             .readTimeout(READ_TIMEOUT, TimeUnit.SECONDS)
             .writeTimeout(WRITE_TIMEOUT, TimeUnit.SECONDS)
+            .callTimeout(LYRICS_CALL_TIMEOUT, TimeUnit.SECONDS)
             .connectionPool(connectionPool)
             .build()
     }

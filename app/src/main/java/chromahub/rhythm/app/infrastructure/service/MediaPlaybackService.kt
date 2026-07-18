@@ -190,6 +190,7 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
         currentPlainLyricsLines = emptyList()
         currentLyricIndex = -1
         serviceLyricsLoadedSongId = null
+        serviceRomanizationAttemptedSongId = null
         serviceLyricsLoadJob?.cancel()
         chromahub.rhythm.app.infrastructure.widget.glance.GlanceWidgetUpdater.updateLyrics(this, emptyList(), -1)
     }
@@ -1246,7 +1247,7 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
                 if (enabled && currentLyricRomanizations.none { it.isNotBlank() }) {
                     serviceLyricsLoadJob?.cancel()
                     serviceLyricsLoadJob = null
-                    serviceLyricsLoadedSongId = null
+                    serviceRomanizationAttemptedSongId = null
                     player.currentMediaItem
                         ?.let(::convertMediaItemToSong)
                         ?.let { ensureServiceLyricsLoaded(it, initialDelayMs = 0L) }
@@ -1828,14 +1829,13 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Log.d(TAG, "Service started with command: ${intent?.action}")
 
-        // onCreate() acknowledges the first foreground-service start, but Android can
-        // deliver another startForegroundService() intent while this Media3 service is
-        // already bound (or has been demoted after pausing). Each such start owns a fresh
-        // foreground deadline, so acknowledge it before doing any command work.
-        startForegroundWithNotification(
-            getString(chromahub.rhythm.app.R.string.service_rhythm_music),
-            getString(chromahub.rhythm.app.R.string.service_starting)
-        )
+        // Media3 owns notification 1001 after a media item loads; the placeholder is only for cold starts.
+        if (!::player.isInitialized || player.currentMediaItem == null) {
+            startForegroundWithNotification(
+                getString(chromahub.rhythm.app.R.string.service_rhythm_music),
+                getString(chromahub.rhythm.app.R.string.service_starting)
+            )
+        }
         
         when (intent?.action) {
             ACTION_UPDATE_SETTINGS -> {
@@ -2558,33 +2558,43 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
             return Futures.immediateFuture(
                 when (customCommand.customAction) {
                     "UPDATE_LYRICS_DATA" -> {
-                        val texts = args.getStringArrayList("lyric_texts")
-                        val translations = args.getStringArrayList("lyric_translations")
-                        val romanizations = args.getStringArrayList("lyric_romanizations")
-                        val timestamps = args.getLongArray("lyric_timestamps")
-                        currentLyricTexts = texts ?: emptyList()
-                        currentLyricTranslations = translations ?: emptyList()
-                        currentLyricRomanizations = romanizations ?: emptyList()
-                        currentLyricTimestamps = timestamps ?: longArrayOf()
-                        
+                        val commandSongId = args.getString("song_id")
+                        val currentSongId = player.currentMediaItem?.mediaId
+                        if (commandSongId != null && commandSongId != currentSongId) {
+                            Log.d(TAG, "Ignoring stale lyrics data for mediaId=$commandSongId")
+                            return Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))
+                        }
+
+                        val texts = args.getStringArrayList("lyric_texts") ?: emptyList()
+                        val translations = args.getStringArrayList("lyric_translations") ?: emptyList()
+                        val romanizations = args.getStringArrayList("lyric_romanizations") ?: emptyList()
+                        val timestamps = args.getLongArray("lyric_timestamps") ?: longArrayOf()
                         val plainLyrics = args.getString("plain_lyrics")
-                        currentPlainLyricsLines = if (!plainLyrics.isNullOrBlank()) {
+                        val plainLines = if (!plainLyrics.isNullOrBlank()) {
                             plainLyrics.split("\n").map { it.trim() }.filter { it.isNotEmpty() }
                         } else {
                             emptyList()
                         }
+                        val incomingHasLyrics = texts.isNotEmpty() || plainLines.isNotEmpty()
+                        val currentHasLyrics = currentLyricTexts.isNotEmpty() || currentPlainLyricsLines.isNotEmpty()
+                        if (!incomingHasLyrics) {
+                            if (currentHasLyrics) {
+                                Log.d(TAG, "Ignoring empty lyrics update for mediaId=$currentSongId")
+                            }
+                            return Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))
+                        }
+
+                        currentLyricTexts = texts
+                        currentLyricTranslations = translations
+                        currentLyricRomanizations = romanizations
+                        currentLyricTimestamps = timestamps
+                        currentPlainLyricsLines = plainLines
 
                         currentLyricIndex = -1
-                        val requiresRomanization = appSettings.bluetoothLyricsPreferRomanization.value
                         val incomingHasRomanization = currentLyricRomanizations.any { it.isNotBlank() }
-                        if (requiresRomanization && !incomingHasRomanization) {
-                            // The main lyrics screen may have just supplied embedded or
-                            // standard API lyrics. Keep the Bluetooth-only lookup alive so
-                            // it can replace that data with a timed romanization track.
-                            serviceLyricsLoadedSongId = null
-                            Log.d(TAG, "Incoming lyrics have no romanization; continuing Bluetooth API lookup")
-                        } else {
-                            serviceLyricsLoadedSongId = player.currentMediaItem?.mediaId
+                        serviceLyricsLoadedSongId = currentSongId
+                        if (incomingHasRomanization) {
+                            serviceRomanizationAttemptedSongId = currentSongId
                             serviceLyricsLoadJob?.cancel()
                         }
                         chromahub.rhythm.app.infrastructure.widget.glance.GlanceWidgetUpdater.updateLyrics(this@MediaPlaybackService, getProcessedLyricTexts(), -1)
@@ -2592,6 +2602,10 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
                     }
 
                     "UPDATE_ACTIVE_LYRIC" -> {
+                        val commandSongId = args.getString("song_id")
+                        if (commandSongId != null && commandSongId != player.currentMediaItem?.mediaId) {
+                            return Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))
+                        }
                         val lyricLine = args.getString("lyric_line")
                         val lyricIndex = args.getInt("lyric_index", -1)
                         currentLyricIndex = lyricIndex
@@ -3061,6 +3075,7 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
         chromahub.rhythm.app.features.local.data.repository.MusicRepository(applicationContext)
     }
     @Volatile private var serviceLyricsLoadedSongId: String? = null
+    @Volatile private var serviceRomanizationAttemptedSongId: String? = null
     private var serviceLyricsLoadJob: kotlinx.coroutines.Job? = null
 
     private fun startBluetoothLyricsLoop() {
@@ -3083,45 +3098,79 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
     }
 
     private fun ensureServiceLyricsLoaded(song: Song, initialDelayMs: Long = 1200L) {
-        if (serviceLyricsLoadedSongId == song.id) return
+        val hasLyrics = currentLyricTexts.isNotEmpty() || currentPlainLyricsLines.isNotEmpty()
+        val needsBaseLyrics = serviceLyricsLoadedSongId != song.id && !hasLyrics
+        val needsRomanization =
+            appSettings.bluetoothLyricsPreferRomanization.value &&
+                serviceRomanizationAttemptedSongId != song.id &&
+                currentLyricRomanizations.none { it.isNotBlank() }
+        if (!needsBaseLyrics && !needsRomanization) return
         if (serviceLyricsLoadJob?.isActive == true) return
         serviceLyricsLoadJob = serviceScope.launch {
             if (initialDelayMs > 0L) delay(initialDelayMs)
-            if (serviceLyricsLoadedSongId == song.id) return@launch
             if (player.currentMediaItem?.mediaId != song.id) return@launch
             try {
-                val data = serviceMusicRepository.fetchLyrics(
-                    artist = song.artist,
-                    title = song.title,
-                    songId = song.id,
-                    songUri = song.uri,
-                    sourcePreference = appSettings.lyricsSourcePreference.value,
-                    requireRomanization = appSettings.bluetoothLyricsPreferRomanization.value
-                )
-                if (serviceLyricsLoadedSongId == song.id) return@launch
-                if (player.currentMediaItem?.mediaId != song.id) return@launch
-
-                val synced = data?.syncedLyrics
-                if (!synced.isNullOrBlank()) {
-                    val parsed = chromahub.rhythm.app.util.LyricsParser.parseLyrics(synced)
-                    currentLyricTexts = parsed.map { it.text }
-                    currentLyricTranslations = parsed.map { it.translation ?: "" }
-                    currentLyricRomanizations = parsed.map { it.romanization ?: "" }
-                    currentLyricTimestamps = parsed.map { it.timestamp }.toLongArray()
-                    currentPlainLyricsLines = data.plainLyrics
-                        ?.split("\n")?.map { it.trim() }?.filter { it.isNotEmpty() } ?: emptyList()
-                    currentLyricIndex = -1
-                    chromahub.rhythm.app.infrastructure.widget.glance.GlanceWidgetUpdater
-                        .updateLyrics(this@MediaPlaybackService, getProcessedLyricTexts(), -1)
-                    Log.d(TAG, "Service-loaded synced lyrics for '${song.title}' (${parsed.size} lines)")
-                } else {
-                    Log.d(TAG, "Service lyric load: no synced lyrics for '${song.title}'")
+                val stillHasLyrics = currentLyricTexts.isNotEmpty() || currentPlainLyricsLines.isNotEmpty()
+                if (serviceLyricsLoadedSongId != song.id && !stillHasLyrics) {
+                    val baseLyrics = serviceMusicRepository.fetchLyrics(
+                        artist = song.artist,
+                        title = song.title,
+                        songId = song.id,
+                        songUri = song.uri,
+                        sourcePreference = appSettings.lyricsSourcePreference.value,
+                        requireRomanization = false
+                    )
+                    if (player.currentMediaItem?.mediaId != song.id) return@launch
+                    applyServiceLyrics(song, baseLyrics, requireRomanization = false)
+                    serviceLyricsLoadedSongId = song.id
                 }
-                serviceLyricsLoadedSongId = song.id
+
+                if (
+                    appSettings.bluetoothLyricsPreferRomanization.value &&
+                    serviceRomanizationAttemptedSongId != song.id &&
+                    currentLyricRomanizations.none { it.isNotBlank() }
+                ) {
+                    serviceRomanizationAttemptedSongId = song.id
+                    val romanizedLyrics = serviceMusicRepository.fetchLyrics(
+                        artist = song.artist,
+                        title = song.title,
+                        songId = song.id,
+                        songUri = song.uri,
+                        sourcePreference = appSettings.lyricsSourcePreference.value,
+                        requireRomanization = true
+                    )
+                    if (player.currentMediaItem?.mediaId != song.id) return@launch
+                    applyServiceLyrics(song, romanizedLyrics, requireRomanization = true)
+                }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 Log.w(TAG, "Service lyric load failed for '${song.title}'", e)
             }
         }
+    }
+
+    private fun applyServiceLyrics(
+        song: Song,
+        data: chromahub.rhythm.app.shared.data.model.LyricsData?,
+        requireRomanization: Boolean
+    ): Boolean {
+        val synced = data?.syncedLyrics ?: return false
+        val parsed = chromahub.rhythm.app.util.LyricsParser.parseLyrics(synced)
+        if (parsed.isEmpty()) return false
+        if (requireRomanization && parsed.none { !it.romanization.isNullOrBlank() }) return false
+
+        currentLyricTexts = parsed.map { it.text }
+        currentLyricTranslations = parsed.map { it.translation ?: "" }
+        currentLyricRomanizations = parsed.map { it.romanization ?: "" }
+        currentLyricTimestamps = parsed.map { it.timestamp }.toLongArray()
+        currentPlainLyricsLines = data.plainLyrics
+            ?.split("\n")?.map { it.trim() }?.filter { it.isNotEmpty() } ?: emptyList()
+        currentLyricIndex = -1
+        chromahub.rhythm.app.infrastructure.widget.glance.GlanceWidgetUpdater
+            .updateLyrics(this@MediaPlaybackService, getProcessedLyricTexts(), -1)
+        Log.d(TAG, "Service-loaded synced lyrics for '${song.title}' (${parsed.size} lines)")
+        return true
     }
 
     private fun tickBluetoothLyrics() {

@@ -42,8 +42,10 @@ import java.security.MessageDigest
 import java.util.Locale
 import java.util.Collections
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
@@ -692,11 +694,8 @@ class MusicRepository(context: Context) {
             return size > MAX_ALBUM_CACHE_SIZE
         }
     })
-    private val lyricsCache = Collections.synchronizedMap(object : LinkedHashMap<String, LyricsData>(50, 0.75f, true) {
-        override fun removeEldestEntry(eldest: Map.Entry<String, LyricsData>?): Boolean {
-            return size > MAX_LYRICS_CACHE_SIZE
-        }
-    })
+    private val lyricsCache: MutableMap<String, LyricsData>
+        get() = sharedLyricsCache
     
     // Rate limiting for API calls
     private val lastApiCalls = mutableMapOf<String, Long>()
@@ -706,6 +705,17 @@ class MusicRepository(context: Context) {
         private const val MAX_ARTIST_CACHE_SIZE = 100
         private const val MAX_ALBUM_CACHE_SIZE = 200
         private const val MAX_LYRICS_CACHE_SIZE = 150
+        private const val LYRICS_LOOKUP_TIMEOUT_MS = 20_000L
+
+        private val sharedLyricsScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+        private val lyricsRequests = LyricsRequestCoordinator<String, LyricsData?>(sharedLyricsScope)
+        private val sharedLyricsCache = Collections.synchronizedMap(
+            object : LinkedHashMap<String, LyricsData>(50, 0.75f, true) {
+                override fun removeEldestEntry(eldest: Map.Entry<String, LyricsData>?): Boolean {
+                    return size > MAX_LYRICS_CACHE_SIZE
+                }
+            }
+        )
         
         // API rate limiting constants
         private const val DEEZER_MIN_DELAY = 200L
@@ -4683,6 +4693,42 @@ class MusicRepository(context: Context) {
         sourcePreference: LyricsSourcePreference = LyricsSourcePreference.API_FIRST,
         forceRefresh: Boolean = false,
         requireRomanization: Boolean = false
+    ): LyricsData? {
+        val effectiveSongUri = songUri
+            ?.takeIf { it.toString().isNotBlank() }
+            ?: songId?.toLongOrNull()?.let { id ->
+                ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, id)
+            }
+        val requestKey = listOf(
+            songId.orEmpty(),
+            artist.trim().lowercase(Locale.ROOT),
+            title.trim().lowercase(Locale.ROOT),
+            sourcePreference.name,
+            forceRefresh.toString(),
+            requireRomanization.toString()
+        ).joinToString("\u0000")
+
+        return lyricsRequests.run(requestKey) {
+            fetchLyricsUncoalesced(
+                artist = artist,
+                title = title,
+                songId = songId,
+                songUri = effectiveSongUri,
+                sourcePreference = sourcePreference,
+                forceRefresh = forceRefresh,
+                requireRomanization = requireRomanization
+            )
+        }
+    }
+
+    private suspend fun fetchLyricsUncoalesced(
+        artist: String,
+        title: String,
+        songId: String?,
+        songUri: Uri?,
+        sourcePreference: LyricsSourcePreference,
+        forceRefresh: Boolean,
+        requireRomanization: Boolean
     ): LyricsData? = withContext(Dispatchers.IO) {
         val appSettings = AppSettings.getInstance(context)
         val songSpecificPreference = songId?.let { appSettings.getSongLyricsPreference(it) }
@@ -4747,7 +4793,13 @@ class MusicRepository(context: Context) {
         
         val fetchFromAPI: suspend () -> LyricsData? = {
             if (isNetworkAvailable()) {
-                fetchLyricsFromAPIs(artist, title, requireRomanization)
+                val result = withTimeoutOrNull(LYRICS_LOOKUP_TIMEOUT_MS) {
+                    fetchLyricsFromAPIs(artist, title, requireRomanization)
+                }
+                if (result == null) {
+                    Log.d(TAG, "Online lyrics lookup returned no result within ${LYRICS_LOOKUP_TIMEOUT_MS}ms")
+                }
+                result
             } else {
                 null
             }
@@ -4811,6 +4863,7 @@ class MusicRepository(context: Context) {
                     Log.d(TAG, "Lyrics from $sourceName have no timed romanization; continuing API search for: $artist - $title")
                 }
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 Log.w(TAG, "Error fetching from source ${index + 1}: ${e.message}")
                 // Continue to next source
             }
@@ -4934,6 +4987,7 @@ class MusicRepository(context: Context) {
 
                     if (requireRomanization) foundRomanizedLyrics else foundLyrics
                 } catch (e: Exception) {
+                    if (e is CancellationException) throw e
                     Log.e(TAG, "Lyrically API fetch failed: ${e.message}", e)
                     null
                 }
@@ -4988,6 +5042,7 @@ class MusicRepository(context: Context) {
                         } else null
                     }
                 } catch (e: Exception) {
+                    if (e is CancellationException) throw e
                     Log.e(TAG, "LRCLib lyrics fetch failed: ${e.message}", e)
                     null
                 }
@@ -5063,6 +5118,7 @@ class MusicRepository(context: Context) {
                         val resp = searchService.searchSongs(term = t, limit = 10)
                         allResults.addAll(resp.results)
                     } catch (e: Exception) {
+                        if (e is CancellationException) throw e
                         Log.e(TAG, "iTunes search failed for term $t", e)
                     }
                 }
@@ -5085,6 +5141,7 @@ class MusicRepository(context: Context) {
                         val response = apiService.getAppleMusicLyrics(track.trackId.toString())
                         parseLyricallyResponse(response, "Lyrically (Apple Music)")
                     } catch (e: Exception) {
+                        if (e is CancellationException) throw e
                         Log.d(TAG, "Apple Music lyrics fetch failed: ${e.message}")
                         null
                     }
@@ -5101,6 +5158,7 @@ class MusicRepository(context: Context) {
                         }
                     }
                 } catch (e: Exception) {
+                    if (e is CancellationException) throw e
                     Log.d(TAG, "Spotify lyrics search/fetch failed: ${e.message}")
                     null
                 }
@@ -5121,6 +5179,7 @@ class MusicRepository(context: Context) {
                         parseNeteaseResponse(response, "Lyrically (NetEase)")
                     }
                 } catch (e: Exception) {
+                    if (e is CancellationException) throw e
                     Log.d(TAG, "NetEase lyrics search/fetch failed: ${e.message}")
                     null
                 }
@@ -5136,6 +5195,7 @@ class MusicRepository(context: Context) {
                         }
                     }
                 } catch (e: Exception) {
+                    if (e is CancellationException) throw e
                     Log.d(TAG, "QQ Music lyrics search/fetch failed: ${e.message}")
                     null
                 }
@@ -5151,6 +5211,7 @@ class MusicRepository(context: Context) {
                         }
                     }
                 } catch (e: Exception) {
+                    if (e is CancellationException) throw e
                     Log.d(TAG, "Kugou lyrics search/fetch failed: ${e.message}")
                     null
                 }
@@ -5166,6 +5227,7 @@ class MusicRepository(context: Context) {
                         }
                     }
                 } catch (e: Exception) {
+                    if (e is CancellationException) throw e
                     Log.d(TAG, "YouTube lyrics search/fetch failed: ${e.message}")
                     null
                 }
@@ -5188,6 +5250,7 @@ class MusicRepository(context: Context) {
                         }
                     } else null
                 } catch (e: Exception) {
+                    if (e is CancellationException) throw e
                     Log.d(TAG, "Deezer lyrics search/fetch failed: ${e.message}")
                     null
                 }
@@ -5197,6 +5260,7 @@ class MusicRepository(context: Context) {
                     val response = apiService.getMusixmatchLyrics(title = cleanTitle, artist = cleanArtist)
                     parseLyricallyResponse(response, "Lyrically (Musixmatch)")
                 } catch (e: Exception) {
+                    if (e is CancellationException) throw e
                     Log.d(TAG, "Musixmatch lyrics fetch failed: ${e.message}")
                     null
                 }
@@ -5227,6 +5291,7 @@ class MusicRepository(context: Context) {
                 .mapNotNull { it.trackName?.trim()?.takeIf(String::isNotEmpty) }
                 .minByOrNull(String::length)
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             Log.d(TAG, "iTunes title fallback failed for NetEase: ${e.message}")
             null
         } ?: return null
