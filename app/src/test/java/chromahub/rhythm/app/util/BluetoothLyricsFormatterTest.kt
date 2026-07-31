@@ -1,11 +1,73 @@
 package chromahub.rhythm.app.util
 
+import chromahub.rhythm.app.shared.data.model.BluetoothLyricsTextMode
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class BluetoothLyricsFormatterTest {
+
+    @Test
+    fun carTextMode_selectsOneSupplementalLineAndFallsBackPerLine() {
+        val original = listOf("光", "君を待つ")
+        val translations = listOf("Light", "")
+        val romanizations = listOf("Hikari", "Kimi wo matsu")
+
+        assertEquals(
+            original,
+            BluetoothLyricsFormatter.selectTexts(
+                BluetoothLyricsTextMode.ORIGINAL,
+                original,
+                translations,
+                romanizations
+            )
+        )
+        assertEquals(
+            listOf("Light", "Kimi wo matsu"),
+            BluetoothLyricsFormatter.selectTexts(
+                BluetoothLyricsTextMode.TRANSLATION,
+                original,
+                translations,
+                romanizations
+            )
+        )
+        assertEquals(
+            listOf("Hikari", "Kimi wo matsu"),
+            BluetoothLyricsFormatter.selectTexts(
+                BluetoothLyricsTextMode.ROMANIZATION,
+                original,
+                translations,
+                romanizations
+            )
+        )
+    }
+
+    @Test
+    fun translationMode_neverFallsBackToUnreadableCjk() {
+        assertEquals(
+            listOf("", "Already Latin"),
+            BluetoothLyricsFormatter.selectTexts(
+                BluetoothLyricsTextMode.TRANSLATION,
+                original = listOf("光", "Already Latin"),
+                translations = emptyList(),
+                romanizations = emptyList()
+            )
+        )
+    }
+
+    @Test
+    fun romanizationMode_neverFallsBackToCjkButAcceptsPlainRomaji() {
+        assertEquals(
+            listOf("", "Kimi wo matsu"),
+            BluetoothLyricsFormatter.selectTexts(
+                BluetoothLyricsTextMode.ROMANIZATION,
+                original = listOf("光", "Kimi wo matsu"),
+                translations = emptyList(),
+                romanizations = emptyList()
+            )
+        )
+    }
 
     @Test
     fun telephoneLengthLine_splitsInsideItsOwnTimestampWindow() {

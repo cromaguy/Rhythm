@@ -508,11 +508,12 @@ private fun SyncedLyricItem(
             modifier = Modifier.fillMaxWidth()
         )
         
-        // Translation text (if available and enabled)
-        if (showTranslation && !line.translation.isNullOrBlank()) {
+        val displayTranslation = chromahub.rhythm.app.util.LyricsTranslationPolicy
+            .selectLine(line.text, line.translation)
+        if (showTranslation && displayTranslation != null) {
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = line.translation,
+                text = displayTranslation,
                 style = MaterialTheme.typography.bodyMedium.copy(
                     fontStyle = FontStyle.Italic,
                     fontWeight = if (isCurrentLine) FontWeight.Medium else FontWeight.Normal,

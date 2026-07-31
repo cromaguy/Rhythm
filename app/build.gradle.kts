@@ -141,15 +141,6 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    kotlin {
-        compilerOptions {
-            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
-            freeCompilerArgs.addAll(
-                "-opt-in=androidx.compose.material3.ExperimentalMaterial3ExpressiveApi",
-                "-opt-in=androidx.compose.material3.ExperimentalMaterial3Api"
-            )
-        }
-    }
     buildFeatures {
         compose = true
         buildConfig = true
@@ -195,6 +186,16 @@ android {
 
 }
 
+kotlin {
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+        freeCompilerArgs.addAll(
+            "-opt-in=androidx.compose.material3.ExperimentalMaterial3ExpressiveApi",
+            "-opt-in=androidx.compose.material3.ExperimentalMaterial3Api"
+        )
+    }
+}
+
 androidComponents {
     onVariants { variant ->
         variant.outputs.forEach { output ->
@@ -225,7 +226,6 @@ dependencies {
     implementation(libs.androidx.appcompat)
     
     // Compose dependencies
-    implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.ui)
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)

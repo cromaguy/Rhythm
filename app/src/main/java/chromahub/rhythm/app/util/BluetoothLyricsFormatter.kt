@@ -1,5 +1,6 @@
 package chromahub.rhythm.app.util
 
+import chromahub.rhythm.app.shared.data.model.BluetoothLyricsTextMode
 import kotlin.math.ceil
 
 object BluetoothLyricsFormatter {
@@ -47,6 +48,31 @@ object BluetoothLyricsFormatter {
 
     fun coerceMinChunkHoldMs(value: Int): Int =
         value.coerceIn(MIN_MIN_CHUNK_HOLD_MS, MAX_MIN_CHUNK_HOLD_MS)
+
+    fun selectTexts(
+        mode: BluetoothLyricsTextMode,
+        original: List<String>,
+        translations: List<String>,
+        romanizations: List<String>
+    ): List<String> = original.mapIndexed { index, text ->
+        when (mode) {
+            BluetoothLyricsTextMode.ORIGINAL -> text
+            BluetoothLyricsTextMode.TRANSLATION ->
+                LyricsTranslationPolicy.selectLine(
+                    original = text,
+                    translation = translations.getOrNull(index)
+                ) ?: LyricsRomanizationPolicy.selectLine(
+                    original = text,
+                    supplemental = romanizations.getOrNull(index)
+                ).orEmpty()
+
+            BluetoothLyricsTextMode.ROMANIZATION ->
+                LyricsRomanizationPolicy.selectLine(
+                    original = text,
+                    supplemental = romanizations.getOrNull(index)
+                ).orEmpty()
+        }
+    }
 
     fun resolveLine(
         positionMs: Long,

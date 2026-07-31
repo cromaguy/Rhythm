@@ -90,6 +90,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import chromahub.rhythm.app.BuildConfig
 import chromahub.rhythm.app.shared.data.model.AppSettings
+import chromahub.rhythm.app.shared.data.model.BluetoothLyricsTextMode
 import chromahub.rhythm.app.shared.data.model.Playlist
 import chromahub.rhythm.app.shared.data.model.Song
 import chromahub.rhythm.app.shared.data.repository.PlaybackStatsRepository
@@ -169,6 +170,8 @@ fun LyricsSettingsScreen(onBackClick: () -> Unit) {
 
     val lyricsSourcePreference by appSettings.lyricsSourcePreference.collectAsState()
     var showPriorityBottomSheet by remember { mutableStateOf(false) }
+    var showBluetoothLyricsTextModeDialog by remember { mutableStateOf(false) }
+    var showTranslationLanguageDialog by remember { mutableStateOf(false) }
 
     val scope = rememberCoroutineScope()
 
@@ -202,6 +205,31 @@ fun LyricsSettingsScreen(onBackClick: () -> Unit) {
         }
     }
 
+    val lyricsFolderLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocumentTree()
+    ) { uri ->
+        uri?.let {
+            try {
+                context.contentResolver.takePersistableUriPermission(
+                    it,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION
+                )
+                appSettings.addLyricsFolderTreeUri(it)
+                Toast.makeText(
+                    context,
+                    context.getString(R.string.lyrics_folder_access_granted),
+                    Toast.LENGTH_SHORT
+                ).show()
+            } catch (e: Exception) {
+                Toast.makeText(
+                    context,
+                    context.getString(R.string.lyrics_folder_access_failed),
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+        }
+    }
+
     val showLyrics by appSettings.showLyrics.collectAsState()
     val tapLyricsToFullScreen by appSettings.tapLyricsToFullScreen.collectAsState()
     val keepScreenOnLyrics by appSettings.keepScreenOnLyrics.collectAsState()
@@ -220,6 +248,9 @@ fun LyricsSettingsScreen(onBackClick: () -> Unit) {
     val translationAutoWord by appSettings.translationAutoWord.collectAsState()
     val showLyricsTranslation by appSettings.showLyricsTranslation.collectAsState()
     val showLyricsRomanization by appSettings.showLyricsRomanization.collectAsState()
+    val bluetoothLyricsTextMode by appSettings.bluetoothLyricsTextMode.collectAsState()
+    val lyricsTranslationLanguage by appSettings.lyricsTranslationLanguage.collectAsState()
+    val lyricsFolderTreeUris by appSettings.lyricsFolderTreeUris.collectAsState()
 
     CollapsibleHeaderScreen(
         title = context.getString(R.string.lyrics_settings_title),
@@ -276,6 +307,37 @@ fun LyricsSettingsScreen(onBackClick: () -> Unit) {
                                         description = context.getString(R.string.lyrics_settings_open_fullscreen_desc),
                                         toggleState = tapLyricsToFullScreen,
                                         onToggleChange = { appSettings.setTapLyricsToFullScreen(it) }
+                                    )
+                                )
+                            )
+                            add(
+                                toMaterial3SettingsItem(
+                                    context = context,
+                                    hapticFeedback = hapticFeedback,
+                                    item = SettingItem(
+                                        icon = MaterialSymbolIcon("language"),
+                                        title = context.getString(
+                                            R.string.lyrics_translation_language_title
+                                        ),
+                                        description = translationLanguageLabel(
+                                            lyricsTranslationLanguage
+                                        ),
+                                        onClick = { showTranslationLanguageDialog = true }
+                                    )
+                                )
+                            )
+                            add(
+                                toMaterial3SettingsItem(
+                                    context = context,
+                                    hapticFeedback = hapticFeedback,
+                                    item = SettingItem(
+                                        icon = MaterialSymbolIcon("directions_car"),
+                                        title = context.getString(R.string.bluetooth_lyrics_text_mode),
+                                        description = bluetoothLyricsTextModeSummary(
+                                            context,
+                                            bluetoothLyricsTextMode
+                                        ),
+                                        onClick = { showBluetoothLyricsTextModeDialog = true }
                                     )
                                 )
                             )
@@ -359,6 +421,12 @@ fun LyricsSettingsScreen(onBackClick: () -> Unit) {
                     ),
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.padding(start = 16.dp, bottom = 8.dp)
+                )
+                Text(
+                    text = stringResource(R.string.lyrics_source_priority_romaji_note),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 10.dp)
                 )
 
                 val sourceOptions = listOf<Pair<chromahub.rhythm.app.shared.data.model.LyricsSourcePreference, Triple<String, String, MaterialSymbolIcon>>>(
@@ -695,7 +763,59 @@ fun LyricsSettingsScreen(onBackClick: () -> Unit) {
                 )
 
                 Material3SettingsGroup(
-                    items = listOf(
+                    items = buildList {
+                        add(
+                            Material3SettingsItem(
+                                icon = MaterialSymbolIcon("folder_open"),
+                                title = {
+                                    Text(stringResource(R.string.lyrics_folder_access_title))
+                                },
+                                description = {
+                                    Text(
+                                        if (lyricsFolderTreeUris.isEmpty()) {
+                                            stringResource(R.string.lyrics_folder_access_desc)
+                                        } else {
+                                            context.resources.getQuantityString(
+                                                R.plurals.lyrics_folder_access_count,
+                                                lyricsFolderTreeUris.size,
+                                                lyricsFolderTreeUris.size
+                                            )
+                                        }
+                                    )
+                                },
+                                onClick = {
+                                    HapticUtils.performHapticFeedback(
+                                        context,
+                                        hapticFeedback,
+                                        HapticType.HEAVY
+                                    )
+                                    lyricsFolderLauncher.launch(null)
+                                }
+                            )
+                        )
+                        if (lyricsFolderTreeUris.isNotEmpty()) {
+                            add(
+                                Material3SettingsItem(
+                                    icon = MaterialSymbolIcon("folder_off"),
+                                    title = {
+                                        Text(
+                                            stringResource(
+                                                R.string.lyrics_folder_access_clear
+                                            )
+                                        )
+                                    },
+                                    description = {
+                                        Text(
+                                            stringResource(
+                                                R.string.lyrics_folder_access_clear_desc
+                                            )
+                                        )
+                                    },
+                                    onClick = appSettings::clearLyricsFolderTreeUris
+                                )
+                            )
+                        }
+                        add(
                         Material3SettingsItem(
                             icon = MaterialSymbolIcon("drive_file_rename_outline"),
                             title = { Text("LRC Rename Behavior") },
@@ -717,7 +837,8 @@ fun LyricsSettingsScreen(onBackClick: () -> Unit) {
                                 }
                                 appSettings.setLrcRenameBehavior(nextBehavior)
                             }
-                        ),
+                        ))
+                        add(
                         Material3SettingsItem(
                             icon = MaterialSymbolIcon("upload"),
                             title = { Text("Export Lyrics Preferences") },
@@ -726,7 +847,8 @@ fun LyricsSettingsScreen(onBackClick: () -> Unit) {
                                 HapticUtils.performHapticFeedback(context, hapticFeedback, HapticType.HEAVY)
                                 exportCsvLauncher.launch("rhythm_lyrics_preferences.csv")
                             }
-                        ),
+                        ))
+                        add(
                         Material3SettingsItem(
                             icon = MaterialSymbolIcon("download"),
                             title = { Text("Import Lyrics Preferences") },
@@ -735,8 +857,8 @@ fun LyricsSettingsScreen(onBackClick: () -> Unit) {
                                 HapticUtils.performHapticFeedback(context, hapticFeedback, HapticType.HEAVY)
                                 importCsvLauncher.launch("*/*")
                             }
-                        )
-                    ),
+                        ))
+                    },
                     containerColor = MaterialTheme.colorScheme.surfaceContainer
                 )
             }
@@ -792,5 +914,81 @@ fun LyricsSettingsScreen(onBackClick: () -> Unit) {
             appSettings = appSettings
         )
     }
+
+    if (showBluetoothLyricsTextModeDialog) {
+        BluetoothLyricsTextModeDialog(
+            currentMode = bluetoothLyricsTextMode,
+            onSelect = appSettings::setBluetoothLyricsTextMode,
+            onDismiss = { showBluetoothLyricsTextModeDialog = false }
+        )
+    }
+
+    if (showTranslationLanguageDialog) {
+        LyricsTranslationLanguageDialog(
+            currentLanguage = lyricsTranslationLanguage,
+            onSelect = appSettings::setLyricsTranslationLanguage,
+            onDismiss = { showTranslationLanguageDialog = false }
+        )
+    }
 }
 
+private fun translationLanguageLabel(language: String): String =
+    when (language.lowercase()) {
+        "pt" -> "Português"
+        "es" -> "Español"
+        "fr" -> "Français"
+        "de" -> "Deutsch"
+        else -> "English"
+    }
+
+@Composable
+private fun LyricsTranslationLanguageDialog(
+    currentLanguage: String,
+    onSelect: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val options = listOf(
+        "en" to "English",
+        "pt" to "Português",
+        "es" to "Español",
+        "fr" to "Français",
+        "de" to "Deutsch"
+    )
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.lyrics_translation_language_title)) },
+        text = {
+            Column {
+                Text(
+                    text = stringResource(R.string.lyrics_translation_language_desc),
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(bottom = 12.dp)
+                )
+                options.forEach { (code, label) ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                onSelect(code)
+                                onDismiss()
+                            }
+                            .padding(vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(
+                            selected = currentLanguage.equals(code, ignoreCase = true),
+                            onClick = null
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(label)
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(android.R.string.cancel))
+            }
+        }
+    )
+}

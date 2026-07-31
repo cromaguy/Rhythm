@@ -89,6 +89,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import chromahub.rhythm.app.BuildConfig
 import chromahub.rhythm.app.shared.data.model.AppSettings
+import chromahub.rhythm.app.shared.data.model.BluetoothLyricsTextMode
 import chromahub.rhythm.app.shared.data.model.Playlist
 import chromahub.rhythm.app.shared.data.model.Song
 import chromahub.rhythm.app.shared.data.repository.PlaybackStatsRepository
@@ -179,7 +180,7 @@ fun ExperimentalFeaturesScreen(
     val broadcastStatusEnabled by appSettings.broadcastStatusEnabled.collectAsState()
     val bluetoothLyricsEnabled by appSettings.bluetoothLyricsEnabled.collectAsState()
     val bluetoothLyricsLegacyCarModeEnabled by appSettings.bluetoothLyricsLegacyCarModeEnabled.collectAsState()
-    val bluetoothLyricsPreferRomanization by appSettings.bluetoothLyricsPreferRomanization.collectAsState()
+    val bluetoothLyricsTextMode by appSettings.bluetoothLyricsTextMode.collectAsState()
     val bluetoothLyricsOffsetMs by appSettings.bluetoothLyricsOffsetMs.collectAsState()
     val bluetoothLyricsMaxChunkChars by appSettings.bluetoothLyricsMaxChunkChars.collectAsState()
     val bluetoothLyricsScrollCharsPerSecond by appSettings.bluetoothLyricsScrollCharsPerSecond.collectAsState()
@@ -194,6 +195,7 @@ fun ExperimentalFeaturesScreen(
     var showRestartDialog by remember { mutableStateOf(false) }
     var restartDialogMessage by remember { mutableStateOf("") }
     var showBluetoothLyricsTuningDialog by remember { mutableStateOf(false) }
+    var showBluetoothLyricsTextModeDialog by remember { mutableStateOf(false) }
 
     CollapsibleHeaderScreen(
         title = context.getString(R.string.settings_experimental),
@@ -309,12 +311,7 @@ fun ExperimentalFeaturesScreen(
                             context.getString(R.string.bluetooth_lyrics_enabled),
                             context.getString(R.string.bluetooth_lyrics_desc),
                             toggleState = bluetoothLyricsEnabled,
-                            onToggleChange = {
-                                appSettings.setBluetoothLyricsEnabled(it)
-                                if (it && !broadcastStatusEnabled) {
-                                    appSettings.setBroadcastStatusEnabled(true)
-                                }
-                            }
+                            onToggleChange = { appSettings.setBluetoothLyricsEnabled(it) }
                         ),
                         SettingItem(
                             MaterialSymbolIcon("directions_car"),
@@ -326,11 +323,10 @@ fun ExperimentalFeaturesScreen(
                         ),
                         SettingItem(
                             MaterialSymbolIcon("language"),
-                            context.getString(R.string.bluetooth_lyrics_prefer_romanization),
-                            context.getString(R.string.bluetooth_lyrics_prefer_romanization_desc),
+                            context.getString(R.string.bluetooth_lyrics_text_mode),
+                            bluetoothLyricsTextModeSummary(context, bluetoothLyricsTextMode),
                             enabled = bluetoothLyricsEnabled,
-                            toggleState = bluetoothLyricsPreferRomanization,
-                            onToggleChange = { appSettings.setBluetoothLyricsPreferRomanization(it) }
+                            onClick = { showBluetoothLyricsTextModeDialog = true }
                         ),
                         SettingItem(
                             MaterialSymbolIcon("sync_alt"),
@@ -523,13 +519,18 @@ fun ExperimentalFeaturesScreen(
     }
 
     if (showBluetoothLyricsTuningDialog) {
+        val currentBtDeviceName = remember {
+            (context.getSystemService(Context.AUDIO_SERVICE) as? android.media.AudioManager)
+                ?.let { chromahub.rhythm.app.util.AudioCapabilitiesMonitor.activeBluetoothOutputName(it) }
+        }
         BluetoothLyricsTuningDialog(
-            currentOffsetMs = bluetoothLyricsOffsetMs,
+            currentOffsetMs = appSettings.effectiveBluetoothLyricsOffsetMs(currentBtDeviceName),
+            deviceLabel = currentBtDeviceName,
             currentMaxChunkChars = bluetoothLyricsMaxChunkChars,
             currentScrollCharsPerSecond = bluetoothLyricsScrollCharsPerSecond,
             currentMinChunkHoldMs = bluetoothLyricsMinChunkHoldMs,
             onApply = { offsetMs, maxChunkChars, scrollCharsPerSecond, minChunkHoldMs ->
-                appSettings.setBluetoothLyricsOffsetMs(offsetMs)
+                appSettings.setBluetoothLyricsOffsetForDevice(currentBtDeviceName, offsetMs)
                 appSettings.setBluetoothLyricsMaxChunkChars(maxChunkChars)
                 appSettings.setBluetoothLyricsScrollCharsPerSecond(scrollCharsPerSecond)
                 appSettings.setBluetoothLyricsMinChunkHoldMs(minChunkHoldMs)
@@ -538,13 +539,120 @@ fun ExperimentalFeaturesScreen(
         )
     }
 
+    if (showBluetoothLyricsTextModeDialog) {
+        BluetoothLyricsTextModeDialog(
+            currentMode = bluetoothLyricsTextMode,
+            onSelect = appSettings::setBluetoothLyricsTextMode,
+            onDismiss = { showBluetoothLyricsTextModeDialog = false }
+        )
+    }
+
     // Show update bottomsheet - removed, now handled globally in LocalNavigation
+}
+
+internal fun bluetoothLyricsTextModeLabel(
+    context: Context,
+    mode: BluetoothLyricsTextMode
+): String = context.getString(
+    when (mode) {
+        BluetoothLyricsTextMode.ORIGINAL -> R.string.bluetooth_lyrics_text_original
+        BluetoothLyricsTextMode.TRANSLATION -> R.string.bluetooth_lyrics_text_translation
+        BluetoothLyricsTextMode.ROMANIZATION -> R.string.bluetooth_lyrics_text_romanization
+    }
+)
+
+internal fun bluetoothLyricsTextModeDescription(
+    context: Context,
+    mode: BluetoothLyricsTextMode
+): String = context.getString(
+    when (mode) {
+        BluetoothLyricsTextMode.ORIGINAL -> R.string.bluetooth_lyrics_text_original_desc
+        BluetoothLyricsTextMode.TRANSLATION -> R.string.bluetooth_lyrics_text_translation_desc
+        BluetoothLyricsTextMode.ROMANIZATION -> R.string.bluetooth_lyrics_text_romanization_desc
+    }
+)
+
+internal fun bluetoothLyricsTextModeSummary(
+    context: Context,
+    mode: BluetoothLyricsTextMode
+): String = "${bluetoothLyricsTextModeLabel(context, mode)} — ${
+    bluetoothLyricsTextModeDescription(
+        context,
+        mode
+    )
+}"
+
+@Composable
+internal fun BluetoothLyricsTextModeDialog(
+    currentMode: BluetoothLyricsTextMode,
+    onSelect: (BluetoothLyricsTextMode) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val context = LocalContext.current
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = {
+            Icon(
+                imageVector = MaterialSymbolIcon("language"),
+                contentDescription = null,
+                modifier = Modifier.size(18.dp)
+            )
+        },
+        title = { Text(stringResource(R.string.bluetooth_lyrics_text_mode)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(
+                    text = stringResource(R.string.bluetooth_lyrics_text_mode_desc),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                BluetoothLyricsTextMode.entries.forEach { mode ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                onSelect(mode)
+                                onDismiss()
+                            }
+                            .padding(vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(
+                            selected = currentMode == mode,
+                            onClick = {
+                                onSelect(mode)
+                                onDismiss()
+                            }
+                        )
+                        Column(modifier = Modifier.padding(start = 8.dp)) {
+                            Text(
+                                text = bluetoothLyricsTextModeLabel(context, mode),
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                            Text(
+                                text = bluetoothLyricsTextModeDescription(context, mode),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.ui_cancel))
+            }
+        }
+    )
 }
 
 
 @Composable
 private fun BluetoothLyricsTuningDialog(
     currentOffsetMs: Int,
+    deviceLabel: String?,
     currentMaxChunkChars: Int,
     currentScrollCharsPerSecond: Int,
     currentMinChunkHoldMs: Int,
@@ -606,6 +714,20 @@ private fun BluetoothLyricsTuningDialog(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+
+                if (deviceLabel != null) {
+                    Text(
+                        text = stringResource(R.string.bluetooth_lyrics_offset_device, deviceLabel),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                } else {
+                    Text(
+                        text = stringResource(R.string.bluetooth_lyrics_offset_device_none),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
 
                 BluetoothLyricsGuidance()
 

@@ -46,7 +46,6 @@ class StatusBroadcaster(private val context: Context) {
         private const val EXTRA_LIST_SIZE = "ListSize"
         private const val EXTRA_LIST_POSITION = "ListPosition"
 
-        private const val DEFAULT_BLUETOOTH_LYRIC_LINE = "No lyrics"
         
         private const val PACKAGE_NAME = "chromahub.rhythm.app"
     }
@@ -71,7 +70,7 @@ class StatusBroadcaster(private val context: Context) {
                 .ifBlank { song.title }
             val artistMetadata = if (bluetoothLyricsMode) mergedTitleArtist else song.artist
             val trackMetadata = if (bluetoothLyricsMode) {
-                currentLyricLine?.takeIf { it.isNotBlank() } ?: DEFAULT_BLUETOOTH_LYRIC_LINE
+                currentLyricLine?.takeIf { it.isNotBlank() } ?: song.title
             } else {
                 song.title
             }

@@ -11,7 +11,8 @@ data class LyricsData(
     val syncedLyrics: String?,
     val wordByWordLyrics: String? = null, // JSON string of Rhythm word-by-word lyrics
     val source: String? = null, // Source of lyrics: "LRCLib", "Embedded", "Local File", etc.
-    val isCorrected: Boolean? = null
+    val isCorrected: Boolean? = null,
+    val cacheVersion: Int? = null
 ) : Parcelable {
     
     /**

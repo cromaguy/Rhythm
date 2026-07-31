@@ -53,13 +53,13 @@
     <string name="settings_use_exoplayer_shuffle">Shuffle Engine</string>
     <string name="settings_use_exoplayer_shuffle_desc">Use the player timeline for shuffle order.</string>
     <string name="settings_auto_queue">Context Queue</string>
-    <string name="settings_auto_queue_desc">Build a related queue when playback starts.</string>
+    <string name="settings_auto_queue_desc">Append related, unplayed library tracks after an album, artist, playlist, or single-track queue.</string>
     <string name="settings_context_queue_preference">Context Queue Preference</string>
-    <string name="settings_context_queue_preference_desc">Choose which metadata the context queue should prioritize first.</string>
+    <string name="settings_context_queue_preference_desc">Choose whether artist or genre matches are tried first when filling related tracks.</string>
     <string name="settings_context_pref_artist_first">Artist first</string>
     <string name="settings_context_pref_genre_first">Genre first</string>
     <string name="settings_context_queue_persistence">Context Queue Persistence</string>
-    <string name="settings_context_queue_persistence_desc">Choose whether the context queue should stay available after playback ends.</string>
+    <string name="settings_context_queue_persistence_desc">Save contextual queues so they can be restored after restart.</string>
     <string name="settings_context_persistence_persistent">Persistent</string>
     <string name="settings_context_persistence_ephemeral">Ephemeral</string>
     <string name="settings_clear_queue_on_new_song">Replace Queue on Play</string>
@@ -644,10 +644,10 @@
 <string name="lyrics_source_priority">Lyrics Source Priority</string>
     <string name="lyrics_choose_source">Choose where to look for Lyrics</string>
     <string name="lyrics_embedded_note">Embedded lyrics are extracted from ID3v2 USLT tags in your audio files. For best results, use properly tagged MP3/FLAC files.</string>
-    <string name="lyrics_show_translation">Show Translation</string>
-    <string name="lyrics_show_translation_desc">Display translated lyrics when available</string>
-    <string name="lyrics_show_romanization">Show Romanization</string>
-    <string name="lyrics_show_romanization_desc">Display romanized lyrics when available</string>
+    <string name="lyrics_show_translation">Show Translation on phone</string>
+    <string name="lyrics_show_translation_desc">Add translated lines to Rhythm\'s player when available. This does not change car lyrics.</string>
+    <string name="lyrics_show_romanization">Show Romanization on phone</string>
+    <string name="lyrics_show_romanization_desc">Add Romaji or other Latin-script lines to Rhythm\'s player. This does not change car lyrics.</string>
     <string name="settings_keep_screen_on_lyrics">Keep Screen Awake</string>
     <string name="settings_keep_screen_on_lyrics_desc">Prevent screen from turning off while lyrics are visible</string>
     <string name="settings_show_lyrics_background_artwork">Show Background Artwork</string>
@@ -711,6 +711,7 @@
     <string name="library_reorder_tabs">Reorder tabs to customize your library experience</string>
     <string name="external_services_desc">Control which external API services are active to enhance your music experience. Toggle services on/off to manage data usage and functionality.</string>
     <string name="lyrics_source_priority_title">Lyrics Source Priority</string>
+    <string name="lyrics_source_priority_romaji_note">This chooses the base lyrics. Car Romanization always checks local .lrc → embedded lyrics → active online providers, regardless of this choice.</string>
     <string name="playlist_action_title">Playlist Tap Action</string>
     <string name="playlist_action_desc">Default behavior for playlist taps</string>
     <string name="playlist_action_load_title">Load entire playlist</string>
@@ -747,15 +748,37 @@
 
 <string name="broadcast_status_enabled">Enable Status Broadcasting</string>
     <string name="broadcast_status_desc">Send playback info to Tasker, KWGT, and automation apps</string>
-    <string name="bluetooth_lyrics_enabled">Bluetooth Lyrics Mode</string>
-    <string name="bluetooth_lyrics_desc">Send synced lyric lines as Bluetooth track titles while keeping the normal playback queue</string>
-    <string name="bluetooth_lyrics_legacy_car_mode">Legacy car mode</string>
-    <string name="bluetooth_lyrics_legacy_car_mode_desc">For older car units that freeze on queued songs. Uses an experimental one-song Bluetooth queue while Rhythm keeps the real queue internally.</string>
+    <string name="bluetooth_lyrics_enabled">Show synced lyrics on car display</string>
+    <string name="bluetooth_lyrics_desc">Send the current synced lyric through Bluetooth metadata. This never changes Rhythm\'s real playback queue.</string>
+    <string name="bluetooth_lyrics_legacy_car_mode">Older-car queue compatibility</string>
+    <string name="bluetooth_lyrics_legacy_car_mode_desc">Enable only if the car freezes or skips when it receives a multi-song Bluetooth queue. Rhythm\'s queue, shuffle, and repeat remain unchanged.</string>
     <string name="bluetooth_lyrics_prefer_romanization">Use Romanized Bluetooth lyrics</string>
-    <string name="bluetooth_lyrics_prefer_romanization_desc">Use Romaji or other Latin-script lyrics. If local lyrics have none, Rhythm checks active online lyric sources for a timed Romanized track. Turn this off for car screens that support CJK characters.</string>
+    <string name="bluetooth_lyrics_prefer_romanization_desc">Use Romaji or other Latin-script lyrics. Rhythm checks local .lrc, embedded lyrics, then active online sources and never substitutes a CJK line.</string>
+    <string name="bluetooth_lyrics_text_mode">Car lyric text</string>
+    <string name="bluetooth_lyrics_text_mode_desc">Choose what the car can read. Translation falls back to Romanization; neither mode sends unreadable CJK as a fallback.</string>
+    <string name="bluetooth_lyrics_text_original">Original</string>
+    <string name="bluetooth_lyrics_text_original_desc">Use the song\'s original synced lyric line.</string>
+    <string name="bluetooth_lyrics_text_translation">Translation</string>
+    <string name="bluetooth_lyrics_text_translation_desc">Use the selected translation language, then Romanization. If neither is available, keep the song title instead of sending CJK.</string>
+    <string name="bluetooth_lyrics_text_romanization">Romanization</string>
+    <string name="bluetooth_lyrics_text_romanization_desc">Use Romaji or another Latin-script line. Rhythm checks local .lrc, embedded lyrics, then active online sources and retries temporary failures.</string>
+    <string name="lyrics_translation_language_title">Translation language</string>
+    <string name="lyrics_translation_language_desc">Online providers are asked for this language. English is the default and applies to both phone and car lyrics.</string>
+    <string name="lyrics_folder_access_title">Folders containing local lyrics</string>
+    <string name="lyrics_folder_access_desc">Grant your Music folder once so Android lets Rhythm read adjacent .lrc, .elrc, .ttml, and .srt files.</string>
+    <string name="lyrics_folder_access_granted">Local lyrics folder added</string>
+    <string name="lyrics_folder_access_failed">Rhythm could not keep access to that folder</string>
+    <string name="lyrics_folder_access_clear">Remove local lyrics folder access</string>
+    <string name="lyrics_folder_access_clear_desc">Forget every folder previously granted for sidecar lyrics.</string>
+    <plurals name="lyrics_folder_access_count">
+        <item quantity="one">%d local lyrics folder is available</item>
+        <item quantity="other">%d local lyrics folders are available</item>
+    </plurals>
     <string name="bluetooth_lyrics_tuning_title">Bluetooth Lyrics Tuning</string>
     <string name="bluetooth_lyrics_tuning_desc">These sliders only change the lyrics shown on your car or Bluetooth screen. Your phone\'s synced lyrics stay exactly the same.</string>
     <string name="bluetooth_lyrics_tuning_summary">Timing %1$s · %2$d chars · +%3$d/s scroll</string>
+    <string name="bluetooth_lyrics_offset_device">Timing offset saved for: %1$s</string>
+    <string name="bluetooth_lyrics_offset_device_none">No Bluetooth device connected — editing the default timing offset</string>
 
     <string name="bluetooth_lyrics_how_to_title">How the sliders work</string>
     <string name="bluetooth_lyrics_how_to_body">Car screens fit only a little text at a time, so each lyric line is cut into small pieces that show one after another. The sliders below decide how big each piece is and how quickly they change. Fast, wordy songs like small pieces that flip quickly; slower songs can hold bigger pieces for longer. Pick a preset to start, then fine-tune.</string>
@@ -837,7 +860,7 @@
     <string name="settings_library_tab_order_desc">Tab arrangement</string>
     <string name="settings_section_user_interface">Navigation &amp; Controls</string>
     <string name="settings_language">Language</string>
-    <string name="settings_language_desc">English, Spanish</string>
+    <string name="settings_language_desc">Choose the language used by Rhythm</string>
     <string name="settings_haptic_feedback">Haptic Feedback</string>
     <string name="settings_haptic_feedback_desc">Tap feedback</string>
     <string name="settings_section_queue_playback">Queue &amp; Playback</string>
@@ -1333,7 +1356,7 @@
     <string name="settings_playlist_action_play_all">Load full playlist into queue</string>
     <string name="settings_playlist_action_play_one">Play only selected track</string>
     <string name="settings_playlist_action_ask">Ask each time</string>
-    <string name="settings_list_queue_action_dialog">List Play Queue Action</string>
+    <string name="settings_list_queue_action_dialog">List Track Queue Action</string>
     <string name="settings_list_queue_action_replace">Replace queue and play</string>
     <string name="settings_list_queue_action_ask">Ask each time</string>
     <string name="settings_list_queue_action_play_next">Insert next and play</string>
@@ -1343,8 +1366,8 @@
     <string name="settings_crossfade_min">0.5s</string>
     <string name="settings_crossfade_max">12s</string>
 
-    <string name="list_queue_behavior_title">Play All Queue Rule</string>
-    <string name="list_queue_behavior_desc">Choose how list actions modify an active queue</string>
+    <string name="list_queue_behavior_title">Playlist Song Queue Rule</string>
+    <string name="list_queue_behavior_desc">When you tap a song inside a playlist while a queue is already playing, choose how it affects that queue. (Play-All and album/artist buttons always replace the queue and keep playing.)</string>
     <string name="list_queue_behavior_replace_title">Replace queue</string>
     <string name="list_queue_behavior_replace_desc">Clear current queue and start this list immediately.</string>
     <string name="list_queue_behavior_ask_title">Ask every time</string>
@@ -1652,10 +1675,10 @@
     <string name="settings_exp_test_crash_desc">Force app crash</string>
     <string name="settings_broadcast_status_enabled">Enable Status Broadcasting</string>
     <string name="settings_broadcast_status_enabled_desc">Broadcast play status</string>
-    <string name="settings_bluetooth_lyrics_enabled">Bluetooth Lyrics Mode</string>
-    <string name="settings_bluetooth_lyrics_enabled_desc">Broadcast current lyric line via Bluetooth metadata with the normal queue</string>
-    <string name="settings_bluetooth_lyrics_legacy_car_mode">Legacy car mode</string>
-    <string name="settings_bluetooth_lyrics_legacy_car_mode_desc">Experimental one-song Bluetooth queue for older car units that freeze lyrics in queued playback</string>
+    <string name="settings_bluetooth_lyrics_enabled">Show synced lyrics on car display</string>
+    <string name="settings_bluetooth_lyrics_enabled_desc">Use Bluetooth metadata for lyrics without changing the real playback queue</string>
+    <string name="settings_bluetooth_lyrics_legacy_car_mode">Older-car queue compatibility</string>
+    <string name="settings_bluetooth_lyrics_legacy_car_mode_desc">Only for car units that freeze or skip when sent a multi-song Bluetooth queue</string>
     <string name="settings_bluetooth_lyrics_tuning">Bluetooth Lyrics Tuning</string>
     <string name="settings_bluetooth_lyrics_tuning_desc">Tune Bluetooth/AVRCP lyric timing and line splitting without changing phone lyrics sync</string>
     <string name="exp_go_mode">Go Mode</string>
@@ -1721,10 +1744,10 @@
     <string name="settings_theme_import_font_desc">Import your own font file (.ttf, .otf)</string>
 <string name="settings_player_chip_order">Chip Order &amp; Visibility</string>
     <string name="settings_player_chip_order_desc">Customize and reorder player action chips</string>
-    <string name="settings_lyrics_show_translation">Show Translation</string>
-    <string name="settings_lyrics_show_translation_desc">Display translated lyrics when available</string>
-    <string name="settings_lyrics_show_romanization">Show Romanization</string>
-    <string name="settings_lyrics_show_romanization_desc">Display romanized lyrics when available</string>
+    <string name="settings_lyrics_show_translation">Show Translation on phone</string>
+    <string name="settings_lyrics_show_translation_desc">Display translated lines in Rhythm\'s player; car lyrics are configured separately</string>
+    <string name="settings_lyrics_show_romanization">Show Romanization on phone</string>
+    <string name="settings_lyrics_show_romanization_desc">Display Romanized lines in Rhythm\'s player; car lyrics are configured separately</string>
 
     <string name="settings_embed_lyrics_in_file">Embed Lyrics in File</string>
     <string name="settings_embed_lyrics_in_file_desc">Write lyrics directly into audio file metadata</string>

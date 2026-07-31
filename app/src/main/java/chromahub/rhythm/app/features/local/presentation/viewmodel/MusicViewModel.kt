@@ -35,6 +35,7 @@ import chromahub.rhythm.app.activities.MainActivity
 import chromahub.rhythm.app.activities.RhythmGuardTimeoutActivity
 import chromahub.rhythm.app.shared.data.model.Album
 import chromahub.rhythm.app.shared.data.model.AppSettings
+import chromahub.rhythm.app.shared.data.model.BluetoothLyricsTextMode
 import chromahub.rhythm.app.shared.data.model.Artist
 import chromahub.rhythm.app.shared.data.model.LyricsSourcePreference
 import chromahub.rhythm.app.shared.data.model.MediaScanMode
@@ -95,6 +96,9 @@ import chromahub.rhythm.app.util.GenreUtils
 import chromahub.rhythm.app.util.NaturalSortComparator
 import chromahub.rhythm.app.util.LyricLine
 import chromahub.rhythm.app.util.LyricsParser
+import chromahub.rhythm.app.util.LyricsRomanizationPolicy
+import chromahub.rhythm.app.util.hasUsableTimedRomanization
+import chromahub.rhythm.app.util.hasUsableTimedTranslation
 import chromahub.rhythm.app.util.ServiceStartUtils
 import chromahub.rhythm.app.utils.StatusBroadcaster
 import chromahub.rhythm.app.shared.data.repository.PlaybackStatsRepository // Import for enhanced stats tracking
@@ -184,7 +188,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
     
     // Queue state manager
     private val queueStateHolder = QueueStateHolder()
-    
+
     // Playback command serializer for deterministic queue operations
     private val commandSerializer = PlaybackCommandSerializer()
     
@@ -266,8 +270,10 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
 
     // Lyrics fetch job tracking to prevent race conditions
     private var lyricsFetchJob: Job? = null
+    private var lyricsFetchGeneration: Long = 0L
 
     private var cachedSyncedLyricsRaw: String? = null
+    private var lastSentLyricsDataKey: String? = null
     private var cachedParsedSyncedLyrics: List<LyricLine> = emptyList()
     private var lastBroadcastLyricSongId: String? = null
     private var lastBroadcastLyricLine: String? = null
@@ -1120,16 +1126,36 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
             }
         }
 
-        // Romanization is supplemental data, so a normal lyrics fetch may legitimately
-        // stop at a local/LRCLib result without it. Enabling the display preference must
-        // actively request a timed romanization track for the song already on screen.
+        // Refetch the current song when a newly enabled supplemental track is missing.
         viewModelScope.launch {
-            var previous = appSettings.showLyricsRomanization.value
-            appSettings.showLyricsRomanization.collect { enabled ->
+            var previous = appSettings.showLyricsRomanization.value to
+                appSettings.showLyricsTranslation.value
+            combine(
+                appSettings.showLyricsRomanization,
+                appSettings.showLyricsTranslation
+            ) { romanization, translation ->
+                romanization to translation
+            }.collect { enabled ->
                 if (enabled == previous) return@collect
+                val newlyRequested =
+                    (enabled.first && !previous.first) ||
+                        (enabled.second && !previous.second)
                 previous = enabled
                 resetBluetoothLyricsBroadcastState(clearLastBroadcast = true)
-                if (enabled && currentSong.value != null && showLyrics.value) {
+                if (newlyRequested && currentSong.value != null && showLyrics.value) {
+                    fetchLyricsForCurrentSong()
+                }
+            }
+        }
+
+        // Apply source changes to the current song instead of waiting for the next track.
+        viewModelScope.launch {
+            var previous = appSettings.lyricsSourcePreference.value
+            appSettings.lyricsSourcePreference.collect { preference ->
+                if (preference == previous) return@collect
+                previous = preference
+                resetBluetoothLyricsBroadcastState(clearLastBroadcast = true)
+                if (currentSong.value != null && showLyrics.value) {
                     fetchLyricsForCurrentSong()
                 }
             }
@@ -3361,6 +3387,14 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                             pendingQueueToPlay = null
                         }
 
+                        // Replay a play request that arrived before the controller was ready
+                        // (e.g. the user tapped Play on the Home carousel during cold start).
+                        pendingPlaybackAction?.let { action ->
+                            pendingPlaybackAction = null
+                            Log.d(TAG, "Replaying deferred playback action after controller connected")
+                            action()
+                        }
+
                         resumePlaybackAfterRhythmGuardTimeoutIfNeeded(source = "controller connected")
                     } else {
                         _serviceConnected.value = false
@@ -3620,6 +3654,10 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                         // Song not found in current queue - sync with MediaController
                         Log.d(TAG, "Song not in queue, syncing queue from MediaController for: ${song.title}")
                         mediaController?.let { controller ->
+                            if (shouldPreserveQueueForLegacyCarMode(controller)) {
+                                Log.d(TAG, "Legacy car mode: keeping full queue for out-of-queue item ${song.title}")
+                                return@let
+                            }
                             val mediaItems = (0 until controller.mediaItemCount).map { index ->
                                 controller.getMediaItemAt(index)
                             }
@@ -3780,10 +3818,14 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
         val currentLyricsVal = _currentLyrics.value
         
         // Track raw lyrics key (synced or plain) to send updates to service
-        val rawLyricsKey = currentLyricsVal?.syncedLyrics ?: currentLyricsVal?.plainLyrics ?: ""
-        if (cachedSyncedLyricsRaw != rawLyricsKey) {
-            cachedSyncedLyricsRaw = rawLyricsKey
+        val lyricsDataKey = listOf(
+            currentLyricsVal?.syncedLyrics ?: currentLyricsVal?.plainLyrics.orEmpty(),
+            currentLyricsVal?.source.orEmpty()
+        ).joinToString("\u0000")
+        if (lastSentLyricsDataKey != lyricsDataKey) {
+            lastSentLyricsDataKey = lyricsDataKey
             val synced = currentLyricsVal?.syncedLyrics
+            cachedSyncedLyricsRaw = synced
             if (!synced.isNullOrBlank()) {
                 cachedParsedSyncedLyrics = LyricsParser.parseLyrics(synced)
             } else {
@@ -3804,6 +3846,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                     if (plain != null) {
                         putString("plain_lyrics", plain)
                     }
+                    currentLyricsVal?.source?.let { putString("lyrics_source", it) }
                 }
                 controller.sendCustomCommand(
                     androidx.media3.session.SessionCommand("UPDATE_LYRICS_DATA", Bundle.EMPTY),
@@ -3976,10 +4019,13 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
         return cachedParsedSyncedLyrics
             .lastOrNull { it.timestamp <= effectivePosition }
             ?.let { line ->
-                if (appSettings.bluetoothLyricsPreferRomanization.value) {
-                    line.romanization?.takeIf { it.isNotBlank() } ?: line.text
-                } else {
-                    line.text
+                when (appSettings.bluetoothLyricsTextMode.value) {
+                    BluetoothLyricsTextMode.ORIGINAL -> line.text
+                    BluetoothLyricsTextMode.TRANSLATION ->
+                        line.translation?.takeIf { it.isNotBlank() } ?: line.text
+
+                    BluetoothLyricsTextMode.ROMANIZATION ->
+                        LyricsRomanizationPolicy.selectLine(line.text, line.romanization)
                 }
             }
             ?.trim()
@@ -3988,6 +4034,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
 
     private fun resetBluetoothLyricsBroadcastState(clearLastBroadcast: Boolean = false) {
         cachedSyncedLyricsRaw = null
+        lastSentLyricsDataKey = null
         cachedParsedSyncedLyrics = emptyList()
         if (clearLastBroadcast) {
             lastBroadcastLyricSongId = null
@@ -4254,7 +4301,11 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
         if (!canStartPlayback("playSongAtIndex")) {
             return
         }
-        
+
+        if (!ensureControllerReadyForPlayback("playSongAtIndex") { playSongAtIndex(index) }) {
+            return
+        }
+
         val song = _currentQueue.value.songs[index]
         Log.d(TAG, "Playing song at index $index: ${song.title}")
         
@@ -4291,6 +4342,10 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
         Log.d(TAG, "Playing song: ${song.title}")
 
         if (!canStartPlayback("playSong")) {
+            return
+        }
+
+        if (!ensureControllerReadyForPlayback("playSong") { playSong(song) }) {
             return
         }
 
@@ -4428,7 +4483,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
             if (startIndex != -1) {
                 val reordered = listOf(song) + recentlyPlayedSongs.filter { it.id != song.id }
                 Log.d(TAG, "Created queue from recently played with ${reordered.size} songs")
-                return reordered.take(maxSize)
+                return persistContextualQueueIfRequested(reordered.take(maxSize))
             }
         }
 
@@ -4438,65 +4493,102 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
             val sortedAlbumSongs = albumSongs.sortedWith { a, b -> compareByDiscThenTrack(a, b) }
             val reordered = listOf(song) + sortedAlbumSongs.filter { it.id != song.id }
             Log.d(TAG, "Created queue from album '${song.album}' with ${reordered.size} songs")
-            return reordered.take(maxSize)
+            return persistContextualQueueIfRequested(reordered.take(maxSize))
         }
 
-        // Gather candidate pools
-        val artistPool = _songs.value
-            .filter { it.artist == song.artist && it.id != song.id }
-            .distinctBy { it.id }
+        // Fall back to the same contextual continuation used by explicit lists.
+        val finalQueue = listOf(song) + buildContinuationTail(listOf(song), song)
 
-        val songGenres = GenreUtils.splitGenres(song.genre ?: "").map { it.lowercase() }.toSet()
-        val genrePool = if (songGenres.isNotEmpty()) {
-            _songs.value.filter { other ->
-                other.id != song.id && GenreUtils.splitGenres(other.genre ?: "").any { it.lowercase() in songGenres }
-            }.distinctBy { it.id }
-        } else emptyList()
+        Log.d(TAG, "Created contextual queue (pref=$pref, size=${finalQueue.size})")
+        return persistContextualQueueIfRequested(finalQueue)
+    }
 
-        // Home recommendations / personalized seeds
-        val recommended = getRecommendedSongs()
-
-        // Scoring function using per-user play counts, favorites and recency
-        val playCounts = _songPlayCounts.value
-        val favorites = _favoriteSongs.value
-        val recentlyIds = _recentlyPlayed.value.map { it.id }.toSet()
-        val recommendedIds = recommended.map { it.id }.toSet()
-
-        fun score(s: Song): Int {
-            var sc = (playCounts[s.id] ?: 0) * 2
-            if (favorites.contains(s.id)) sc += 50
-            if (recentlyIds.contains(s.id)) sc += 10
-            if (recommendedIds.contains(s.id)) sc += 20
-            return sc
-        }
-
-        // Combine pools respecting preference
-        val combined = when (pref) {
-            "GENRE_FIRST" -> (genrePool + artistPool + recommended)
-            "ARTIST_FIRST" -> (artistPool + genrePool + recommended)
-            else -> (artistPool + genrePool + recommended) // ARTIST_THEN_GENRE default
-        }
-
-        val deduped = combined
-            .distinctBy { it.id }
-            .filter { it.id != song.id }
-            .sortedByDescending { score(it) }
-            .take(maxSize)
-
-        val finalQueue = listOf(song) + deduped
-
-        // Persist queue if user requested persistent context queues
+    private fun persistContextualQueueIfRequested(queue: List<Song>): List<Song> {
         if (appSettings.contextQueuePersistence.value == "PERSISTENT") {
             try {
-                appSettings.setSavedQueue(finalQueue.map { it.id })
+                appSettings.setSavedQueue(queue.map { it.id })
                 appSettings.setSavedQueueIndex(0)
             } catch (e: Exception) {
                 Log.w(TAG, "Failed to persist contextual queue: ${e.message}")
             }
         }
+        return queue
+    }
 
-        Log.d(TAG, "Created contextual queue (pref=$pref, size=${finalQueue.size})")
-        return finalQueue
+    /** Builds a scored local-library continuation without repeating base or recent songs. */
+    private fun buildContinuationTail(baseSongs: List<Song>, seed: Song): List<Song> {
+        val maxTotal = appSettings.contextQueueSize.value.coerceAtLeast(1)
+        val remaining = maxTotal - baseSongs.size
+        if (remaining <= 0) return emptyList()
+
+        val baseIds = baseSongs.mapTo(HashSet()) { it.id }
+        val pref = appSettings.contextQueuePreference.value
+
+        val recentlyIds = _recentlyPlayed.value.map { it.id }.toSet()
+        val excludedIds = baseIds + recentlyIds
+
+        val artistPool = _songs.value
+            .filter { it.artist == seed.artist && it.id !in excludedIds }
+            .distinctBy { it.id }
+
+        val seedGenres = GenreUtils.splitGenres(seed.genre ?: "").map { it.lowercase() }.toSet()
+        val genrePool = if (seedGenres.isNotEmpty()) {
+            _songs.value.filter { other ->
+                other.id !in excludedIds &&
+                    GenreUtils.splitGenres(other.genre ?: "").any { it.lowercase() in seedGenres }
+            }.distinctBy { it.id }
+        } else emptyList()
+
+        val recommended = getRecommendedSongs().filter { it.id !in excludedIds }
+
+        val playCounts = _songPlayCounts.value
+        val favorites = _favoriteSongs.value
+        val recommendedIds = recommended.map { it.id }.toSet()
+
+        fun score(s: Song): Int {
+            var sc = (playCounts[s.id] ?: 0) * 2
+            if (favorites.contains(s.id)) sc += 50
+            if (recommendedIds.contains(s.id)) sc += 20
+            return sc
+        }
+
+        val combined = when (pref) {
+            "GENRE_FIRST" -> genrePool + artistPool + recommended
+            else -> artistPool + genrePool + recommended
+        }
+
+        return combined
+            .distinctBy { it.id }
+            .filter { it.id !in excludedIds }
+            .sortedByDescending { score(it) }
+            .take(remaining)
+    }
+
+    /** Plays an explicit list, optionally followed by a contextual continuation. */
+    private fun playListWithContinuation(
+        songs: List<Song>,
+        startIndex: Int = 0,
+        sourceLabel: String? = null
+    ) {
+        if (songs.isEmpty()) {
+            Log.w(TAG, "Ignoring list play request for empty song list")
+            return
+        }
+
+        val validStartIndex = startIndex.coerceIn(0, songs.lastIndex)
+        val finalSongs = if (autoAddToQueue.value) {
+            val seed = songs[validStartIndex]
+            val tail = buildContinuationTail(songs, seed)
+            if (tail.isNotEmpty()) {
+                Log.d(TAG, "Appending ${tail.size}-song continuation tail after ${songs.size}-song list (autoAddToQueue=on, seed='${seed.title}')")
+            }
+            songs + tail
+        } else {
+            Log.d(TAG, "autoAddToQueue off — playing ${songs.size}-song list without continuation")
+            songs
+        }
+
+        playQueue(finalSongs, enableShuffle = false, startIndex = validStartIndex, sourceLabel = sourceLabel)
     }
 
     private fun compareByDiscThenTrack(a: Song, b: Song): Int {
@@ -4863,7 +4955,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                 val sortedSongs = album.songs.sortedWith { a, b ->
                     compareByDiscThenTrack(a, b)
                 }
-                playSongs(sortedSongs)
+                playSongs(sortedSongs, sourceLabel = "Album · ${album.title}")
             } else {
                 // Fallback to querying if album.songs is empty
                 Log.d(TAG, "Album songs empty, querying repository")
@@ -4874,7 +4966,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                     val sortedSongs = songs.sortedWith { a: Song, b: Song ->
                         compareByDiscThenTrack(a, b)
                     }
-                    playSongs(sortedSongs)
+                    playSongs(sortedSongs, sourceLabel = "Album · ${album.title}")
                 } else {
                     Log.e(TAG, "No songs found for album: ${album.title} (ID: ${album.id})")
                     debugQueueState()
@@ -4889,7 +4981,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
             val songs = repository.getSongsForArtist(artist.id)
             Log.d(TAG, "Found ${songs.size} songs for artist")
             if (songs.isNotEmpty()) {
-                playSongs(songs)
+                playSongs(songs, sourceLabel = "Artist · ${artist.name}")
             } else {
                 Log.e(TAG, "No songs found for artist: ${artist.name} (ID: ${artist.id})")
                 debugQueueState()
@@ -4900,7 +4992,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
     fun playPlaylist(playlist: Playlist) {
         Log.d(TAG, "Playing playlist: ${playlist.name}")
         if (playlist.songs.isNotEmpty()) {
-            playSongs(playlist.songs)
+            playSongs(playlist.songs, sourceLabel = "Playlist · ${playlist.name}")
         }
     }
 
@@ -5033,21 +5125,30 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun playQueue(songs: List<Song>, enableShuffle: Boolean? = null, startIndex: Int = 0) {
-        Log.d(TAG, "Playing queue with ${songs.size} songs, shuffle: $enableShuffle, startIndex: $startIndex")
+    fun playQueue(
+        songs: List<Song>,
+        enableShuffle: Boolean? = null,
+        startIndex: Int = 0,
+        sourceLabel: String? = null
+    ) {
+        Log.d(TAG, "Playing queue with ${songs.size} songs, shuffle: $enableShuffle, startIndex: $startIndex, source: $sourceLabel")
 
         if (!canStartPlayback("playQueue")) {
             return
         }
-        
-        // Clear current lyrics to prevent showing stale lyrics from previous song
-        _currentLyrics.value = null
-        
+
         if (songs.isEmpty()) {
             Log.e(TAG, "Cannot play empty queue")
             return
         }
-        
+
+        if (!ensureControllerReadyForPlayback("playQueue") { playQueue(songs, enableShuffle, startIndex, sourceLabel) }) {
+            return
+        }
+
+        // Clear current lyrics to prevent showing stale lyrics from previous song
+        _currentLyrics.value = null
+
         // Validate startIndex
         val validStartIndex = startIndex.coerceIn(0, songs.size - 1)
         if (startIndex != validStartIndex) {
@@ -5117,9 +5218,14 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                         
                         // Set original queue state if shuffle is enabled
                         if (enableShuffle == true) {
-                            queueStateHolder.saveOriginalQueueState(songs, queueStateHolder.currentQueueSourceName.value)
+                            queueStateHolder.saveOriginalQueueState(songs, sourceLabel ?: queueStateHolder.currentQueueSourceName.value)
                         } else {
                             queueStateHolder.clearOriginalQueue()
+                        }
+
+                        // clearOriginalQueue() also clears this label.
+                        if (sourceLabel != null) {
+                            queueStateHolder.setQueueSourceName(sourceLabel)
                         }
                         
                         // Save queue to persistence
@@ -5184,6 +5290,8 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
     
     // Store pending queue to play when controller becomes available
     private var pendingQueueToPlay: List<Song>? = null
+    // Last-tap-wins playback request queued while MediaController connects.
+    private var pendingPlaybackAction: (() -> Unit)? = null
     private var wasRhythmGuardTimeoutActive = false
     private var shouldResumeAfterRhythmGuardTimeout = false
 
@@ -5231,6 +5339,15 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
         Log.d(TAG, "Resuming playback after timeout from $source")
         shouldResumeAfterRhythmGuardTimeout = false
         resumeMusic()
+    }
+
+    /** Queues [action] until MediaController is ready, returning true when it can run now. */
+    private fun ensureControllerReadyForPlayback(reason: String, action: () -> Unit): Boolean {
+        if (mediaController != null) return true
+        Log.d(TAG, "Media controller not ready for '$reason'; deferring playback until connected")
+        pendingPlaybackAction = action
+        connectToMediaService()
+        return false
     }
 
     private fun canStartPlayback(action: String): Boolean {
@@ -5542,8 +5659,9 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
 
             val currentSongs = _currentQueue.value.songs
             val currentSong = _currentSong.value
-            val currentQueueSourceName = queueStateHolder.currentQueueSourceName.value
-            val useExoPlayerShuffle = shuffleUsesExoplayer.value
+            val queueSourceName = queueStateHolder.currentQueueSourceName.value
+            // The one-item legacy player requires shuffling the cached virtual queue.
+            val useExoPlayerShuffle = shuffleUsesExoplayer.value && !isBluetoothLyricsLegacyCarModeActive()
             val newShuffleMode = !_isShuffleEnabled.value
 
             Log.d(TAG, "Toggle shuffle mode to: $newShuffleMode (useExoPlayerShuffle=$useExoPlayerShuffle)")
@@ -5552,7 +5670,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                 // Enable Shuffle
                 if (!queueStateHolder.hasOriginalQueue()) {
                     queueStateHolder.setOriginalQueueOrder(currentSongs)
-                    queueStateHolder.saveOriginalQueueState(currentSongs, currentQueueSourceName)
+                    queueStateHolder.saveOriginalQueueState(currentSongs, queueSourceName)
                 }
 
                 val currentMediaId = controller.currentMediaItem?.mediaId ?: currentSong?.id
@@ -7005,7 +7123,10 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
         if (show && currentSong.value != null) {
             fetchLyricsForCurrentSong()
         } else {
+            lyricsFetchGeneration++
+            lyricsFetchJob?.cancel()
             _currentLyrics.value = null
+            _isLoadingLyrics.value = false
         }
     }
     
@@ -7014,9 +7135,6 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
      */
     fun setLyricsSourcePreference(preference: LyricsSourcePreference) {
         appSettings.setLyricsSourcePreference(preference)
-        if (showLyrics.value && currentSong.value != null) {
-            fetchLyricsForCurrentSong()
-        }
     }
     
     /**
@@ -7025,6 +7143,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
      */
     private fun fetchLyricsForCurrentSong(retryCount: Int = 0) {
         val song = currentSong.value ?: return
+        val requestGeneration = ++lyricsFetchGeneration
         
         // Cancel any previous lyrics fetch to prevent race conditions
         lyricsFetchJob?.cancel()
@@ -7037,15 +7156,19 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
         
         // Check if lyrics are enabled
         if (!showLyrics.value) {
+            _isLoadingLyrics.value = false
             return
         }
         
         // Get the user's lyrics source preference
         val lyricsPreference = appSettings.lyricsSourcePreference.value
-        
+
+        // Mark the latest request before launching so a cancelled predecessor can never
+        // leave the player stuck on its loading state during rapid track changes.
+        _isLoadingLyrics.value = true
+
         // Create a new job for this lyrics fetch
         lyricsFetchJob = viewModelScope.launch {
-            _isLoadingLyrics.value = true
             try {
                 // Store the song ID to validate it hasn't changed
                 val fetchingSongId = song.id
@@ -7070,25 +7193,52 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                     return@launch
                 }
 
-                if (
-                    appSettings.showLyricsRomanization.value &&
-                    lyricsData?.hasTimedRomanizationTrack() != true
-                ) {
-                    val romanizedLyrics = repository.fetchLyrics(
-                        artist = song.artist,
-                        title = song.title,
-                        songId = song.id,
-                        songUri = song.uri,
-                        sourcePreference = lyricsPreference,
-                        requireRomanization = true
-                    )
-                    if (
-                        currentSong.value?.id == fetchingSongId &&
-                        isActive &&
-                        romanizedLyrics?.hasTimedRomanizationTrack() == true
-                    ) {
-                        _currentLyrics.value = romanizedLyrics
-                        Log.d(TAG, "Applied timed romanization for: ${song.artist} - ${song.title}")
+                val requireRomanization = appSettings.showLyricsRomanization.value
+                val requireTranslation = appSettings.showLyricsTranslation.value
+                val needsEnrichment =
+                    (requireRomanization && lyricsData?.hasUsableTimedRomanization() != true) ||
+                        (requireTranslation && lyricsData?.hasUsableTimedTranslation() != true)
+                if (needsEnrichment) {
+                    val retryDelaysMs = longArrayOf(0L, 3_000L, 10_000L)
+                    for ((attemptIndex, retryDelayMs) in retryDelaysMs.withIndex()) {
+                        if (retryDelayMs > 0L) delay(retryDelayMs)
+                        if (currentSong.value?.id != fetchingSongId || !isActive) return@launch
+
+                        Log.d(
+                            TAG,
+                            "Phone lyric enrichment attempt ${attemptIndex + 1} for: ${song.artist} - ${song.title}"
+                        )
+                        val enrichedLyrics = repository.fetchLyrics(
+                            artist = song.artist,
+                            title = song.title,
+                            songId = song.id,
+                            songUri = song.uri,
+                            sourcePreference = lyricsPreference,
+                            requireRomanization = requireRomanization,
+                            requireTranslation = requireTranslation
+                        )
+                        val requirementsMet =
+                            (!requireRomanization ||
+                                enrichedLyrics?.hasUsableTimedRomanization() == true) &&
+                                (!requireTranslation ||
+                                    enrichedLyrics?.hasUsableTimedTranslation() == true)
+                        if (currentSong.value?.id == fetchingSongId && isActive) {
+                            val addsRequestedTrack =
+                                (requireRomanization &&
+                                    enrichedLyrics?.hasUsableTimedRomanization() == true) ||
+                                    (requireTranslation &&
+                                        enrichedLyrics?.hasUsableTimedTranslation() == true)
+                            if (addsRequestedTrack) {
+                                _currentLyrics.value = enrichedLyrics
+                                Log.d(
+                                    TAG,
+                                    "Applied timed lyric enrichment from ${enrichedLyrics.source} for: ${song.artist} - ${song.title}"
+                                )
+                            }
+                        }
+                        if (requirementsMet) {
+                            break
+                        }
                     }
                 }
             } catch (e: Exception) {
@@ -7127,18 +7277,13 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                     }
                 }
             } finally {
-                if (isActive) {
+                if (requestGeneration == lyricsFetchGeneration) {
                     _isLoadingLyrics.value = false
                 }
             }
         }
     }
 
-    private fun LyricsData.hasTimedRomanizationTrack(): Boolean = syncedLyrics
-        ?.let(LyricsParser::parseLyrics)
-        ?.any { !it.romanization.isNullOrBlank() }
-        ?: false
-    
     /**
      * Manually retry fetching lyrics for the current song
      */
@@ -7178,7 +7323,8 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                         songUri = songUri,
                         sourcePreference = appSettings.lyricsSourcePreference.value,
                         forceRefresh = true, // Force bypass cache
-                        requireRomanization = appSettings.showLyricsRomanization.value
+                        requireRomanization = appSettings.showLyricsRomanization.value,
+                        requireTranslation = appSettings.showLyricsTranslation.value
                     )
                     
                     withContext(Dispatchers.Main) {
@@ -8210,10 +8356,9 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
     /**
      * Plays a list of songs as a queue.
      */
-    fun playSongs(songs: List<Song>) {
+    fun playSongs(songs: List<Song>, sourceLabel: String? = null) {
         Log.d(TAG, "Playing list of songs (force replace): ${songs.size} songs")
-        // Force replace current queue for explicit list "Play All" actions
-        playQueue(songs, enableShuffle = false, startIndex = 0)
+        playListWithContinuation(songs, startIndex = 0, sourceLabel = sourceLabel)
     }
 
     /**
@@ -8523,11 +8668,36 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     /**
-     * Force sync the queue state with MediaController
-     * This is useful for debugging queue inconsistencies
+     * Prevents a one-item legacy AVRCP timeline from replacing the cached virtual queue.
      */
+    private fun shouldPreserveQueueForLegacyCarMode(controller: MediaController): Boolean =
+        isBluetoothLyricsLegacyCarModeActive() &&
+            controller.mediaItemCount < _currentQueue.value.songs.size
+
+    /** Updates only the cached queue index from a collapsed legacy timeline. */
+    private fun syncCurrentIndexFromCollapsedController(controller: MediaController) {
+        val currentMediaId = controller.currentMediaItem?.mediaId ?: return
+        val songs = _currentQueue.value.songs
+        val idx = songs.indexOfFirst { it.id == currentMediaId }
+        if (idx < 0) {
+            Log.d(TAG, "Legacy car mode: current item not in cached queue; leaving queue intact")
+            return
+        }
+        if (idx != _currentQueue.value.currentIndex) {
+            _currentQueue.value = _currentQueue.value.copy(currentIndex = idx)
+        }
+        val song = songs[idx]
+        _currentSong.value = song
+        _isFavorite.value = _favoriteSongs.value.contains(song.id)
+        Log.d(TAG, "Legacy car mode: tracked current index to $idx without collapsing queue")
+    }
+
     fun syncQueueWithMediaController() {
         mediaController?.let { controller ->
+            if (shouldPreserveQueueForLegacyCarMode(controller)) {
+                syncCurrentIndexFromCollapsedController(controller)
+                return
+            }
             Log.d(TAG, "Syncing queue with MediaController")
             Log.d(TAG, "MediaController: ${controller.mediaItemCount} items, current index: ${controller.currentMediaItemIndex}")
             Log.d(TAG, "ViewModel queue: ${_currentQueue.value.songs.size} songs, current index: ${_currentQueue.value.currentIndex}")

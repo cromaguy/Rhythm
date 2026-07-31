@@ -36,6 +36,7 @@ import androidx.media3.session.SessionError
 import androidx.media3.session.SessionResult
 import chromahub.rhythm.app.activities.MainActivity
 import chromahub.rhythm.app.shared.data.model.AppSettings
+import chromahub.rhythm.app.shared.data.model.BluetoothLyricsTextMode
 import chromahub.rhythm.app.shared.data.model.Song
 import chromahub.rhythm.app.infrastructure.service.player.RhythmPlayerEngine
 import chromahub.rhythm.app.infrastructure.service.player.TransitionController
@@ -55,6 +56,10 @@ import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import chromahub.rhythm.app.util.BluetoothLyricsFormatter
 import chromahub.rhythm.app.util.GsonUtils
+import chromahub.rhythm.app.util.LyricsRomanizationPolicy
+import chromahub.rhythm.app.util.LyricsTranslationPolicy
+import chromahub.rhythm.app.util.hasUsableTimedRomanization
+import chromahub.rhythm.app.util.hasUsableTimedTranslation
 import chromahub.rhythm.app.shared.data.model.Playlist
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -114,6 +119,9 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
     private var audioEffectsInitJob: Job? = null
     private var equalizerVolumeTransitionJob: Job? = null
     private var equalizerVolumeRestoreTarget: Float? = null
+
+    // Only the current transition may restore player.volume.
+    private var equalizerVolumeTransitionGeneration = 0L
     @Volatile
     private var pendingAudioEffectsSessionId: Int = 0
     
@@ -159,6 +167,7 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
     var currentLyricTimestamps: LongArray = longArrayOf()
     var currentPlainLyricsLines: List<String> = emptyList()
     var currentLyricIndex: Int = -1
+    private var currentLyricsSource: String? = null
 
     private fun getProcessedLyricTexts(): List<String> {
         val showTranslation = appSettings.showLyricsTranslation.value
@@ -168,11 +177,14 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
             val translation = currentLyricTranslations.getOrNull(index)
             val romanization = currentLyricRomanizations.getOrNull(index)
             
+            val displayTranslation = chromahub.rhythm.app.util.LyricsTranslationPolicy
+                .selectLine(text, translation)
+
             buildString {
                 append(text)
-                if (showTranslation && !translation.isNullOrBlank()) {
+                if (showTranslation && displayTranslation != null) {
                     append("\n")
-                    append(translation)
+                    append(displayTranslation)
                 }
                 if (showRomanization && !romanization.isNullOrBlank()) {
                     append("\n")
@@ -189,8 +201,14 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
         currentLyricTimestamps = longArrayOf()
         currentPlainLyricsLines = emptyList()
         currentLyricIndex = -1
+        currentLyricsSource = null
         serviceLyricsLoadedSongId = null
-        serviceRomanizationAttemptedSongId = null
+        serviceRomanizationLoadedSongId = null
+        serviceRomanizationAttemptCount = 0
+        serviceRomanizationNextRetryAtMs = 0L
+        serviceTranslationLoadedSongId = null
+        serviceTranslationAttemptCount = 0
+        serviceTranslationNextRetryAtMs = 0L
         serviceLyricsLoadJob?.cancel()
         chromahub.rhythm.app.infrastructure.widget.glance.GlanceWidgetUpdater.updateLyrics(this, emptyList(), -1)
     }
@@ -579,7 +597,7 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
         appSettings = AppSettings.getInstance(applicationContext)
         
         // Initialize preloader
-        preloadController = PreloadController(applicationContext, appSettings)
+        preloadController = PreloadController()
         
         // Initialize Rhythm audio processors early (before player creation)
         try {
@@ -1072,18 +1090,8 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
 
             override fun onRepeatModeChanged(repeatMode: Int) {
                 if (!btVirtualQueueActive() || isMutatingBtVirtualQueue) return
-                // The one-item compatibility player itself must stay non-repeating so
-                // end-of-track can be routed through the saved queue. Remember a live
-                // user choice and restore it when the compatibility mode is switched off.
+                // The virtual queue owns repeat state while the legacy player has one item.
                 btVirtualOriginalRepeatMode = repeatMode
-                if (repeatMode != Player.REPEAT_MODE_OFF) {
-                    isMutatingBtVirtualQueue = true
-                    try {
-                        player.repeatMode = Player.REPEAT_MODE_OFF
-                    } finally {
-                        isMutatingBtVirtualQueue = false
-                    }
-                }
             }
 
             override fun onShuffleModeEnabledChanged(shuffleModeEnabled: Boolean) {
@@ -1234,20 +1242,33 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
             }
         }
 
-        // This preference is live. If the current service-owned lyrics were loaded before
-        // romanization was requested, invalidate only that lookup and retry immediately;
-        // toggling the switch must not require a song change or an app restart.
+        // Car text mode is independent from the phone lyric display.
         serviceScope.launch {
-            var previous = appSettings.bluetoothLyricsPreferRomanization.value
-            appSettings.bluetoothLyricsPreferRomanization.collect { enabled ->
-                if (enabled == previous) return@collect
-                previous = enabled
+            var previous = appSettings.bluetoothLyricsTextMode.value
+            appSettings.bluetoothLyricsTextMode.collect { mode ->
+                if (mode == previous) return@collect
+                previous = mode
                 lastServiceBtLyricLine = null
 
-                if (enabled && currentLyricRomanizations.none { it.isNotBlank() }) {
+                val needsRomanization =
+                    mode == BluetoothLyricsTextMode.ROMANIZATION &&
+                        !currentLyricsHaveUsableRomanization()
+                val needsTranslation =
+                    mode == BluetoothLyricsTextMode.TRANSLATION &&
+                        !currentLyricsHaveUsableTranslation()
+                if (needsRomanization || needsTranslation) {
                     serviceLyricsLoadJob?.cancel()
                     serviceLyricsLoadJob = null
-                    serviceRomanizationAttemptedSongId = null
+                    if (needsRomanization) {
+                        serviceRomanizationLoadedSongId = null
+                        serviceRomanizationAttemptCount = 0
+                        serviceRomanizationNextRetryAtMs = 0L
+                    }
+                    if (needsTranslation) {
+                        serviceTranslationLoadedSongId = null
+                        serviceTranslationAttemptCount = 0
+                        serviceTranslationNextRetryAtMs = 0L
+                    }
                     player.currentMediaItem
                         ?.let(::convertMediaItemToSong)
                         ?.let { ensureServiceLyricsLoaded(it, initialDelayMs = 0L) }
@@ -1320,7 +1341,9 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
         player.volume = 0.0f
         var actualState = enabled
 
+        val transitionGeneration = ++equalizerVolumeTransitionGeneration
         equalizerVolumeTransitionJob = serviceScope.launch(Dispatchers.Main.immediate) {
+            var rampCompleted = false
             try {
                 // If disabling, set the band levels to 0 (flat) first before waiting,
                 // so the DSP coefficients transition smoothly in the background.
@@ -1358,7 +1381,12 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
                     player.volume = startVolume + (restoreVolume - startVolume) * fraction
                     delay(EQ_TOGGLE_RAMP_STEP_DELAY_MS)
                 }
+                rampCompleted = true
             } finally {
+                // Cancellation must not leave a transition-owned volume duck in place.
+                if (!rampCompleted && transitionGeneration == equalizerVolumeTransitionGeneration) {
+                    player.volume = restoreVolume
+                }
                 if (equalizerVolumeRestoreTarget == restoreVolume) {
                     equalizerVolumeRestoreTarget = null
                 }
@@ -2071,6 +2099,34 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
                 .build()
         }
 
+        override fun getRepeatMode(): Int =
+            if (btVirtualOriginalQueue != null && btVirtualQueueActive()) {
+                btVirtualOriginalRepeatMode
+            } else {
+                super.getRepeatMode()
+            }
+
+        override fun setRepeatMode(repeatMode: Int) {
+            if (btVirtualOriginalQueue == null || !btVirtualQueueActive() || isMutatingBtVirtualQueue) {
+                super.setRepeatMode(repeatMode)
+                return
+            }
+
+            val safeMode = when (repeatMode) {
+                Player.REPEAT_MODE_OFF,
+                Player.REPEAT_MODE_ONE,
+                Player.REPEAT_MODE_ALL -> repeatMode
+
+                else -> Player.REPEAT_MODE_OFF
+            }
+            if (btVirtualOriginalRepeatMode == safeMode) return
+
+            btVirtualOriginalRepeatMode = safeMode
+            injectionListeners.forEach { it.onRepeatModeChanged(safeMode) }
+            notifyBtCommandsChanged()
+            Log.d(TAG, "Legacy car mode: effective repeat mode changed to $safeMode")
+        }
+
         fun injectLyricMetadata(title: CharSequence?, artist: CharSequence?) {
             injectedTitle = title
             injectedArtist = artist
@@ -2570,6 +2626,7 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
                         val romanizations = args.getStringArrayList("lyric_romanizations") ?: emptyList()
                         val timestamps = args.getLongArray("lyric_timestamps") ?: longArrayOf()
                         val plainLyrics = args.getString("plain_lyrics")
+                        val incomingSource = args.getString("lyrics_source")
                         val plainLines = if (!plainLyrics.isNullOrBlank()) {
                             plainLyrics.split("\n").map { it.trim() }.filter { it.isNotEmpty() }
                         } else {
@@ -2584,19 +2641,63 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
                             return Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))
                         }
 
+                        val incomingHasRomanization = LyricsRomanizationPolicy.hasUsableCoverage(
+                            original = texts,
+                            supplemental = romanizations
+                        )
+                        val incomingHasTranslation = LyricsTranslationPolicy.hasUsableCoverage(
+                            original = texts,
+                            supplemental = translations
+                        )
+                        val currentHasRomanization = currentLyricsHaveUsableRomanization()
+                        val currentHasTranslation = currentLyricsHaveUsableTranslation()
+                        if (
+                            (appSettings.bluetoothLyricsTextMode.value ==
+                                BluetoothLyricsTextMode.ROMANIZATION &&
+                                currentHasRomanization &&
+                                !incomingHasRomanization) ||
+                            (appSettings.bluetoothLyricsTextMode.value ==
+                                BluetoothLyricsTextMode.TRANSLATION &&
+                                currentHasTranslation &&
+                                !incomingHasTranslation)
+                        ) {
+                            Log.d(
+                                TAG,
+                                "Ignoring lyrics downgrade for mediaId=$currentSongId: " +
+                                        "currentSource=$currentLyricsSource, incomingSource=$incomingSource"
+                            )
+                            return Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))
+                        }
+
                         currentLyricTexts = texts
                         currentLyricTranslations = translations
                         currentLyricRomanizations = romanizations
                         currentLyricTimestamps = timestamps
                         currentPlainLyricsLines = plainLines
+                        currentLyricsSource = incomingSource
 
                         currentLyricIndex = -1
-                        val incomingHasRomanization = currentLyricRomanizations.any { it.isNotBlank() }
                         serviceLyricsLoadedSongId = currentSongId
                         if (incomingHasRomanization) {
-                            serviceRomanizationAttemptedSongId = currentSongId
+                            serviceRomanizationLoadedSongId = currentSongId
+                            serviceRomanizationAttemptCount = 0
+                            serviceRomanizationNextRetryAtMs = 0L
+                        }
+                        if (incomingHasTranslation) {
+                            serviceTranslationLoadedSongId = currentSongId
+                            serviceTranslationAttemptCount = 0
+                            serviceTranslationNextRetryAtMs = 0L
+                        }
+                        if (incomingHasRomanization || incomingHasTranslation) {
                             serviceLyricsLoadJob?.cancel()
                         }
+                        Log.d(
+                            TAG,
+                            "Applied lyrics data for mediaId=$currentSongId: " +
+                                "source=$incomingSource, " +
+                                "usableRomanization=$incomingHasRomanization, " +
+                                "usableTranslation=$incomingHasTranslation"
+                        )
                         chromahub.rhythm.app.infrastructure.widget.glance.GlanceWidgetUpdater.updateLyrics(this@MediaPlaybackService, getProcessedLyricTexts(), -1)
                         SessionResult(SessionResult.RESULT_SUCCESS)
                     }
@@ -2620,7 +2721,7 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
                                 val song = convertMediaItemToSong(currentMediaItem)
                                 if (song != null) {
                                     val bluetoothPosition = player.currentPosition +
-                                        appSettings.bluetoothLyricsOffsetMs.value.toLong()
+                                        resolvedBluetoothLyricsOffsetMs()
                                     val bluetoothLine = if (currentLyricTimestamps.isNotEmpty()) {
                                         resolveServiceBtLyricLine(
                                             positionMs = bluetoothPosition,
@@ -3046,6 +3147,10 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
         }
 
         clearLyricsState()
+        (player as? RhythmForwardingPlayer)?.clearLyricMetadata()
+        lastServiceBtLyricLine = null
+        lastServiceBtLyricSongId = null
+        lastServiceBtAppliedSongId = null
         Log.d(TAG, "Media item transitioned: ${mediaItem?.mediaMetadata?.title}, reason=$reason")
         
         // Update custom layout when song changes to reflect correct favorite state
@@ -3075,8 +3180,29 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
         chromahub.rhythm.app.features.local.data.repository.MusicRepository(applicationContext)
     }
     @Volatile private var serviceLyricsLoadedSongId: String? = null
-    @Volatile private var serviceRomanizationAttemptedSongId: String? = null
+    @Volatile
+    private var serviceRomanizationLoadedSongId: String? = null
+    private var serviceRomanizationAttemptCount: Int = 0
+    private var serviceRomanizationNextRetryAtMs: Long = 0L
+    @Volatile
+    private var serviceTranslationLoadedSongId: String? = null
+    private var serviceTranslationAttemptCount: Int = 0
+    private var serviceTranslationNextRetryAtMs: Long = 0L
     private var serviceLyricsLoadJob: kotlinx.coroutines.Job? = null
+    private val serviceEnrichmentRetryDelaysMs =
+        longArrayOf(3_000L, 10_000L, 30_000L, 60_000L)
+
+    private fun currentLyricsHaveUsableRomanization(): Boolean =
+        LyricsRomanizationPolicy.hasUsableCoverage(
+            original = currentLyricTexts,
+            supplemental = currentLyricRomanizations
+        )
+
+    private fun currentLyricsHaveUsableTranslation(): Boolean =
+        LyricsTranslationPolicy.hasUsableCoverage(
+            original = currentLyricTexts,
+            supplemental = currentLyricTranslations
+        )
 
     private fun startBluetoothLyricsLoop() {
         if (bluetoothLyricsLoopJob?.isActive == true) return
@@ -3100,11 +3226,18 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
     private fun ensureServiceLyricsLoaded(song: Song, initialDelayMs: Long = 1200L) {
         val hasLyrics = currentLyricTexts.isNotEmpty() || currentPlainLyricsLines.isNotEmpty()
         val needsBaseLyrics = serviceLyricsLoadedSongId != song.id && !hasLyrics
+        val now = SystemClock.elapsedRealtime()
         val needsRomanization =
-            appSettings.bluetoothLyricsPreferRomanization.value &&
-                serviceRomanizationAttemptedSongId != song.id &&
-                currentLyricRomanizations.none { it.isNotBlank() }
-        if (!needsBaseLyrics && !needsRomanization) return
+            appSettings.bluetoothLyricsTextMode.value == BluetoothLyricsTextMode.ROMANIZATION &&
+                    serviceRomanizationLoadedSongId != song.id &&
+                    !currentLyricsHaveUsableRomanization() &&
+                    now >= serviceRomanizationNextRetryAtMs
+        val needsTranslation =
+            appSettings.bluetoothLyricsTextMode.value == BluetoothLyricsTextMode.TRANSLATION &&
+                serviceTranslationLoadedSongId != song.id &&
+                !currentLyricsHaveUsableTranslation() &&
+                now >= serviceTranslationNextRetryAtMs
+        if (!needsBaseLyrics && !needsRomanization && !needsTranslation) return
         if (serviceLyricsLoadJob?.isActive == true) return
         serviceLyricsLoadJob = serviceScope.launch {
             if (initialDelayMs > 0L) delay(initialDelayMs)
@@ -3118,19 +3251,30 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
                         songId = song.id,
                         songUri = song.uri,
                         sourcePreference = appSettings.lyricsSourcePreference.value,
-                        requireRomanization = false
+                        requireRomanization = false,
+                        requireTranslation = false
                     )
                     if (player.currentMediaItem?.mediaId != song.id) return@launch
-                    applyServiceLyrics(song, baseLyrics, requireRomanization = false)
+                    applyServiceLyrics(
+                        song = song,
+                        data = baseLyrics,
+                        requireRomanization = false,
+                        requireTranslation = false
+                    )
                     serviceLyricsLoadedSongId = song.id
                 }
 
                 if (
-                    appSettings.bluetoothLyricsPreferRomanization.value &&
-                    serviceRomanizationAttemptedSongId != song.id &&
-                    currentLyricRomanizations.none { it.isNotBlank() }
+                    appSettings.bluetoothLyricsTextMode.value == BluetoothLyricsTextMode.ROMANIZATION &&
+                    serviceRomanizationLoadedSongId != song.id &&
+                    !currentLyricsHaveUsableRomanization() &&
+                    SystemClock.elapsedRealtime() >= serviceRomanizationNextRetryAtMs
                 ) {
-                    serviceRomanizationAttemptedSongId = song.id
+                    val attempt = ++serviceRomanizationAttemptCount
+                    val retryDelay = serviceEnrichmentRetryDelaysMs[
+                        (attempt - 1).coerceAtMost(serviceEnrichmentRetryDelaysMs.lastIndex)
+                    ]
+                    Log.d(TAG, "Romaji lookup attempt $attempt for '${song.title}'")
                     val romanizedLyrics = serviceMusicRepository.fetchLyrics(
                         artist = song.artist,
                         title = song.title,
@@ -3140,11 +3284,106 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
                         requireRomanization = true
                     )
                     if (player.currentMediaItem?.mediaId != song.id) return@launch
-                    applyServiceLyrics(song, romanizedLyrics, requireRomanization = true)
+                    if (
+                        applyServiceLyrics(
+                            song = song,
+                            data = romanizedLyrics,
+                            requireRomanization = true,
+                            requireTranslation = false
+                        )
+                    ) {
+                        serviceRomanizationLoadedSongId = song.id
+                        serviceRomanizationAttemptCount = 0
+                        serviceRomanizationNextRetryAtMs = 0L
+                    } else {
+                        serviceRomanizationNextRetryAtMs =
+                            SystemClock.elapsedRealtime() + retryDelay
+                        Log.d(
+                            TAG,
+                            "Romaji lookup attempt $attempt found no usable track; retry in ${retryDelay}ms"
+                        )
+                    }
+                }
+
+                if (
+                    appSettings.bluetoothLyricsTextMode.value ==
+                        BluetoothLyricsTextMode.TRANSLATION &&
+                    serviceTranslationLoadedSongId != song.id &&
+                    !currentLyricsHaveUsableTranslation() &&
+                    SystemClock.elapsedRealtime() >= serviceTranslationNextRetryAtMs
+                ) {
+                    val attempt = ++serviceTranslationAttemptCount
+                    val retryDelay = serviceEnrichmentRetryDelaysMs[
+                        (attempt - 1).coerceAtMost(serviceEnrichmentRetryDelaysMs.lastIndex)
+                    ]
+                    Log.d(TAG, "Translation lookup attempt $attempt for '${song.title}'")
+                    val translatedLyrics = serviceMusicRepository.fetchLyrics(
+                        artist = song.artist,
+                        title = song.title,
+                        songId = song.id,
+                        songUri = song.uri,
+                        sourcePreference = appSettings.lyricsSourcePreference.value,
+                        requireRomanization = true,
+                        requireTranslation = true
+                    )
+                    if (player.currentMediaItem?.mediaId != song.id) return@launch
+                    val hasTranslation = translatedLyrics?.hasUsableTimedTranslation() == true
+                    val hasRomanization = translatedLyrics?.hasUsableTimedRomanization() == true
+                    val applied = when {
+                        hasTranslation -> applyServiceLyrics(
+                            song = song,
+                            data = translatedLyrics,
+                            requireRomanization = false,
+                            requireTranslation = true
+                        )
+                        hasRomanization -> applyServiceLyrics(
+                            song = song,
+                            data = translatedLyrics,
+                            requireRomanization = true,
+                            requireTranslation = false
+                        )
+                        else -> false
+                    }
+                    if (hasTranslation && applied) {
+                        serviceTranslationLoadedSongId = song.id
+                        serviceTranslationAttemptCount = 0
+                        serviceTranslationNextRetryAtMs = 0L
+                    } else {
+                        serviceTranslationNextRetryAtMs =
+                            SystemClock.elapsedRealtime() + retryDelay
+                        Log.d(
+                            TAG,
+                            "Translation lookup attempt $attempt found no usable track; " +
+                                "retry in ${retryDelay}ms"
+                        )
+                    }
                 }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
+                if (
+                    appSettings.bluetoothLyricsTextMode.value == BluetoothLyricsTextMode.ROMANIZATION &&
+                    !currentLyricsHaveUsableRomanization()
+                ) {
+                    val retryDelay = serviceEnrichmentRetryDelaysMs[
+                        (serviceRomanizationAttemptCount - 1)
+                            .coerceAtLeast(0)
+                            .coerceAtMost(serviceEnrichmentRetryDelaysMs.lastIndex)
+                    ]
+                    serviceRomanizationNextRetryAtMs = SystemClock.elapsedRealtime() + retryDelay
+                }
+                if (
+                    appSettings.bluetoothLyricsTextMode.value ==
+                        BluetoothLyricsTextMode.TRANSLATION &&
+                    !currentLyricsHaveUsableTranslation()
+                ) {
+                    val retryDelay = serviceEnrichmentRetryDelaysMs[
+                        (serviceTranslationAttemptCount - 1)
+                            .coerceAtLeast(0)
+                            .coerceAtMost(serviceEnrichmentRetryDelaysMs.lastIndex)
+                    ]
+                    serviceTranslationNextRetryAtMs = SystemClock.elapsedRealtime() + retryDelay
+                }
                 Log.w(TAG, "Service lyric load failed for '${song.title}'", e)
             }
         }
@@ -3153,12 +3392,14 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
     private fun applyServiceLyrics(
         song: Song,
         data: chromahub.rhythm.app.shared.data.model.LyricsData?,
-        requireRomanization: Boolean
+        requireRomanization: Boolean,
+        requireTranslation: Boolean
     ): Boolean {
         val synced = data?.syncedLyrics ?: return false
         val parsed = chromahub.rhythm.app.util.LyricsParser.parseLyrics(synced)
         if (parsed.isEmpty()) return false
-        if (requireRomanization && parsed.none { !it.romanization.isNullOrBlank() }) return false
+        if (requireRomanization && !data.hasUsableTimedRomanization()) return false
+        if (requireTranslation && !data.hasUsableTimedTranslation()) return false
 
         currentLyricTexts = parsed.map { it.text }
         currentLyricTranslations = parsed.map { it.translation ?: "" }
@@ -3166,18 +3407,42 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
         currentLyricTimestamps = parsed.map { it.timestamp }.toLongArray()
         currentPlainLyricsLines = data.plainLyrics
             ?.split("\n")?.map { it.trim() }?.filter { it.isNotEmpty() } ?: emptyList()
+        currentLyricsSource = data.source
         currentLyricIndex = -1
+        if (data.hasUsableTimedRomanization()) {
+            serviceRomanizationLoadedSongId = song.id
+            serviceRomanizationAttemptCount = 0
+            serviceRomanizationNextRetryAtMs = 0L
+        }
+        if (data.hasUsableTimedTranslation()) {
+            serviceTranslationLoadedSongId = song.id
+            serviceTranslationAttemptCount = 0
+            serviceTranslationNextRetryAtMs = 0L
+        }
         chromahub.rhythm.app.infrastructure.widget.glance.GlanceWidgetUpdater
             .updateLyrics(this@MediaPlaybackService, getProcessedLyricTexts(), -1)
-        Log.d(TAG, "Service-loaded synced lyrics for '${song.title}' (${parsed.size} lines)")
+        Log.d(
+            TAG,
+            "Service-loaded synced lyrics for '${song.title}' " +
+                "(${parsed.size} lines, source=${data.source}, " +
+                "romanization=$requireRomanization, translation=$requireTranslation)"
+        )
         return true
+    }
+
+    /** Returns the active Bluetooth device's offset, or zero for non-Bluetooth output. */
+    private fun resolvedBluetoothLyricsOffsetMs(): Long {
+        val audioManager = getSystemService(Context.AUDIO_SERVICE) as? AudioManager ?: return 0L
+        val deviceName = chromahub.rhythm.app.util.AudioCapabilitiesMonitor
+            .activeBluetoothOutputName(audioManager) ?: return 0L
+        return appSettings.effectiveBluetoothLyricsOffsetMs(deviceName).toLong()
     }
 
     private fun tickBluetoothLyrics() {
         if (!::player.isInitialized || !::appSettings.isInitialized) return
         val item = player.currentMediaItem ?: return
         val song = convertMediaItemToSong(item) ?: return
-        val enabled = appSettings.broadcastStatusEnabled.value && appSettings.bluetoothLyricsEnabled.value
+        val enabled = appSettings.bluetoothLyricsEnabled.value
         if (!enabled) {
             if (lastServiceBtAppliedSongId != null) restoreServiceBtMetadata(song)
             lastServiceBtLyricLine = null
@@ -3186,19 +3451,21 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
         }
         ensureServiceLyricsLoaded(song)
         val line = resolveServiceBtLyricLine(
-            player.currentPosition + appSettings.bluetoothLyricsOffsetMs.value.toLong()
+            player.currentPosition + resolvedBluetoothLyricsOffsetMs()
         )
         if (song.id == lastServiceBtLyricSongId && line == lastServiceBtLyricLine) return
         lastServiceBtLyricSongId = song.id
         lastServiceBtLyricLine = line
-        statusBroadcaster.broadcastMetadataChanged(
-            song = song,
-            position = player.currentPosition,
-            queueSize = player.mediaItemCount,
-            queuePosition = player.currentMediaItemIndex,
-            bluetoothLyricsMode = true,
-            currentLyricLine = line
-        )
+        if (appSettings.broadcastStatusEnabled.value) {
+            statusBroadcaster.broadcastMetadataChanged(
+                song = song,
+                position = player.currentPosition,
+                queueSize = player.mediaItemCount,
+                queuePosition = player.currentMediaItemIndex,
+                bluetoothLyricsMode = true,
+                currentLyricLine = line
+            )
+        }
         applyServiceBtMetadata(song, line)
     }
 
@@ -3214,13 +3481,12 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
             if (ts[i] <= pos) idx = i else break
         }
         if (idx < 0) return null
-        val effectiveTexts = currentLyricTexts.mapIndexed { i, text ->
-            if (appSettings.bluetoothLyricsPreferRomanization.value) {
-                currentLyricRomanizations.getOrNull(i)?.takeIf { it.isNotBlank() } ?: text
-            } else {
-                text
-            }
-        }
+        val effectiveTexts = BluetoothLyricsFormatter.selectTexts(
+            mode = appSettings.bluetoothLyricsTextMode.value,
+            original = currentLyricTexts,
+            translations = currentLyricTranslations,
+            romanizations = currentLyricRomanizations
+        )
         val resolved = BluetoothLyricsFormatter.resolveLine(
             positionMs = pos,
             timestamps = ts,

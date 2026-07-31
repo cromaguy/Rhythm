@@ -618,10 +618,14 @@ private fun WordByWordLyricLineItem(
             modifier = Modifier.fillMaxWidth()
         )
 
-        if (showTranslation && !line.translation.isNullOrBlank()) {
+        val displayTranslation = chromahub.rhythm.app.util.LyricsTranslationPolicy.selectLine(
+            original = line.words.joinToString(" ") { it.text },
+            translation = line.translation
+        )
+        if (showTranslation && displayTranslation != null) {
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = line.translation,
+                text = displayTranslation,
                 style = MaterialTheme.typography.bodyMedium.copy(
                     fontStyle = FontStyle.Italic,
                     fontWeight = if (isCurrentLine) {

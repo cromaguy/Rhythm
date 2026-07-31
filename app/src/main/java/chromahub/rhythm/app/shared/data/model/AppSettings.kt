@@ -89,6 +89,21 @@ enum class LyricsApiPriority(val displayName: String) {
     }
 }
 
+enum class BluetoothLyricsTextMode {
+    ORIGINAL,
+    TRANSLATION,
+    ROMANIZATION;
+
+    companion object {
+        fun fromPreference(
+            value: String?,
+            legacyPreferRomanization: Boolean
+        ): BluetoothLyricsTextMode =
+            entries.firstOrNull { it.name == value }
+                ?: if (legacyPreferRomanization) ROMANIZATION else ORIGINAL
+    }
+}
+
 /**
  * Singleton class to manage all app settings using SharedPreferences
  */
@@ -132,6 +147,8 @@ class AppSettings private constructor(context: Context) {
         private const val KEY_SHOW_LYRICS_BACKGROUND_ARTWORK = "show_lyrics_background_artwork"
         private const val KEY_SHOW_LYRICS_TRANSLATION = "show_lyrics_translation"
         private const val KEY_SHOW_LYRICS_ROMANIZATION = "show_lyrics_romanization"
+        private const val KEY_LYRICS_TRANSLATION_LANGUAGE = "lyrics_translation_language"
+        private const val KEY_LYRICS_FOLDER_TREE_URIS = "lyrics_folder_tree_uris"
         private const val KEY_KEEP_SCREEN_ON_LYRICS = "keep_screen_on_lyrics"
         private const val KEY_TAP_LYRICS_TO_FULL_SCREEN = "tap_lyrics_to_full_screen"
         private const val KEY_LYRICS_API_PRIORITY = "lyrics_api_priority"
@@ -284,7 +301,9 @@ class AppSettings private constructor(context: Context) {
         private const val KEY_BLUETOOTH_LYRICS_ENABLED = "bluetooth_lyrics_enabled"
         private const val KEY_BLUETOOTH_LYRICS_LEGACY_CAR_MODE_ENABLED = "bluetooth_lyrics_legacy_car_mode_enabled"
         private const val KEY_BLUETOOTH_LYRICS_PREFER_ROMANIZATION = "bluetooth_lyrics_prefer_romanization"
+        private const val KEY_BLUETOOTH_LYRICS_TEXT_MODE = "bluetooth_lyrics_text_mode"
         private const val KEY_BLUETOOTH_LYRICS_OFFSET_MS = "bluetooth_lyrics_offset_ms"
+        private const val KEY_BLUETOOTH_LYRICS_OFFSET_PRESETS = "bluetooth_lyrics_offset_presets"
         private const val KEY_BLUETOOTH_LYRICS_MAX_CHUNK_CHARS = "bluetooth_lyrics_max_chunk_chars"
         private const val KEY_BLUETOOTH_LYRICS_SCROLL_CHARS_PER_SECOND = "bluetooth_lyrics_scroll_chars_per_second"
         private const val KEY_BLUETOOTH_LYRICS_MIN_CHUNK_HOLD_MS = "bluetooth_lyrics_min_chunk_hold_ms"
@@ -424,7 +443,7 @@ class AppSettings private constructor(context: Context) {
         private const val KEY_SHUFFLE_USES_EXOPLAYER = "shuffle_uses_exoplayer"
         private const val KEY_AUTO_ADD_TO_QUEUE = "auto_add_to_queue"
         private const val KEY_CLEAR_QUEUE_ON_NEW_SONG = "clear_queue_on_new_song"
-        private const val KEY_CONTEXT_QUEUE_PREFERENCE = "context_queue_preference" // ARTIST_FIRST | GENRE_FIRST | ARTIST_THEN_GENRE
+        private const val KEY_CONTEXT_QUEUE_PREFERENCE = "context_queue_preference" // ARTIST_FIRST | GENRE_FIRST
         private const val KEY_CONTEXT_QUEUE_PERSISTENCE = "context_queue_persistence" // EPHEMERAL | PERSISTENT
         private const val KEY_CONTEXT_QUEUE_SIZE = "context_queue_size" // default number of contextual tracks to build
         private const val KEY_HIDE_PLAYED_SONGS_IN_QUEUE = "hide_played_songs_in_queue"
@@ -682,9 +701,27 @@ class AppSettings private constructor(context: Context) {
     private val _showLyricsBackgroundArtwork = MutableStateFlow(prefs.getBoolean(KEY_SHOW_LYRICS_BACKGROUND_ARTWORK, true))
     val showLyricsBackgroundArtwork: StateFlow<Boolean> = _showLyricsBackgroundArtwork.asStateFlow()
 
-    // TODO: Replace this boolean with a preferred translation locale, then fall back to app and system locales.
     private val _showLyricsTranslation = MutableStateFlow(prefs.getBoolean(KEY_SHOW_LYRICS_TRANSLATION, true))
     val showLyricsTranslation: StateFlow<Boolean> = _showLyricsTranslation.asStateFlow()
+
+    private val _lyricsTranslationLanguage = MutableStateFlow(
+        prefs.getString(KEY_LYRICS_TRANSLATION_LANGUAGE, "en")
+            ?.takeIf { it.isNotBlank() }
+            ?: "en"
+    )
+    val lyricsTranslationLanguage: StateFlow<String> =
+        _lyricsTranslationLanguage.asStateFlow()
+
+    private val _lyricsFolderTreeUris = MutableStateFlow(
+        prefs.getString(KEY_LYRICS_FOLDER_TREE_URIS, null)
+            ?.lineSequence()
+            ?.map(String::trim)
+            ?.filter(String::isNotBlank)
+            ?.toSet()
+            ?: emptySet()
+    )
+    val lyricsFolderTreeUris: StateFlow<Set<String>> =
+        _lyricsFolderTreeUris.asStateFlow()
     
     private val _showLyricsRomanization = MutableStateFlow(prefs.getBoolean(KEY_SHOW_LYRICS_ROMANIZATION, true))
     val showLyricsRomanization: StateFlow<Boolean> = _showLyricsRomanization.asStateFlow()
@@ -1078,7 +1115,7 @@ class AppSettings private constructor(context: Context) {
     val queuePersistenceEnabled: StateFlow<Boolean> = _queuePersistenceEnabled.asStateFlow()
 
     // Context queue preferences
-    private val _contextQueuePreference = MutableStateFlow(prefs.getString(KEY_CONTEXT_QUEUE_PREFERENCE, "ARTIST_THEN_GENRE")!!)
+    private val _contextQueuePreference = MutableStateFlow(prefs.getString(KEY_CONTEXT_QUEUE_PREFERENCE, "ARTIST_FIRST")!!)
     val contextQueuePreference: StateFlow<String> = _contextQueuePreference.asStateFlow()
 
     private val _contextQueuePersistence = MutableStateFlow(prefs.getString(KEY_CONTEXT_QUEUE_PERSISTENCE, "EPHEMERAL")!!)
@@ -1463,8 +1500,20 @@ class AppSettings private constructor(context: Context) {
     val bluetoothLyricsLegacyCarModeEnabled: StateFlow<Boolean> =
         _bluetoothLyricsLegacyCarModeEnabled.asStateFlow()
 
+    private val _bluetoothLyricsTextMode = MutableStateFlow(
+        BluetoothLyricsTextMode.fromPreference(
+            value = prefs.getString(KEY_BLUETOOTH_LYRICS_TEXT_MODE, null),
+            legacyPreferRomanization = prefs.getBoolean(
+                KEY_BLUETOOTH_LYRICS_PREFER_ROMANIZATION,
+                true
+            )
+        )
+    )
+    val bluetoothLyricsTextMode: StateFlow<BluetoothLyricsTextMode> =
+        _bluetoothLyricsTextMode.asStateFlow()
+
     private val _bluetoothLyricsPreferRomanization = MutableStateFlow(
-        prefs.getBoolean(KEY_BLUETOOTH_LYRICS_PREFER_ROMANIZATION, true)
+        _bluetoothLyricsTextMode.value == BluetoothLyricsTextMode.ROMANIZATION
     )
     val bluetoothLyricsPreferRomanization: StateFlow<Boolean> =
         _bluetoothLyricsPreferRomanization.asStateFlow()
@@ -1474,6 +1523,11 @@ class AppSettings private constructor(context: Context) {
             .coerceIn(BLUETOOTH_LYRICS_OFFSET_MIN_MS, BLUETOOTH_LYRICS_OFFSET_MAX_MS)
     )
     val bluetoothLyricsOffsetMs: StateFlow<Int> = _bluetoothLyricsOffsetMs.asStateFlow()
+
+    private val _bluetoothLyricsOffsetPresets =
+        MutableStateFlow(loadBluetoothLyricsOffsetPresets())
+    val bluetoothLyricsOffsetPresets: StateFlow<Map<String, Int>> =
+        _bluetoothLyricsOffsetPresets.asStateFlow()
 
     private val _bluetoothLyricsMaxChunkChars = MutableStateFlow(
         BluetoothLyricsFormatter.coerceMaxChunkChars(
@@ -2182,6 +2236,23 @@ private val _autoCheckForUpdates = MutableStateFlow(prefs.getBoolean(KEY_AUTO_CH
     fun setShowLyricsTranslation(show: Boolean) {
         prefs.edit().putBoolean(KEY_SHOW_LYRICS_TRANSLATION, show).apply()
         _showLyricsTranslation.value = show
+    }
+
+    fun setLyricsTranslationLanguage(language: String) {
+        val normalized = language.trim().lowercase().ifBlank { "en" }
+        prefs.edit().putString(KEY_LYRICS_TRANSLATION_LANGUAGE, normalized).apply()
+        _lyricsTranslationLanguage.value = normalized
+    }
+
+    fun addLyricsFolderTreeUri(uri: Uri) {
+        val updated = _lyricsFolderTreeUris.value + uri.toString()
+        prefs.edit().putString(KEY_LYRICS_FOLDER_TREE_URIS, updated.joinToString("\n")).apply()
+        _lyricsFolderTreeUris.value = updated
+    }
+
+    fun clearLyricsFolderTreeUris() {
+        prefs.edit().remove(KEY_LYRICS_FOLDER_TREE_URIS).apply()
+        _lyricsFolderTreeUris.value = emptySet()
     }
     
     fun setShowLyricsRomanization(show: Boolean) {
@@ -3234,8 +3305,21 @@ private val _autoCheckForUpdates = MutableStateFlow(prefs.getBoolean(KEY_AUTO_CH
     }
 
     fun setBluetoothLyricsPreferRomanization(enabled: Boolean) {
-        prefs.edit().putBoolean(KEY_BLUETOOTH_LYRICS_PREFER_ROMANIZATION, enabled).apply()
-        _bluetoothLyricsPreferRomanization.value = enabled
+        setBluetoothLyricsTextMode(
+            if (enabled) BluetoothLyricsTextMode.ROMANIZATION else BluetoothLyricsTextMode.ORIGINAL
+        )
+    }
+
+    fun setBluetoothLyricsTextMode(mode: BluetoothLyricsTextMode) {
+        prefs.edit()
+            .putString(KEY_BLUETOOTH_LYRICS_TEXT_MODE, mode.name)
+            .putBoolean(
+                KEY_BLUETOOTH_LYRICS_PREFER_ROMANIZATION,
+                mode == BluetoothLyricsTextMode.ROMANIZATION
+            )
+            .apply()
+        _bluetoothLyricsTextMode.value = mode
+        _bluetoothLyricsPreferRomanization.value = mode == BluetoothLyricsTextMode.ROMANIZATION
     }
 
     fun setBluetoothLyricsOffsetMs(offsetMs: Int) {
@@ -3245,6 +3329,58 @@ private val _autoCheckForUpdates = MutableStateFlow(prefs.getBoolean(KEY_AUTO_CH
         )
         prefs.edit().putInt(KEY_BLUETOOTH_LYRICS_OFFSET_MS, safeOffset).apply()
         _bluetoothLyricsOffsetMs.value = safeOffset
+    }
+
+    private fun loadBluetoothLyricsOffsetPresets(): Map<String, Int> {
+        val raw = prefs.getString(KEY_BLUETOOTH_LYRICS_OFFSET_PRESETS, null)
+            ?.takeIf { it.isNotBlank() } ?: return emptyMap()
+        return try {
+            val type = object : TypeToken<Map<String, Int>>() {}.type
+            Gson().fromJson<Map<String, Int>>(raw, type)
+                ?.mapValues { (_, value) ->
+                    value.coerceIn(BLUETOOTH_LYRICS_OFFSET_MIN_MS, BLUETOOTH_LYRICS_OFFSET_MAX_MS)
+                }
+                ?: emptyMap()
+        } catch (e: Exception) {
+            emptyMap()
+        }
+    }
+
+    private fun persistBluetoothLyricsOffsetPresets(presets: Map<String, Int>) {
+        prefs.edit()
+            .putString(KEY_BLUETOOTH_LYRICS_OFFSET_PRESETS, Gson().toJson(presets))
+            .apply()
+    }
+
+    /** Returns the per-device offset when present, otherwise the global default. */
+    fun effectiveBluetoothLyricsOffsetMs(deviceName: String?): Int {
+        val preset = deviceName?.let { _bluetoothLyricsOffsetPresets.value[it] }
+        return preset ?: _bluetoothLyricsOffsetMs.value
+    }
+
+    /** Saves a device override, or the global default when [deviceName] is blank. */
+    fun setBluetoothLyricsOffsetForDevice(deviceName: String?, offsetMs: Int) {
+        val safeOffset = offsetMs.coerceIn(
+            BLUETOOTH_LYRICS_OFFSET_MIN_MS,
+            BLUETOOTH_LYRICS_OFFSET_MAX_MS
+        )
+        val name = deviceName?.trim()?.takeIf { it.isNotBlank() }
+        if (name == null) {
+            setBluetoothLyricsOffsetMs(safeOffset)
+            return
+        }
+        val updated = _bluetoothLyricsOffsetPresets.value.toMutableMap()
+            .apply { put(name, safeOffset) }
+        persistBluetoothLyricsOffsetPresets(updated)
+        _bluetoothLyricsOffsetPresets.value = updated
+    }
+
+    fun removeBluetoothLyricsOffsetPreset(deviceName: String) {
+        if (!_bluetoothLyricsOffsetPresets.value.containsKey(deviceName)) return
+        val updated = _bluetoothLyricsOffsetPresets.value.toMutableMap()
+            .apply { remove(deviceName) }
+        persistBluetoothLyricsOffsetPresets(updated)
+        _bluetoothLyricsOffsetPresets.value = updated
     }
 
     fun setBluetoothLyricsMaxChunkChars(maxChunkChars: Int) {
@@ -4862,6 +4998,18 @@ private val _autoCheckForUpdates = MutableStateFlow(prefs.getBoolean(KEY_AUTO_CH
         _lyricNoAnimation.value = prefs.getBoolean(KEY_LYRIC_NO_ANIMATION, false)
         _translationAutoWord.value = prefs.getBoolean(KEY_TRANSLATION_AUTO_WORD, false)
         _showLyricsBackgroundArtwork.value = prefs.getBoolean(KEY_SHOW_LYRICS_BACKGROUND_ARTWORK, true)
+        _showLyricsTranslation.value = prefs.getBoolean(KEY_SHOW_LYRICS_TRANSLATION, true)
+        _showLyricsRomanization.value = prefs.getBoolean(KEY_SHOW_LYRICS_ROMANIZATION, true)
+        _lyricsTranslationLanguage.value =
+            prefs.getString(KEY_LYRICS_TRANSLATION_LANGUAGE, "en")
+                ?.takeIf { it.isNotBlank() }
+                ?: "en"
+        _lyricsFolderTreeUris.value = prefs.getString(KEY_LYRICS_FOLDER_TREE_URIS, null)
+            ?.lineSequence()
+            ?.map(String::trim)
+            ?.filter(String::isNotBlank)
+            ?.toSet()
+            ?: emptySet()
         _searchHistory.value = prefs.getString(KEY_SEARCH_HISTORY, null)
         _showKeyboardOnSearchOpen.value = prefs.getBoolean(KEY_SHOW_KEYBOARD_ON_SEARCH_OPEN, true)
         _playlists.value = prefs.getString(KEY_PLAYLISTS, null)
@@ -4967,8 +5115,15 @@ private val _autoCheckForUpdates = MutableStateFlow(prefs.getBoolean(KEY_AUTO_CH
         _bluetoothLyricsEnabled.value = prefs.getBoolean(KEY_BLUETOOTH_LYRICS_ENABLED, false)
         _bluetoothLyricsLegacyCarModeEnabled.value =
             prefs.getBoolean(KEY_BLUETOOTH_LYRICS_LEGACY_CAR_MODE_ENABLED, false)
+        _bluetoothLyricsTextMode.value = BluetoothLyricsTextMode.fromPreference(
+            value = prefs.getString(KEY_BLUETOOTH_LYRICS_TEXT_MODE, null),
+            legacyPreferRomanization = prefs.getBoolean(
+                KEY_BLUETOOTH_LYRICS_PREFER_ROMANIZATION,
+                true
+            )
+        )
         _bluetoothLyricsPreferRomanization.value =
-            prefs.getBoolean(KEY_BLUETOOTH_LYRICS_PREFER_ROMANIZATION, true)
+            _bluetoothLyricsTextMode.value == BluetoothLyricsTextMode.ROMANIZATION
         _bluetoothLyricsOffsetMs.value = prefs.getInt(KEY_BLUETOOTH_LYRICS_OFFSET_MS, 0)
             .coerceIn(BLUETOOTH_LYRICS_OFFSET_MIN_MS, BLUETOOTH_LYRICS_OFFSET_MAX_MS)
         _bluetoothLyricsMaxChunkChars.value = BluetoothLyricsFormatter.coerceMaxChunkChars(

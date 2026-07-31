@@ -169,6 +169,7 @@ fun LyricsEditorBottomSheet(
     onDismiss: () -> Unit,
     onSave: (String, Int, String) -> Unit,
     onRefresh: () -> Unit = {},
+    onSourcePreferenceChanged: () -> Unit = {},
     onEmbedInFile: (String) -> Unit = {}
 ) {
     val context = LocalContext.current
@@ -553,7 +554,9 @@ fun LyricsEditorBottomSheet(
     }
 
     ModalBottomSheet(
-        modifier = Modifier.widthIn(max = 640.dp).fillMaxWidth(),
+        modifier = Modifier
+            .widthIn(max = 640.dp)
+            .fillMaxWidth(),
         onDismissRequest = onDismiss,
         sheetState = sheetState,
         dragHandle = {
@@ -595,7 +598,10 @@ fun LyricsEditorBottomSheet(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 24.dp)
-                        .background(MaterialTheme.colorScheme.surfaceContainerHigh, RoundedCornerShape(16.dp))
+                        .background(
+                            MaterialTheme.colorScheme.surfaceContainerHigh,
+                            RoundedCornerShape(16.dp)
+                        )
                         .padding(16.dp)
                 ) {
                     Row(
@@ -678,6 +684,7 @@ fun LyricsEditorBottomSheet(
                                                 HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
                                                 appSettings.setSongLyricsPreference(songId, prefValue)
                                                 dropdownExpanded = false
+                                                onSourcePreferenceChanged()
                                             },
                                             shape = itemShape,
                                             color = MaterialTheme.colorScheme.surfaceContainer,
@@ -728,7 +735,10 @@ fun LyricsEditorBottomSheet(
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .background(MaterialTheme.colorScheme.surfaceContainerLowest, RoundedCornerShape(8.dp))
+                                .background(
+                                    MaterialTheme.colorScheme.surfaceContainerLowest,
+                                    RoundedCornerShape(8.dp)
+                                )
                                 .padding(horizontal = 12.dp, vertical = 8.dp),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically

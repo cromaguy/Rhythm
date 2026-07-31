@@ -1,5 +1,6 @@
 package chromahub.rhythm.app.util
 
+import android.bluetooth.BluetoothAdapter
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -21,6 +22,47 @@ class AudioCapabilitiesMonitor(private val context: Context) {
     
     companion object {
         private const val TAG = "AudioCapabilitiesMonitor"
+
+        /** Returns the active A2DP/SCO device name, or null for non-Bluetooth output. */
+        fun activeBluetoothOutputName(audioManager: AudioManager): String? {
+            return try {
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+                    @Suppress("DEPRECATION")
+                    return if (audioManager.isBluetoothA2dpOn) "Bluetooth" else null
+                }
+
+                val device = audioManager
+                    .getDevices(AudioManager.GET_DEVICES_OUTPUTS)
+                    .firstOrNull {
+                        it.isSink && (it.type == AudioDeviceInfo.TYPE_BLUETOOTH_A2DP ||
+                            it.type == AudioDeviceInfo.TYPE_BLUETOOTH_SCO)
+                    } ?: return null
+
+                // Some devices report the handset model as the sink product name.
+                val remoteName = try {
+                    device.address
+                        .takeIf { it.contains(':') }
+                        ?.let {
+                            @Suppress("DEPRECATION")
+                            BluetoothAdapter.getDefaultAdapter()?.getRemoteDevice(it)?.name
+                        }
+                } catch (e: SecurityException) {
+                    null // BLUETOOTH_CONNECT not granted
+                } catch (e: IllegalArgumentException) {
+                    null // not a valid MAC
+                }
+
+                val productName = device.productName?.toString()?.trim()
+                    ?.takeIf { it.isNotBlank() && !it.equals(Build.MODEL, ignoreCase = true) }
+
+                remoteName?.trim()?.takeIf { it.isNotBlank() }
+                    ?: productName
+                    ?: "Bluetooth"
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to resolve active Bluetooth output name", e)
+                null
+            }
+        }
     }
     
     interface Listener {

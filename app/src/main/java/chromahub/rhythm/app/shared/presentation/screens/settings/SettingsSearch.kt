@@ -1496,14 +1496,23 @@ fun buildSettingsSearchIndex(context: Context): List<SearchableSettingItem> {
             settingKey = "bluetoothLyricsLegacyCarMode"
         ))
         add(SearchableSettingItem(
-            id = "bluetooth_lyrics_prefer_romanization",
-            title = context.getString(R.string.bluetooth_lyrics_prefer_romanization),
-            description = context.getString(R.string.bluetooth_lyrics_prefer_romanization_desc),
-            keywords = listOf("bluetooth", "lyrics", "romanization", "romaji", "cjk", "kanji", "chinese", "japanese", "korean", "car"),
+            id = "bluetooth_lyrics_text_mode",
+            title = context.getString(R.string.bluetooth_lyrics_text_mode),
+            description = context.getString(R.string.bluetooth_lyrics_text_mode_desc),
+            keywords = listOf(
+                "bluetooth",
+                "lyrics",
+                "translation",
+                "romanization",
+                "romaji",
+                "original",
+                "cjk",
+                "car"
+            ),
             icon = MaterialSymbolIcon("language"),
-            route = SettingsRoutes.EXPERIMENTAL_FEATURES,
-            parentScreen = "Experimental",
-            settingKey = "bluetoothLyricsPreferRomanization"
+            route = SettingsRoutes.LYRICS,
+            parentScreen = "Lyrics",
+            settingKey = "bluetoothLyricsTextMode"
         ))
         add(SearchableSettingItem(
             id = "bluetooth_lyrics_tuning",

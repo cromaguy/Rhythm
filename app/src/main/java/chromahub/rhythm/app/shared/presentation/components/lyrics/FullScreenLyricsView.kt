@@ -572,7 +572,11 @@ fun FullScreenLyricsView(
                                                 .padding(start = 6.dp)
                                                 .size(20.dp)
                                                 .bouncyClickable {
-                                                    HapticUtils.performHapticFeedback(context, haptic, HapticType.HEAVY)
+                                                    HapticUtils.performHapticFeedback(
+                                                        context,
+                                                        haptic,
+                                                        HapticType.HEAVY
+                                                    )
                                                     manualSyncOffsetMs = 0L
                                                 }
                                         )
@@ -610,6 +614,7 @@ fun FullScreenLyricsView(
                         .fillMaxHeight()
                 ) {
                     val hasLyrics = lyrics?.hasLyrics() == true && lyrics.isErrorMessage().not()
+                    val visibleLyricsSource = lyrics?.source
 
                     when {
                         isLoadingLyrics -> {
@@ -711,6 +716,15 @@ fun FullScreenLyricsView(
                                 )
                             }
                         }
+                    }
+
+                    if (hasLyrics && !visibleLyricsSource.isNullOrBlank()) {
+                        LyricsSourceBadge(
+                            source = visibleLyricsSource,
+                            modifier = Modifier
+                                .align(Alignment.TopStart)
+                                .padding(8.dp)
+                        )
                     }
 
                     // Floating Romanization and Translation Stack (on the right)
@@ -897,6 +911,7 @@ fun FullScreenLyricsView(
                         .fillMaxWidth()
                 ) {
                     val hasLyrics = lyrics?.hasLyrics() == true && lyrics.isErrorMessage().not()
+                    val visibleLyricsSource = lyrics?.source
 
                     when {
                         isLoadingLyrics -> {
@@ -998,6 +1013,15 @@ fun FullScreenLyricsView(
                                 )
                             }
                         }
+                    }
+
+                    if (hasLyrics && !visibleLyricsSource.isNullOrBlank()) {
+                        LyricsSourceBadge(
+                            source = visibleLyricsSource,
+                            modifier = Modifier
+                                .align(Alignment.TopStart)
+                                .padding(8.dp)
+                        )
                     }
 
                     // Floating Romanization and Translation Stack (on the right)
@@ -1219,7 +1243,11 @@ fun FullScreenLyricsView(
                                                 .padding(start = 6.dp)
                                                 .size(20.dp)
                                                 .bouncyClickable {
-                                                    HapticUtils.performHapticFeedback(context, haptic, HapticType.HEAVY)
+                                                    HapticUtils.performHapticFeedback(
+                                                        context,
+                                                        haptic,
+                                                        HapticType.HEAVY
+                                                    )
                                                     manualSyncOffsetMs = 0L
                                                 }
                                         )
@@ -1259,6 +1287,25 @@ fun FullScreenLyricsView(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun LyricsSourceBadge(source: String, modifier: Modifier = Modifier) {
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.92f),
+        tonalElevation = 2.dp
+    ) {
+        Text(
+            text = stringResource(R.string.lyrics_source_attribution, source),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+        )
     }
 }
 

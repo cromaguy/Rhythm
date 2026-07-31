@@ -1268,10 +1268,17 @@ fun MaterialPlayerScreen(
                                 // Only allow downward swipes
                                 if (dragAmount > 0) {
                                     change.consume()
-                                    val currentSwipeProgress = (swipeOffsetY / screenHeight).coerceIn(0f, 1f)
-                                    val dragResistance = (1f - (currentSwipeProgress * 0.35f)).coerceAtLeast(0.55f)
-                                    swipeOffsetY = (swipeOffsetY + dragAmount * dragResistance).coerceIn(0f, dismissTargetOffset)
-                                    velocityTracker = (dragAmount * 0.55f) + (velocityTracker * 0.45f)
+                                    val currentSwipeProgress =
+                                        (swipeOffsetY / screenHeight).coerceIn(0f, 1f)
+                                    val dragResistance =
+                                        (1f - (currentSwipeProgress * 0.35f)).coerceAtLeast(0.55f)
+                                    swipeOffsetY =
+                                        (swipeOffsetY + dragAmount * dragResistance).coerceIn(
+                                            0f,
+                                            dismissTargetOffset
+                                        )
+                                    velocityTracker =
+                                        (dragAmount * 0.55f) + (velocityTracker * 0.45f)
                                 }
                             },
                             onDragEnd = {
@@ -1279,7 +1286,7 @@ fun MaterialPlayerScreen(
 
                                 val fastSwipeThreshold = 900f
                                 val shouldDismiss = swipeOffsetY > swipeDismissThreshold ||
-                                    (velocityTracker > fastSwipeThreshold && swipeOffsetY > screenHeight * 0.03f)
+                                        (velocityTracker > fastSwipeThreshold && swipeOffsetY > screenHeight * 0.03f)
 
                                 if (shouldDismiss) {
                                     HapticUtils.performHapticFeedback(
@@ -1441,7 +1448,12 @@ fun MaterialPlayerScreen(
                         Box(
                             modifier = Modifier
                                 .fillMaxHeight()
-                                .fillMaxWidth((swipeOffsetY / swipeDismissThreshold).coerceIn(0f, 1f))
+                                .fillMaxWidth(
+                                    (swipeOffsetY / swipeDismissThreshold).coerceIn(
+                                        0f,
+                                        1f
+                                    )
+                                )
                                 .background(
                                     if (isPastThreshold) {
                                         MaterialTheme.colorScheme.primary
@@ -1604,16 +1616,19 @@ fun MaterialPlayerScreen(
                                 .fillMaxHeight(if (isTablet) 1.0f else albumArtFraction) // Responsive size based on screen dimensions
                                 .aspectRatio(1f)
                                 .graphicsLayer {
-                                    val currentSwipeProgress = (animatedSwipeOffset / screenHeight).coerceIn(0f, 1f)
+                                    val currentSwipeProgress =
+                                        (animatedSwipeOffset / screenHeight).coerceIn(0f, 1f)
                                     // Album art scales and shrinks during swipe (mini-player effect)
-                                    val combinedScale = albumScale * (1f - currentSwipeProgress * 0.2f)
+                                    val combinedScale =
+                                        albumScale * (1f - currentSwipeProgress * 0.2f)
                                     scaleX = combinedScale
                                     scaleY = combinedScale
-                                    alpha = albumAlpha * (1f - currentSwipeProgress * 0.3f) * line2Alpha
-                                    
+                                    alpha =
+                                        albumAlpha * (1f - currentSwipeProgress * 0.3f) * line2Alpha
+
                                     // Move upward slightly as if collapsing to mini player position
                                     translationY = -currentSwipeProgress * 100f + line2TranslationY
-                                    
+
                                     // Apply horizontal translation for track swipe and track change animation
                                     translationX = artworkTranslationX + albumSlideOffset
                                 }
@@ -1624,17 +1639,29 @@ fun MaterialPlayerScreen(
                                             onDoubleTap = {
                                                 if (gestureArtworkDoubleTap) {
                                                     // Double tap to play/pause
-                                                    HapticUtils.performHapticFeedback(context, haptic, HapticType.HEAVY)
+                                                    HapticUtils.performHapticFeedback(
+                                                        context,
+                                                        haptic,
+                                                        HapticType.HEAVY
+                                                    )
                                                     onPlayPause()
                                                 }
                                             },
                                             onTap = {
                                                 // Single tap - toggle lyrics if available
                                                 if (showLyrics && !isLyricsContentVisible && isSongInfoVisible) {
-                                                    HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
+                                                    HapticUtils.performHapticFeedback(
+                                                        context,
+                                                        haptic,
+                                                        HapticType.LIGHT
+                                                    )
                                                     showLyricsView = !showLyricsView
                                                 } else if (showLyrics && isLyricsContentVisible && !isSongInfoVisible) {
-                                                    HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
+                                                    HapticUtils.performHapticFeedback(
+                                                        context,
+                                                        haptic,
+                                                        HapticType.LIGHT
+                                                    )
                                                     showLyricsView = !showLyricsView
                                                 }
                                             }
@@ -1648,11 +1675,19 @@ fun MaterialPlayerScreen(
                                             onDragEnd = {
                                                 if (artworkOffsetX < -artworkSwipeThreshold) {
                                                     // Swipe left - next track
-                                                    HapticUtils.performHapticFeedback(context, haptic, HapticType.HEAVY)
+                                                    HapticUtils.performHapticFeedback(
+                                                        context,
+                                                        haptic,
+                                                        HapticType.HEAVY
+                                                    )
                                                     onSkipNext()
                                                 } else if (artworkOffsetX > artworkSwipeThreshold) {
                                                     // Swipe right - previous track
-                                                    HapticUtils.performHapticFeedback(context, haptic, HapticType.HEAVY)
+                                                    HapticUtils.performHapticFeedback(
+                                                        context,
+                                                        haptic,
+                                                        HapticType.HEAVY
+                                                    )
                                                     onSkipPrevious()
                                                 }
                                                 artworkOffsetX = 0f
@@ -1722,10 +1757,15 @@ fun MaterialPlayerScreen(
                                                         .align(androidx.compose.ui.Alignment.TopEnd)
                                                         .padding(10.dp)
                                                         .background(
-                                                            MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.82f),
+                                                            MaterialTheme.colorScheme.surfaceContainer.copy(
+                                                                alpha = 0.82f
+                                                            ),
                                                             RoundedCornerShape(50)
                                                         )
-                                                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                                                        .padding(
+                                                            horizontal = 10.dp,
+                                                            vertical = 6.dp
+                                                        ),
                                                     contentAlignment = androidx.compose.ui.Alignment.Center
                                                 ) {
                                                     Row(
@@ -1756,9 +1796,15 @@ fun MaterialPlayerScreen(
                                                             Brush.verticalGradient(
                                                                 colors = listOf(
                                                                     Color.Transparent,
-                                                                    BottomSheetDefaults.ContainerColor.copy(alpha = 0.6f),
-                                                                    BottomSheetDefaults.ContainerColor.copy(alpha = 0.9f),
-                                                                    BottomSheetDefaults.ContainerColor.copy(alpha = 1.0f)
+                                                                    BottomSheetDefaults.ContainerColor.copy(
+                                                                        alpha = 0.6f
+                                                                    ),
+                                                                    BottomSheetDefaults.ContainerColor.copy(
+                                                                        alpha = 0.9f
+                                                                    ),
+                                                                    BottomSheetDefaults.ContainerColor.copy(
+                                                                        alpha = 1.0f
+                                                                    )
                                                                 )
                                                             )
                                                         )
@@ -1802,7 +1848,9 @@ fun MaterialPlayerScreen(
                                                             Brush.verticalGradient(
                                                                 0.0f to Color.Transparent,
                                                                 0.35f to Color.Transparent,
-                                                                1.0f to BottomSheetDefaults.ContainerColor.copy(alpha = 0.85f)
+                                                                1.0f to BottomSheetDefaults.ContainerColor.copy(
+                                                                    alpha = 0.85f
+                                                                )
                                                             )
                                                         )
                                                 )
@@ -2014,10 +2062,14 @@ fun MaterialPlayerScreen(
                                                 .background(
                                                     Brush.horizontalGradient(
                                                         colors = listOf(
-                                                            BottomSheetDefaults.ContainerColor.copy(alpha = 0.4f),
+                                                            BottomSheetDefaults.ContainerColor.copy(
+                                                                alpha = 0.4f
+                                                            ),
                                                             Color.Transparent,
                                                             Color.Transparent,
-                                                            BottomSheetDefaults.ContainerColor.copy(alpha = 0.4f)
+                                                            BottomSheetDefaults.ContainerColor.copy(
+                                                                alpha = 0.4f
+                                                            )
                                                         )
                                                     )
                                                 )
@@ -2029,9 +2081,15 @@ fun MaterialPlayerScreen(
                                                 .background(
                                                     brush = Brush.verticalGradient(
                                                         colors = listOf(
-                                                            BottomSheetDefaults.ContainerColor.copy(alpha = 0.50f),
-                                                            BottomSheetDefaults.ContainerColor.copy(alpha = 0.60f),
-                                                            BottomSheetDefaults.ContainerColor.copy(alpha = 0.75f)
+                                                            BottomSheetDefaults.ContainerColor.copy(
+                                                                alpha = 0.50f
+                                                            ),
+                                                            BottomSheetDefaults.ContainerColor.copy(
+                                                                alpha = 0.60f
+                                                            ),
+                                                            BottomSheetDefaults.ContainerColor.copy(
+                                                                alpha = 0.75f
+                                                            )
                                                         )
                                                     ),
                                                     shape = RoundedCornerShape(0.dp)
@@ -2045,7 +2103,9 @@ fun MaterialPlayerScreen(
                                                     brush = Brush.radialGradient(
                                                         colors = listOf(
                                                             Color.Transparent,
-                                                            BottomSheetDefaults.ContainerColor.copy(alpha = 0.10f)
+                                                            BottomSheetDefaults.ContainerColor.copy(
+                                                                alpha = 0.10f
+                                                            )
                                                         ),
                                                         radius = 500f
                                                     ),
@@ -2313,7 +2373,9 @@ fun MaterialPlayerScreen(
                                                             Column(
                                                                 modifier = Modifier
                                                                     .fillMaxSize()
-                                                                    .verticalScroll(rememberScrollState()),
+                                                                    .verticalScroll(
+                                                                        rememberScrollState()
+                                                                    ),
                                                                 horizontalAlignment = when (playerLyricsAlignment) {
                                                                     "START" -> Alignment.Start
                                                                     "END" -> Alignment.End
@@ -2454,7 +2516,8 @@ fun MaterialPlayerScreen(
                             .fillMaxWidth()
                             .graphicsLayer {
                                 // Fade out controls as we swipe down (mini-player doesn't show full controls)
-                                val swipeProgress = (animatedSwipeOffset / screenHeight).coerceIn(0f, 1f)
+                                val swipeProgress =
+                                    (animatedSwipeOffset / screenHeight).coerceIn(0f, 1f)
                                 alpha = 1f - (swipeProgress * 1.2f)
                                 translationY = swipeProgress * 50f
                             }
@@ -2599,7 +2662,9 @@ fun MaterialPlayerScreen(
                                                         }
                                                     )
                                                     .background(
-                                                        MaterialTheme.colorScheme.secondary.copy(alpha = 0.5f),
+                                                        MaterialTheme.colorScheme.secondary.copy(
+                                                            alpha = 0.5f
+                                                        ),
                                                         RoundedCornerShape(8.dp)
                                                     )
                                                     .align(Alignment.CenterStart)
@@ -2832,11 +2897,13 @@ fun MaterialPlayerScreen(
                                         showChips = true
                                     },
                                     modifier = Modifier
-                                        .width(when {
-                                            isExtraSmallWidth -> 160.dp
-                                            isCompactWidth -> 190.dp
-                                            else -> 226.dp
-                                        })
+                                        .width(
+                                            when {
+                                                isExtraSmallWidth -> 160.dp
+                                                isCompactWidth -> 190.dp
+                                                else -> 226.dp
+                                            }
+                                        )
                                         .height(26.dp)
                                         .background(
                                             color = BottomSheetDefaults.ContainerColor,
@@ -4000,7 +4067,9 @@ fun MaterialPlayerScreen(
             // Adaptive Layout Logic
             if (isLandscapeTablet) {
                 Row(
-                    modifier = Modifier.fillMaxSize().navigationBarsPadding(),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .navigationBarsPadding(),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     // Left Side - Reduced size on tablet
@@ -4018,7 +4087,9 @@ fun MaterialPlayerScreen(
                     }
                     // Right Side
                     Column(
-                        modifier = Modifier.weight(1f).fillMaxHeight(),
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight(),
                         verticalArrangement = Arrangement.Center
                     ) {
                         Spacer(modifier = Modifier.height(32.dp))
@@ -4029,7 +4100,9 @@ fun MaterialPlayerScreen(
                 }
             } else {
                 Column(
-                    modifier = Modifier.fillMaxSize().navigationBarsPadding(),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .navigationBarsPadding(),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.SpaceBetween
                 ) {
@@ -4126,6 +4199,7 @@ fun MaterialPlayerScreen(
                 // Clear cache and refetch lyrics from source priority
                 musicViewModel.clearLyricsCacheAndRefetch()
             },
+            onSourcePreferenceChanged = musicViewModel::retryFetchLyrics,
             onEmbedInFile = { editedLyrics ->
                 // Embed lyrics into the audio file's metadata with permission handling
                 musicViewModel.embedLyricsInFile(

@@ -198,6 +198,8 @@ fun SettingsScreen(
     val rhythmGuardMode by appSettings.rhythmGuardMode.collectAsState()
     val showSettingsSuggestions by appSettings.showSettingsSuggestions.collectAsState()
     val showKeyboardOnSearchOpen by appSettings.showKeyboardOnSearchOpen.collectAsState()
+    val currentAppLocale = context.resources.configuration.locales[0]
+    val currentAppLanguage = currentAppLocale.getDisplayName(currentAppLocale)
     
     var showDefaultScreenDialog by remember { mutableStateOf(false) }
     var showLanguageSwitcher by remember { mutableStateOf(false) }
@@ -266,7 +268,7 @@ fun SettingsScreen(
                     add(SettingItem(
                         RhythmIcons.Public,
                         context.getString(R.string.settings_language),
-                        context.getString(R.string.settings_language_desc),
+                        currentAppLanguage,
                         onClick = { showLanguageSwitcher = true }
                     ))
                     if (appMode == "LOCAL") {
@@ -473,7 +475,11 @@ fun SettingsScreen(
                                                     modifier = Modifier
                                                         .width(1.dp)
                                                         .height(20.dp)
-                                                        .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f))
+                                                        .background(
+                                                            MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                                                                alpha = 0.3f
+                                                            )
+                                                        )
                                                 )
                                                 Spacer(modifier = Modifier.width(12.dp))
                                                 AnimatedSwitch(
@@ -574,7 +580,9 @@ fun SettingsScreen(
                 },
                 shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
                 containerColor = MaterialTheme.colorScheme.surfaceContainer,
-                modifier = Modifier.widthIn(max = 640.dp).fillMaxWidth()
+                modifier = Modifier
+                    .widthIn(max = 640.dp)
+                    .fillMaxWidth()
             ) {
                 Column(
                     modifier = Modifier
@@ -861,7 +869,11 @@ fun SettingRow(item: SettingItem) {
                             indication = null,
                             onClick = {
                                 isPressed = true
-                                HapticUtils.performHapticFeedback(context, hapticFeedback, HapticType.HEAVY)
+                                HapticUtils.performHapticFeedback(
+                                    context,
+                                    hapticFeedback,
+                                    HapticType.HEAVY
+                                )
                                 item.onClick()
                             }
                         )
@@ -871,7 +883,11 @@ fun SettingRow(item: SettingItem) {
                             indication = null,
                             onClick = {
                                 isPressed = true
-                                HapticUtils.performHapticFeedback(context, hapticFeedback, HapticType.HEAVY)
+                                HapticUtils.performHapticFeedback(
+                                    context,
+                                    hapticFeedback,
+                                    HapticType.HEAVY
+                                )
                                 item.onClick()
                             }
                         )

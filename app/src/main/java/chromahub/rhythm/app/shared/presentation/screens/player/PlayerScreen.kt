@@ -900,6 +900,7 @@ fun PlayerScreen(
             onRefresh = {
                 musicViewModel.clearLyricsCacheAndRefetch()
             },
+            onSourcePreferenceChanged = musicViewModel::retryFetchLyrics,
             onEmbedInFile = { editedLyrics ->
                 musicViewModel.embedLyricsInFile(
                     lyrics = editedLyrics,

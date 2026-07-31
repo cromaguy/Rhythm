@@ -275,10 +275,57 @@ object RhythmLyricsParser {
     }
 
     private fun WordByWordLyricLine.asDisplayText(): String {
-        return words.joinToString(separator = "") { word ->
-            if (word.isPart && word.text.isNotEmpty()) word.text else " ${word.text}"
-        }.trim()
+        return joinWords(words)
     }
+
+    /** Treats `part` as a join hint without collapsing ordinary Latin word boundaries. */
+    private fun joinWords(words: List<WordByWordWord>): String {
+        val nonBlankWords = words.filter { it.text.isNotBlank() }
+        if (nonBlankWords.isEmpty()) return ""
+        val hasExplicitBoundaries = nonBlankWords.drop(1).any { !it.isPart }
+
+        return buildString {
+            nonBlankWords.forEachIndexed { index, word ->
+                val text = word.text.trim()
+                val previous = nonBlankWords.getOrNull(index - 1)?.text?.trim().orEmpty()
+                val attach = index == 0 ||
+                    shouldAttachWithoutSpace(
+                        previous = previous,
+                        current = text,
+                        isPart = word.isPart,
+                        hasExplicitBoundaries = hasExplicitBoundaries
+                    )
+                if (!attach) append(' ')
+                append(text)
+            }
+        }
+    }
+
+    private fun shouldAttachWithoutSpace(
+        previous: String,
+        current: String,
+        isPart: Boolean,
+        hasExplicitBoundaries: Boolean
+    ): Boolean {
+        if (previous.isEmpty() || current.isEmpty()) return true
+        if (containsCjk(previous) || containsCjk(current)) return true
+        if (current.first() in ".,!?;:%)]}»”’") return true
+        if (previous.last() in "([{«“") return true
+        if (current.first() in "'’-‐‑–—" || previous.last() in "'’-‐‑–—") return true
+        return isPart && hasExplicitBoundaries
+    }
+
+    private fun containsCjk(text: String): Boolean =
+        text.codePoints().anyMatch { codePoint ->
+            when (Character.UnicodeScript.of(codePoint)) {
+                Character.UnicodeScript.HAN,
+                Character.UnicodeScript.HIRAGANA,
+                Character.UnicodeScript.KATAKANA,
+                Character.UnicodeScript.HANGUL,
+                Character.UnicodeScript.BOPOMOFO -> true
+                else -> false
+            }
+        }
 
     private fun canonicalText(text: String): String {
         return text
@@ -367,13 +414,7 @@ object RhythmLyricsParser {
      */
     fun toPlainText(wordByWordLines: List<WordByWordLyricLine>): String {
         return wordByWordLines.joinToString("\n") { line ->
-            line.words.joinToString("") { word ->
-                if (word.isPart && word.text.isNotEmpty()) {
-                    word.text // syllable, no space before
-                } else {
-                    " ${word.text}"
-                }
-            }.trim()
+            joinWords(line.words)
         }
     }
     
@@ -383,13 +424,7 @@ object RhythmLyricsParser {
     fun toLRCFormat(wordByWordLines: List<WordByWordLyricLine>): String {
         return wordByWordLines.flatMap { line ->
             val timestamp = formatLRCTimestamp(line.lineTimestamp)
-            val text = line.words.joinToString("") { word ->
-                if (word.isPart && word.text.isNotEmpty()) {
-                    word.text
-                } else {
-                    " ${word.text}"
-                }
-            }.trim()
+            val text = joinWords(line.words)
             buildList {
                 add("[$timestamp]$text")
                 line.translation?.takeIf { it.isNotBlank() }?.let { add("[$timestamp]($it)") }
