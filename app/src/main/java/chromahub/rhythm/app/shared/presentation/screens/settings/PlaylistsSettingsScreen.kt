@@ -239,28 +239,7 @@ fun PlaylistsSettingsScreen(onBackClick: () -> Unit) {
                     onClick = null,
                     toggleState = defaultPlaylistsEnabled,
                     onToggleChange = { enabled ->
-                        appSettings.setDefaultPlaylistsEnabled(enabled)
-                        // Reload playlists to apply the change
-                        if (enabled) {
-                            // Add default playlists if they don't exist
-                            val currentPlaylists = playlists.toMutableList()
-                            if (currentPlaylists.none { it.id == "2" }) {
-                                currentPlaylists.add(Playlist("2", "Recently Added"))
-                            }
-                            if (currentPlaylists.none { it.id == "3" }) {
-                                currentPlaylists.add(Playlist("3", "Most Played"))
-                            }
-                            // Save updated playlists
-                            val playlistsJson = GsonUtils.gson.toJson(currentPlaylists)
-                            appSettings.setPlaylists(playlistsJson)
-                        } else {
-                            // Remove default playlists (except Favorites)
-                            val filteredPlaylists = playlists.filter { it.id == "1" || !it.isDefault }
-                            val playlistsJson = GsonUtils.gson.toJson(filteredPlaylists)
-                            appSettings.setPlaylists(playlistsJson)
-                        }
-                        // Show restart dialog
-                        showRestartDialog = true
+                        musicViewModel.setDefaultPlaylistsEnabled(enabled)
                     }
                 )
             ) + if (defaultPlaylists.isNotEmpty()) {

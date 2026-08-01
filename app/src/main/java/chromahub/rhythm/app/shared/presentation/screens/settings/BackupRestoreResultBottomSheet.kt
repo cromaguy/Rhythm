@@ -103,8 +103,9 @@ import kotlin.system.exitProcess
 import chromahub.rhythm.app.shared.presentation.components.common.CollapsibleHeaderScreen
 import chromahub.rhythm.app.shared.presentation.components.common.ButtonGroupStyle
 import chromahub.rhythm.app.shared.presentation.components.common.ExpressiveScrollBar
-import chromahub.rhythm.app.shared.presentation.components.common.ExpressiveButtonGroup
-import chromahub.rhythm.app.shared.presentation.components.common.ExpressiveGroupButton
+import chromahub.rhythm.app.shared.presentation.components.common.RhythmGroupedButton
+import chromahub.rhythm.app.shared.presentation.components.common.RhythmButtonWeighted
+import chromahub.rhythm.app.shared.presentation.components.common.RhythmButtonSize
 import chromahub.rhythm.app.shared.presentation.components.bottomsheets.StandardBottomSheetHeader
 import chromahub.rhythm.app.shared.presentation.components.common.StyledProgressBar
 import chromahub.rhythm.app.shared.presentation.components.common.ProgressStyle
@@ -277,65 +278,43 @@ fun BackupRestoreResultBottomSheet(
             Spacer(modifier = Modifier.height(16.dp))
 
             if (!state.requiresRestart) {
-                ExpressiveButtonGroup(
+                RhythmGroupedButton(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 20.dp),
-                    style = ButtonGroupStyle.Tonal
+                    size = RhythmButtonSize.Large
                 ) {
-                    ExpressiveGroupButton(
+                    RhythmButtonWeighted(
                         onClick = onDismiss,
-                        modifier = Modifier.weight(1f),
-                        isStart = true
-                    ) {
-                        Icon(
-                            imageVector = RhythmIcons.Close,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(context.getString(R.string.ui_close))
-                    }
+                        weight = 1f,
+                        isFirst = true,
+                        icon = RhythmIcons.Close,
+                        text = context.getString(R.string.ui_close)
+                    )
 
-                    ExpressiveGroupButton(
+                    RhythmButtonWeighted(
                         onClick = onPrimaryAction,
-                        modifier = Modifier.weight(1f),
-                        isEnd = true
-                    ) {
-                        Icon(
-                            imageVector = if (state.isError) {
-                                RhythmIcons.Refresh
-                            } else {
-                                RhythmIcons.Check
-                            },
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(context.getString(R.string.ui_ok))
-                    }
+                        weight = 1f,
+                        isLast = true,
+                        icon = if (state.isError) RhythmIcons.Refresh else RhythmIcons.Check,
+                        text = context.getString(R.string.ui_ok)
+                    )
                 }
             } else {
-                ExpressiveButtonGroup(
+                RhythmGroupedButton(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 20.dp),
-                    style = ButtonGroupStyle.Tonal
+                    size = RhythmButtonSize.Large
                 ) {
-                    ExpressiveGroupButton(
+                    RhythmButtonWeighted(
                         onClick = onPrimaryAction,
-                        modifier = Modifier.weight(1f),
-                        isStart = true,
-                        isEnd = true
-                    ) {
-                        Icon(
-                            imageVector = MaterialSymbolIcon("restart_alt"),
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(context.getString(R.string.settings_restart_now))
-                    }
+                        weight = 1f,
+                        isFirst = true,
+                        isLast = true,
+                        icon = MaterialSymbolIcon("restart_alt"),
+                        text = context.getString(R.string.settings_restart_now)
+                    )
                 }
             }
         }

@@ -13,10 +13,28 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import chromahub.rhythm.app.shared.presentation.components.icons.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -61,7 +79,9 @@ fun PermissionHandler(
     onSetIsInitializingApp: (Boolean) -> Unit, // Callback to update state
     musicViewModel: MusicViewModel = viewModel(),
     updaterViewModel: AppUpdaterViewModel = rememberAppUpdaterViewModel(),
-    streamingViewModel: StreamingMusicViewModel = viewModel()
+    streamingViewModel: StreamingMusicViewModel = viewModel(),
+    showMediaScanLoader: Boolean,
+    onShowMediaScanLoaderChange: (Boolean) -> Unit
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -70,7 +90,6 @@ fun PermissionHandler(
     val appMode by appSettings.appMode.collectAsState()
     var permissionScreenState by remember { mutableStateOf<PermissionScreenState>(PermissionScreenState.Loading) }
     var permissionRequestLaunched by remember { mutableStateOf(false) } // New state to track if permission request has been launched
-    var showMediaScanLoader by remember { mutableStateOf(false) } // New state for media scan loader
     var continueFullTour by remember { mutableStateOf(false) }
     // Track whether the tour was programmatically reset so that remember(onboardingCompleted)
     // does not flip currentOnboardingStep back to COMPLETE during mid-tour recompositions.
@@ -173,8 +192,9 @@ fun PermissionHandler(
         tourWasReset = false // Clear reset flag before completing so the remember lambda sees false
         appSettings.setOnboardingCompleted(true)
         currentOnboardingStep = OnboardingStep.COMPLETE
-        if (!initialMediaScanCompleted && appSettings.appMode.value != "STREAMING") {
-            showMediaScanLoader = true
+        if (!initialMediaScanCompleted && !musicViewModel.isLibraryRefreshing.value && appSettings.appMode.value != "STREAMING") {
+            onShowMediaScanLoaderChange(true)
+            musicViewModel.refreshLibrary(showMediaScanLoader = false)
         }
     }
     
@@ -284,9 +304,9 @@ fun PermissionHandler(
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        // Show the main app when onboarding is complete, not initializing, and media scan is not needed
+        // Show the main app as soon as onboarding is complete, not initializing
         AnimatedVisibility(
-            visible = currentOnboardingStep == OnboardingStep.COMPLETE && !isInitializingApp && !showMediaScanLoader, // Show app when complete AND not initializing AND media scan is done
+            visible = currentOnboardingStep == OnboardingStep.COMPLETE && !isInitializingApp, // Show app immediately when complete
             enter = fadeIn(animationSpec = tween(1000, easing = androidx.compose.animation.core.EaseOutCubic)) +
                    slideInVertically(
                        initialOffsetY = { it / 3 },
@@ -296,21 +316,6 @@ fun PermissionHandler(
             onPermissionsGranted()
         }
 
-        // Show media scan loader only on first launch after onboarding completion
-        AnimatedVisibility(
-            visible = showMediaScanLoader && !isInitializingApp,
-            enter = fadeIn(animationSpec = tween(800, easing = androidx.compose.animation.core.EaseOutCubic)),
-            exit = fadeOut(animationSpec = tween(800, easing = androidx.compose.animation.core.EaseInCubic))
-        ) {
-            MediaScanLoader(
-                musicViewModel = musicViewModel,
-                onScanComplete = {
-                    showMediaScanLoader = false
-                    // Mark initial media scan as completed
-                    appSettings.setInitialMediaScanCompleted(true)
-                }
-            )
-        }
 
         AnimatedVisibility(
             visible = isInitializingApp || (isLoading && currentOnboardingStep != OnboardingStep.COMPLETE && currentOnboardingStep != OnboardingStep.PERMISSIONS), // Show loading if app initializing, or general loading not on permission screen
@@ -383,7 +388,11 @@ fun PermissionHandler(
                                 OnboardingStep.MEDIA_SCAN
                             }
                         }
-                        OnboardingStep.MEDIA_SCAN -> currentOnboardingStep = OnboardingStep.UPDATER
+                        OnboardingStep.MEDIA_SCAN -> {
+                            musicViewModel.refreshLibrary(showMediaScanLoader = false)
+                            onShowMediaScanLoaderChange(true)
+                            currentOnboardingStep = OnboardingStep.UPDATER
+                        }
                         OnboardingStep.UPDATER -> currentOnboardingStep = OnboardingStep.FULL_TOUR_PROMPT
                         OnboardingStep.FULL_TOUR_PROMPT -> {
                             currentOnboardingStep = if (continueFullTour) {

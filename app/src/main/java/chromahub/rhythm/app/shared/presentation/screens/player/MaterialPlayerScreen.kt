@@ -1613,7 +1613,7 @@ fun MaterialPlayerScreen(
                         
                         Box(
                             modifier = Modifier
-                                .fillMaxHeight(if (isTablet) 1.0f else albumArtFraction) // Responsive size based on screen dimensions
+                                .fillMaxHeight(if (isLandscapeTablet) 1.0f else if (isTablet) 0.55f else albumArtFraction) // Responsive size based on screen dimensions
                                 .aspectRatio(1f)
                                 .graphicsLayer {
                                     val currentSwipeProgress =

@@ -73,10 +73,15 @@ class StreamingNotificationManager(private val context: Context) {
     
     // ========== Authentication Notifications ==========
     
+    private fun isNotificationsEnabled(): Boolean {
+        return chromahub.rhythm.app.shared.data.model.AppSettings.getInstance(context).streamingNotificationsEnabled.value
+    }
+
     /**
      * Show notification when streaming service is successfully connected
      */
     fun notifyAuthenticationSuccess(serviceName: String) {
+        if (!isNotificationsEnabled()) return
         val intent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             putExtra("navigate_to", "streaming")

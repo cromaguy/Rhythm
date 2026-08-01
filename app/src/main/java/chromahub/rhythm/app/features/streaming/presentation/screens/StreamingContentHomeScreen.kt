@@ -50,6 +50,12 @@ import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.Text
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import kotlinx.coroutines.launch
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -113,14 +119,14 @@ import chromahub.rhythm.app.shared.data.model.AppSettings
 import chromahub.rhythm.app.shared.data.model.Song
 import chromahub.rhythm.app.shared.data.repository.PlaybackStatsRepository
 import android.net.Uri
-import chromahub.rhythm.app.shared.presentation.components.common.ButtonGroupStyle
 import chromahub.rhythm.app.shared.presentation.components.common.CollapsibleHeaderScreen
 import chromahub.rhythm.app.ui.LocalMiniPlayerPadding
 import chromahub.rhythm.app.shared.presentation.components.common.ExpressiveElevatedCard
-import chromahub.rhythm.app.shared.presentation.components.common.ExpressiveButtonGroup
 import chromahub.rhythm.app.shared.presentation.components.common.ExpressiveFilledIconButton
-import chromahub.rhythm.app.shared.presentation.components.common.ExpressiveGroupButton
 import chromahub.rhythm.app.shared.presentation.components.common.ExpressiveShapeTarget
+import chromahub.rhythm.app.shared.presentation.components.common.RhythmGroupedButton
+import chromahub.rhythm.app.shared.presentation.components.common.RhythmButtonWeighted
+import chromahub.rhythm.app.shared.presentation.components.common.RhythmButtonSize
 import chromahub.rhythm.app.shared.presentation.components.common.rememberExpressiveShapeFor
 import chromahub.rhythm.app.util.HapticUtils
 import chromahub.rhythm.app.util.HapticType
@@ -842,24 +848,18 @@ private fun StreamingHomeStateCard(
                 )
             }
 
-            if (actionText != null && onAction != null) {
-                ExpressiveButtonGroup(
-                    style = ButtonGroupStyle.Filled,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    ExpressiveGroupButton(
-                        onClick = onAction,
-                        isStart = true,
-                        isEnd = true,
+            if (actionText != null && onAction != null) {                    RhythmGroupedButton(
+                        size = RhythmButtonSize.Large,
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text(
+                        RhythmButtonWeighted(
+                            onClick = onAction,
+                            weight = 1f,
                             text = actionText,
-                            style = MaterialTheme.typography.labelLarge,
-                            fontWeight = FontWeight.SemiBold
+                            isFirst = true,
+                            isLast = true
                         )
                     }
-                }
             }
         }
     }
@@ -884,52 +884,42 @@ private fun StreamingWidgetSectionTitle(
                 text = title,
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Black,
-                color = MaterialTheme.colorScheme.onBackground
+                color = MaterialTheme.colorScheme.onBackground,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
             Text(
                 text = subtitle,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = 2.dp)
+                modifier = Modifier.padding(top = 2.dp),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
         }
 
         if (onPlayAll != null || onShufflePlay != null) {
-            ExpressiveButtonGroup(style = ButtonGroupStyle.Tonal) {
-                onPlayAll?.let { playAction ->
-                    ExpressiveGroupButton(
+            RhythmGroupedButton(size = RhythmButtonSize.Small, isFillMaxWidth = false, modifier = Modifier.widthIn(max = 120.dp)) {
+                val playAction = onPlayAll
+                val shuffleAction = onShufflePlay
+                if (playAction != null) {
+                    RhythmButtonWeighted(
                         onClick = playAction,
-                        isStart = true,
-                        isEnd = onShufflePlay == null
-                    ) {
-                        Text(
-                            text = stringResource(id = R.string.action_play),
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
+                        weight = 1f,
+                        text = stringResource(id = R.string.action_play),
+                        isFirst = true,
+                        isLast = shuffleAction == null
+                    )
                 }
-
-                onShufflePlay?.let { shuffleAction ->
-                    ExpressiveGroupButton(
+                if (shuffleAction != null) {
+                    RhythmButtonWeighted(
                         onClick = shuffleAction,
-                        isStart = onPlayAll == null,
-                        isEnd = true
-                    ) {
-                        Icon(
-                            imageVector = RhythmIcons.Shuffle,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        if (onPlayAll == null) {
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                text = stringResource(id = R.string.action_shuffle),
-                                style = MaterialTheme.typography.labelMedium,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                    }
+                        weight = 1f,
+                        icon = RhythmIcons.Shuffle,
+                        text = if (playAction == null) stringResource(id = R.string.action_shuffle) else null,
+                        isFirst = playAction == null,
+                        isLast = true
+                    )
                 }
             }
         }
@@ -1195,17 +1185,40 @@ private fun StreamingRecommendationsCarousel(
         initialItem = 0,
         itemCount = { songs.size }
     )
+    val coroutineScope = rememberCoroutineScope()
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                if (songs.isNotEmpty() && !carouselState.isScrollInProgress) {
+                    coroutineScope.launch {
+                        carouselState.scrollToItem(carouselState.currentItem.coerceIn(0, songs.lastIndex))
+                    }
+                }
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
 
     LaunchedEffect(songs.size, autoScrollEnabled, autoScrollIntervalSeconds) {
         if (autoScrollEnabled && songs.size > 1) {
+            if (!carouselState.isScrollInProgress) {
+                carouselState.scrollToItem(carouselState.currentItem.coerceIn(0, songs.lastIndex))
+            }
             while (true) {
                 delay(autoScrollIntervalSeconds.coerceIn(2, 20) * 1000L)
-                val currentItem = carouselState.currentItem
-                val nextItem = (currentItem + 1) % songs.size
-                carouselState.animateScrollToItem(
-                    nextItem,
-                    animationSpec = tween(durationMillis = 900)
-                )
+                if (!carouselState.isScrollInProgress) {
+                    val currentItem = carouselState.currentItem
+                    val nextItem = (currentItem + 1) % songs.size
+                    carouselState.animateScrollToItem(
+                        nextItem,
+                        animationSpec = tween(durationMillis = 900)
+                    )
+                }
             }
         }
     }
@@ -1315,23 +1328,20 @@ private fun StreamingRecommendationsCarousel(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        ExpressiveButtonGroup(style = ButtonGroupStyle.Filled) {
-                            ExpressiveGroupButton(
+                        RhythmGroupedButton(
+                            size = RhythmButtonSize.Large,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            RhythmButtonWeighted(
                                 onClick = {
                                     HapticUtils.performHapticFeedback(context, haptic, HapticType.HEAVY)
                                     onPlaySong(song, page)
                                 },
-                                isStart = true,
-                                isEnd = true,
-                                modifier = Modifier.height(56.dp)
-                            ) {
-                                Text(
-                                    text = context.getString(R.string.action_play),
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.ExtraBold,
-                                    modifier = Modifier.padding(horizontal = 16.dp)
-                                )
-                            }
+                                weight = 1f,
+                                text = context.getString(R.string.action_play),
+                                isFirst = true,
+                                isLast = true
+                            )
                         }
 
                         Row(

@@ -1415,10 +1415,12 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
         Log.e(TAG, "Playback error: $message", error)
         
         // Prevent auto skip and looping loading on corrupted songs by pausing/stopping the player
-        try {
-            player.pause()
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to pause player on error", e)
+        if (appSettings.trackErrorCheckerEnabled.value) {
+            try {
+                player.pause()
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to pause player on error", e)
+            }
         }
     }
 
@@ -3943,6 +3945,11 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
             .setProgress(safeTotalSeconds, completedSeconds, false)
             .setContentIntent(pendingIntent)
             .build()
+
+        val appSettings = chromahub.rhythm.app.shared.data.model.AppSettings.getInstance(this)
+        if (!appSettings.sleepTimerNotificationsEnabled.value) {
+            return
+        }
 
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.notify(SLEEP_TIMER_NOTIFICATION_ID, notification)

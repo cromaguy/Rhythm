@@ -483,7 +483,12 @@ fun LocalNavigation(
             }
             basePadding + systemNavBarPadding
         } else {
-            0.dp
+            if (showMiniPlayer) {
+                val miniPlayerHeight = if (miniPlayerThemeId == "EXPRESSIVE") 84.dp else 96.dp
+                miniPlayerHeight + 16.dp + systemNavBarPadding
+            } else {
+                0.dp
+            }
         },
         animationSpec = spring(
             dampingRatio = Spring.DampingRatioMediumBouncy,
@@ -2722,9 +2727,9 @@ private fun LocalNavigationContent(
 
                         if (targetPlaylist != null) {
                             // Filter available songs
-                            val availableSongs =
-                                remember(allSongs, targetPlaylist.songs, searchQuery) {
-                                    allSongs.filter { song ->
+                             val availableSongs =
+                                remember(songs, targetPlaylist.songs, searchQuery) {
+                                    songs.filter { song ->
                                         // Filter out songs that are already in the playlist
                                         !targetPlaylist.songs.any { it.id == song.id }
                                     }

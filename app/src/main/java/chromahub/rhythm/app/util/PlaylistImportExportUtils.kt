@@ -217,7 +217,7 @@ object PlaylistImportExportUtils {
      */
     fun isRhythmBackupJson(json: String): Boolean {
         return try {
-            val map = Gson().fromJson(json, Map::class.java) ?: return false
+            val map = GsonUtils.gson.fromJson(json, Map::class.java) ?: return false
             map.containsKey("backup_version") && map.containsKey("playlists_data")
         } catch (_: Exception) {
             false
@@ -237,7 +237,7 @@ object PlaylistImportExportUtils {
         availableSongs: List<Song>
     ): Result<List<Playlist>> {
         return try {
-            val backupMap = Gson().fromJson(backupJson, Map::class.java)
+            val backupMap = GsonUtils.gson.fromJson(backupJson, Map::class.java)
                 ?: return Result.failure(IllegalArgumentException("Invalid Rhythm backup JSON"))
 
             val playlistsData = backupMap["playlists_data"] as? String
@@ -350,7 +350,7 @@ object PlaylistImportExportUtils {
             }
         )
         
-        val json = Gson().toJson(exportData)
+        val json = GsonUtils.gson.toJson(exportData)
         outputFile.writeText(json)
     }
     
@@ -386,7 +386,7 @@ object PlaylistImportExportUtils {
     }
     
     private fun importFromJson(content: String, availableSongs: List<Song>): Playlist {
-        val exportData = Gson().fromJson(content, PlaylistExportData::class.java)
+        val exportData = GsonUtils.gson.fromJson(content, PlaylistExportData::class.java)
             ?: throw IllegalArgumentException("Invalid playlist JSON format")
         
         val songsList = exportData.songs
@@ -840,7 +840,7 @@ object PlaylistImportExportUtils {
                             )
                         }
                     )
-                    val json = Gson().toJson(exportData)
+                    val json = GsonUtils.gson.toJson(exportData)
                     outputStream.write(json.toByteArray())
                 }
                 PlaylistExportFormat.M3U -> exportM3uToStream(playlist, outputStream, false)

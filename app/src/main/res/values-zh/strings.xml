@@ -593,7 +593,7 @@
     <string name="option_stable">稳定版</string>
     <string name="option_beta">测试版</string>
     <string name="option_home">首页</string>
-    <string name="option_library">图书馆</string>
+    <string name="option_library">音乐库</string>
     <!-- Onboarding Media Scan -->
     <string name="onboarding_how_it_works">它是如何运作的</string>
     <!-- Onboarding Setup Complete -->
@@ -792,7 +792,7 @@
     <string name="backup_all_settings_placeholder">所有设置、播放列表、主题和库自定义</string>
     <string name="backup_restore_tap_placeholder">一键从文件或剪贴板恢复</string>
     <string name="backup_local_storage_placeholder">为了保护隐私，备份本地存储在您的设备上</string>
-    <string name="library_reorder_tabs">重新排序选项卡以定制您的图书馆体验</string>
+    <string name="library_reorder_tabs">重新排序选项卡以定制您的音乐库体验</string>
     <string name="external_services_desc">控制哪些外部 API 服务处于活动状态以增强您的音乐体验。打开/关闭服务以管理数据使用和功能。</string>
     <string name="lyrics_source_priority_title">歌词优先来源</string>
     <string name="playlist_action_title">播放列表点击操作</string>
@@ -929,7 +929,7 @@
     <string name="settings_queue_playback_desc">自动添加、重复</string>
     <string name="settings_equalizer_title">均衡器</string>
     <string name="settings_equalizer_desc">低音、高音</string>
-    <string name="settings_section_library_content">图书馆与媒体</string>
+    <string name="settings_section_library_content">音乐库与媒体</string>
     <string name="settings_media_scan_title">媒体扫描</string>
     <string name="settings_media_scan_desc">扫描文件夹</string>
     <string name="settings_playlists_title">播放列表</string>
@@ -1417,7 +1417,7 @@
     
     <!-- More PlaceholderScreens Strings -->
     <string name="settings_double_tap_artwork_tip">双击封面可快速播放/暂停</string>
-    <string name="settings_full_player">完整玩播放器</string>
+    <string name="settings_full_player">完整播放器</string>
     <string name="settings_header_customization">标题定制</string>
     <string name="settings_header_display">标题显示</string>
     <string name="settings_hue">色调</string>
@@ -1542,7 +1542,7 @@
     <!-- Library Storage -->
     <string name="settings_cache_backend">缓存后端</string>
     <string name="settings_storage_rebuild_room">重建房间数据库</string>
-    <string name="settings_storage_rebuild_room_desc">从当前图书馆数据重新同步 Room 数据库</string>
+    <string name="settings_storage_rebuild_room_desc">从当前音乐库数据重新同步 Room 数据库</string>
     <string name="settings_storage_room_stats">房间数据库统计</string>
     <string name="settings_storage_song_count">已存储 %1$d 首歌曲</string>
     <string name="settings_storage_not_available">在当前模式下不可用</string>
@@ -1695,7 +1695,7 @@
     <string name="settings_tablet_layout_desc">在手机上使用平板电脑式迷你播放器</string>
     <!-- Player Customization -->
     <string name="settings_chip_order">小组件顺序和可见性</string>
-    <string name="settings_chip_order_desc">自定义和重新排序玩家动作筹码</string>
+    <string name="settings_chip_order_desc">自定义和重新排序播放器操作组件</string>
     <string name="settings_artwork_overlay">封面叠加层</string>
     <string name="settings_artwork_overlay_desc">在专辑插图上显示叠加层</string>
     <string name="settings_song_info_artwork">封面上的歌曲信息</string>
@@ -1724,7 +1724,7 @@
     <string name="settings_color_customization">颜色定制</string>
     <string name="settings_color_source">颜色源</string>
     <string name="settings_color_source_album">专辑封面——提取自曲目封面</string>
-    <string name="settings_color_source_monet">系统颜色 - Material 你</string>
+    <string name="settings_color_source_monet">系统颜色 - Material You</string>
     <string name="settings_color_source_custom">自定义方案 - %1$s</string>
     <string name="settings_color_schemes">配色方案</string>
     <string name="settings_color_schemes_desc">浏览并选择预定义的调色板</string>
@@ -1878,11 +1878,11 @@
     <string name="settings_shape_artist_art">艺术家封面形状</string>
     <string name="settings_shape_artist_art_desc">艺术家图片形状</string>
     <string name="settings_shape_player_controls">播放器控制键形状</string>
-    <string name="settings_shape_player_controls_desc">玩家控制形状</string>
+    <string name="settings_shape_player_controls_desc">播放器控制按钮形状</string>
     <string name="settings_shape_mini_player">迷你播放器形状</string>
     <string name="settings_shape_mini_player_desc">迷你播放器造型</string>
-    <string name="settings_library_settings">音乐库经验</string>
-    <string name="settings_library_settings_desc">评级、组织和艺术品行为</string>
+    <string name="settings_library_settings">音乐库体验</string>
+    <string name="settings_library_settings_desc">评分、组织和封面行为</string>
     <string name="settings_library_group_organization">组织与评级</string>
     <string name="settings_library_combine_discs">组合光盘</string>
     <string name="settings_library_combine_discs_desc">将多光盘专辑合并为一个连续排序</string>
@@ -2358,7 +2358,7 @@
     <!-- Settings Suggestions and Tips -->
     <string name="settings_suggestions">设置建议</string>
     <string name="settings_suggestions_desc">在顶部显示上下文建议</string>
-    <string name="settings_performance_desc_optimized">优化触觉、解码、选取框和艺术品获取以减少延迟</string>
+    <string name="settings_performance_desc_optimized">优化触觉、解码、选取框和封面获取以减少延迟</string>
     <string name="moment_morning">今天早上</string>
     <string name="moment_afternoon">今天下午</string>
     <string name="moment_evening">今天晚上</string>
@@ -2384,7 +2384,7 @@
     <string name="settings_tip_updates_active_desc_2">您已准备好接收更新。检查渠道偏好的稳定性与新鲜度。</string>
     <string name="settings_tip_updates_inactive_desc_1">更新被禁用。重新使它们保持受保护和最新状态。</string>
     <string name="settings_tip_updates_inactive_desc_2">您被固定到当前版本。准备好后重新打开更新。</string>
-    <string name="settings_tip_queue_active_desc_1">玩家滑动跳过功能处于活动状态。调整队列规则以实现更平滑的转换。</string>
+    <string name="settings_tip_queue_active_desc_1">播放器滑动跳过功能已激活。调整队列规则以实现更平滑的转换。</string>
     <string name="settings_tip_queue_active_desc_2">手势跳过已开启。将队列行为与您的监听流程相匹配。</string>
     <string name="settings_tip_queue_inactive_desc_1">滑动跳过已关闭。队列控制有助于保持播放效率。</string>
     <string name="settings_tip_queue_inactive_desc_2">更喜欢显式控制？微调队列行为以实现可预测的播放。</string>
@@ -2392,9 +2392,9 @@
     <string name="settings_tip_controls_active_desc_2">启用控制丰富的播放器。调整拇指可触及的布局。</string>
     <string name="settings_tip_controls_inactive_desc_1">启用最小播放器控件。如果您错过了精确跳转，请添加搜索按钮。</string>
     <string name="settings_tip_controls_inactive_desc_2">干净的布局处于活动状态。重新启用搜索控件以实现更精细的播放处理。</string>
-    <string name="settings_tip_miniplayer_active_desc_1">迷你玩家进度可见。选择与您的主题相匹配的风格。</string>
+    <string name="settings_tip_miniplayer_active_desc_1">迷你播放器进度条可见。选择与您的主题相匹配的风格。</string>
     <string name="settings_tip_miniplayer_active_desc_2">进度条在迷你播放器上处于活动状态。接下来尝试调整形状和角。</string>
-    <string name="settings_tip_miniplayer_inactive_desc_1">迷你玩家进度隐藏。启用它以实现快速跟踪意识。</string>
+    <string name="settings_tip_miniplayer_inactive_desc_1">迷你播放器进度条已隐藏。启用它以快速了解进度。</string>
     <string name="settings_tip_miniplayer_inactive_desc_2">紧凑模式现在是极简的。打开进度以获得更好的一目了然。</string>
     <string name="settings_tip_library_active_desc_1">评级已启用。使用库设置来加强发现和排序。</string>
     <string name="settings_tip_library_active_desc_2">您的音乐库支持评级。调整扫描和分组以实现更清晰的浏览。</string>

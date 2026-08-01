@@ -29,6 +29,9 @@ interface PlaylistDao {
     @Query("DELETE FROM playlists")
     suspend fun deleteAllPlaylists()
 
+    @Query("DELETE FROM playlist_songs")
+    suspend fun deleteAllPlaylistSongs()
+
     // Playlist songs relationships
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertPlaylistSong(playlistSong: PlaylistSongEntity)

@@ -162,6 +162,7 @@ class ExternalPlaybackActivity : ComponentActivity() {
                         uriStr.endsWith(".flac", ignoreCase = true) ||
                         uriStr.endsWith(".aac", ignoreCase = true) ||
                         uriStr.endsWith(".opus", ignoreCase = true) ||
+                        uriStr.endsWith(".opa", ignoreCase = true) ||
                         uriStr.endsWith(".wma", ignoreCase = true) ||
                         uriStr.endsWith(".mkv", ignoreCase = true) ||
                         uriStr.endsWith(".mka", ignoreCase = true) ||

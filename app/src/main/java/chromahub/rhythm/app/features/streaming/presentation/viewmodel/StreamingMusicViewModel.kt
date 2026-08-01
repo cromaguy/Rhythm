@@ -677,7 +677,7 @@ class StreamingMusicViewModel(application: Application) : AndroidViewModel(appli
     /**
      * Play a specific queue and start index.
      */
-    fun playQueue(queue: List<StreamingSong>, startIndex: Int = 0, shuffle: Boolean = false) {
+    fun playQueue(queue: List<StreamingSong>, startIndex: Int = 0, shuffle: Boolean = false, pinStartIndex: Boolean = false) {
         val playableQueue = queue.filter { it.isPlayable }
         if (playableQueue.isEmpty()) {
             _error.value = "No playable tracks available"
@@ -691,13 +691,18 @@ class StreamingMusicViewModel(application: Application) : AndroidViewModel(appli
                 }
 
             val safeStartIndex = startIndex.coerceIn(0, playableQueue.lastIndex)
+            val shouldPinStart = pinStartIndex || (shuffle && safeStartIndex > 0)
             val queueToPlay = if (shuffle && playableQueue.size > 1) {
-                val startSong = playableQueue[safeStartIndex]
-                val tail = playableQueue.toMutableList().apply {
-                    removeAt(safeStartIndex)
-                    shuffle()
+                if (shouldPinStart) {
+                    val startSong = playableQueue[safeStartIndex]
+                    val tail = playableQueue.toMutableList().apply {
+                        removeAt(safeStartIndex)
+                        shuffle()
+                    }
+                    listOf(startSong) + tail
+                } else {
+                    playableQueue.shuffled()
                 }
-                listOf(startSong) + tail
             } else {
                 playableQueue
             }

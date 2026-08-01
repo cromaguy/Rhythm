@@ -305,7 +305,7 @@ fun SingleCardExplorerContent(
     }
 
     val audioExtensions = remember {
-        setOf("mp3", "flac", "m4a", "aac", "ogg", "wav", "wma", "aiff", "opus", "mkv", "mka")
+        setOf("mp3", "flac", "m4a", "aac", "ogg", "wav", "wma", "aiff", "opus", "opa", "mkv", "mka")
     }
 
     var songPathMap by remember { mutableStateOf<Map<String, Song>>(emptyMap()) }
@@ -1299,7 +1299,7 @@ fun getDirectoryContentsOptimized(directoryPath: String, songPathMap: Map<String
     
     val items = mutableListOf<ExplorerItem>()
     val normalizedDirPath = directoryPath.replace("//", "/").trimEnd('/')
-    val audioExtensions = setOf("mp3", "flac", "m4a", "aac", "ogg", "wav", "wma", "aiff", "opus", "mkv", "mka")
+    val audioExtensions = setOf("mp3", "flac", "m4a", "aac", "ogg", "wav", "wma", "aiff", "opus", "opa", "mkv", "mka")
     
     val subdirectorySongCounts = mutableMapOf<String, Int>()
     val directoriesWithSongs = mutableSetOf<String>()

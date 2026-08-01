@@ -3,6 +3,8 @@ name: Build Nightly Artifacts
 on:
   push:
     branches: [ "main" ]
+    paths:
+      - "app/build.gradle.kts"
   workflow_dispatch:
 
 permissions:
@@ -19,7 +21,42 @@ jobs:
         with:
           fetch-depth: 0 # Fetch all history for proper versioning and commit count
 
+      - name: Check if version changed
+        id: check_version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "Manually triggered via workflow_dispatch. Proceeding with build."
+            echo "should_run=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          BEFORE_SHA="${{ github.event.before }}"
+          if [ -z "$BEFORE_SHA" ] || [ "$BEFORE_SHA" = "0000000000000000000000000000000000000000" ]; then
+            BEFORE_SHA="HEAD~1"
+          fi
+
+          if git rev-parse "$BEFORE_SHA" >/dev/null 2>&1; then
+            OLD_NAME=$(git show "$BEFORE_SHA":app/build.gradle.kts 2>/dev/null | grep -E 'versionName\s*=' | grep -oE '"[^"]+"' | sed 's/"//g' || true)
+            OLD_CODE=$(git show "$BEFORE_SHA":app/build.gradle.kts 2>/dev/null | grep -E 'versionCode\s*=' | grep -oE '[0-9]+' | head -n 1 || true)
+
+            CURR_NAME=$(grep -E 'versionName\s*=' app/build.gradle.kts | grep -oE '"[^"]+"' | sed 's/"//g' || true)
+            CURR_CODE=$(grep -E 'versionCode\s*=' app/build.gradle.kts | grep -oE '[0-9]+' | head -n 1 || true)
+
+            echo "Previous version: name='$OLD_NAME', code='$OLD_CODE'"
+            echo "Current version:  name='$CURR_NAME', code='$CURR_CODE'"
+
+            if [ -n "$OLD_NAME" ] && [ -n "$CURR_NAME" ] && [ "$OLD_NAME" = "$CURR_NAME" ] && [ "$OLD_CODE" = "$CURR_CODE" ]; then
+              echo "::notice::Version in app/build.gradle.kts has not changed. Skipping nightly build."
+              echo "should_run=false" >> $GITHUB_OUTPUT
+              exit 0
+            fi
+          fi
+
+          echo "Version changed or check skipped. Proceeding with nightly build."
+          echo "should_run=true" >> $GITHUB_OUTPUT
+
       - name: set up JDK 17
+        if: steps.check_version.outputs.should_run == 'true'
         uses: actions/setup-java@v4
         with:
           java-version: '17'
@@ -27,9 +64,11 @@ jobs:
           cache: gradle
 
       - name: Setup Android-SDK
+        if: steps.check_version.outputs.should_run == 'true'
         uses: android-actions/setup-android@v3
 
       - name: Create files for signing
+        if: steps.check_version.outputs.should_run == 'true'
         env:
           SIGNING_KEYSTORE: ${{ secrets.SIGNING_KEYSTORE }}
           SIGNING_PROPERTIES: ${{ secrets.SIGNING_PROPERTIES }}
@@ -51,9 +90,11 @@ jobs:
           fi
 
       - name: Make Gradle executable
+        if: steps.check_version.outputs.should_run == 'true'
         run: chmod +x ./gradlew
 
       - name: Compute dynamic version info
+        if: steps.check_version.outputs.should_run == 'true'
         id: version_info
         run: |
           # Parse current versionName & versionCode from build.gradle.kts
@@ -88,6 +129,7 @@ jobs:
           echo "Computed Version Name: $NEW_VERSION_NAME"
 
       - name: Send start notification to Telegram
+        if: steps.check_version.outputs.should_run == 'true'
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
@@ -114,6 +156,7 @@ jobs:
             --form-string "disable_web_page_preview=true"
 
       - name: Build with Gradle (GitHub and F-Droid release variants)
+        if: steps.check_version.outputs.should_run == 'true'
         env:
           APPLE_MUSIC_FALLBACK_TOKEN: ${{ secrets.APPLE_MUSIC_FALLBACK_TOKEN }}
         run: |
@@ -125,6 +168,7 @@ jobs:
             --stacktrace
 
       - name: Upload Nightly APKs
+        if: steps.check_version.outputs.should_run == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: Rhythm-Nightly-Artifacts
@@ -136,7 +180,7 @@ jobs:
       # ── Notifications ────────────────────────────────────────────────────────
 
       - name: Locate universal Nightly APK
-        if: success()
+        if: success() && steps.check_version.outputs.should_run == 'true'
         id: find_apk
         run: |
           APK_PATH=$(find app/build/outputs/apk/github/release -name "Rhythm-*-githubRelease.apk" ! -name "*-arm64-v8a.apk" ! -name "*-armeabi-v7a.apk" ! -name "*-x86_64.apk" ! -name "*-x86.apk" | head -n 1)
@@ -152,6 +196,7 @@ jobs:
       - name: Send Nightly APK to Telegram
         if: >
           success() &&
+          steps.check_version.outputs.should_run == 'true' &&
           steps.find_apk.outputs.path != ''
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
@@ -196,7 +241,7 @@ jobs:
           fi
 
       - name: Send Nightly notification to Discord
-        if: success()
+        if: success() && steps.check_version.outputs.should_run == 'true'
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: |
@@ -266,7 +311,7 @@ jobs:
             || { echo "❌ Discord notification failed:"; cat /tmp/discord_response.json; exit 1; }
 
       - name: Send failure notification to Telegram
-        if: failure()
+        if: failure() && steps.check_version.outputs.should_run == 'true'
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}

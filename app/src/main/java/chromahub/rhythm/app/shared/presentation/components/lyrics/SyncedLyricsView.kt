@@ -193,10 +193,10 @@ fun SyncedLyricsView(
         }
     }
 
-    // Find current line index more efficiently (using adjustedPlaybackTime for sync offset)
+    // Find current line index (using adjustedPlaybackTime for sync offset)
     val currentLineIndex by remember(adjustedPlaybackTime, parsedLyrics) {
         derivedStateOf {
-            if (isInGap) -1 else parsedLyrics.indexOfLast { it.timestamp <= adjustedPlaybackTime }
+            parsedLyrics.indexOfLast { it.timestamp <= adjustedPlaybackTime }
         }
     }
 

@@ -177,6 +177,9 @@ fun PlayerCustomizationSettingsScreen(onBackClick: () -> Unit) {
     val playerArtworkCornerRadius by appSettings.playerArtworkCornerRadius.collectAsState()
     val playerShowAudioQualityBadges by appSettings.playerShowAudioQualityBadges.collectAsState()
     val expressiveShapesEnabled by appSettings.expressiveShapesEnabled.collectAsState()
+    val playerAmbientBackdropEnabled by appSettings.playerAmbientBackdropEnabled.collectAsState()
+    val playerAmbientBackdropIntensity by appSettings.playerAmbientBackdropIntensity.collectAsState()
+    val playerGlassIntensity by appSettings.playerGlassIntensity.collectAsState()
 
     // Progress bar settings
     val playerProgressStyle by appSettings.playerProgressStyle.collectAsState()
@@ -187,6 +190,7 @@ fun PlayerCustomizationSettingsScreen(onBackClick: () -> Unit) {
     var showCornerRadiusSheet by remember { mutableStateOf(false) }
     var showPlayerProgressStyleSheet by remember { mutableStateOf(false) }
     var showPlayerThumbStyleSheet by remember { mutableStateOf(false) }
+    var showAmbientIntensitySheet by remember { mutableStateOf(false) }
 
     CollapsibleHeaderScreen(
         title = context.getString(R.string.settings_player),
@@ -313,6 +317,29 @@ fun PlayerCustomizationSettingsScreen(onBackClick: () -> Unit) {
                                 toggleState = playerShowAudioQualityBadges,
                                 onToggleChange = { appSettings.setPlayerShowAudioQualityBadges(it) },
                                 enabled = !isExpressiveActive
+                            )
+                        ),
+                        toMaterial3SettingsItem(
+                            context = context,
+                            hapticFeedback = haptics,
+                            item = SettingItem(
+                                icon = MaterialSymbolIcon("blur_on"),
+                                title = "Ambient backdrop",
+                                description = if (isExpressiveActive) "Show artwork-derived ambient background behind controls" else "Expressive player only",
+                                toggleState = playerAmbientBackdropEnabled,
+                                onToggleChange = { appSettings.setPlayerAmbientBackdropEnabled(it) },
+                                enabled = isExpressiveActive
+                            )
+                        ),
+                        toMaterial3SettingsItem(
+                            context = context,
+                            hapticFeedback = haptics,
+                            item = SettingItem(
+                                icon = MaterialSymbolIcon("opacity"),
+                                title = "Ambient intensity",
+                                description = if (isExpressiveActive) "${(playerAmbientBackdropIntensity * 100).toInt()}%" else "Expressive player only",
+                                onClick = { if (isExpressiveActive) showAmbientIntensitySheet = true },
+                                enabled = isExpressiveActive
                             )
                         )
                     ),
@@ -743,6 +770,135 @@ fun PlayerCustomizationSettingsScreen(onBackClick: () -> Unit) {
                         Spacer(modifier = Modifier.width(12.dp))
                         Text(
                             text = context.getString(R.string.settings_adjust_artwork_corners),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+        }
+    }
+
+    // Ambient Intensity Bottom Sheet
+    if (showAmbientIntensitySheet) {
+        val sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded))
+        var tempIntensity by remember { mutableFloatStateOf(playerAmbientBackdropIntensity) }
+
+        ModalBottomSheet(
+            onDismissRequest = { showAmbientIntensitySheet = false },
+            sheetState = sheetState,
+            dragHandle = {
+                BottomSheetDefaults.DragHandle(color = MaterialTheme.colorScheme.primary)
+            },
+            shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+            containerColor = MaterialTheme.colorScheme.surfaceContainer,
+            modifier = Modifier.widthIn(max = 640.dp).fillMaxWidth()
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp)
+                    .padding(bottom = 24.dp)
+            ) {
+                // Header
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 0.dp, vertical = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text(
+                            text = "Ambient intensity",
+                            style = MaterialTheme.typography.displayMedium,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Box(
+                            modifier = Modifier
+                                .padding(top = 6.dp)
+                                .background(
+                                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                    shape = CircleShape
+                                )
+                        ) {
+                            Text(
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                style = MaterialTheme.typography.labelLarge,
+                                text = "${(tempIntensity * 100).toInt()}%",
+                                overflow = TextOverflow.Ellipsis,
+                                maxLines = 1,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Slider(
+                    value = tempIntensity,
+                    onValueChange = { tempIntensity = it },
+                    onValueChangeFinished = {
+                        HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
+                        appSettings.setPlayerAmbientBackdropIntensity(tempIntensity)
+                    },
+                    valueRange = 0.0f..1.0f,
+                    steps = 39,
+                    colors = SliderDefaults.colors(
+                        thumbColor = MaterialTheme.colorScheme.primary,
+                        activeTrackColor = MaterialTheme.colorScheme.primary
+                    )
+                )
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 6.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = "0%",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = "100%",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = "100%",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Info card
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.5f)
+                    ),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = RhythmIcons.Info,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.tertiary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(
+                            text = "Controls the transparency of the controls card. Higher values make it more opaque against the ambient backdrop.",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

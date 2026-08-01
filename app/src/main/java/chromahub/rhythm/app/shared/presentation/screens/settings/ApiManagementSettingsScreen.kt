@@ -172,6 +172,7 @@ fun ApiManagementSettingsScreen(onBackClick: () -> Unit) {
     val lrclibApiEnabled by appSettings.lrclibApiEnabled.collectAsState()
     val ytMusicApiEnabled by appSettings.ytMusicApiEnabled.collectAsState()
     val lyricallyApiEnabled by appSettings.lyricallyApiEnabled.collectAsState()
+    val wikipediaApiEnabled by appSettings.wikipediaApiEnabled.collectAsState()
     var showLyricallySourcesBottomSheet by remember { mutableStateOf(false) }
     val appleCanvasEnabled by appSettings.appleCanvasEnabled.collectAsState()
     val appleCanvasNetworkMode by appSettings.appleCanvasNetworkMode.collectAsState()
@@ -295,6 +296,22 @@ fun ApiManagementSettingsScreen(onBackClick: () -> Unit) {
                                     description = "Fallback for artist images and album artwork",
                                     toggleState = ytMusicApiEnabled,
                                     onToggleChange = { enabled -> appSettings.setYTMusicApiEnabled(enabled) }
+                                )
+                            )
+                        )
+                    }
+
+                    if (chromahub.rhythm.app.BuildConfig.ENABLE_WIKIPEDIA) {
+                        add(
+                            toMaterial3SettingsItem(
+                                context = context,
+                                hapticFeedback = hapticFeedback,
+                                item = SettingItem(
+                                    icon = RhythmIcons.Info,
+                                    title = stringResource(R.string.onboarding_integration_wikipedia),
+                                    description = stringResource(R.string.onboarding_integration_wikipedia_desc),
+                                    toggleState = wikipediaApiEnabled,
+                                    onToggleChange = { enabled -> appSettings.setWikipediaApiEnabled(enabled) }
                                 )
                             )
                         )

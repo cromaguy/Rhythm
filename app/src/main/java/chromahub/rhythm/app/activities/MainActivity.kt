@@ -93,6 +93,17 @@ import androidx.compose.material3.FilledTonalButton
 import androidx.compose.animation.Crossfade
 import androidx.compose.ui.text.font.FontWeight
 import chromahub.rhythm.app.features.local.presentation.viewmodel.MusicViewModel
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
+import chromahub.rhythm.app.shared.data.model.ScanPhase
+import chromahub.rhythm.app.shared.presentation.components.common.RhythmWavyProgressLoader
+import chromahub.rhythm.app.shared.presentation.components.icons.Icon as RhythmIcon
+import kotlin.math.abs
 //import chromahub.rhythm.app.ui.annotations.RhythmAnimation
 import android.provider.Settings
 import chromahub.rhythm.app.util.ServiceStartUtils
@@ -198,6 +209,7 @@ class MainActivity : AppCompatActivity() {
                         var showBetaPopup by remember { mutableStateOf(false) }
                         val currentAppVersion by appUpdaterViewModel.currentVersion.collectAsState() // Observe current version
                         val updateChannel by appUpdaterViewModel.updateChannel.collectAsState() // Observe update channel
+                        var showMediaScanLoader by rememberSaveable { mutableStateOf(false) }
 
                     // State for permission handling and app initialization.
                     // rememberSaveable so these survive configuration changes (e.g. system theme toggle)
@@ -268,7 +280,9 @@ class MainActivity : AppCompatActivity() {
                                 isInitializingApp = isInitializingApp,
                                 onSetIsLoading = { isLoading = it },
                                 onSetIsInitializingApp = { isInitializingApp = it },
-                                musicViewModel = musicViewModel
+                                musicViewModel = musicViewModel,
+                                showMediaScanLoader = showMediaScanLoader,
+                                onShowMediaScanLoaderChange = { showMediaScanLoader = it }
                             )
                         }
                         
@@ -303,6 +317,181 @@ class MainActivity : AppCompatActivity() {
                                 trackName = corruptedTrackName,
                                 errorMessage = corruptedTrackMessage
                             )
+                        }
+
+                        // Show media scan loader as a small floating chip with swipe-to-dismiss at the top Center
+                        val scanProgress by musicViewModel.scanProgress.collectAsState()
+                        val coroutineScope = rememberCoroutineScope()
+                        val swipeOffsetX = remember { Animatable(0f) }
+                        val swipeOffsetY = remember { Animatable(0f) }
+                        val density = LocalDensity.current
+                        val swipeThresholdPx = with(density) { 80.dp.toPx() }
+
+                        var exitTransition by remember {
+                            mutableStateOf(fadeOut(animationSpec = tween(300)) + slideOutVertically(targetOffsetY = { -it }))
+                        }
+
+                        LaunchedEffect(showMediaScanLoader) {
+                            if (showMediaScanLoader) {
+                                swipeOffsetX.snapTo(0f)
+                                swipeOffsetY.snapTo(0f)
+                                exitTransition = fadeOut(animationSpec = tween(300)) + slideOutVertically(targetOffsetY = { -it })
+                            }
+                        }
+
+                        LaunchedEffect(scanProgress.stage) {
+                            if (scanProgress.stage is ScanPhase.Complete && showMediaScanLoader) {
+                                delay(2000)
+                                showMediaScanLoader = false
+                                appSettings.setInitialMediaScanCompleted(true)
+                            }
+                        }
+
+                        AnimatedVisibility(
+                            visible = showMediaScanLoader && !showSplash,
+                            enter = fadeIn(animationSpec = tween(500)) + slideInVertically(initialOffsetY = { -it }),
+                            exit = exitTransition,
+                            modifier = Modifier
+                                .align(Alignment.TopCenter)
+                                .statusBarsPadding()
+                                .padding(top = 16.dp)
+                        ) {
+                            val scanProgressValue = remember(scanProgress) {
+                                when (scanProgress.stage) {
+                                    is ScanPhase.Idle -> 0f
+                                    is ScanPhase.Songs -> {
+                                        if (scanProgress.total > 0) {
+                                            (scanProgress.current.toFloat() / scanProgress.total.toFloat()).coerceIn(0f, 0.85f)
+                                        } else {
+                                            0.1f
+                                        }
+                                    }
+                                    is ScanPhase.Incremental -> {
+                                        if (scanProgress.total > 0) {
+                                            0.5f + (scanProgress.current.toFloat() / scanProgress.total.toFloat() * 0.35f)
+                                        } else {
+                                            0.5f
+                                        }
+                                    }
+                                    is ScanPhase.SavingDb -> 0.90f
+                                    is ScanPhase.Complete -> 1.0f
+                                    else -> 0.5f
+                                }
+                            }
+
+                            val scanLabelText = "Scanning Music Library"
+
+                            val scanStatusText = remember(scanProgress) {
+                                when (scanProgress.stage) {
+                                    is ScanPhase.Idle -> "Initializing..."
+                                    is ScanPhase.Songs -> "Scanning: ${scanProgress.current} of ${scanProgress.total} files..."
+                                    is ScanPhase.Incremental -> "Checking for new music: ${scanProgress.current} of ${scanProgress.total}..."
+                                    is ScanPhase.SavingDb -> "Saving database..."
+                                    is ScanPhase.Complete -> "Media scan complete!"
+                                    is ScanPhase.Error -> "Scan error"
+                                    is ScanPhase.PermissionDenied -> "Permission denied"
+                                }
+                            }
+
+                            val swipeFraction = remember(swipeOffsetX.value, swipeOffsetY.value) {
+                                val maxDist = swipeThresholdPx * 1.5f
+                                val dist = maxOf(abs(swipeOffsetX.value), abs(swipeOffsetY.value))
+                                (dist / maxDist).coerceIn(0f, 1f)
+                            }
+                            val chipAlpha = (1f - swipeFraction).coerceIn(0f, 1f)
+                            val chipScale = (1f - swipeFraction * 0.1f).coerceIn(0.9f, 1f)
+
+                            Surface(
+                                modifier = Modifier
+                                    .padding(horizontal = 24.dp)
+                                    .graphicsLayer {
+                                        translationX = swipeOffsetX.value
+                                        translationY = swipeOffsetY.value
+                                        alpha = chipAlpha
+                                        scaleX = chipScale
+                                        scaleY = chipScale
+                                    }
+                                    .pointerInput(Unit) {
+                                        detectDragGestures(
+                                            onDragEnd = {
+                                                val x = swipeOffsetX.value
+                                                val y = swipeOffsetY.value
+                                                if (y < -swipeThresholdPx) {
+                                                    coroutineScope.launch {
+                                                        exitTransition = fadeOut(animationSpec = tween(200)) + slideOutVertically(targetOffsetY = { -it })
+                                                        swipeOffsetY.animateTo(-500f, tween(200))
+                                                        showMediaScanLoader = false
+                                                        appSettings.setInitialMediaScanCompleted(true)
+                                                    }
+                                                } else if (abs(x) > swipeThresholdPx) {
+                                                    coroutineScope.launch {
+                                                        if (x > 0) {
+                                                            exitTransition = fadeOut(animationSpec = tween(200)) + slideOutHorizontally(targetOffsetX = { it })
+                                                        } else {
+                                                            exitTransition = fadeOut(animationSpec = tween(200)) + slideOutHorizontally(targetOffsetX = { -it })
+                                                        }
+                                                        val targetX = if (x > 0) 1000f else -1000f
+                                                        swipeOffsetX.animateTo(targetX, tween(200))
+                                                        showMediaScanLoader = false
+                                                        appSettings.setInitialMediaScanCompleted(true)
+                                                    }
+                                                } else {
+                                                    coroutineScope.launch {
+                                                        launch { swipeOffsetX.animateTo(0f, spring(stiffness = Spring.StiffnessMedium)) }
+                                                        launch { swipeOffsetY.animateTo(0f, spring(stiffness = Spring.StiffnessMedium)) }
+                                                    }
+                                                }
+                                            },
+                                            onDragCancel = {
+                                                coroutineScope.launch {
+                                                    launch { swipeOffsetX.animateTo(0f, spring()) }
+                                                    launch { swipeOffsetY.animateTo(0f, spring()) }
+                                                }
+                                            }
+                                        ) { change, dragAmount ->
+                                            change.consume()
+                                            coroutineScope.launch {
+                                                swipeOffsetX.snapTo(swipeOffsetX.value + dragAmount.x)
+                                                swipeOffsetY.snapTo((swipeOffsetY.value + dragAmount.y).coerceAtMost(50f))
+                                            }
+                                        }
+                                    },
+                                shape = RoundedCornerShape(22.dp),
+                                color = MaterialTheme.colorScheme.primaryContainer,
+                                tonalElevation = 4.dp,
+                                shadowElevation = 8.dp
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Box(
+                                        modifier = Modifier.size(34.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        RhythmWavyProgressLoader(
+                                            progress = scanProgressValue,
+                                            modifier = Modifier.fillMaxSize(),
+                                            indicatorColor = MaterialTheme.colorScheme.onPrimaryContainer
+                                        )
+                                    }
+
+                                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                        Text(
+                                            text = scanLabelText,
+                                            style = MaterialTheme.typography.labelMedium,
+                                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.85f)
+                                        )
+                                        Text(
+                                            text = scanStatusText,
+                                            style = MaterialTheme.typography.titleSmall,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                                        )
+                                    }
+                                }
+                            }
                         }
                     }
                     }
@@ -513,6 +702,7 @@ class MainActivity : AppCompatActivity() {
                     uriStr.endsWith(".flac", ignoreCase = true) ||
                     uriStr.endsWith(".aac", ignoreCase = true) ||
                     uriStr.endsWith(".opus", ignoreCase = true) ||
+                    uriStr.endsWith(".opa", ignoreCase = true) ||
                     uriStr.endsWith(".wma", ignoreCase = true) ||
                     uriStr.endsWith(".mkv", ignoreCase = true) ||
                     uriStr.endsWith(".mka", ignoreCase = true) ||

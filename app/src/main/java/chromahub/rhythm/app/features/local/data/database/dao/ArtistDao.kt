@@ -12,6 +12,12 @@ interface ArtistDao {
     @Query("SELECT * FROM artists WHERE groupByAlbumArtist = :groupByAlbumArtist")
     suspend fun getArtists(groupByAlbumArtist: Boolean): List<ArtistEntity>
 
+    @Query("SELECT * FROM artists WHERE groupByAlbumArtist = :groupByAlbumArtist ORDER BY name ASC")
+    fun getArtistsFlow(groupByAlbumArtist: Boolean): kotlinx.coroutines.flow.Flow<List<ArtistEntity>>
+
+    @Query("SELECT * FROM artists WHERE groupByAlbumArtist = :groupByAlbumArtist ORDER BY name ASC")
+    fun getArtistsPagingSource(groupByAlbumArtist: Boolean): androidx.paging.PagingSource<Int, ArtistEntity>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(artists: List<ArtistEntity>)
 

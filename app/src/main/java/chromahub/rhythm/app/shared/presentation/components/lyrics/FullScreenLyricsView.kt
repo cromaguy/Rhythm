@@ -473,7 +473,9 @@ fun FullScreenLyricsView(
                                     style = MaterialTheme.typography.bodyMedium.copy(
                                         fontWeight = FontWeight.Bold,
                                         color = textSecondaryColor
-                                    )
+                                    ),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
@@ -1143,7 +1145,10 @@ fun FullScreenLyricsView(
                                     style = MaterialTheme.typography.bodyMedium.copy(
                                         fontWeight = FontWeight.Bold,
                                         color = textSecondaryColor
-                                    )
+                                    ),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.weight(1f, fill = false)
                                 )
 
                                 Row(

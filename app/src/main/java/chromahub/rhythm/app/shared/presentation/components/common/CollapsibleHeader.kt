@@ -630,6 +630,8 @@ fun FixedHeaderScreen(
     actions: @Composable () -> Unit = {},
     screenModifier: Modifier = Modifier,
     containerColor: Color = Color.Transparent,
+    backButtonContainerColor: Color = MaterialTheme.colorScheme.surfaceContainerHigh,
+    backButtonContentColor: Color = MaterialTheme.colorScheme.onSurface,
     content: @Composable (Modifier) -> Unit
 ) {
     // Entrance animation state
@@ -687,13 +689,13 @@ fun FixedHeaderScreen(
                                     modifier = Modifier
                                         .size(40.dp)
                                         .clip(RoundedCornerShape(50))
-                                        .background(MaterialTheme.colorScheme.surfaceContainerHigh),
+                                        .background(backButtonContainerColor),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Icon(
                                         imageVector = RhythmIcons.Back,
                                         contentDescription = stringResource(R.string.cd_back),
-                                        tint = MaterialTheme.colorScheme.onSurface,
+                                        tint = backButtonContentColor,
                                         modifier = Modifier.size(25.dp)
                                     )
                                 }

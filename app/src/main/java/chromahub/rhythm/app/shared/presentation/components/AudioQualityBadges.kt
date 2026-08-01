@@ -127,7 +127,8 @@ fun AudioQualityIcon(
     song: Song,
     modifier: Modifier = Modifier,
     iconSize: Dp = 32.dp,
-    padding: Dp = 8.dp
+    padding: Dp = 8.dp,
+    tint: Color? = null
 ) {
     val context = LocalContext.current
     var audioQuality by remember(song.id) { mutableStateOf<AudioQualityDetector.AudioQuality?>(null) }
@@ -182,7 +183,7 @@ fun AudioQualityIcon(
                     modifier = modifier
                         .padding(padding)
                         .size(iconSize),
-                    tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
+                    tint = tint ?: MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
                 )
             }
         }

@@ -433,7 +433,7 @@ object MediaUtils {
         val path = uri.path ?: uri.toString()
         val extension = path.substringAfterLast('.', "").lowercase()
         return when (extension) {
-            "opus" -> "audio/ogg"
+            "opus", "opa" -> "audio/ogg"
             "ogg", "oga" -> "audio/ogg"
             "mkv", "mka" -> "audio/x-matroska"
             "mp3" -> "audio/mpeg"
@@ -704,7 +704,7 @@ object MediaUtils {
                     mimeType.contains("flac", ignoreCase = true) || extension == "flac" -> "FLAC"
                     mimeType.contains("ogg", ignoreCase = true) || extension == "ogg" || extension == "oga" -> "OGG"
                     mimeType.contains("alac", ignoreCase = true) || extension == "alac" -> "ALAC"
-                    mimeType.contains("opus", ignoreCase = true) || extension == "opus" -> "Opus"
+                    mimeType.contains("opus", ignoreCase = true) || extension == "opus" || extension == "opa" -> "Opus"
                     mimeType.contains("ac3", ignoreCase = true) || mimeType.contains("ac-3", ignoreCase = true) || extension == "ac3" -> "AC-3"
                     mimeType.contains("ac4", ignoreCase = true) || extension == "ac4" -> "AC-4"
                     mimeType.contains("truehd", ignoreCase = true) -> "TrueHD"
@@ -959,7 +959,7 @@ object MediaUtils {
         return when (extension.lowercase()) {
             "mp3", "flac", "ogg", "wav", "wave", "aif", "aiff",
             "mp4", "m4a", "m4p", "m4b", "wma", "dsf", "dff",
-            "opus" -> true
+            "opus", "opa" -> true
             else -> false
         }
     }
@@ -2423,15 +2423,23 @@ object MediaUtils {
         val primaryPrefix = if (lossless) "embedded_art_lossless_$songKey" else "embedded_art_$songKey"
         val fallbackPrefix = if (lossless) "embedded_art_$songKey" else "embedded_art_lossless_$songKey"
 
-        val artworkCacheDir = File(cacheDir, EMBEDDED_ARTWORK_CACHE_DIR)
+        val directoriesToSearch = mutableListOf(File(cacheDir, EMBEDDED_ARTWORK_CACHE_DIR))
+        val parent = cacheDir.parentFile
+        if (parent != null && parent.exists()) {
+            val altDirName = if (cacheDir.name == "cache") "files" else "cache"
+            directoriesToSearch.add(File(File(parent, altDirName), EMBEDDED_ARTWORK_CACHE_DIR))
+        }
+
         val extensions = listOf("jpg", "png", "webp", "gif", "bmp", "img")
-        val modernCandidate = findFirstExistingArtworkFile(
-            directory = artworkCacheDir,
-            prefixes = listOf(primaryPrefix, fallbackPrefix),
-            extensions = extensions
-        )
-        if (modernCandidate != null) {
-            return modernCandidate.toUri()
+        for (dir in directoriesToSearch) {
+            val modernCandidate = findFirstExistingArtworkFile(
+                directory = dir,
+                prefixes = listOf(primaryPrefix, fallbackPrefix),
+                extensions = extensions
+            )
+            if (modernCandidate != null) {
+                return modernCandidate.toUri()
+            }
         }
 
         val legacyHash = songUri.hashCode()

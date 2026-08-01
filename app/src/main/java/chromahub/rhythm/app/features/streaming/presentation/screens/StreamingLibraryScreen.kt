@@ -316,7 +316,7 @@ fun StreamingLibraryScreen(
     val isTabletLayout = LocalConfiguration.current.screenWidthDp >= 600
     val baseLibraryBottomPadding = LocalMiniPlayerPadding.current.calculateBottomPadding()
     val fabBottomPaddingVal = if (isTabletLayout) {
-        12.dp
+        (baseLibraryBottomPadding + 12.dp).coerceAtLeast(12.dp)
     } else {
         (baseLibraryBottomPadding - 4.dp).coerceAtLeast(0.dp)
     }
@@ -1409,10 +1409,20 @@ fun StreamingLibraryScreen(
                                                     )
                                                 }
                                             },
+                                            onPlayNext = {
+                                                dismissMenu()
+                                                sortedSongsById[localSong.id]?.let { s ->
+                                                    if (localMusicViewModel != null) {
+                                                        viewModel.playNext(s, localMusicViewModel)
+                                                    }
+                                                }
+                                            },
                                             onAddToQueue = {
                                                 dismissMenu()
                                                 sortedSongsById[localSong.id]?.let { s ->
-                                                    viewModel.playQueue(queue = listOf(s), startIndex = 0, shuffle = false)
+                                                    if (localMusicViewModel != null) {
+                                                        viewModel.addSongToQueue(s, localMusicViewModel)
+                                                    }
                                                 }
                                             },
                                             isLiked = isLiked,

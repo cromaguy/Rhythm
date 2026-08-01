@@ -24,7 +24,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.material3.SheetValue
@@ -51,6 +50,10 @@ import chromahub.rhythm.app.shared.presentation.components.icons.MaterialSymbolI
 import chromahub.rhythm.app.shared.presentation.components.Material3SettingsGroup
 import chromahub.rhythm.app.shared.presentation.components.Material3SettingsItem
 import chromahub.rhythm.app.shared.presentation.components.common.M3FourColorCircularLoader
+import chromahub.rhythm.app.shared.presentation.components.common.RhythmGroupedButton
+import chromahub.rhythm.app.shared.presentation.components.common.RhythmButtonWeighted
+import chromahub.rhythm.app.shared.presentation.components.common.RhythmButtonSize
+import chromahub.rhythm.app.shared.presentation.components.common.RhythmButtonType
 import java.net.DatagramPacket
 import java.net.DatagramSocket
 import java.net.InetAddress
@@ -165,17 +168,20 @@ fun NearbyServerDiscoverySheet(
                             
                             try {
                                 val json = org.json.JSONObject(responseJson)
-                                val address = json.optString("Address")
-                                val name = json.optString("Name")
-                                if (!address.isNullOrBlank()) {
+                                val rawAddress = json.optString("Address", "").trim()
+                                val name = json.optString("Name", "").trim()
+                                val pktHost = receivePacket.address.hostAddress ?: ""
+                                if (pktHost.isNotBlank()) {
+                                    val formattedPktHost = if (pktHost.contains(":") && !pktHost.startsWith("[")) "[$pktHost]" else pktHost
+                                    val finalUrl = if (rawAddress.isNotBlank()) rawAddress else "http://$formattedPktHost:8096"
                                     withContext(Dispatchers.Main) {
-                                        if (discoveredServers.none { it.url == address }) {
+                                        if (discoveredServers.none { it.url == finalUrl }) {
                                             discoveredServers.add(
                                                 DiscoveredServer(
-                                                    name = if (name.isNullOrBlank()) "Jellyfin Server" else name,
-                                                    host = receivePacket.address.hostAddress ?: "",
+                                                    name = if (name.isBlank()) "Jellyfin Server" else name,
+                                                    host = pktHost,
                                                     port = 8096,
-                                                    url = address,
+                                                    url = finalUrl,
                                                     type = "Jellyfin"
                                                 )
                                             )
@@ -292,10 +298,11 @@ fun NearbyServerDiscoverySheet(
                         // Skip non-matching services for HTTP fallback to reduce noise
                         if (type.startsWith("_http._tcp")) {
                             val name = serviceInfo.serviceName?.lowercase() ?: ""
+                            val port = serviceInfo.port
                             val isJellyfinMatch = upperServiceId == StreamingServiceId.JELLYFIN && 
-                                (name.contains("jellyfin") || name.contains("emby"))
+                                (port == 8096 || name.contains("jellyfin") || name.contains("emby") || name.contains("media") || name.contains("server") || name.contains("arch"))
                             val isSubsonicMatch = upperServiceId == StreamingServiceId.SUBSONIC && 
-                                (name.contains("subsonic") || name.contains("navidrome") || name.contains("airsonic") || name.contains("music"))
+                                (port == 4533 || port == 4040 || name.contains("subsonic") || name.contains("navidrome") || name.contains("airsonic") || name.contains("music") || name.contains("server"))
                             
                             if (!isJellyfinMatch && !isSubsonicMatch) {
                                 return
@@ -410,13 +417,22 @@ fun NearbyServerDiscoverySheet(
                         textAlign = androidx.compose.ui.text.style.TextAlign.Center
                     )
                     Spacer(modifier = Modifier.height(16.dp))
-                    OutlinedButton(
-                        onClick = {
-                            discoveredServers.clear()
-                            scanTrigger++
-                        }
+                    RhythmGroupedButton(
+                        modifier = Modifier.fillMaxWidth(),
+                        size = RhythmButtonSize.Large
                     ) {
-                        Text(text = stringResource(id = R.string.nearby_server_discovery_rescan))
+                        RhythmButtonWeighted(
+                            onClick = {
+                                discoveredServers.clear()
+                                scanTrigger++
+                            },
+                            weight = 1f,
+                            isFirst = true,
+                            isLast = true,
+                            type = RhythmButtonType.Tonal,
+                            icon = MaterialSymbolIcon("refresh"),
+                            text = stringResource(id = R.string.nearby_server_discovery_rescan)
+                        )
                     }
                 }
             } else if (discoveredServers.isEmpty() && isScanning) {
@@ -516,14 +532,22 @@ fun NearbyServerDiscoverySheet(
                 
                 if (!isScanning) {
                     Spacer(modifier = Modifier.height(16.dp))
-                    OutlinedButton(
-                        onClick = {
-                            discoveredServers.clear()
-                            scanTrigger++
-                        },
-                        modifier = Modifier.fillMaxWidth()
+                    RhythmGroupedButton(
+                        modifier = Modifier.fillMaxWidth(),
+                        size = RhythmButtonSize.Large
                     ) {
-                        Text(text = stringResource(id = R.string.nearby_server_discovery_rescan))
+                        RhythmButtonWeighted(
+                            onClick = {
+                                discoveredServers.clear()
+                                scanTrigger++
+                            },
+                            weight = 1f,
+                            isFirst = true,
+                            isLast = true,
+                            type = RhythmButtonType.Tonal,
+                            icon = MaterialSymbolIcon("refresh"),
+                            text = stringResource(id = R.string.nearby_server_discovery_rescan)
+                        )
                     }
                 }
             }

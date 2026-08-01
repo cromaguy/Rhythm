@@ -1,0 +1,9 @@
+Rhythm v5.3 - Beta Update
+
+• Refine fullscreen lyrics sync UI behavior #517
+• Stabilize carousel auto-scroll on resume #511
+• Keep playback active when queueing songs #514
+• Respect whitelist scan mode in library refresh #498
+• Add .opa format support across media handling #516
+
+Thanks for using Rhythm ;)

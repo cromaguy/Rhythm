@@ -39,9 +39,9 @@ import chromahub.rhythm.app.shared.data.model.Song
 import chromahub.rhythm.app.features.local.presentation.viewmodel.MusicViewModel
 import chromahub.rhythm.app.features.local.presentation.viewmodel.MusicViewModel.SleepAction
 import chromahub.rhythm.app.shared.presentation.components.common.RhythmWavyProgressLoader
-import chromahub.rhythm.app.shared.presentation.components.common.ButtonGroupStyle
-import chromahub.rhythm.app.shared.presentation.components.common.ExpressiveButtonGroup
-import chromahub.rhythm.app.shared.presentation.components.common.ExpressiveGroupButton
+import chromahub.rhythm.app.shared.presentation.components.common.RhythmGroupedButton
+import chromahub.rhythm.app.shared.presentation.components.common.RhythmButtonWeighted
+import chromahub.rhythm.app.shared.presentation.components.common.RhythmButtonSize
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -570,42 +570,28 @@ fun SleepTimerBottomSheetNew(
                     modifier = Modifier.fillMaxWidth(),
                     color = MaterialTheme.colorScheme.surfaceContainerLow,
                 ) {
-                    ExpressiveButtonGroup(
+                    RhythmGroupedButton(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 24.dp, vertical = 16.dp),
-                        style = ButtonGroupStyle.Tonal
+                        size = RhythmButtonSize.Large
                     ) {
-                        ExpressiveGroupButton(
+                        RhythmButtonWeighted(
                             onClick = { stopTimer() },
-                            modifier = Modifier.weight(1f),
-                            isStart = true,
-                            colors = ButtonDefaults.filledTonalButtonColors(
-                                containerColor = MaterialTheme.colorScheme.errorContainer,
-                                contentColor = MaterialTheme.colorScheme.onErrorContainer
-                            )
-                        ) {
-                            Icon(RhythmIcons.Stop, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                context.getString(R.string.bottomsheet_cancel),
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
-                        ExpressiveGroupButton(
+                            weight = 1f,
+                            isFirst = true,
+                            icon = RhythmIcons.Stop,
+                            text = context.getString(R.string.bottomsheet_cancel),
+                            containerColor = MaterialTheme.colorScheme.errorContainer,
+                            contentColor = MaterialTheme.colorScheme.onErrorContainer
+                        )
+                        RhythmButtonWeighted(
                             onClick = { sheetState = SheetContentState.InlinePicker },
-                            modifier = Modifier.weight(1f),
-                            isEnd = true
-                        ) {
-                            Icon(RhythmIcons.Edit, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                context.getString(R.string.bottomsheet_timer_edit),
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
+                            weight = 1f,
+                            isLast = true,
+                            icon = RhythmIcons.Edit,
+                            text = context.getString(R.string.bottomsheet_timer_edit)
+                        )
                     }
                 }
             }
@@ -742,40 +728,26 @@ private fun InlineTimePickerContent(
             modifier = Modifier.fillMaxWidth(),
             color = MaterialTheme.colorScheme.surfaceContainerLow
         ) {
-            ExpressiveButtonGroup(
+            RhythmGroupedButton(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp),
-                style = ButtonGroupStyle.Tonal
+                size = RhythmButtonSize.Large
             ) {
-                ExpressiveGroupButton(
+                RhythmButtonWeighted(
                     onClick = onCancel,
-                    modifier = Modifier.weight(1f),
-                    isStart = true,
-                    colors = ButtonDefaults.filledTonalButtonColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                        contentColor = MaterialTheme.colorScheme.onSurface
-                    )
-                ) {
-                    Icon(RhythmIcons.Close, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        context.getString(R.string.bottomsheet_cancel),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-                ExpressiveGroupButton(
+                    weight = 1f,
+                    isFirst = true,
+                    icon = RhythmIcons.Close,
+                    text = context.getString(R.string.bottomsheet_cancel),
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                    contentColor = MaterialTheme.colorScheme.onSurface
+                )
+                RhythmButtonWeighted(
                     onClick = { onTimeSelected(timePickerState.hour, timePickerState.minute) },
-                    modifier = Modifier.weight(1f),
-                    isEnd = true
-                ) {
-                    Icon(RhythmIcons.Check, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        context.getString(R.string.bottomsheet_timer_set),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
+                    weight = 1f,
+                    isLast = true,
+                    icon = RhythmIcons.Check,
+                    text = context.getString(R.string.bottomsheet_timer_set)
+                )
             }
         }
     }

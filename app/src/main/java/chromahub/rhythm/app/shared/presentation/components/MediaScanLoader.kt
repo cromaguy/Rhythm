@@ -1,4 +1,12 @@
 package chromahub.rhythm.app.shared.presentation.components
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.LaunchedEffect
+import chromahub.rhythm.app.shared.data.model.ScanProgress
+import chromahub.rhythm.app.shared.data.model.ScanPhase
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.LinearEasing
@@ -38,12 +46,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -63,7 +65,6 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.material3.LinearWavyProgressIndicator
 import chromahub.rhythm.app.R
-import chromahub.rhythm.app.shared.data.model.ScanPhase
 import chromahub.rhythm.app.shared.presentation.components.common.MediaScanningLoader
 import chromahub.rhythm.app.shared.presentation.components.icons.RhythmIcons
 import chromahub.rhythm.app.features.local.presentation.viewmodel.MusicViewModel

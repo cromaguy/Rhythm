@@ -5,6 +5,10 @@ package chromahub.rhythm.app.shared.presentation.components.bottomsheets
 import chromahub.rhythm.app.shared.presentation.components.icons.RhythmIcons
 import chromahub.rhythm.app.shared.presentation.components.icons.MaterialSymbolIcon
 import chromahub.rhythm.app.shared.presentation.components.icons.Icon
+import chromahub.rhythm.app.shared.presentation.components.common.RhythmGroupedButton
+import chromahub.rhythm.app.shared.presentation.components.common.RhythmButtonWeighted
+import chromahub.rhythm.app.shared.presentation.components.common.RhythmButtonSize
+import chromahub.rhythm.app.shared.presentation.components.common.RhythmButtonType
 
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -305,67 +309,42 @@ fun DeviceConfigurationBottomSheet(
                     
                 Spacer(modifier = Modifier.height(12.dp))
                 
-                // Action Buttons Row
-                Row(
+                RhythmGroupedButton(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    size = RhythmButtonSize.Large
                 ) {
-                    // Add Device Button
-                    Button(
+                    RhythmButtonWeighted(
                         onClick = {
                             HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
                             showAddDeviceDialog = true
                         },
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(16.dp),
-                        contentPadding = PaddingValues(12.dp)
-                    ) {
-                        Icon(
-                            imageVector = RhythmIcons.Add,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(stringResource(R.string.button_add))
-                    }
-                    
-                    // Import Button
-                    OutlinedButton(
+                        weight = 1f,
+                        isFirst = true,
+                        type = RhythmButtonType.Filled,
+                        icon = RhythmIcons.Add,
+                        text = stringResource(R.string.button_add)
+                    )
+                    RhythmButtonWeighted(
                         onClick = {
                             HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
                             showImportDialog = true
                         },
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(16.dp),
-                        contentPadding = PaddingValues(12.dp)
-                    ) {
-                        Icon(
-                            imageVector = RhythmIcons.Download,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(stringResource(R.string.button_import))
-                    }
-                    
-                    // Export Button
-                    OutlinedButton(
+                        weight = 1f,
+                        type = RhythmButtonType.Tonal,
+                        icon = RhythmIcons.Download,
+                        text = stringResource(R.string.button_import)
+                    )
+                    RhythmButtonWeighted(
                         onClick = {
                             HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
                             showExportDialog = true
                         },
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(16.dp),
-                        contentPadding = PaddingValues(12.dp)
-                    ) {
-                        Icon(
-                            imageVector = MaterialSymbolIcon("file_upload"),
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(stringResource(R.string.button_export))
-                    }
+                        weight = 1f,
+                        isLast = true,
+                        type = RhythmButtonType.Tonal,
+                        icon = MaterialSymbolIcon("file_upload"),
+                        text = stringResource(R.string.button_export)
+                    )
                 }
                 
                 Spacer(modifier = Modifier.height(16.dp))

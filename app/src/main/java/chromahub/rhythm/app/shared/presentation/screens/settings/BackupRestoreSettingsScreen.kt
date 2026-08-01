@@ -198,6 +198,8 @@ fun BackupRestoreSettingsScreen(onBackClick: () -> Unit) {
     val autoBackupEnabled by appSettings.autoBackupEnabled.collectAsState()
     val lastBackupTimestamp by appSettings.lastBackupTimestamp.collectAsState()
     val backupLocation by appSettings.backupLocation.collectAsState()
+    val isLibraryRefreshing by musicViewModel.isLibraryRefreshing.collectAsState()
+    val restoreResult by musicViewModel.restoreResult.collectAsState()
 
     // Local states
     var isCreatingBackup by remember { mutableStateOf(false) }
@@ -231,12 +233,47 @@ fun BackupRestoreSettingsScreen(onBackClick: () -> Unit) {
         )
     }
 
+    LaunchedEffect(restoreResult) {
+        when (val result = restoreResult) {
+            is MusicViewModel.RestoreResult.Queued -> {
+                isPreparingRestore = false
+                Toast.makeText(context, "Media scan is in progress. Restore has been queued and will apply automatically when the scan finishes.", Toast.LENGTH_LONG).show()
+                musicViewModel.clearRestoreResult()
+            }
+            is MusicViewModel.RestoreResult.Success -> {
+                isPreparingRestore = false
+                resultSheetState = BackupRestoreResultState(
+                    title = if (result.wasQueued) "Queued Restore Completed" else context.getString(R.string.settings_restore_completed),
+                    message = if (result.wasQueued) {
+                        "The queued restore has completed successfully.\n\nPlease restart the app to apply all settings."
+                    } else {
+                        "Restore completed successfully.\n\nRestored sections:\n${selectedSectionsSummary(restoreSections)}"
+                    },
+                    isError = false,
+                    requiresRestart = true
+                )
+                musicViewModel.clearRestoreResult()
+            }
+            is MusicViewModel.RestoreResult.Failure -> {
+                isPreparingRestore = false
+                showError(result.errorMessage)
+                musicViewModel.clearRestoreResult()
+            }
+            else -> {}
+        }
+    }
+
     // File picker launcher for backup export
     val backupLocationLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
             result.data?.data?.let { uri ->
+                if (isLibraryRefreshing) {
+                    Toast.makeText(context, "Cannot create backup while a media scan is in progress. Please wait for the scan to finish.", Toast.LENGTH_LONG).show()
+                    isCreatingBackup = false
+                    return@let
+                }
                 scope.launch {
                     try {
                         isCreatingBackup = true
@@ -345,28 +382,9 @@ fun BackupRestoreSettingsScreen(onBackClick: () -> Unit) {
     }
 
     fun applyRestoreWithSections(backupJson: String, sections: AppSettings.BackupRestoreSections) {
-        scope.launch {
-            try {
-                isPreparingRestore = true
-                HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
-
-                if (appSettings.restoreFromBackup(backupJson, sections)) {
-                    musicViewModel.reloadPlaylistsFromSettings()
-                    resultSheetState = BackupRestoreResultState(
-                        title = context.getString(R.string.settings_restore_completed),
-                        message = "Restore completed successfully.\n\nRestored sections:\n${selectedSectionsSummary(sections)}",
-                        isError = false,
-                        requiresRestart = true
-                    )
-                } else {
-                    showError("Invalid backup format, no sections selected, or corrupted data")
-                }
-            } catch (e: Exception) {
-                showError("Failed to restore backup: ${e.message}")
-            } finally {
-                isPreparingRestore = false
-            }
-        }
+        isPreparingRestore = true
+        HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
+        musicViewModel.restoreFromBackup(backupJson, sections)
     }
 
     val infiniteTransition = rememberInfiniteTransition(label = "backup_animations")
@@ -593,7 +611,9 @@ fun BackupRestoreSettingsScreen(onBackClick: () -> Unit) {
                             context.getString(R.string.settings_create_backup),
                             context.getString(R.string.settings_create_backup_desc),
                             onClick = {
-                                if (!isBusy) {
+                                if (isLibraryRefreshing) {
+                                    Toast.makeText(context, "Cannot create backup while a media scan is in progress. Please wait for the scan to finish.", Toast.LENGTH_LONG).show()
+                                } else if (!isBusy) {
                                     HapticUtils.performHapticFeedback(context, haptics, HapticType.LIGHT)
                                     backupSections = AppSettings.BackupRestoreSections()
                                     showBackupSelectionSheet = true

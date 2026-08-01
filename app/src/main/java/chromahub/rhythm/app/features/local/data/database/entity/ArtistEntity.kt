@@ -12,3 +12,13 @@ data class ArtistEntity(
     val numberOfTracks: Int,
     val groupByAlbumArtist: Boolean
 )
+
+fun ArtistEntity.toArtist(): chromahub.rhythm.app.shared.data.model.Artist {
+    return chromahub.rhythm.app.shared.data.model.Artist(
+        id = id,
+        name = name,
+        artworkUri = artworkUri?.let { android.net.Uri.parse(it) },
+        numberOfAlbums = numberOfAlbums,
+        numberOfTracks = numberOfTracks
+    )
+}

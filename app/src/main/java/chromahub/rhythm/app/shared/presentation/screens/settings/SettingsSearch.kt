@@ -341,8 +341,8 @@ fun buildSettingsSearchIndex(context: Context): List<SearchableSettingItem> {
             description = "Hardware-accelerated audio decoding to save device power",
             keywords = listOf("audio", "offload", "hardware", "dsp", "decode", "battery", "power"),
             icon = MaterialSymbolIcon("bolt"),
-            route = SettingsRoutes.BATTERY_SAVER,
-            parentScreen = context.getString(R.string.settings_section_audio_lyrics)
+            route = SettingsRoutes.PLAYBACK,
+            parentScreen = context.getString(R.string.settings_playback_title)
         ))
         add(SearchableSettingItem(
             id = "battery_saver_disable_haptics",
@@ -512,6 +512,16 @@ fun buildSettingsSearchIndex(context: Context): List<SearchableSettingItem> {
             route = SettingsRoutes.LIBRARY_SETTINGS,
             parentScreen = context.getString(R.string.settings_library_settings),
             settingKey = "preferSongArtwork"
+        ))
+        add(SearchableSettingItem(
+            id = "artist_artwork_source",
+            title = context.getString(R.string.settings_artist_artwork_source),
+            description = context.getString(R.string.settings_artist_artwork_source_desc),
+            keywords = listOf("artist image", "artist art", "artist photo", "artist cover", "deezer", "local image", "artist.jpg", "band.jpg", "api", "artwork source"),
+            icon = RhythmIcons.Artist,
+            route = SettingsRoutes.LIBRARY_SETTINGS,
+            parentScreen = context.getString(R.string.settings_library_settings),
+            settingKey = "artistArtworkSource"
         ))
 
         
@@ -1386,19 +1396,20 @@ fun buildSettingsSearchIndex(context: Context): List<SearchableSettingItem> {
             keywords = listOf("replay gain", "replaygain", "volume normalization", "normalization", "gain", "audio effects"),
             icon = MaterialSymbolIcon("volume_up"),
             route = SettingsRoutes.REPLAY_GAIN,
-            parentScreen = context.getString(R.string.settings_section_audio_lyrics),
+            parentScreen = context.getString(R.string.settings_playback_title),
             settingKey = "replayGain"
         ))
         add(SearchableSettingItem(
-            id = "audio_routing_mode",
-            title = context.getString(R.string.settings_audio_routing),
-            description = context.getString(R.string.settings_dac_usb_audio_desc),
-            keywords = listOf("audio routing", "dac", "usb audio", "default routing", "app routing", "system routing", "output", "exclusive", "exclusive usb", "usb-c", "bit perfect", "direct"),
-            icon = RhythmIcons.Headphones,
+            id = "skip_silence",
+            title = context.getString(R.string.settings_skip_silence),
+            description = context.getString(R.string.settings_skip_silence_desc),
+            keywords = listOf("skip silence", "silence", "gap", "mute", "quiet", "audio detection", "auto skip"),
+            icon = MaterialSymbolIcon("hearing"),
             route = SettingsRoutes.EXPERIMENTAL_FEATURES,
             parentScreen = "Experimental",
-            settingKey = "audioRoutingMode"
+            settingKey = "skipSilenceEnabled"
         ))
+
         
         add(SearchableSettingItem(
             id = "exp_festive_theme",

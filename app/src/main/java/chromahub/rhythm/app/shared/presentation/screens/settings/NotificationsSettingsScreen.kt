@@ -2,179 +2,83 @@
 
 package chromahub.rhythm.app.shared.presentation.screens.settings
 
-
-
-import chromahub.rhythm.app.ui.LocalMiniPlayerPadding
-import androidx.compose.foundation.layout.PaddingValues
-import chromahub.rhythm.app.shared.presentation.components.icons.RhythmIcons
-import chromahub.rhythm.app.shared.presentation.components.icons.MaterialSymbolIcon
-import chromahub.rhythm.app.shared.presentation.components.icons.Icon
-
-import android.app.Activity
-import android.content.ClipData
-import android.content.ClipboardManager
+import android.Manifest
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
-import android.provider.DocumentsContract
-import android.util.Log
-import android.widget.Toast
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
+import android.provider.Settings
 import androidx.compose.animation.*
-import androidx.compose.animation.core.*
-import androidx.compose.animation.core.Spring
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.ExperimentalFoundationApi
-import chromahub.rhythm.app.R
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.GridItemSpan
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.border
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.material3.*
-import androidx.compose.material3.CircularWavyProgressIndicator
-import androidx.compose.material3.LinearWavyProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.Slider
-import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.*
-import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.PathEffect
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.luminance
-import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.graphics.vector.rememberVectorPainter
-import androidx.compose.ui.hapticfeedback.HapticFeedback
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.TextUnit
-import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import chromahub.rhythm.app.BuildConfig
+import androidx.core.content.ContextCompat
+import chromahub.rhythm.app.R
 import chromahub.rhythm.app.shared.data.model.AppSettings
-import chromahub.rhythm.app.shared.data.model.Playlist
-import chromahub.rhythm.app.shared.data.model.Song
-import chromahub.rhythm.app.shared.data.repository.PlaybackStatsRepository
-import chromahub.rhythm.app.shared.data.repository.StatsTimeRange
-import chromahub.rhythm.app.util.GsonUtils
-import chromahub.rhythm.app.util.HapticUtils
-import chromahub.rhythm.app.util.HapticType
-import coil.compose.AsyncImage
-import coil.compose.rememberAsyncImagePainter
-import coil.request.ImageRequest
-import kotlin.system.exitProcess
-import chromahub.rhythm.app.shared.presentation.components.common.CollapsibleHeaderScreen
-import chromahub.rhythm.app.shared.presentation.components.common.ButtonGroupStyle
-import chromahub.rhythm.app.shared.presentation.components.common.ExpressiveScrollBar
-import chromahub.rhythm.app.shared.presentation.components.common.ExpressiveButtonGroup
-import chromahub.rhythm.app.shared.presentation.components.common.ExpressiveGroupButton
-import chromahub.rhythm.app.shared.presentation.components.bottomsheets.StandardBottomSheetHeader
-import chromahub.rhythm.app.shared.presentation.components.common.StyledProgressBar
-import chromahub.rhythm.app.shared.presentation.components.common.ProgressStyle
-import chromahub.rhythm.app.shared.presentation.components.common.ThumbStyle
-import chromahub.rhythm.app.shared.presentation.components.bottomsheets.LicensesBottomSheet
-import chromahub.rhythm.app.shared.presentation.components.bottomsheets.UpdateBottomSheet
-import chromahub.rhythm.app.ui.utils.LazyListStateSaver
-import chromahub.rhythm.app.features.local.presentation.viewmodel.MusicViewModel
-import chromahub.rhythm.app.shared.presentation.components.common.ExpressiveShapeProvider
-import chromahub.rhythm.app.shared.presentation.components.common.ExpressiveShapes
-import chromahub.rhythm.app.shared.presentation.components.common.buildSplashBackdropShapes
-import chromahub.rhythm.app.shared.presentation.components.common.SplashBackgroundOrbs
-import chromahub.rhythm.app.shared.presentation.viewmodel.AppUpdaterViewModel
-import chromahub.rhythm.app.shared.presentation.viewmodel.AppVersion
-import chromahub.rhythm.app.ui.theme.getFontPreviewStyle
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.MainScope
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
-import java.io.File
-import chromahub.rhythm.app.utils.FontLoader
-import chromahub.rhythm.app.ui.theme.parseCustomColorScheme
-import androidx.compose.ui.viewinterop.AndroidView
-import android.widget.TextView
-import androidx.compose.foundation.Image
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
-import androidx.core.text.HtmlCompat
-import chromahub.rhythm.app.shared.presentation.components.common.M3FourColorCircularLoader
-import chromahub.rhythm.app.shared.presentation.components.player.PlayingEqIcon
-import chromahub.rhythm.app.shared.presentation.components.dialogs.CreatePlaylistDialog
-import chromahub.rhythm.app.shared.presentation.components.dialogs.BulkPlaylistExportDialog
-import chromahub.rhythm.app.shared.presentation.components.dialogs.PlaylistImportDialog
-import chromahub.rhythm.app.shared.presentation.components.common.rememberExpressiveShape
-import chromahub.rhythm.app.shared.presentation.components.dialogs.PlaylistOperationProgressDialog
-import chromahub.rhythm.app.shared.presentation.components.dialogs.PlaylistOperationResultDialog
-import chromahub.rhythm.app.shared.presentation.components.dialogs.AppRestartDialog
-import chromahub.rhythm.app.shared.presentation.components.player.PlayerChipOrderBottomSheet
-import chromahub.rhythm.app.features.local.presentation.components.settings.HomeSectionOrderBottomSheet
-import chromahub.rhythm.app.features.local.presentation.components.settings.LibraryTabOrderBottomSheet
 import chromahub.rhythm.app.shared.presentation.components.Material3SettingsGroup
 import chromahub.rhythm.app.shared.presentation.components.Material3SettingsItem
+import chromahub.rhythm.app.shared.presentation.components.common.CollapsibleHeaderScreen
+import chromahub.rhythm.app.shared.presentation.components.common.ExpressiveShapeTarget
+import chromahub.rhythm.app.shared.presentation.components.common.rememberExpressiveShapeFor
+import chromahub.rhythm.app.shared.presentation.components.icons.Icon
+import chromahub.rhythm.app.shared.presentation.components.icons.MaterialSymbolIcon
+import chromahub.rhythm.app.shared.presentation.components.icons.RhythmIcons
+import chromahub.rhythm.app.ui.LocalMiniPlayerPadding
+import chromahub.rhythm.app.ui.utils.LazyListStateSaver
+import chromahub.rhythm.app.util.HapticType
+import chromahub.rhythm.app.util.HapticUtils
 
-import chromahub.rhythm.app.shared.presentation.screens.settings.TunerSettingRow
-import chromahub.rhythm.app.shared.presentation.screens.settings.TunerAnimatedSwitch
-import chromahub.rhythm.app.shared.presentation.screens.settings.TunerSettingCard
-import chromahub.rhythm.app.shared.presentation.screens.settings.SettingItem
-import chromahub.rhythm.app.shared.presentation.screens.settings.SettingGroup
-
-
-// Individual screens with actual settings
 @Composable
 fun NotificationsSettingsScreen(onBackClick: () -> Unit) {
     val context = LocalContext.current
-    val appSettings = AppSettings.getInstance(context)
+    val appSettings = remember { AppSettings.getInstance(context) }
     val hapticFeedback = LocalHapticFeedback.current
+
+    // Preference states
+    val useCustomNotification by appSettings.useCustomNotification.collectAsState()
+    val showCodecNotifications by appSettings.showCodecNotifications.collectAsState()
+    val libraryOperationsNotificationsEnabled by appSettings.libraryOperationsNotificationsEnabled.collectAsState()
+    val sleepTimerNotificationsEnabled by appSettings.sleepTimerNotificationsEnabled.collectAsState()
+    val streamingNotificationsEnabled by appSettings.streamingNotificationsEnabled.collectAsState()
     val updateNotificationsEnabled by appSettings.updateNotificationsEnabled.collectAsState()
-    val updateStatusNotificationsEnabled by appSettings.updateStatusNotificationsEnabled.collectAsState()
     val rhythmGuardAlertNotificationsEnabled by appSettings.rhythmGuardAlertNotificationsEnabled.collectAsState()
     val rhythmGuardTimerNotificationsEnabled by appSettings.rhythmGuardTimerNotificationsEnabled.collectAsState()
     val rhythmPulseNotificationsEnabled by appSettings.rhythmPulseNotificationsEnabled.collectAsState()
     val rhythmPulseNotificationIntervalHours by appSettings.rhythmPulseNotificationIntervalHours.collectAsState()
 
-    val mergedUpdateNotificationsEnabled =
-        updateNotificationsEnabled || updateStatusNotificationsEnabled
-
     var showPulseIntervalDialog by remember { mutableStateOf(false) }
+
+    // System notification permission check
+    var isPermissionGranted by remember {
+        mutableStateOf(
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.POST_NOTIFICATIONS
+                ) == PackageManager.PERMISSION_GRANTED
+            } else {
+                true
+            }
+        )
+    }
 
     val pulseIntervalLabel = when (rhythmPulseNotificationIntervalHours) {
         6 -> context.getString(R.string.settings_interval_every_6_hours)
@@ -185,20 +89,69 @@ fun NotificationsSettingsScreen(onBackClick: () -> Unit) {
         else -> context.getString(R.string.settings_check_interval_value, rhythmPulseNotificationIntervalHours)
     }
 
+    fun openSystemNotificationSettings() {
+        val intent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+                putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+            }
+        } else {
+            Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                data = Uri.fromParts("package", context.packageName, null)
+            }
+        }
+        context.startActivity(intent)
+    }
+
     CollapsibleHeaderScreen(
-        title = context.getString(R.string.settings_notifications),
+        title = stringResource(R.string.settings_notifications),
         showBackButton = true,
         onBackClick = onBackClick
     ) { modifier ->
         val settingGroups = listOf(
             SettingGroup(
-                title = context.getString(R.string.settings_notifications_updates_group),
+                title = stringResource(R.string.settings_notifications_library_group),
+                items = listOf(
+                    SettingItem(
+                        RhythmIcons.Library,
+                        stringResource(R.string.settings_library_operations_notifications),
+                        stringResource(R.string.settings_library_operations_notifications_desc),
+                        toggleState = libraryOperationsNotificationsEnabled,
+                        onToggleChange = { appSettings.setLibraryOperationsNotificationsEnabled(it) }
+                    )
+                )
+            ),
+            SettingGroup(
+                title = "Sleep Timer",
+                items = listOf(
+                    SettingItem(
+                        RhythmIcons.AccessTime,
+                        "Sleep Timer Status",
+                        "Show notification countdown and controls when sleep timer is active",
+                        toggleState = sleepTimerNotificationsEnabled,
+                        onToggleChange = { appSettings.setSleepTimerNotificationsEnabled(it) }
+                    )
+                )
+            ),
+            SettingGroup(
+                title = "Cloud & Streaming",
+                items = listOf(
+                    SettingItem(
+                        MaterialSymbolIcon("cloud"),
+                        "Cloud Sync Alerts",
+                        "Show notifications for streaming service connection and sync progress",
+                        toggleState = streamingNotificationsEnabled,
+                        onToggleChange = { appSettings.setStreamingNotificationsEnabled(it) }
+                    )
+                )
+            ),
+            SettingGroup(
+                title = stringResource(R.string.settings_notifications_updates_group),
                 items = listOf(
                     SettingItem(
                         RhythmIcons.Update,
-                        context.getString(R.string.settings_update_notifications),
-                        context.getString(R.string.settings_update_notifications_merged_desc),
-                        toggleState = mergedUpdateNotificationsEnabled,
+                        stringResource(R.string.settings_notifications_updates_group),
+                        stringResource(R.string.settings_update_notifications_merged_desc),
+                        toggleState = updateNotificationsEnabled,
                         onToggleChange = {
                             appSettings.setUpdateNotificationsEnabled(it)
                             appSettings.setUpdateStatusNotificationsEnabled(it)
@@ -207,48 +160,57 @@ fun NotificationsSettingsScreen(onBackClick: () -> Unit) {
                 )
             ),
             SettingGroup(
-                title = context.getString(R.string.settings_notifications_rhythm_guard_group),
+                title = stringResource(R.string.settings_notifications_rhythm_guard_group),
                 items = listOf(
                     SettingItem(
                         RhythmIcons.Warning,
-                        context.getString(R.string.settings_rhythm_guard_alert_notifications),
-                        context.getString(R.string.settings_rhythm_guard_alert_notifications_desc),
+                        stringResource(R.string.settings_rhythm_guard_alert_notifications),
+                        stringResource(R.string.settings_rhythm_guard_alert_notifications_desc),
                         toggleState = rhythmGuardAlertNotificationsEnabled,
                         onToggleChange = { appSettings.setRhythmGuardAlertNotificationsEnabled(it) }
                     ),
                     SettingItem(
                         RhythmIcons.AccessTime,
-                        context.getString(R.string.settings_rhythm_guard_timer_notifications),
-                        context.getString(R.string.settings_rhythm_guard_timer_notifications_desc),
+                        stringResource(R.string.settings_rhythm_guard_timer_notifications),
+                        stringResource(R.string.settings_rhythm_guard_timer_notifications_desc),
                         toggleState = rhythmGuardTimerNotificationsEnabled,
                         onToggleChange = { appSettings.setRhythmGuardTimerNotificationsEnabled(it) }
                     )
                 )
             ),
             SettingGroup(
-                title = context.getString(R.string.settings_notifications_rhythm_pulse_group),
+                title = stringResource(R.string.settings_notifications_rhythm_pulse_group),
                 items = listOf(
                     SettingItem(
                         MaterialSymbolIcon("celebration"),
-                        context.getString(R.string.settings_rhythm_pulse_notifications),
-                        context.getString(R.string.settings_rhythm_pulse_notifications_desc),
+                        stringResource(R.string.settings_rhythm_pulse_notifications),
+                        stringResource(R.string.settings_rhythm_pulse_notifications_desc),
                         toggleState = rhythmPulseNotificationsEnabled,
                         onToggleChange = { appSettings.setRhythmPulseNotificationsEnabled(it) }
                     ),
                     SettingItem(
                         RhythmIcons.AccessTime,
-                        context.getString(R.string.settings_rhythm_pulse_interval),
+                        stringResource(R.string.settings_rhythm_pulse_interval),
                         pulseIntervalLabel,
                         onClick = { showPulseIntervalDialog = true },
                         enabled = rhythmPulseNotificationsEnabled
                     )
                 )
+            ),
+            SettingGroup(
+                title = stringResource(R.string.settings_notifications_system_group),
+                items = listOf(
+                    SettingItem(
+                        RhythmIcons.Settings,
+                        stringResource(R.string.settings_system_notification_channels),
+                        stringResource(R.string.settings_system_notification_channels_desc),
+                        onClick = { openSystemNotificationSettings() }
+                    )
+                )
             )
         )
 
-        val lazyListState = rememberSaveable(
-            saver = LazyListStateSaver
-        ) {
+        val lazyListState = rememberSaveable(saver = LazyListStateSaver) {
             androidx.compose.foundation.lazy.LazyListState()
         }
 
@@ -260,12 +222,71 @@ fun NotificationsSettingsScreen(onBackClick: () -> Unit) {
                 .background(MaterialTheme.colorScheme.background)
                 .padding(horizontal = 24.dp)
         ) {
+            // System Notification Permission Warning Banner (if permission missing)
+            if (!isPermissionGranted) {
+                item {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Card(
+                        shape = RoundedCornerShape(24.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(20.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Icon(
+                                    imageVector = RhythmIcons.Notifications,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onErrorContainer,
+                                    modifier = Modifier.size(28.dp)
+                                )
+                                Text(
+                                    text = stringResource(R.string.settings_notification_permission_title),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onErrorContainer
+                                )
+                            }
+                            Text(
+                                text = stringResource(R.string.settings_notification_permission_desc),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.85f)
+                            )
+                            Button(
+                                onClick = {
+                                    HapticUtils.performHapticFeedback(context, hapticFeedback, HapticType.HEAVY)
+                                    openSystemNotificationSettings()
+                                },
+                                shape = RoundedCornerShape(16.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.error,
+                                    contentColor = MaterialTheme.colorScheme.onError
+                                )
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.settings_notification_permission_grant),
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Setting Groups
             items(
                 items = settingGroups,
                 key = { "setting_${it.title}" },
                 contentType = { "settingGroup" }
             ) { group ->
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(20.dp))
 
                 val materialItems = group.items.map { item ->
                     toMaterial3SettingsItem(
@@ -295,15 +316,15 @@ fun NotificationsSettingsScreen(onBackClick: () -> Unit) {
                     modifier = Modifier.size(28.dp)
                 )
             },
-            title = { Text(context.getString(R.string.settings_rhythm_pulse_interval_dialog_title)) },
+            title = { Text(stringResource(R.string.settings_rhythm_pulse_interval_dialog_title)) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     val intervals = listOf(
-                        6 to context.getString(R.string.settings_interval_every_6_hours),
-                        12 to context.getString(R.string.settings_interval_every_12_hours),
-                        24 to context.getString(R.string.settings_interval_once_a_day),
-                        48 to context.getString(R.string.settings_interval_every_48_hours),
-                        72 to context.getString(R.string.settings_interval_every_72_hours)
+                        6 to stringResource(R.string.settings_interval_every_6_hours),
+                        12 to stringResource(R.string.settings_interval_every_12_hours),
+                        24 to stringResource(R.string.settings_interval_once_a_day),
+                        48 to stringResource(R.string.settings_interval_every_48_hours),
+                        72 to stringResource(R.string.settings_interval_every_72_hours)
                     )
 
                     intervals.forEach { (hours, label) ->
@@ -319,7 +340,7 @@ fun NotificationsSettingsScreen(onBackClick: () -> Unit) {
                                 else
                                     MaterialTheme.colorScheme.surfaceVariant
                             ),
-                            shape = RoundedCornerShape(12.dp),
+                            shape = RoundedCornerShape(14.dp),
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Row(
@@ -331,13 +352,13 @@ fun NotificationsSettingsScreen(onBackClick: () -> Unit) {
                                 Text(
                                     text = label,
                                     style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = if (rhythmPulseNotificationIntervalHours == hours) FontWeight.SemiBold else FontWeight.Normal,
+                                    fontWeight = if (rhythmPulseNotificationIntervalHours == hours) FontWeight.Bold else FontWeight.Normal,
                                     modifier = Modifier.weight(1f)
                                 )
                                 if (rhythmPulseNotificationIntervalHours == hours) {
                                     Icon(
                                         imageVector = RhythmIcons.CheckCircle,
-                                        contentDescription = context.getString(R.string.ui_selected),
+                                        contentDescription = stringResource(R.string.ui_selected),
                                         tint = MaterialTheme.colorScheme.primary
                                     )
                                 }
@@ -348,7 +369,7 @@ fun NotificationsSettingsScreen(onBackClick: () -> Unit) {
             },
             confirmButton = {
                 OutlinedButton(onClick = { showPulseIntervalDialog = false }) {
-                    Text(context.getString(R.string.ui_close))
+                    Text(stringResource(R.string.ui_close))
                 }
             },
             shape = RoundedCornerShape(24.dp)

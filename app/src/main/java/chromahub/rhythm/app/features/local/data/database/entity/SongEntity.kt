@@ -26,3 +26,54 @@ data class SongEntity(
     val discNumber: Int = 1,
     val path: String? = null
 )
+
+fun SongEntity.toSong(): chromahub.rhythm.app.shared.data.model.Song {
+    return chromahub.rhythm.app.shared.data.model.Song(
+        id = id,
+        title = title,
+        artist = artist,
+        album = album,
+        albumId = albumId,
+        duration = duration,
+        uri = android.net.Uri.parse(uri),
+        artworkUri = artworkUri?.let { android.net.Uri.parse(it) },
+        trackNumber = trackNumber,
+        year = year,
+        genre = genre,
+        dateAdded = dateAdded,
+        dateModified = dateModified.takeIf { it > 0L } ?: dateAdded,
+        albumArtist = albumArtist,
+        bitrate = bitrate,
+        sampleRate = sampleRate,
+        channels = channels,
+        codec = codec,
+        discNumber = discNumber,
+        path = path
+    )
+}
+
+
+fun chromahub.rhythm.app.shared.data.model.Song.toEntity(): SongEntity {
+    return SongEntity(
+        id = id,
+        title = title,
+        artist = artist,
+        album = album,
+        albumId = albumId,
+        duration = duration,
+        uri = uri.toString(),
+        artworkUri = artworkUri?.toString(),
+        trackNumber = trackNumber,
+        year = year,
+        genre = genre,
+        dateAdded = dateAdded,
+        dateModified = dateModified,
+        albumArtist = albumArtist,
+        bitrate = bitrate,
+        sampleRate = sampleRate,
+        channels = channels,
+        codec = codec,
+        discNumber = discNumber,
+        path = path
+    )
+}

@@ -2777,6 +2777,8 @@ fun EnhancedBackupRestoreContent(
     // State for backup settings
     val autoBackupEnabled by appSettings.autoBackupEnabled.collectAsState()
     val lastBackupTimestamp by appSettings.lastBackupTimestamp.collectAsState()
+    val isLibraryRefreshing by musicViewModel.isLibraryRefreshing.collectAsState()
+    val restoreResult by musicViewModel.restoreResult.collectAsState()
 
     // Local UI state
     var isCreatingBackup by remember { mutableStateOf(false) }
@@ -2798,6 +2800,32 @@ fun EnhancedBackupRestoreContent(
         Runtime.getRuntime().exit(0)
     }
 
+    LaunchedEffect(restoreResult) {
+        when (val result = restoreResult) {
+            is MusicViewModel.RestoreResult.Queued -> {
+                Toast.makeText(context, "Media scan is in progress. Restore has been queued and will apply automatically when the scan finishes.", Toast.LENGTH_LONG).show()
+                musicViewModel.clearRestoreResult()
+            }
+            is MusicViewModel.RestoreResult.Success -> {
+                backupStatusIsError = false
+                backupStatusMessage = if (result.wasQueued) {
+                    "Queued restore completed successfully! Please restart the app."
+                } else {
+                    context.getString(R.string.backup_restored_success)
+                }
+                showRestartHint = true
+                musicViewModel.clearRestoreResult()
+            }
+            is MusicViewModel.RestoreResult.Failure -> {
+                backupStatusIsError = true
+                backupStatusMessage = result.errorMessage
+                showRestartHint = false
+                musicViewModel.clearRestoreResult()
+            }
+            else -> {}
+        }
+    }
+
     fun handleRestorePayload(backupJson: String?) {
         if (backupJson.isNullOrEmpty()) {
             backupStatusIsError = true
@@ -2806,16 +2834,7 @@ fun EnhancedBackupRestoreContent(
             return
         }
 
-        if (appSettings.restoreFromBackup(backupJson)) {
-            musicViewModel.reloadPlaylistsFromSettings()
-            backupStatusIsError = false
-            backupStatusMessage = context.getString(R.string.backup_restored_success)
-            showRestartHint = true
-        } else {
-            backupStatusIsError = true
-            backupStatusMessage = context.getString(R.string.backup_invalid_format)
-            showRestartHint = false
-        }
+        musicViewModel.restoreFromBackup(backupJson)
     }
 
     val backupLocationLauncher = rememberLauncherForActivityResult(
@@ -2823,6 +2842,11 @@ fun EnhancedBackupRestoreContent(
     ) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
             result.data?.data?.let { uri ->
+                if (isLibraryRefreshing) {
+                    Toast.makeText(context, "Cannot create backup while a media scan is in progress. Please wait for the scan to finish.", Toast.LENGTH_LONG).show()
+                    isCreatingBackup = false
+                    return@let
+                }
                 scope.launch {
                     try {
                         isCreatingBackup = true
@@ -10000,6 +10024,7 @@ fun EnhancedIntegrationsContent(
     val lyricallyApiEnabled by appSettings.lyricallyApiEnabled.collectAsState()
     val ytMusicApiEnabled by appSettings.ytMusicApiEnabled.collectAsState()
     val spotifyApiEnabled by appSettings.spotifyApiEnabled.collectAsState()
+    val wikipediaApiEnabled by appSettings.wikipediaApiEnabled.collectAsState()
     val broadcastStatusEnabled by appSettings.broadcastStatusEnabled.collectAsState()
     val bluetoothLyricsEnabled by appSettings.bluetoothLyricsEnabled.collectAsState()
     val appleCanvasEnabled by appSettings.appleCanvasEnabled.collectAsState()
@@ -10065,6 +10090,7 @@ fun EnhancedIntegrationsContent(
                     lyricallyApiEnabled = lyricallyApiEnabled,
                     ytMusicApiEnabled = ytMusicApiEnabled,
                     spotifyApiEnabled = spotifyApiEnabled,
+                    wikipediaApiEnabled = wikipediaApiEnabled,
                     broadcastStatusEnabled = broadcastStatusEnabled,
                     bluetoothLyricsEnabled = bluetoothLyricsEnabled,
                     appleCanvasEnabled = appleCanvasEnabled,
@@ -10074,6 +10100,7 @@ fun EnhancedIntegrationsContent(
                     onLyricallyChange = { appSettings.setLyricallyApiEnabled(it) },
                     onYtMusicChange = { appSettings.setYTMusicApiEnabled(it) },
                     onSpotifyChange = { appSettings.setSpotifyApiEnabled(it) },
+                    onWikipediaChange = { appSettings.setWikipediaApiEnabled(it) },
                     onBroadcastChange = { appSettings.setBroadcastStatusEnabled(it) },
                     onBluetoothLyricsChange = {
                         appSettings.setBluetoothLyricsEnabled(it)
@@ -10125,6 +10152,7 @@ fun EnhancedIntegrationsContent(
                 lyricallyApiEnabled = lyricallyApiEnabled,
                 ytMusicApiEnabled = ytMusicApiEnabled,
                 spotifyApiEnabled = spotifyApiEnabled,
+                wikipediaApiEnabled = wikipediaApiEnabled,
                 broadcastStatusEnabled = broadcastStatusEnabled,
                 bluetoothLyricsEnabled = bluetoothLyricsEnabled,
                 appleCanvasEnabled = appleCanvasEnabled,
@@ -10134,6 +10162,7 @@ fun EnhancedIntegrationsContent(
                 onLyricallyChange = { appSettings.setLyricallyApiEnabled(it) },
                 onYtMusicChange = { appSettings.setYTMusicApiEnabled(it) },
                 onSpotifyChange = { appSettings.setSpotifyApiEnabled(it) },
+                onWikipediaChange = { appSettings.setWikipediaApiEnabled(it) },
                 onBroadcastChange = { appSettings.setBroadcastStatusEnabled(it) },
                 onBluetoothLyricsChange = {
                     appSettings.setBluetoothLyricsEnabled(it)
@@ -10162,6 +10191,7 @@ private fun IntegrationsSettingsCards(
     lyricallyApiEnabled: Boolean,
     ytMusicApiEnabled: Boolean,
     spotifyApiEnabled: Boolean,
+    wikipediaApiEnabled: Boolean,
     broadcastStatusEnabled: Boolean,
     bluetoothLyricsEnabled: Boolean,
     appleCanvasEnabled: Boolean,
@@ -10171,6 +10201,7 @@ private fun IntegrationsSettingsCards(
     onLyricallyChange: (Boolean) -> Unit,
     onYtMusicChange: (Boolean) -> Unit,
     onSpotifyChange: (Boolean) -> Unit,
+    onWikipediaChange: (Boolean) -> Unit,
     onBroadcastChange: (Boolean) -> Unit,
     onBluetoothLyricsChange: (Boolean) -> Unit,
     onAppleCanvasChange: (Boolean) -> Unit,
@@ -10288,6 +10319,18 @@ private fun IntegrationsSettingsCards(
                     "Access matching song details and recommendations",
                     ytMusicApiEnabled,
                     onYtMusicChange,
+                    null
+                )
+            )
+        }
+        if (chromahub.rhythm.app.BuildConfig.ENABLE_WIKIPEDIA) {
+            add(
+                onboardingToggleItem(
+                    MaterialSymbolIcon("article"),
+                    "Wikipedia",
+                    "Fetch album details and descriptions for About section",
+                    wikipediaApiEnabled,
+                    onWikipediaChange,
                     null
                 )
             )

@@ -294,6 +294,7 @@ object NetworkClient {
     fun isYTMusicApiEnabled(): Boolean = BuildConfig.ENABLE_YOUTUBE_MUSIC && (appSettings?.ytMusicApiEnabled?.value ?: false)
     fun isSpotifyApiEnabled(): Boolean = BuildConfig.ENABLE_SPOTIFY_SEARCH && (appSettings?.spotifyApiEnabled?.value ?: false)
     fun isLyricallyApiEnabled(): Boolean = BuildConfig.ENABLE_LYRICALLY_API && (appSettings?.lyricallyApiEnabled?.value ?: false)
+    fun isWikipediaApiEnabled(): Boolean = BuildConfig.ENABLE_WIKIPEDIA && (appSettings?.wikipediaApiEnabled?.value ?: false)
     
     // Get Spotify API credentials
     fun getSpotifyClientId(): String = appSettings?.spotifyClientId?.value ?: ""

@@ -72,9 +72,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import chromahub.rhythm.app.R
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import chromahub.rhythm.app.shared.presentation.components.common.ButtonGroupStyle
-import chromahub.rhythm.app.shared.presentation.components.common.ExpressiveButtonGroup
-import chromahub.rhythm.app.shared.presentation.components.common.ExpressiveGroupButton
+import chromahub.rhythm.app.shared.presentation.components.common.RhythmGroupedButton
+import chromahub.rhythm.app.shared.presentation.components.common.RhythmButtonWeighted
+import chromahub.rhythm.app.shared.presentation.components.common.RhythmButtonSize
+import chromahub.rhythm.app.shared.presentation.components.common.RhythmToggleButtonGroup
+import chromahub.rhythm.app.shared.presentation.components.common.RhythmToggleOption
 import chromahub.rhythm.app.util.HapticUtils
 import chromahub.rhythm.app.util.HapticType
 import chromahub.rhythm.app.util.LyricsFileUtils
@@ -789,18 +791,20 @@ fun LyricsEditorBottomSheet(
                         .fillMaxWidth()
                         .padding(horizontal = 24.dp)
                 ) {
-                    ExpressiveButtonGroup(
-                        items = listOf(
-                            "Source",
-                            "Line-by-line",
-                            "Word-by-word"
+                    RhythmToggleButtonGroup(
+                        options = listOf(
+                            RhythmToggleOption(text = "Source"),
+                            RhythmToggleOption(text = "Line-by-line"),
+                            RhythmToggleOption(text = "Word-by-word")
                         ),
-                        selectedIndex = when (selectedFormat) {
-                            LyricFormat.SOURCE -> 0
-                            LyricFormat.LINE_BY_LINE -> 1
-                            LyricFormat.WORD_BY_WORD -> 2
-                        },
-                        onItemClick = { index ->
+                        selectedIndices = setOf(
+                            when (selectedFormat) {
+                                LyricFormat.SOURCE -> 0
+                                LyricFormat.LINE_BY_LINE -> 1
+                                LyricFormat.WORD_BY_WORD -> 2
+                            }
+                        ),
+                        onToggle = { index ->
                             HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
                             selectedFormat = when (index) {
                                 0 -> LyricFormat.SOURCE
@@ -808,7 +812,9 @@ fun LyricsEditorBottomSheet(
                                 else -> LyricFormat.WORD_BY_WORD
                             }
                         },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        size = RhythmButtonSize.Medium,
+                        isShowingCheck = false
                     )
                 }
             }
@@ -883,32 +889,25 @@ fun LyricsEditorBottomSheet(
                     
                     Spacer(modifier = Modifier.height(12.dp))
                     
-                    ExpressiveButtonGroup(
+                    RhythmGroupedButton(
                         modifier = Modifier.fillMaxWidth(),
-                        style = ButtonGroupStyle.Outlined
+                        size = RhythmButtonSize.Large
                     ) {
-                        // Earlier Button (-500ms)
-                        ExpressiveGroupButton(
+                        RhythmButtonWeighted(
                             onClick = {
                                 HapticUtils.performHapticFeedback(context, haptic, HapticType.HEAVY)
                                 timeOffset -= 500
                                 val adjusted = adjustLyricsTimestamps(editedLyrics, -500)
                                 updateEditedLyrics(adjusted)
-                                onSave(adjusted, timeOffset, selectedFormat.name) // Apply changes immediately with offset
+                                onSave(adjusted, timeOffset, selectedFormat.name)
                             },
+                            weight = 1f,
+                            isFirst = true,
+                            isLast = false,
                             enabled = hasSyncedLyrics,
-                            isStart = true,
-                            isEnd = false,
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(72.dp),
-                            colors = ButtonDefaults.filledTonalButtonColors(
-                                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
-                                contentColor = MaterialTheme.colorScheme.primary,
-                                disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
-                                disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
-                            ),
-                            contentPadding = PaddingValues(vertical = 8.dp, horizontal = 4.dp)
+                            height = 72.dp,
+                            containerColor = if (hasSyncedLyrics) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
+                            contentColor = if (hasSyncedLyrics) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
                         ) {
                             Column(
                                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -937,28 +936,21 @@ fun LyricsEditorBottomSheet(
                             }
                         }
                         
-                        // Earlier Button (-100ms)
-                        ExpressiveGroupButton(
+                        RhythmButtonWeighted(
                             onClick = {
                                 HapticUtils.performHapticFeedback(context, haptic, HapticType.HEAVY)
                                 timeOffset -= 100
                                 val adjusted = adjustLyricsTimestamps(editedLyrics, -100)
                                 updateEditedLyrics(adjusted)
-                                onSave(adjusted, timeOffset, selectedFormat.name) // Apply changes immediately with offset
+                                onSave(adjusted, timeOffset, selectedFormat.name)
                             },
+                            weight = 1f,
+                            isFirst = false,
+                            isLast = false,
                             enabled = hasSyncedLyrics,
-                            isStart = false,
-                            isEnd = false,
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(72.dp),
-                            colors = ButtonDefaults.filledTonalButtonColors(
-                                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
-                                contentColor = MaterialTheme.colorScheme.primary,
-                                disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
-                                disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
-                            ),
-                            contentPadding = PaddingValues(vertical = 8.dp, horizontal = 4.dp)
+                            height = 72.dp,
+                            containerColor = if (hasSyncedLyrics) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
+                            contentColor = if (hasSyncedLyrics) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
                         ) {
                             Column(
                                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -987,28 +979,21 @@ fun LyricsEditorBottomSheet(
                             }
                         }
                         
-                        // Later Button (+100ms)
-                        ExpressiveGroupButton(
+                        RhythmButtonWeighted(
                             onClick = {
                                 HapticUtils.performHapticFeedback(context, haptic, HapticType.HEAVY)
                                 timeOffset += 100
                                 val adjusted = adjustLyricsTimestamps(editedLyrics, 100)
                                 updateEditedLyrics(adjusted)
-                                onSave(adjusted, timeOffset, selectedFormat.name) // Apply changes immediately with offset
+                                onSave(adjusted, timeOffset, selectedFormat.name)
                             },
+                            weight = 1f,
+                            isFirst = false,
+                            isLast = false,
                             enabled = hasSyncedLyrics,
-                            isStart = false,
-                            isEnd = false,
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(72.dp),
-                            colors = ButtonDefaults.filledTonalButtonColors(
-                                containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f),
-                                contentColor = MaterialTheme.colorScheme.secondary,
-                                disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
-                                disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
-                            ),
-                            contentPadding = PaddingValues(vertical = 8.dp, horizontal = 4.dp)
+                            height = 72.dp,
+                            containerColor = if (hasSyncedLyrics) MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
+                            contentColor = if (hasSyncedLyrics) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
                         ) {
                             Column(
                                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -1037,28 +1022,21 @@ fun LyricsEditorBottomSheet(
                             }
                         }
                         
-                        // Later Button (+500ms)
-                        ExpressiveGroupButton(
+                        RhythmButtonWeighted(
                             onClick = {
                                 HapticUtils.performHapticFeedback(context, haptic, HapticType.HEAVY)
                                 timeOffset += 500
                                 val adjusted = adjustLyricsTimestamps(editedLyrics, 500)
                                 updateEditedLyrics(adjusted)
-                                onSave(adjusted, timeOffset, selectedFormat.name) // Apply changes immediately with offset
+                                onSave(adjusted, timeOffset, selectedFormat.name)
                             },
+                            weight = 1f,
+                            isFirst = false,
+                            isLast = true,
                             enabled = hasSyncedLyrics,
-                            isStart = false,
-                            isEnd = true,
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(72.dp),
-                            colors = ButtonDefaults.filledTonalButtonColors(
-                                containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f),
-                                contentColor = MaterialTheme.colorScheme.secondary,
-                                disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
-                                disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
-                            ),
-                            contentPadding = PaddingValues(vertical = 8.dp, horizontal = 4.dp)
+                            height = 72.dp,
+                            containerColor = if (hasSyncedLyrics) MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
+                            contentColor = if (hasSyncedLyrics) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
                         ) {
                             Column(
                                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -1144,14 +1122,14 @@ fun LyricsEditorBottomSheet(
                         .fillMaxWidth()
                         .padding(top = 16.dp)
                 ) {
-                    ExpressiveButtonGroup(
+                    RhythmGroupedButton(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 24.dp),
-                        style = ButtonGroupStyle.Tonal
+                        size = RhythmButtonSize.Large
                     ) {
                         // Load File Button
-                        ExpressiveGroupButton(
+                        RhythmButtonWeighted(
                             onClick = {
                                 HapticUtils.performHapticFeedback(context, haptic, HapticType.HEAVY)
                                 loadLyricsLauncher.launch(
@@ -1166,24 +1144,14 @@ fun LyricsEditorBottomSheet(
                                     )
                                 )
                             },
-                            modifier = Modifier.weight(1f),
-                            isStart = true
-                        ) {
-                            Icon(
-                                imageVector = MaterialSymbolIcon("file_open", filled = true),
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                context.getString(R.string.bottomsheet_lyrics_load),
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
+                            weight = 1f,
+                            isFirst = true,
+                            icon = MaterialSymbolIcon("file_open", filled = true),
+                            text = context.getString(R.string.bottomsheet_lyrics_load)
+                        )
 
                         // Save File Button
-                        ExpressiveGroupButton(
+                        RhythmButtonWeighted(
                             onClick = {
                                 HapticUtils.performHapticFeedback(context, haptic, HapticType.HEAVY)
                                 if (editedLyrics.isNotBlank()) {
@@ -1198,53 +1166,37 @@ fun LyricsEditorBottomSheet(
                                     )
                                 }
                             },
-                            modifier = Modifier.weight(1f),
+                            weight = 1f,
+                            isLast = true,
                             enabled = editedLyrics.isNotBlank(),
-                            isEnd = true
-                        ) {
-                            Icon(
-                                imageVector = MaterialSymbolIcon("save", filled = true),
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                context.getString(R.string.bottomsheet_lyrics_save),
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
+                            icon = MaterialSymbolIcon("save", filled = true),
+                            text = context.getString(R.string.bottomsheet_lyrics_save)
+                        )
                     }
 
                     Spacer(modifier = Modifier.height(12.dp))
 
                     // Embed in File Button
-                    ExpressiveButtonGroup(
+                    RhythmGroupedButton(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 24.dp),
-                        style = ButtonGroupStyle.Tonal
+                        size = RhythmButtonSize.Large
                     ) {
-                        ExpressiveGroupButton(
+                        RhythmButtonWeighted(
                             onClick = {
                                 HapticUtils.performHapticFeedback(context, haptic, HapticType.HEAVY)
                                 if (editedLyrics.isNotBlank()) {
                                     onEmbedInFile(editedLyrics)
                                 }
                             },
-                            modifier = Modifier.fillMaxWidth(),
+                            weight = 1f,
+                            isFirst = true,
+                            isLast = true,
                             enabled = editedLyrics.isNotBlank(),
-                            isStart = true,
-                            isEnd = true
-                        ) {
-                            Icon(
-                                imageVector = RhythmIcons.MusicNote,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(context.getString(R.string.bottomsheet_lyrics_embed))
-                        }
+                            icon = RhythmIcons.MusicNote,
+                            text = context.getString(R.string.bottomsheet_lyrics_embed)
+                        )
                 }
             }
         }

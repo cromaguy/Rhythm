@@ -70,13 +70,14 @@ import chromahub.rhythm.app.shared.presentation.components.common.ContentLoading
 import chromahub.rhythm.app.shared.presentation.components.player.formatDuration
 import chromahub.rhythm.app.shared.presentation.components.common.MarqueeText
 import chromahub.rhythm.app.shared.presentation.components.common.rhythmMarquee
-import chromahub.rhythm.app.shared.presentation.components.common.ExpressiveButtonGroup
-import chromahub.rhythm.app.shared.presentation.components.common.ExpressiveFilledTonalButton
-import chromahub.rhythm.app.shared.presentation.components.common.ExpressiveGroupButton
-import chromahub.rhythm.app.shared.presentation.components.common.ExpressiveShapes
 import chromahub.rhythm.app.shared.presentation.components.common.ExpressiveShapeTarget
 import chromahub.rhythm.app.shared.presentation.components.common.rememberExpressiveShapeFor
-import chromahub.rhythm.app.shared.presentation.components.common.ButtonGroupStyle
+import chromahub.rhythm.app.shared.presentation.components.common.RhythmDetailActionButton
+import chromahub.rhythm.app.shared.presentation.components.common.RhythmDetailActionButtonFullWidth
+import chromahub.rhythm.app.shared.presentation.components.common.RhythmButtonType
+import chromahub.rhythm.app.shared.presentation.components.common.RhythmGroupedButton
+import chromahub.rhythm.app.shared.presentation.components.common.RhythmButtonWeighted
+import chromahub.rhythm.app.shared.presentation.components.common.RhythmButtonSize
 import chromahub.rhythm.app.shared.presentation.components.RatingStarsDisplay
 import chromahub.rhythm.app.util.ImageUtils
 import chromahub.rhythm.app.util.MediaUtils
@@ -209,6 +210,7 @@ fun SongInfoBottomSheet(
     
     // Detect tablet mode
     val isTablet = configuration.screenWidthDp >= 600
+    val isLandscapeTablet = isTablet && configuration.screenWidthDp > configuration.screenHeightDp
     
     // Time format setting
     val useHoursFormat by appSettings.useHoursInTimeFormat.collectAsState()
@@ -487,7 +489,7 @@ fun SongInfoBottomSheet(
         )
     }
 
-    if (isTablet) {
+    if (isLandscapeTablet) {
         // Tablet layout: Dialog with side-by-side layout
         Dialog(
             onDismissRequest = onDismiss,
@@ -895,117 +897,79 @@ fun SongInfoBottomSheet(
                     Column(
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        ExpressiveButtonGroup(
-                            modifier = Modifier.align(Alignment.CenterHorizontally),
-                            style = ButtonGroupStyle.Tonal
+                                                Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
                             // Edit button
-                            if (!isStreamingMode) {
-                                onEditSong?.let {
-                                    ExpressiveFilledTonalButton(
-                                        onClick = {
-                                            HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
-                                            showEditSheet = true
-                                        },
-                                        shape = if (folderPath == null) ExpressiveShapes.Full else RoundedCornerShape(topStart = 20.dp, bottomStart = 20.dp, topEnd = 8.dp, bottomEnd = 8.dp),
-                                        colors = ButtonDefaults.filledTonalButtonColors(
-                                            containerColor = MaterialTheme.colorScheme.primaryContainer,
-                                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                                        ),
-                                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp)
-                                    ) {
-                                        Icon(
-                                            imageVector = RhythmIcons.Edit,
-                                            contentDescription = null,
-                                            modifier = Modifier.size(16.dp)
-                                        )
-                                        Spacer(modifier = Modifier.width(8.dp))
-                                        Text(stringResource(R.string.bottomsheet_timer_edit))
-                                    }
-                                }
-                            }
-                            
-                            // Block Song
-                            if (!isStreamingMode) {
-                                ExpressiveFilledTonalButton(
+                            if (onEditSong != null) {
+                                RhythmDetailActionButton(
                                     onClick = {
                                         HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
-                                        showBlacklistTrackConfirm = true
+                                        showEditSheet = true
                                     },
-                                    enabled = !isLoadingBlacklist,
-                                    shape = if (onEditSong == null && folderPath == null) 
-                                        ExpressiveShapes.Full 
-                                    else if (onEditSong == null) 
-                                        RoundedCornerShape(topStart = 20.dp, bottomStart = 20.dp, topEnd = 8.dp, bottomEnd = 8.dp)
-                                    else if (folderPath == null)
-                                        RoundedCornerShape(topStart = 8.dp, bottomStart = 8.dp, topEnd = 20.dp, bottomEnd = 20.dp)
-                                    else
-                                        RoundedCornerShape(8.dp),
-                                    colors = ButtonDefaults.filledTonalButtonColors(
-                                        containerColor = if (isBlacklisted) 
-                                            MaterialTheme.colorScheme.errorContainer 
-                                        else 
-                                            MaterialTheme.colorScheme.secondaryContainer,
-                                        contentColor = if (isBlacklisted) 
-                                            MaterialTheme.colorScheme.onErrorContainer 
-                                        else 
-                                            MaterialTheme.colorScheme.onSecondaryContainer
-                                    ),
-                                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp)
-                                ) {
-                                    if (isLoadingBlacklist) {
-                                        ActionProgressLoader(
-                                            size = 16.dp,
-                                            color = MaterialTheme.colorScheme.onSecondaryContainer
-                                        )
-                                    } else {
-                                        Icon(
-                                            imageVector = RhythmIcons.Block,
-                                            contentDescription = null,
-                                            modifier = Modifier.size(16.dp)
-                                        )
-                                    }
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text(stringResource(R.string.bottomsheet_track))
-                                }
+                                    height = 48.dp,
+                                    isFirst = true,
+                                    isLast = false,
+                                    type = RhythmButtonType.Tonal,
+                                    icon = RhythmIcons.Edit,
+                                    iconSize = 16.dp,
+                                    text = stringResource(R.string.bottomsheet_timer_edit),
+                                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
                             }
-                            
+
+                            // Block Song
+                            RhythmDetailActionButton(
+                                onClick = {
+                                    HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
+                                    showBlacklistTrackConfirm = true
+                                },
+                                height = 48.dp,
+                                enabled = !isLoadingBlacklist,
+                                isFirst = onEditSong == null,
+                                isLast = folderPath == null,
+                                type = RhythmButtonType.Tonal,
+                                isLoading = isLoadingBlacklist,
+                                icon = RhythmIcons.Block,
+                                iconSize = 16.dp,
+                                text = stringResource(R.string.bottomsheet_track),
+                                containerColor = if (isBlacklisted)
+                                    MaterialTheme.colorScheme.errorContainer
+                                else
+                                    MaterialTheme.colorScheme.secondaryContainer,
+                                contentColor = if (isBlacklisted)
+                                    MaterialTheme.colorScheme.onErrorContainer
+                                else
+                                    MaterialTheme.colorScheme.onSecondaryContainer
+                            )
+
                             // Block Folder
-                            if (!isStreamingMode && folderPath != null) {
-                                ExpressiveFilledTonalButton(
+                            if (folderPath != null) {
+                                RhythmDetailActionButton(
                                     onClick = {
                                         HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
                                         showBlacklistFolderConfirm = true
                                     },
+                                    height = 48.dp,
                                     enabled = !isLoadingBlacklist,
-                                    shape = RoundedCornerShape(topStart = 8.dp, bottomStart = 8.dp, topEnd = 20.dp, bottomEnd = 20.dp),
-                                    colors = ButtonDefaults.filledTonalButtonColors(
-                                        containerColor = if (isInBlacklistedFolder) 
-                                            MaterialTheme.colorScheme.errorContainer 
-                                        else 
-                                            MaterialTheme.colorScheme.secondaryContainer,
-                                        contentColor = if (isInBlacklistedFolder) 
-                                            MaterialTheme.colorScheme.onErrorContainer 
-                                        else 
-                                            MaterialTheme.colorScheme.onSecondaryContainer
-                                    ),
-                                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp)
-                                ) {
-                                    if (isLoadingBlacklist) {
-                                        ActionProgressLoader(
-                                            size = 16.dp,
-                                            color = MaterialTheme.colorScheme.onSecondaryContainer
-                                        )
-                                    } else {
-                                        Icon(
-                                            imageVector = MaterialSymbolIcon("folder_off", filled = true),
-                                            contentDescription = null,
-                                            modifier = Modifier.size(16.dp)
-                                        )
-                                    }
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text(stringResource(R.string.cd_folder))
-                                }
+                                    isFirst = false,
+                                    isLast = true,
+                                    type = RhythmButtonType.Tonal,
+                                    isLoading = isLoadingBlacklist,
+                                    icon = MaterialSymbolIcon("folder_off", filled = true),
+                                    iconSize = 16.dp,
+                                    text = stringResource(R.string.cd_folder),
+                                    containerColor = if (isInBlacklistedFolder)
+                                        MaterialTheme.colorScheme.errorContainer
+                                    else
+                                        MaterialTheme.colorScheme.secondaryContainer,
+                                    contentColor = if (isInBlacklistedFolder)
+                                        MaterialTheme.colorScheme.onErrorContainer
+                                    else
+                                        MaterialTheme.colorScheme.onSecondaryContainer
+                                )
                             }
                         }
                     }
@@ -1834,6 +1798,7 @@ private fun EditSongSheet(
     
     // Detect tablet mode
     val isTablet = configuration.screenWidthDp >= 600
+    val isLandscapeTablet = isTablet && configuration.screenWidthDp > configuration.screenHeightDp
     
     // Store original values for undo functionality
     val originalTitle by remember(song.id) { mutableStateOf(song.title) }
@@ -2044,7 +2009,7 @@ private fun EditSongSheet(
         }
     }
 
-    if (isTablet) {
+    if (isLandscapeTablet) {
         // Tablet layout: Dialog with side-by-side layout
         Dialog(
             onDismissRequest = onDismiss,
@@ -2140,27 +2105,20 @@ private fun EditSongSheet(
 
                                 Spacer(modifier = Modifier.height(16.dp))
 
-                                OutlinedButton(
+                                RhythmDetailActionButtonFullWidth(
                                     onClick = {
                                         selectedImageUri = null
                                         removeArtwork = true
                                     },
                                     enabled = hasArtworkPreview,
-                                    shape = RoundedCornerShape(14.dp),
-                                    colors = ButtonDefaults.outlinedButtonColors(
-                                        contentColor = MaterialTheme.colorScheme.error
-                                    )
-                                ) {
-                                    Icon(
-                                        imageVector = RhythmIcons.Delete,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text(stringResource(R.string.songinfobottomsheet_remove_artwork))
-                                }
-
-
+                                    height = 48.dp,
+                                    type = RhythmButtonType.Tonal,
+                                    icon = RhythmIcons.Delete,
+                                    iconSize = 18.dp,
+                                    text = stringResource(R.string.songinfobottomsheet_remove_artwork),
+                                    containerColor = MaterialTheme.colorScheme.errorContainer,
+                                    contentColor = MaterialTheme.colorScheme.onErrorContainer
+                                )
                             }
                         }
 
@@ -2726,50 +2684,37 @@ private fun EditSongSheet(
                                 }
                             }
 
-                            ExpressiveButtonGroup(
+                                                        Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                style = ButtonGroupStyle.Tonal
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
-                                ExpressiveGroupButton(
+                                RhythmDetailActionButton(
                                     onClick = { imagePickerLauncher.launch("image/*") },
-                                    modifier = Modifier.weight(1f),
-                                    isStart = true,
-                                    isEnd = !hasArtworkPreview
-                                ) {
-                                    Icon(
-                                        imageVector = RhythmIcons.Image,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text(
-                                        text = if (selectedImageUri != null) "Change" else "Select",
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-                                }
+                                    height = 48.dp,
+                                    isFirst = true,
+                                    isLast = !hasArtworkPreview,
+                                    type = RhythmButtonType.Filled,
+                                    icon = RhythmIcons.Image,
+                                    iconSize = 18.dp,
+                                    text = if (selectedImageUri != null) "Change" else "Select"
+                                )
 
                                 if (hasArtworkPreview) {
-                                    ExpressiveGroupButton(
+                                    RhythmDetailActionButton(
                                         onClick = {
                                             selectedImageUri = null
                                             removeArtwork = true
                                         },
-                                        modifier = Modifier.weight(1f),
-                                        isEnd = true
-                                    ) {
-                                        Icon(
-                                            imageVector = RhythmIcons.Delete,
-                                            contentDescription = null,
-                                            modifier = Modifier.size(18.dp)
-                                        )
-                                        Spacer(modifier = Modifier.width(8.dp))
-                                        Text(
-                                            text = stringResource(R.string.content_desc_remove),
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis
-                                        )
-                                    }
+                                        height = 48.dp,
+                                        isFirst = false,
+                                        isLast = true,
+                                        type = RhythmButtonType.Tonal,
+                                        icon = RhythmIcons.Delete,
+                                        iconSize = 18.dp,
+                                        text = stringResource(R.string.content_desc_remove),
+                                        containerColor = MaterialTheme.colorScheme.errorContainer,
+                                        contentColor = MaterialTheme.colorScheme.onErrorContainer
+                                    )
                                 }
                             }
 
@@ -3068,13 +3013,13 @@ private fun EditSongSheet(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            ExpressiveButtonGroup(
+            RhythmGroupedButton(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 20.dp),
-                style = ButtonGroupStyle.Tonal
+                size = RhythmButtonSize.Large
             ) {
-                ExpressiveGroupButton(
+                RhythmButtonWeighted(
                     onClick = {
                         HapticUtils.performHapticFeedback(
                             context,
@@ -3083,33 +3028,21 @@ private fun EditSongSheet(
                         )
                         resetToOriginal()
                     },
-                    modifier = Modifier.weight(1f),
+                    weight = 1f,
+                    isFirst = true,
                     enabled = !isSaving,
-                    isStart = true
-                ) {
-                    Icon(
-                        imageVector = MaterialSymbolIcon("restart_alt", filled = true),
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(stringResource(R.string.ui_reset))
-                }
+                    icon = MaterialSymbolIcon("restart_alt", filled = true),
+                    text = stringResource(R.string.ui_reset)
+                )
 
-                ExpressiveGroupButton(
+                RhythmButtonWeighted(
                     onClick = { handleSave() },
-                    modifier = Modifier.weight(1f),
+                    weight = 1f,
+                    isLast = true,
                     enabled = title.isNotBlank() && artist.isNotBlank() && !isSaving,
-                    isEnd = true
-                ) {
-                    Icon(
-                        imageVector = MaterialSymbolIcon("save", filled = true),
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(stringResource(R.string.ui_save))
-                }
+                    icon = MaterialSymbolIcon("save", filled = true),
+                    text = stringResource(R.string.ui_save)
+                )
             }
 
             Spacer(modifier = Modifier.height(8.dp))

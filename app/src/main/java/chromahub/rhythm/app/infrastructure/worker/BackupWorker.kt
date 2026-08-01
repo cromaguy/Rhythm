@@ -66,6 +66,9 @@ class BackupWorker(
             
             // Write backup to file
             backupFile.writeText(backupJson)
+            if (backupFile.length() <= 0L) {
+                throw IllegalStateException("Written auto-backup file is empty (0 bytes)")
+            }
             Log.d(TAG, "Auto-backup saved to: ${backupFile.absolutePath}")
             Log.d(TAG, "Backup file size: ${backupFile.length()} bytes")
             

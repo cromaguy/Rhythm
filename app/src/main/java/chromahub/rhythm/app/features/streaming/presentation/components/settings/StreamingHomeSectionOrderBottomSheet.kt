@@ -55,8 +55,9 @@ import androidx.compose.ui.unit.dp
 import chromahub.rhythm.app.R
 import chromahub.rhythm.app.shared.data.model.AppSettings
 import chromahub.rhythm.app.shared.presentation.components.common.ButtonGroupStyle
-import chromahub.rhythm.app.shared.presentation.components.common.ExpressiveButtonGroup
-import chromahub.rhythm.app.shared.presentation.components.common.ExpressiveGroupButton
+import chromahub.rhythm.app.shared.presentation.components.common.RhythmGroupedButton
+import chromahub.rhythm.app.shared.presentation.components.common.RhythmButtonWeighted
+import chromahub.rhythm.app.shared.presentation.components.common.RhythmButtonSize
 import chromahub.rhythm.app.util.HapticUtils
 import chromahub.rhythm.app.util.HapticType
 import kotlinx.coroutines.launch
@@ -416,13 +417,13 @@ fun StreamingHomeSectionOrderBottomSheet(
                 color = MaterialTheme.colorScheme.surfaceContainer,
                 tonalElevation = 3.dp
             ) {
-                ExpressiveButtonGroup(
+                RhythmGroupedButton(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 24.dp, vertical = 16.dp),
-                    style = ButtonGroupStyle.Tonal
+                    size = RhythmButtonSize.Large
                 ) {
-                    ExpressiveGroupButton(
+                    RhythmButtonWeighted(
                         onClick = {
                             HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
                             reorderableList = defaultStreamingReorderableSections
@@ -437,19 +438,13 @@ fun StreamingHomeSectionOrderBottomSheet(
                             )
                             Toast.makeText(context, R.string.streaminghomesectionorderbottomsheet_streaming_section_order_and, Toast.LENGTH_SHORT).show()
                         },
-                        modifier = Modifier.weight(1f),
-                        isStart = true
-                    ) {
-                        Icon(
-                            imageVector = MaterialSymbolIcon("restart_alt"),
-                            contentDescription = null,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(context.getString(R.string.bottomsheet_reset))
-                    }
+                        weight = 1f,
+                        isFirst = true,
+                        icon = MaterialSymbolIcon("restart_alt"),
+                        text = context.getString(R.string.bottomsheet_reset)
+                    )
 
-                    ExpressiveGroupButton(
+                    RhythmButtonWeighted(
                         onClick = {
                             HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
                             val finalOrder = listOf(STREAMING_SECTION_DISCOVER) + reorderableList
@@ -471,19 +466,13 @@ fun StreamingHomeSectionOrderBottomSheet(
                                 }
                             }
                         },
-                        modifier = Modifier.weight(1f),
-                        isEnd = true
-                    ) {
-                        Icon(
-                            imageVector = RhythmIcons.Check,
-                            contentDescription = null,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(context.getString(R.string.bottomsheet_save))
-                    }
+                        weight = 1f,
+                        isLast = true,
+                        icon = RhythmIcons.Check,
+                        text = context.getString(R.string.bottomsheet_save)
+                    )
                 }
             }
     }
-    }
+}
 }

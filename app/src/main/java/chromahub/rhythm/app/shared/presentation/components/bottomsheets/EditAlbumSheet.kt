@@ -35,9 +35,9 @@ import chromahub.rhythm.app.R
 import chromahub.rhythm.app.shared.data.model.Album
 import chromahub.rhythm.app.shared.data.model.Song
 import chromahub.rhythm.app.shared.presentation.components.common.M3PlaceholderType
-import chromahub.rhythm.app.shared.presentation.components.common.ButtonGroupStyle
-import chromahub.rhythm.app.shared.presentation.components.common.ExpressiveButtonGroup
-import chromahub.rhythm.app.shared.presentation.components.common.ExpressiveGroupButton
+import chromahub.rhythm.app.shared.presentation.components.common.RhythmGroupedButton
+import chromahub.rhythm.app.shared.presentation.components.common.RhythmButtonWeighted
+import chromahub.rhythm.app.shared.presentation.components.common.RhythmButtonSize
 import chromahub.rhythm.app.shared.presentation.components.common.ActionProgressLoader
 import chromahub.rhythm.app.shared.presentation.components.icons.RhythmIcons
 import chromahub.rhythm.app.shared.presentation.components.icons.Icon
@@ -199,8 +199,9 @@ fun EditAlbumSheet(
 
     val configuration = androidx.compose.ui.platform.LocalConfiguration.current
     val isTablet = configuration.screenWidthDp >= 600
+    val isLandscapeTablet = isTablet && configuration.screenWidthDp > configuration.screenHeightDp
 
-    if (isTablet) {
+    if (isLandscapeTablet) {
         Dialog(
             onDismissRequest = { if (!isSaving) onDismiss() },
             properties = DialogProperties(
@@ -541,39 +542,27 @@ fun EditAlbumSheet(
                                         Spacer(modifier = Modifier.weight(1f))
 
                                         // Apply & Cancel Buttons
-                                        ExpressiveButtonGroup(
+                                        RhythmGroupedButton(
                                             modifier = Modifier.fillMaxWidth(),
-                                            style = ButtonGroupStyle.Tonal
+                                            size = RhythmButtonSize.Large
                                         ) {
-                                            ExpressiveGroupButton(
+                                            RhythmButtonWeighted(
                                                 onClick = onDismiss,
+                                                weight = 1f,
+                                                isFirst = true,
                                                 enabled = !isSaving,
-                                                modifier = Modifier.weight(1f),
-                                                isStart = true
-                                            ) {
-                                                Icon(
-                                                    imageVector = RhythmIcons.Close,
-                                                    contentDescription = null,
-                                                    modifier = Modifier.size(18.dp)
-                                                )
-                                                Spacer(modifier = Modifier.width(6.dp))
-                                                Text(stringResource(R.string.ui_cancel))
-                                            }
+                                                icon = RhythmIcons.Close,
+                                                text = stringResource(R.string.ui_cancel)
+                                            )
 
-                                            ExpressiveGroupButton(
+                                            RhythmButtonWeighted(
                                                 onClick = { handleSave() },
+                                                weight = 1f,
+                                                isLast = true,
                                                 enabled = !isSaving,
-                                                modifier = Modifier.weight(1f),
-                                                isEnd = true
-                                            ) {
-                                                Icon(
-                                                    imageVector = RhythmIcons.Check,
-                                                    contentDescription = null,
-                                                    modifier = Modifier.size(18.dp)
-                                                )
-                                                Spacer(modifier = Modifier.width(6.dp))
-                                                Text(stringResource(R.string.ui_apply))
-                                            }
+                                                icon = RhythmIcons.Check,
+                                                text = stringResource(R.string.ui_apply)
+                                            )
                                         }
                                     }
                                 }
@@ -887,41 +876,29 @@ fun EditAlbumSheet(
                 }
 
                 // Buttons
-                ExpressiveButtonGroup(
+                RhythmGroupedButton(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 20.dp),
-                    style = ButtonGroupStyle.Tonal
+                    size = RhythmButtonSize.Large
                 ) {
-                    ExpressiveGroupButton(
+                    RhythmButtonWeighted(
                         onClick = onDismiss,
+                        weight = 1f,
+                        isFirst = true,
                         enabled = !isSaving,
-                        modifier = Modifier.weight(1f),
-                        isStart = true
-                    ) {
-                        Icon(
-                            imageVector = RhythmIcons.Close,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(stringResource(R.string.ui_cancel))
-                    }
+                        icon = RhythmIcons.Close,
+                        text = stringResource(R.string.ui_cancel)
+                    )
 
-                    ExpressiveGroupButton(
+                    RhythmButtonWeighted(
                         onClick = { handleSave() },
+                        weight = 1f,
+                        isLast = true,
                         enabled = !isSaving,
-                        modifier = Modifier.weight(1f),
-                        isEnd = true
-                    ) {
-                        Icon(
-                            imageVector = RhythmIcons.Check,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(stringResource(R.string.ui_apply))
-                    }
+                        icon = RhythmIcons.Check,
+                        text = stringResource(R.string.ui_apply)
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(12.dp))

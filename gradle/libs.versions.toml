@@ -96,6 +96,9 @@ androidx-compose-animation-core = { group = "androidx.compose.animation", name =
 androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "roomKtx" }
 androidx-room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "roomKtx" }
 androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "roomKtx" }
+androidx-room-paging = { group = "androidx.room", name = "room-paging", version.ref = "roomKtx" }
+androidx-paging-runtime-ktx = { group = "androidx.paging", name = "paging-runtime-ktx", version = "3.5.0" }
+androidx-paging-compose = { group = "androidx.paging", name = "paging-compose", version = "3.5.0" }
 androidx-compose-ui-unit = { group = "androidx.compose.ui", name = "ui-unit", version.ref = "uiUnit" }
 androidx-benchmark-macro-junit4 = { group = "androidx.benchmark", name = "benchmark-macro-junit4", version.ref = "macrobenchmark" }
 androidx-benchmark-junit4 = { group = "androidx.benchmark", name = "benchmark-junit4", version.ref = "macrobenchmark" }

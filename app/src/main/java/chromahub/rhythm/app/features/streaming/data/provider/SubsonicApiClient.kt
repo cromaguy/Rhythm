@@ -137,15 +137,20 @@ class SubsonicApiClient(context: Context) {
 
         return requestAndParse("getArtists", emptyMap()).map { response ->
             val artistsObj = response.optJSONObject("artists")
-            val indexArray = artistsObj?.optJSONArray("index")
+            val indexElement = artistsObj?.opt("index")
             val result = mutableListOf<ProviderArtist>()
-            if (indexArray != null) {
-                for (i in 0 until indexArray.length()) {
-                    val indexObj = indexArray.optJSONObject(i)
+            if (indexElement is org.json.JSONArray) {
+                for (i in 0 until indexElement.length()) {
+                    val indexObj = indexElement.optJSONObject(i)
                     val artistArray = indexObj?.opt("artist")
                     if (artistArray != null) {
                         result.addAll(parseArtistListCompat(artistArray))
                     }
+                }
+            } else if (indexElement is JSONObject) {
+                val artistArray = indexElement.opt("artist")
+                if (artistArray != null) {
+                    result.addAll(parseArtistListCompat(artistArray))
                 }
             }
             result
@@ -215,7 +220,7 @@ class SubsonicApiClient(context: Context) {
         )
 
         return requestAndParse("getRandomSongs", params).map { response ->
-            parseSongList(response.optJSONArray("randomSongs"))
+            parseSongList(response.optJSONArray("randomSongs") ?: response.optJSONObject("randomSongs")?.opt("song"))
         }
     }
 
@@ -230,7 +235,7 @@ class SubsonicApiClient(context: Context) {
         )
 
         return requestAndParse("getAlbumList2", params).map { response ->
-            parseAlbumListCompat(response.optJSONObject("albumList2")?.opt("album"))
+            parseAlbumListCompat(response.optJSONObject("albumList2")?.opt("album") ?: response.optJSONObject("albumList")?.opt("album"))
         }
     }
 
@@ -241,7 +246,7 @@ class SubsonicApiClient(context: Context) {
 
         return withContext(Dispatchers.IO) {
             try {
-                val albumPageSize = limit.coerceIn(1, 500)
+                val albumBatchSize = 200
                 var albumOffset = 0
                 val songs = LinkedHashMap<String, ProviderSong>()
 
@@ -250,17 +255,17 @@ class SubsonicApiClient(context: Context) {
                         "getAlbumList2",
                         mapOf(
                             "type" to "alphabeticalByArtist",
-                            "size" to minOf(albumPageSize, limit - songs.size).toString(),
+                            "size" to albumBatchSize.toString(),
                             "offset" to albumOffset.toString()
                         )
                     )
-                    val albumList = albumResult.getOrThrow().optJSONObject("albumList2")
-                    val albums = albumList?.optJSONArray("album") ?: break
-                    if (albums.length() == 0) break
+                    val responseObj = albumResult.getOrNull()
+                    val albumList = responseObj?.optJSONObject("albumList2") ?: responseObj?.optJSONObject("albumList")
+                    val albums = parseAlbumListCompat(albumList?.opt("album"))
+                    if (albums.isEmpty()) break
 
-                    for (i in 0 until albums.length()) {
-                        val album = albums.optJSONObject(i) ?: continue
-                        val albumId = album.optString("id", "")
+                    for (album in albums) {
+                        val albumId = album.providerId
                         if (albumId.isBlank()) continue
 
                         val albumResponse = requestAndParse("getAlbum", mapOf("id" to albumId)).getOrNull()
@@ -280,8 +285,8 @@ class SubsonicApiClient(context: Context) {
                         }
                     }
 
-                    if (albums.length() < minOf(albumPageSize, limit - songs.size).coerceAtLeast(1)) break
-                    albumOffset += albums.length()
+                    albumOffset += albums.size
+                    if (albums.size < albumBatchSize) break
                 }
 
                 Result.success(songs.values.take(limit).toList())
@@ -298,7 +303,8 @@ class SubsonicApiClient(context: Context) {
         }
 
         return requestAndParse("getPlaylists", emptyMap()).map { response ->
-            parsePlaylistList(response.optJSONObject("playlists")?.optJSONArray("playlist"), limit)
+            val playlistsObj = response.optJSONObject("playlists")
+            parsePlaylistList(playlistsObj?.opt("playlist") as? org.json.JSONArray ?: playlistsObj?.optJSONArray("playlist"), limit)
         }
     }
 
@@ -307,11 +313,11 @@ class SubsonicApiClient(context: Context) {
             return Result.failure(IllegalStateException("Subsonic service is not connected"))
         }
 
-        return getPlaylists(limit).map { playlists ->
+        return getPlaylists(limit = 100).map { playlists ->
             playlists.filter {
                 it.name.contains(query, ignoreCase = true) ||
                     (it.description?.contains(query, ignoreCase = true) == true)
-            }
+            }.take(limit)
         }
     }
 
@@ -324,7 +330,7 @@ class SubsonicApiClient(context: Context) {
         }
 
         return requestAndParse("getPlaylist", mapOf("id" to playlistId)).map { response ->
-            val entries = response.optJSONObject("playlist")?.optJSONArray("entry")
+            val entries = response.optJSONObject("playlist")?.opt("entry")
             parseSongList(entries).take(limit)
         }
     }
@@ -855,7 +861,7 @@ class SubsonicApiClient(context: Context) {
         if (trimmed.startsWith("http://", true) || trimmed.startsWith("https://", true)) {
             return trimmed
         }
-        return "https://$trimmed"
+        return "http://$trimmed"
     }
 
     private fun validateServerUrl(url: String): String? {
@@ -864,19 +870,32 @@ class SubsonicApiClient(context: Context) {
             return "Server URL must not contain embedded credentials"
         }
 
-        if (!parsed.isHttps && !isPrivateHost(parsed.host)) {
-            return "Use https:// for remote Subsonic/Navidrome servers"
-        }
-
         return null
     }
 
     private fun isPrivateHost(host: String): Boolean {
-        if (host.equals("localhost", true) || host.endsWith(".local", true)) {
+        val lowerHost = host.lowercase()
+        if (lowerHost == "localhost" ||
+            lowerHost.endsWith(".local") ||
+            lowerHost.endsWith(".localdomain") ||
+            lowerHost.endsWith(".lan") ||
+            lowerHost.endsWith(".home") ||
+            lowerHost.endsWith(".home.arpa") ||
+            lowerHost.endsWith(".ts.net") ||
+            lowerHost.endsWith(".mesh") ||
+            lowerHost.endsWith(".internal") ||
+            lowerHost.endsWith(".host") ||
+            lowerHost.endsWith(".priv") ||
+            !lowerHost.contains(".")
+        ) {
             return true
         }
 
-        val parts = host.split('.')
+        if (lowerHost == "::1" || lowerHost.startsWith("fe80:") || lowerHost.startsWith("fd") || lowerHost.startsWith("fc")) {
+            return true
+        }
+
+        val parts = lowerHost.split('.')
         if (parts.size != 4) return false
         val octets = parts.map { it.toIntOrNull() ?: return false }
 
@@ -886,7 +905,8 @@ class SubsonicApiClient(context: Context) {
         return first == 10 ||
             (first == 172 && second in 16..31) ||
             (first == 192 && second == 168) ||
-            (first == 127)
+            (first == 127) ||
+            (first == 100 && second in 64..127)
     }
 
     private companion object {

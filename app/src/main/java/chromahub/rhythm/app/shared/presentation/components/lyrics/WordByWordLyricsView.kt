@@ -187,8 +187,6 @@ fun WordByWordLyricsView(
     // Find current line index (among lyric lines only) - using adjustedPlaybackTime for sync offset
     val currentLineIndex by remember(adjustedPlaybackTime, visibleLyricsLines) {
         derivedStateOf {
-            if (isInGap) return@derivedStateOf -1
-
             val lastIndexAtPlayback = visibleLyricsLines.indexOfLast { line ->
                 adjustedPlaybackTime >= line.lineTimestamp
             }

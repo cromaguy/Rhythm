@@ -47,6 +47,9 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import chromahub.rhythm.app.shared.presentation.components.common.RhythmSortMenuContent
 import chromahub.rhythm.app.shared.presentation.components.common.RhythmSortOption
+import chromahub.rhythm.app.shared.presentation.components.common.RhythmDetailActionButton
+import chromahub.rhythm.app.shared.presentation.components.common.RhythmDetailActionButtonFullWidth
+import chromahub.rhythm.app.shared.presentation.components.common.RhythmButtonType
 import chromahub.rhythm.app.shared.presentation.components.common.ExpressiveScrollBar
 import chromahub.rhythm.app.shared.presentation.components.common.playlistDetailFastScrollLabel
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -73,7 +76,6 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.rememberTopAppBarState
-import androidx.compose.material3.ButtonGroupDefaults
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.material3.SheetValue
@@ -1318,41 +1320,6 @@ fun PlaylistDetailScreen(
                         animationSpec = tween(durationMillis = 200)
                     )
                 ) {
-                var shufflePressed by remember { mutableStateOf(false) }
-                var playAllPressed by remember { mutableStateOf(false) }
-                
-                val shuffleScale by animateFloatAsState(
-                    targetValue = if (shufflePressed) 0.96f else 1f,
-                    animationSpec = spring(
-                        dampingRatio = Spring.DampingRatioMediumBouncy,
-                        stiffness = Spring.StiffnessMedium
-                    ),
-                    label = "shuffleScale"
-                )
-                
-                val playAllScale by animateFloatAsState(
-                    targetValue = if (playAllPressed) 0.96f else 1f,
-                    animationSpec = spring(
-                        dampingRatio = Spring.DampingRatioMediumBouncy,
-                        stiffness = Spring.StiffnessMedium
-                    ),
-                    label = "playAllScale"
-                )
-                
-                LaunchedEffect(shufflePressed) {
-                    if (shufflePressed) {
-                        delay(150)
-                        shufflePressed = false
-                    }
-                }
-                
-                LaunchedEffect(playAllPressed) {
-                    if (playAllPressed) {
-                        delay(150)
-                        playAllPressed = false
-                    }
-                }
-                
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -1361,77 +1328,36 @@ fun PlaylistDetailScreen(
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     // Play All Button - Equal sizing with text
-                    Button(
+                    RhythmDetailActionButton(
                         onClick = {
                             HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
-                            playAllPressed = true
                             onPlayAll()
                         },
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(52.dp)
-                            .graphicsLayer {
-                                scaleX = playAllScale
-                                scaleY = playAllScale
-                            },
-                        shape = ButtonGroupDefaults.connectedLeadingButtonShapes().shape,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary,
-                            contentColor = MaterialTheme.colorScheme.onPrimary
-                        ),
-                        contentPadding = PaddingValues(horizontal = 16.dp)
-                    ) {
-                        Icon(
-                            imageVector = RhythmIcons.Play,
-                            contentDescription = null,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            "Play All",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
+                        isFirst = true,
+                        isLast = false,
+                        icon = RhythmIcons.Play,
+                        text = "Play All",
+                        fontWeight = FontWeight.Bold
+                    )
                     
-                    FilledTonalButton(
+                    RhythmDetailActionButton(
                         onClick = {
                             HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
-                            shufflePressed = true
                             onShufflePlay()
                         },
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(52.dp)
-                            .graphicsLayer {
-                                scaleX = shuffleScale
-                                scaleY = shuffleScale
-                            },
-                        shape = ButtonGroupDefaults.connectedTrailingButtonShapes().shape,
-                        colors = ButtonDefaults.filledTonalButtonColors(
-                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                        ),
-                        contentPadding = PaddingValues(horizontal = 16.dp)
-                    ) {
-                        Icon(
-                            imageVector = RhythmIcons.Shuffle,
-                            contentDescription = null,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            stringResource(R.string.action_shuffle),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
+                        type = RhythmButtonType.Tonal,
+                        isFirst = false,
+                        isLast = true,
+                        icon = RhythmIcons.Shuffle,
+                        text = stringResource(R.string.action_shuffle),
+                        fontWeight = FontWeight.Medium
+                    )
                 }
                 }
             }
         }
     ) { modifier ->
-        if (isTablet && !isCompactHeight) {
+        if (isLandscapeTablet) {
             // Tablet split-view layout: Left side (art + controls), Right side (song list)
             Box(modifier = modifier.fillMaxSize()) {
             Row(modifier = Modifier.fillMaxSize()) {
@@ -1501,52 +1427,29 @@ fun PlaylistDetailScreen(
                         ) {
                             if (playlist.songs.isNotEmpty()) {
                                 // Play All button
-                                Button(
+                                RhythmDetailActionButtonFullWidth(
                                     onClick = {
                                         HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
                                         onPlayAll()
                                     },
-                                    shape = RoundedCornerShape(24.dp),
-                                    modifier = Modifier.fillMaxWidth(),
-                                    contentPadding = PaddingValues(vertical = 12.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = RhythmIcons.Play,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text(
-                                        "Play All",
-                                        style = MaterialTheme.typography.titleMedium
-                                    )
-                                }
+                                    icon = RhythmIcons.Play,
+                                    text = "Play All",
+                                    fontWeight = FontWeight.Normal
+                                )
 
                                 // Shuffle button
-                                FilledTonalButton(
+                                RhythmDetailActionButtonFullWidth(
                                     onClick = {
                                         HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
                                         onShufflePlay()
                                     },
-                                    colors = ButtonDefaults.filledTonalButtonColors(
-                                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                                    ),
-                                    shape = RoundedCornerShape(24.dp),
-                                    modifier = Modifier.fillMaxWidth(),
-                                    contentPadding = PaddingValues(vertical = 12.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = RhythmIcons.Shuffle,
-                                        contentDescription = stringResource(R.string.content_desc_shuffle_play),
-                                        modifier = Modifier.size(24.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text(
-                                        stringResource(R.string.action_shuffle),
-                                        style = MaterialTheme.typography.titleMedium
-                                    )
-                                }
+                                    type = RhythmButtonType.Tonal,
+                                    icon = RhythmIcons.Shuffle,
+                                    iconSize = 24.dp,
+                                    text = stringResource(R.string.action_shuffle),
+                                    fontWeight = FontWeight.Normal,
+                                    contentDescription = stringResource(R.string.content_desc_shuffle_play)
+                                )
                             }
 
                             // Add Songs button

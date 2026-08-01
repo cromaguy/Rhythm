@@ -7,8 +7,8 @@
     <string name="search">Buscar</string>
     <string name="settings">Configuración</string>
     <!-- Media3 notification configuration -->
-    <string name="media3_notification_channel_name">Rhythm Música</string>
-    <string name="media3_notification_channel_description">Controles de reproducción multimedia</string>
+    <string name="media3_notification_channel_name">Reproduciendo ahora en Rhythm</string>
+    <string name="media3_notification_channel_description">Controles de reproducción, botones de búsqueda y carátula del álbum</string>
     <!-- Widget strings -->
     <string name="widget_description">Rhythm Widget de música: controle la reproducción con diseños responsivos que admiten tamaños de cuadrícula de 2x1 a 5x5</string>
     <string name="widget_description_glance">Rhythm Música: controla la reproducción con 9 diseños responsivos, Material 3 diseños y actualizaciones de estado en tiempo real</string>
@@ -2884,4 +2884,6 @@
     <string name="lyrically_sources_title">Fuentes de Lyrically</string>
     <string name="lyrically_sources_desc">Configura y prioriza las fuentes de letras en Lyrically. Se intentará primero con las fuentes palabra por palabra, y si no se encuentra una fuente, se recurrirá a las sincronizadas o sin formato.</string>
     <string name="error_no_document_app">No se encontró ningún selector de documentos del sistema para seleccionar una carpeta.</string>
+    <string name="settings_notifications_playback_group">Medios &amp; Reproducción</string>
+    <string name="settings_notifications_library_group">Biblioteca &amp; Sincronización</string>
 </resources>

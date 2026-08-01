@@ -136,7 +136,7 @@ class JellyfinApiClient(context: Context) {
 
         return withContext(Dispatchers.IO) {
             try {
-                val pageSize = limit.coerceIn(1, 100)
+                val pageSize = 200
                 var startIndex = 0
                 val songs = LinkedHashMap<String, ProviderSong>()
 
@@ -147,14 +147,20 @@ class JellyfinApiClient(context: Context) {
                         startIndex = startIndex
                     )
                     val response = requestJson("/Users/${cred.userId}/Items", params).getOrThrow()
+                    val rawItems = response.optJSONArray("Items")
+                    val rawItemsCount = rawItems?.length() ?: 0
+
+                    if (rawItemsCount == 0) break
+
                     val pageSongs = parseAudioItems(response)
-
-                    if (pageSongs.isEmpty()) break
-
                     pageSongs.forEach { song -> songs.putIfAbsent(song.providerId, song) }
 
-                    if (pageSongs.size < params["Limit"]?.toIntOrNull().orZero()) break
-                    startIndex += pageSongs.size
+                    val totalRecordCount = response.optInt("TotalRecordCount", -1)
+                    startIndex += rawItemsCount
+
+                    if (totalRecordCount >= 0 && startIndex >= totalRecordCount) break
+                    val limitParam = params["Limit"]?.toIntOrNull().orZero()
+                    if (limitParam > 0 && rawItemsCount < limitParam) break
                 }
 
                 Result.success(songs.values.take(limit).toList())
@@ -724,10 +730,13 @@ class JellyfinApiClient(context: Context) {
                 put("SearchTerm", query)
             }
             put("IncludeItemTypes", "Audio")
+            put("MediaTypes", "Audio")
             put("Recursive", "true")
-            put("Fields", "MediaSources,Genres,Path,Artists,AlbumArtist,AlbumId,Album,RunTimeTicks")
+            put("Fields", "MediaSources,Genres,Path,Artists,AlbumArtist,AlbumId,Album,RunTimeTicks,ProductionYear,UserData,ParentId")
             put("enableUserData", "true")
-            put("Limit", limit.coerceIn(1, 100).toString())
+            put("SortBy", "SortName")
+            put("SortOrder", "Ascending")
+            put("Limit", limit.coerceIn(1, 500).toString())
             if (startIndex > 0) {
                 put("StartIndex", startIndex.toString())
             }
@@ -735,26 +744,33 @@ class JellyfinApiClient(context: Context) {
     }
 
     private fun parseAudioItems(response: JSONObject): List<ProviderSong> {
-        val items = response.optJSONArray("Items")
+        val items = response.optJSONArray("Items") ?: return emptyList()
         return buildList {
-            for (i in 0 until (items?.length() ?: 0)) {
-                val song = items?.optJSONObject(i) ?: continue
-                val id = song.optString("Id", "")
+            for (i in 0 until items.length()) {
+                val song = items.optJSONObject(i) ?: continue
+                val id = song.optString("Id", song.optString("id", ""))
                 if (id.isBlank()) continue
 
-                val title = song.optString("Name", "Unknown title")
+                val title = song.optString("Name", song.optString("name", "Unknown title"))
                 val artist = parseArtist(song)
-                val album = song.optString("Album", "Unknown album")
+                val album = song.optString("Album", song.optString("album", "Unknown album"))
                 val durationMs = song.optLong("RunTimeTicks", 0L) / 10_000L
                 val isFavorite = song
                     .optJSONObject("UserData")
                     ?.optBoolean("IsFavorite", false)
                     ?: false
 
-                val trackNum = song.optInt("Index", 0).takeIf { it > 0 }
+                val trackNum = song.optInt("IndexNumber", song.optInt("Index", 0)).takeIf { it > 0 }
                 val yearVal = song.optInt("ProductionYear", 0).takeIf { it > 0 }
                 val genres = song.optJSONArray("Genres")
-                val genreVal = if (genres != null && genres.length() > 0) genres.optString(0) else null
+                val genreVal = if (genres != null && genres.length() > 0) {
+                    val first = genres.opt(0)
+                    when (first) {
+                        is String -> first
+                        is JSONObject -> first.optString("Name", "")
+                        else -> null
+                    }
+                } else null
 
                 val mediaSources = song.optJSONArray("MediaSources")
                 val firstSource = mediaSources?.optJSONObject(0)
@@ -801,11 +817,30 @@ class JellyfinApiClient(context: Context) {
     }
 
     private fun parseArtist(song: JSONObject): String {
+        val names = mutableListOf<String>()
+
         val artists = song.optJSONArray("Artists")
-        val names = buildList {
-            for (i in 0 until (artists?.length() ?: 0)) {
-                val name = artists?.optString(i).orEmpty()
-                if (name.isNotBlank()) add(name)
+        if (artists != null) {
+            for (i in 0 until artists.length()) {
+                val item = artists.opt(i)
+                when (item) {
+                    is String -> if (item.isNotBlank()) names.add(item.trim())
+                    is JSONObject -> {
+                        val name = item.optString("Name", item.optString("name", "")).trim()
+                        if (name.isNotBlank()) names.add(name)
+                    }
+                }
+            }
+        }
+
+        if (names.isEmpty()) {
+            val artistItems = song.optJSONArray("ArtistItems")
+            if (artistItems != null) {
+                for (i in 0 until artistItems.length()) {
+                    val obj = artistItems.optJSONObject(i) ?: continue
+                    val name = obj.optString("Name", obj.optString("name", "")).trim()
+                    if (name.isNotBlank()) names.add(name)
+                }
             }
         }
 
@@ -813,7 +848,7 @@ class JellyfinApiClient(context: Context) {
             return names.joinToString(", ")
         }
 
-        return song.optString("AlbumArtist", "Unknown artist")
+        return song.optString("AlbumArtist", "").takeIf { it.isNotBlank() } ?: "Unknown artist"
     }
 
     private fun buildPlaylistBrowseParams(
@@ -927,24 +962,30 @@ class JellyfinApiClient(context: Context) {
     }
 
     private fun parseAlbumArtist(album: JSONObject): String {
-        val albumArtist = album.optString("AlbumArtist", "").takeIf { it.isNotBlank() }
-        if (albumArtist != null) {
+        val albumArtist = album.optString("AlbumArtist", "").trim()
+        if (albumArtist.isNotBlank()) {
             return albumArtist
         }
 
         val artists = album.optJSONArray("Artists")
-        if (artists != null && artists.length() > 0) {
-            val firstArtist = artists.optString(0).takeIf { it.isNotBlank() }
-            if (firstArtist != null) {
-                return firstArtist
+        if (artists != null) {
+            for (i in 0 until artists.length()) {
+                val item = artists.opt(i)
+                val name = when (item) {
+                    is String -> item.trim()
+                    is JSONObject -> item.optString("Name", item.optString("name", "")).trim()
+                    else -> ""
+                }
+                if (name.isNotBlank()) return name
             }
         }
 
         val artistItems = album.optJSONArray("ArtistItems")
-        if (artistItems != null && artistItems.length() > 0) {
-            val firstArtist = artistItems.optJSONObject(0)?.optString("Name", "").orEmpty()
-            if (firstArtist.isNotBlank()) {
-                return firstArtist
+        if (artistItems != null) {
+            for (i in 0 until artistItems.length()) {
+                val obj = artistItems.optJSONObject(i) ?: continue
+                val name = obj.optString("Name", obj.optString("name", "")).trim()
+                if (name.isNotBlank()) return name
             }
         }
 
@@ -1003,7 +1044,7 @@ class JellyfinApiClient(context: Context) {
         if (trimmed.startsWith("http://", true) || trimmed.startsWith("https://", true)) {
             return trimmed
         }
-        return "https://$trimmed"
+        return "http://$trimmed"
     }
 
     private fun validateServerUrl(url: String): String? {
@@ -1012,19 +1053,32 @@ class JellyfinApiClient(context: Context) {
             return "Server URL must not contain embedded credentials"
         }
 
-        if (!parsed.isHttps && !isPrivateHost(parsed.host)) {
-            return "Use https:// for remote Jellyfin servers"
-        }
-
         return null
     }
 
     private fun isPrivateHost(host: String): Boolean {
-        if (host.equals("localhost", true) || host.endsWith(".local", true)) {
+        val lowerHost = host.lowercase()
+        if (lowerHost == "localhost" ||
+            lowerHost.endsWith(".local") ||
+            lowerHost.endsWith(".localdomain") ||
+            lowerHost.endsWith(".lan") ||
+            lowerHost.endsWith(".home") ||
+            lowerHost.endsWith(".home.arpa") ||
+            lowerHost.endsWith(".ts.net") ||
+            lowerHost.endsWith(".mesh") ||
+            lowerHost.endsWith(".internal") ||
+            lowerHost.endsWith(".host") ||
+            lowerHost.endsWith(".priv") ||
+            !lowerHost.contains(".")
+        ) {
             return true
         }
 
-        val parts = host.split('.')
+        if (lowerHost == "::1" || lowerHost.startsWith("fe80:") || lowerHost.startsWith("fd") || lowerHost.startsWith("fc")) {
+            return true
+        }
+
+        val parts = lowerHost.split('.')
         if (parts.size != 4) return false
         val octets = parts.map { it.toIntOrNull() ?: return false }
 
@@ -1034,7 +1088,8 @@ class JellyfinApiClient(context: Context) {
         return first == 10 ||
             (first == 172 && second in 16..31) ||
             (first == 192 && second == 168) ||
-            (first == 127)
+            (first == 127) ||
+            (first == 100 && second in 64..127)
     }
 
     private companion object {

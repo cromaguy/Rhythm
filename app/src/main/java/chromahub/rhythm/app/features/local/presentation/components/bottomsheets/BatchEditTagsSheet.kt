@@ -62,8 +62,11 @@ import androidx.compose.ui.unit.dp
 import chromahub.rhythm.app.shared.data.model.Song
 import chromahub.rhythm.app.shared.presentation.components.common.M3PlaceholderType
 import chromahub.rhythm.app.shared.presentation.components.common.ButtonGroupStyle
-import chromahub.rhythm.app.shared.presentation.components.common.ExpressiveButtonGroup
-import chromahub.rhythm.app.shared.presentation.components.common.ExpressiveGroupButton
+import chromahub.rhythm.app.shared.presentation.components.common.RhythmGroupedButton
+import chromahub.rhythm.app.shared.presentation.components.common.RhythmButtonWeighted
+import chromahub.rhythm.app.shared.presentation.components.common.RhythmButtonSize
+import chromahub.rhythm.app.shared.presentation.components.common.RhythmDetailActionButton
+import chromahub.rhythm.app.shared.presentation.components.common.RhythmButtonType
 import chromahub.rhythm.app.shared.presentation.components.common.ActionProgressLoader
 import chromahub.rhythm.app.network.NetworkClient
 import chromahub.rhythm.app.network.YTMusicSearchRequest
@@ -463,41 +466,38 @@ fun BatchEditTagsSheet(
                                         )
                                     }
 
-                                    Row(
+                                                                        Row(
                                         modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                        horizontalArrangement = Arrangement.spacedBy(12.dp)
                                     ) {
-                                        OutlinedButton(
+                                        RhythmDetailActionButton(
                                             onClick = { imagePickerLauncher.launch("image/*") },
-                                            modifier = Modifier.weight(1f)
-                                        ) {
-                                            Icon(
-                                                imageVector = RhythmIcons.Image,
-                                                contentDescription = null,
-                                                modifier = Modifier.size(18.dp)
-                                            )
-                                            Spacer(modifier = Modifier.width(6.dp))
-                                            Text(if (selectedImageUri != null) "Change" else "Select")
-                                        }
+                                            height = 44.dp,
+                                            isFirst = true,
+                                            isLast = false,
+                                            type = RhythmButtonType.Filled,
+                                            icon = RhythmIcons.Image,
+                                            iconSize = 18.dp,
+                                            text = if (selectedImageUri != null) "Change" else "Select",
+                                            fontWeight = FontWeight.Medium
+                                        )
 
-                                        OutlinedButton(
+                                        RhythmDetailActionButton(
                                             onClick = {
                                                 selectedImageUri = null
                                                 removeArtwork = true
                                             },
-                                            modifier = Modifier.weight(1f),
-                                            colors = ButtonDefaults.outlinedButtonColors(
-                                                contentColor = MaterialTheme.colorScheme.error
-                                            )
-                                        ) {
-                                            Icon(
-                                                imageVector = RhythmIcons.Delete,
-                                                contentDescription = null,
-                                                modifier = Modifier.size(18.dp)
-                                            )
-                                            Spacer(modifier = Modifier.width(6.dp))
-                                            Text(stringResource(R.string.content_desc_remove))
-                                        }
+                                            height = 44.dp,
+                                            isFirst = false,
+                                            isLast = true,
+                                            type = RhythmButtonType.Tonal,
+                                            icon = RhythmIcons.Delete,
+                                            iconSize = 18.dp,
+                                            text = stringResource(R.string.content_desc_remove),
+                                            fontWeight = FontWeight.Medium,
+                                            containerColor = MaterialTheme.colorScheme.errorContainer,
+                                            contentColor = MaterialTheme.colorScheme.onErrorContainer
+                                        )
                                     }
 
                                     if (NetworkClient.isYTMusicApiEnabled()) {
@@ -644,41 +644,29 @@ fun BatchEditTagsSheet(
             }
 
             // Buttons
-            ExpressiveButtonGroup(
+            RhythmGroupedButton(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 20.dp),
-                style = ButtonGroupStyle.Tonal
+                size = RhythmButtonSize.Large
             ) {
-                ExpressiveGroupButton(
+                RhythmButtonWeighted(
                     onClick = onDismiss,
+                    weight = 1f,
+                    isFirst = true,
                     enabled = !isSaving && !isFetchingOnlineArt,
-                    modifier = Modifier.weight(1f),
-                    isStart = true
-                ) {
-                    Icon(
-                        imageVector = RhythmIcons.Close,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(stringResource(R.string.ui_cancel))
-                }
+                    icon = RhythmIcons.Close,
+                    text = stringResource(R.string.ui_cancel)
+                )
 
-                ExpressiveGroupButton(
+                RhythmButtonWeighted(
                     onClick = { handleSave() },
+                    weight = 1f,
+                    isLast = true,
                     enabled = !isSaving && !isFetchingOnlineArt,
-                    modifier = Modifier.weight(1f),
-                    isEnd = true
-                ) {
-                    Icon(
-                        imageVector = RhythmIcons.Check,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(stringResource(R.string.ui_apply))
-                }
+                    icon = RhythmIcons.Check,
+                    text = stringResource(R.string.ui_apply)
+                )
             }
 
             Spacer(modifier = Modifier.height(12.dp))

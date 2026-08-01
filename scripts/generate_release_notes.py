@@ -7,6 +7,10 @@ import subprocess
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CHANGELOG_PATH = os.path.join(ROOT_DIR, "docs", "CHANGELOG.md")
 BUILD_GRADLE_PATH = os.path.join(ROOT_DIR, "app", "build.gradle.kts")
+BANNER_HINT_PATH = os.path.join(ROOT_DIR, ".release_banner_url")
+
+DEFAULT_BETA_BANNER = "https://github.com/user-attachments/assets/52d9f9b9-722e-4e66-abab-2dcbf59b6648"
+DEFAULT_STABLE_BANNER = "https://github.com/user-attachments/assets/f307174a-ec2e-41ec-b274-0a458123d4f7"
 
 def parse_gradle_version_info():
     version_name = "Unknown"
@@ -49,10 +53,34 @@ def extract_release_notes(tag_name):
         return match.group(1).strip()
     return ""
 
+
+def load_banner_url(is_beta):
+    """Load banner URL from .release_banner_url hint file, or return the default."""
+    if os.path.exists(BANNER_HINT_PATH):
+        with open(BANNER_HINT_PATH, "r", encoding="utf-8") as f:
+            url = f.read().strip()
+        # Empty file means "no banner"
+        return url if url else None
+    # No hint file — use defaults
+    return DEFAULT_BETA_BANNER if is_beta else DEFAULT_STABLE_BANNER
+
+
+def render_banner_html(banner_url):
+    """Return an HTML snippet for the banner with rounded corners."""
+    if not banner_url:
+        return None
+    return (
+        '<p align="center">\n'
+        f'  <img src="{banner_url}" alt="Release Banner"\n'
+        '       style="border-radius: 16px; width: 100%; max-width: 960px;" />\n'
+        '</p>'
+    )
+
 def clean_changelog_content(raw_notes):
     lines = raw_notes.splitlines()
     cleaned_items = []
     current_category = "Added"
+    has_translation = False
     
     for line in lines:
         line = line.strip()
@@ -67,7 +95,14 @@ def clean_changelog_content(raw_notes):
         if line.startswith("-") or line.startswith("*") or line.startswith("•"):
             item_text = re.sub(r"^[-*•]\s*", "", line)
             if item_text and item_text != "-":
+                # Collapse all translation/l10n lines into one
+                if re.search(r"l10n|translation|localiz|update.*lang", item_text, re.IGNORECASE):
+                    has_translation = True
+                    continue
                 cleaned_items.append(f"- **{current_category}:** {item_text}")
+
+    if has_translation:
+        cleaned_items.append("- **Added:** Updated translations")
                 
     return cleaned_items
 
@@ -100,13 +135,20 @@ def get_commits_between_tags(current_tag, previous_tag=None):
             return []
             
         commits = []
+        has_translation = False
         for line in log_output.splitlines():
             parts = line.split(" ", 1)
             if len(parts) > 1:
                 msg = parts[1].strip()
                 if msg.startswith("Merge branch") or msg.startswith("Merge pull request") or msg.startswith("Release "):
                     continue
+                # Collapse all translation/l10n commits into one line
+                if re.search(r"l10n|translation|chore\(l10n\)|update.*translation|localiz", msg, re.IGNORECASE):
+                    has_translation = True
+                    continue
                 commits.append(msg)
+        if has_translation:
+            commits.append("Updated translations")
         return commits
     except Exception as e:
         print(f"Error fetching commits between tags: {e}")
@@ -162,13 +204,18 @@ def main():
             
     github_notes = []
     
-    # Title & Banner Banner
+    # Load banner URL (respects prepare_release.py choice, or uses default)
+    banner_url = load_banner_url(is_beta)
+    banner_html = render_banner_html(banner_url)
+
+    # Title & Banner
     if is_beta:
         github_notes.append(f"# Rhythm {major_minor} - Bug Fix Update\n")
-        github_notes.append('<img width="1920" height="1087" alt="Template 5 (1)" src="https://github.com/user-attachments/assets/52d9f9b9-722e-4e66-abab-2dcbf59b6648" />\n')
     else:
         github_notes.append(f"# Rhythm {major_minor} - Feature Update\n")
-        github_notes.append('<img width="1920" height="1087" alt="Template 6" src="https://github.com/user-attachments/assets/f307174a-ec2e-41ec-b274-0a458123d4f7" />\n')
+
+    if banner_html:
+        github_notes.append(banner_html + "\n")
         
     # What's New section
     github_notes.append("**What's New:**")
@@ -182,12 +229,10 @@ def main():
     if is_beta:
         github_notes.append("**Known Issues (Will be fixed on a later build):**")
         github_notes.append("   - Translation contributions are being collected.")
-        github_notes.append("   - Audio Routing doesn't work.")
         github_notes.append("   - Report to GitHub Issues or Community on Discord & Telegram.")
     else:
         github_notes.append("**Known Issues:**")
         github_notes.append("   - Translation contributions are being collected.")
-        github_notes.append("   - Audio Routing doesn't work.")
         github_notes.append("   - Report to GitHub Issues or Community on Discord & Telegram.")
         
     github_notes.append("")

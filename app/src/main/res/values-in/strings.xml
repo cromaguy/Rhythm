@@ -2017,10 +2017,7 @@
     <string name="batchedittagssheet_enable_fields_you_want">Aktifkan bidang yang ingin Anda perbarui. Bidang yang dinonaktifkan tetap tidak berubah.</string>
     <string name="batchedittagssheet_tags">Tag</string>
     <string name="batchedittagssheet_batch_artwork_preview">Pratinjau karya seni kumpulan</string>
-    <string name="deviceconfigurationbottomsheet_supported_formats_fixedbandeq_text">Supported formats:
-• FixedBandEQ text (AutoEQ)
-• JSON format
-• CSV (10 band values)</string>
+    <string name="deviceconfigurationbottomsheet_supported_formats_fixedbandeq_text">Supported formats: • FixedBandEQ text (AutoEQ) • JSON format • CSV (10 band values)</string>
     <string name="deviceconfigurationbottomsheet_paste_eq_data_here">Tempelkan data EQ di sini...</string>
     <string name="deviceconfigurationbottomsheet_open_autoeqapp">Buka autoeq.app</string>
     <string name="deviceconfigurationbottomsheet_export_eq_profile">Ekspor Profil EQ</string>
@@ -2239,8 +2236,7 @@
     <string name="lyricssourcesettingsscreen_lyrics_api_priority">Lirik API Prioritas</string>
     <string name="lyricssourcesettingsscreen_choose_which_online_lyrics">Pilih lirik online mana API yang akan dicari terlebih dahulu</string>
     <string name="lyricssourcesettingsscreen_retry_using_fallbacks">Coba lagi menggunakan fallback</string>
-    <string name="lyricssourcesettingsscreen_embedded_lyrics_are_stored">• Embedded lyrics are stored in your audio files
-</string>
+    <string name="lyricssourcesettingsscreen_embedded_lyrics_are_stored">• Embedded lyrics are stored in your audio files</string>
     <string name="miniplayercustomizationsettingsscreen_miniplayer_theme">Tema Pemutar Mini</string>
     <string name="miniplayercustomizationsettingsscreen_choose_between_rhythm_default">Pilih antara Rhythm Tema default atau Ekspresif</string>
     <string name="miniplayercustomizationsettingsscreen_integrated_directly_into_the">Terintegrasi langsung ke latar belakang MiniPlayer</string>

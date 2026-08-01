@@ -54,6 +54,10 @@ import chromahub.rhythm.app.features.local.presentation.viewmodel.MusicViewModel
 import chromahub.rhythm.app.R
 import chromahub.rhythm.app.shared.presentation.components.Material3SettingsGroup
 import chromahub.rhythm.app.shared.presentation.components.common.RhythmSongMenuContent
+import chromahub.rhythm.app.shared.presentation.components.common.RhythmGroupedButton
+import chromahub.rhythm.app.shared.presentation.components.common.RhythmButtonWeighted
+import chromahub.rhythm.app.shared.presentation.components.common.RhythmButtonSize
+import chromahub.rhythm.app.shared.presentation.components.common.RhythmButtonType
 import chromahub.rhythm.app.shared.presentation.components.Material3SettingsItem
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
@@ -102,6 +106,7 @@ fun ArtistBottomSheet(
     val configuration = LocalConfiguration.current
 
     val isTablet = configuration.screenWidthDp >= 600
+    val isLandscapeTablet = isTablet && configuration.screenWidthDp > configuration.screenHeightDp
 
     val allSongs by viewModel.filteredSongs.collectAsState()
     val allAlbums by viewModel.albums.collectAsState()
@@ -173,7 +178,7 @@ fun ArtistBottomSheet(
         }
     }
 
-    if (isTablet) {
+    if (isLandscapeTablet) {
         Dialog(
             onDismissRequest = onDismiss,
             properties = DialogProperties(dismissOnBackPress = true, dismissOnClickOutside = true, usePlatformDefaultWidth = false)
@@ -275,11 +280,10 @@ fun ArtistBottomSheet(
                                     modifier = Modifier.fillMaxWidth(),
                                     verticalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                    RhythmGroupedButton(
+                                        size = RhythmButtonSize.Large
                                     ) {
-                                        Button(
+                                        RhythmButtonWeighted(
                                             onClick = {
                                                 HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
                                                 if (artistSongs.isNotEmpty()) {
@@ -288,30 +292,12 @@ fun ArtistBottomSheet(
                                                     onPlayerClick()
                                                 }
                                             },
-                                            modifier = Modifier
-                                                .weight(1f)
-                                                .height(52.dp),
-                                            shape = ButtonGroupDefaults.connectedLeadingButtonShapes().shape,
-                                            colors = ButtonDefaults.buttonColors(
-                                                containerColor = MaterialTheme.colorScheme.primary,
-                                                contentColor = MaterialTheme.colorScheme.onPrimary
-                                            ),
-                                            contentPadding = PaddingValues(horizontal = 16.dp)
-                                        ) {
-                                            Icon(
-                                                imageVector = RhythmIcons.Play,
-                                                contentDescription = null,
-                                                modifier = Modifier.size(20.dp)
-                                            )
-                                            Spacer(modifier = Modifier.width(8.dp))
-                                            Text(
-                                                "Play All",
-                                                style = MaterialTheme.typography.titleMedium,
-                                                fontWeight = FontWeight.Bold
-                                            )
-                                        }
-
-                                        FilledTonalButton(
+                                            weight = 1f,
+                                            isFirst = true,
+                                            icon = RhythmIcons.Play,
+                                            text = "Play All"
+                                        )
+                                        RhythmButtonWeighted(
                                             onClick = {
                                                 HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
                                                 if (artistSongs.isNotEmpty()) {
@@ -320,59 +306,32 @@ fun ArtistBottomSheet(
                                                     onPlayerClick()
                                                 }
                                             },
-                                            modifier = Modifier
-                                                .weight(1f)
-                                                .height(52.dp),
-                                            shape = ButtonGroupDefaults.connectedTrailingButtonShapes().shape,
-                                            colors = ButtonDefaults.filledTonalButtonColors(
-                                                containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                                                contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                                            ),
-                                            contentPadding = PaddingValues(horizontal = 16.dp)
-                                        ) {
-                                            Icon(
-                                                imageVector = RhythmIcons.Shuffle,
-                                                contentDescription = null,
-                                                modifier = Modifier.size(20.dp)
-                                            )
-                                            Spacer(modifier = Modifier.width(8.dp))
-                                            Text(
-                                                stringResource(R.string.action_shuffle),
-                                                style = MaterialTheme.typography.titleMedium,
-                                                fontWeight = FontWeight.Medium
-                                            )
-                                        }
+                                            weight = 1f,
+                                            isLast = true,
+                                            type = RhythmButtonType.Tonal,
+                                            icon = RhythmIcons.Shuffle,
+                                            text = stringResource(R.string.action_shuffle)
+                                        )
                                     }
 
                                     if (onAddToQueueAll != null) {
-                                        FilledTonalButton(
-                                            onClick = {
-                                                HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
-                                                if (artistSongs.isNotEmpty()) {
-                                                    onAddToQueueAll(artistSongs)
-                                                    onDismiss()
-                                                }
-                                            },
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .height(52.dp),
-                                            shape = RoundedCornerShape(26.dp),
-                                            colors = ButtonDefaults.filledTonalButtonColors(
-                                                containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                                                contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                                            ),
-                                            contentPadding = PaddingValues(horizontal = 16.dp)
+                                        RhythmGroupedButton(
+                                            size = RhythmButtonSize.Large
                                         ) {
-                                            Icon(
-                                                imageVector = RhythmIcons.Queue,
-                                                contentDescription = null,
-                                                modifier = Modifier.size(20.dp)
-                                            )
-                                            Spacer(modifier = Modifier.width(8.dp))
-                                            Text(
-                                                "Add to queue",
-                                                style = MaterialTheme.typography.titleMedium,
-                                                fontWeight = FontWeight.Medium
+                                            RhythmButtonWeighted(
+                                                onClick = {
+                                                    HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
+                                                    if (artistSongs.isNotEmpty()) {
+                                                        onAddToQueueAll(artistSongs)
+                                                        onDismiss()
+                                                    }
+                                                },
+                                                weight = 1f,
+                                                isFirst = true,
+                                                isLast = true,
+                                                type = RhythmButtonType.Tonal,
+                                                icon = RhythmIcons.Queue,
+                                                text = "Add to queue"
                                             )
                                         }
                                     }
@@ -681,11 +640,10 @@ fun ArtistBottomSheet(
                                 modifier = Modifier.fillMaxWidth(),
                                 verticalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                RhythmGroupedButton(
+                                    size = RhythmButtonSize.Large
                                 ) {
-                                    Button(
+                                    RhythmButtonWeighted(
                                         onClick = {
                                             HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
                                             if (artistSongs.isNotEmpty()) {
@@ -696,30 +654,12 @@ fun ArtistBottomSheet(
                                                 }
                                             }
                                         },
-                                        modifier = Modifier
-                                            .weight(1f)
-                                            .height(52.dp),
-                                        shape = ButtonGroupDefaults.connectedLeadingButtonShapes().shape,
-                                        colors = ButtonDefaults.buttonColors(
-                                            containerColor = MaterialTheme.colorScheme.primary,
-                                            contentColor = MaterialTheme.colorScheme.onPrimary
-                                        ),
-                                        contentPadding = PaddingValues(horizontal = 16.dp)
-                                    ) {
-                                        Icon(
-                                            imageVector = RhythmIcons.Play,
-                                            contentDescription = null,
-                                            modifier = Modifier.size(20.dp)
-                                        )
-                                        Spacer(modifier = Modifier.width(8.dp))
-                                        Text(
-                                            "Play All",
-                                            style = MaterialTheme.typography.titleMedium,
-                                            fontWeight = FontWeight.Bold
-                                        )
-                                    }
-
-                                    FilledTonalButton(
+                                        weight = 1f,
+                                        isFirst = true,
+                                        icon = RhythmIcons.Play,
+                                        text = "Play All"
+                                    )
+                                    RhythmButtonWeighted(
                                         onClick = {
                                             HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
                                             if (artistSongs.isNotEmpty()) {
@@ -730,61 +670,34 @@ fun ArtistBottomSheet(
                                                 }
                                             }
                                         },
-                                        modifier = Modifier
-                                            .weight(1f)
-                                            .height(52.dp),
-                                        shape = ButtonGroupDefaults.connectedTrailingButtonShapes().shape,
-                                        colors = ButtonDefaults.filledTonalButtonColors(
-                                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                                        ),
-                                        contentPadding = PaddingValues(horizontal = 16.dp)
-                                    ) {
-                                        Icon(
-                                            imageVector = RhythmIcons.Shuffle,
-                                            contentDescription = null,
-                                            modifier = Modifier.size(20.dp)
-                                        )
-                                        Spacer(modifier = Modifier.width(8.dp))
-                                        Text(
-                                            stringResource(R.string.action_shuffle),
-                                            style = MaterialTheme.typography.titleMedium,
-                                            fontWeight = FontWeight.Medium
-                                        )
-                                    }
+                                        weight = 1f,
+                                        isLast = true,
+                                        type = RhythmButtonType.Tonal,
+                                        icon = RhythmIcons.Shuffle,
+                                        text = stringResource(R.string.action_shuffle)
+                                    )
                                 }
 
                                 if (onAddToQueueAll != null) {
-                                    FilledTonalButton(
-                                        onClick = {
-                                            HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
-                                            if (artistSongs.isNotEmpty()) {
-                                                onAddToQueueAll(artistSongs)
-                                                scope.launch { sheetState.hide() }.invokeOnCompletion {
-                                                    onDismiss()
-                                                }
-                                            }
-                                        },
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .height(52.dp),
-                                        shape = RoundedCornerShape(26.dp),
-                                        colors = ButtonDefaults.filledTonalButtonColors(
-                                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                                        ),
-                                        contentPadding = PaddingValues(horizontal = 16.dp)
+                                    RhythmGroupedButton(
+                                        size = RhythmButtonSize.Large
                                     ) {
-                                        Icon(
-                                            imageVector = RhythmIcons.Queue,
-                                            contentDescription = null,
-                                            modifier = Modifier.size(20.dp)
-                                        )
-                                        Spacer(modifier = Modifier.width(8.dp))
-                                        Text(
-                                            "Add to queue",
-                                            style = MaterialTheme.typography.titleMedium,
-                                            fontWeight = FontWeight.Medium
+                                        RhythmButtonWeighted(
+                                            onClick = {
+                                                HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
+                                                if (artistSongs.isNotEmpty()) {
+                                                    onAddToQueueAll(artistSongs)
+                                                    scope.launch { sheetState.hide() }.invokeOnCompletion {
+                                                        onDismiss()
+                                                    }
+                                                }
+                                            },
+                                            weight = 1f,
+                                            isFirst = true,
+                                            isLast = true,
+                                            type = RhythmButtonType.Tonal,
+                                            icon = RhythmIcons.Queue,
+                                            text = "Add to queue"
                                         )
                                     }
                                 }

@@ -175,7 +175,7 @@ fun UniversalSearchScreen(
     }
 
     val localSongs by localViewModel.filteredSongs.collectAsState()
-    val fullLocalAlbums by localViewModel.albums.collectAsState()
+    val fullLocalAlbums by localViewModel.filteredAlbums.collectAsState()
     val localArtists by localViewModel.filteredArtists.collectAsState()
     val localPlaylists by localViewModel.playlists.collectAsState()
     val searchHistory by localViewModel.searchHistory.collectAsState()
@@ -1393,7 +1393,7 @@ fun UniversalSearchScreen(
                 onGoToAlbum = {
                     showSongOptionsSheet = false
                     if (isLocal) {
-                        val album = localViewModel.albums.value.findAlbumForSong(songObj)
+                        val album = localViewModel.filteredAlbums.value.findAlbumForSong(songObj)
                         if (album != null) {
                             handleAction("LOCAL") { onLocalAlbumClick(album) }
                         } else Toast.makeText(context, R.string.universalsearchscreen_album_not_found, Toast.LENGTH_SHORT).show()

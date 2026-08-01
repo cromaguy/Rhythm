@@ -1143,8 +1143,8 @@
     <string name="settings_player_customization_desc">Кнопки пропуску, панель прогресу</string>
     <string name="settings_miniplayer_customization">Міні-плеєр</string>
     <string name="settings_miniplayer_customization_desc">Фон, елементи керування</string>
-    <string name="settings_album_bottom_sheet_gradient_blur">Градієнт/розмиття альбому</string>
-    <string name="settings_album_bottom_sheet_gradient_blur_desc">Керуйте градієнтом і розмиттям за альбомними аркушами</string>
+    <string name="settings_album_bottom_sheet_gradient_blur">Градієнт/розмиття екрана альбому</string>
+    <string name="settings_album_bottom_sheet_gradient_blur_desc">Керуйте градієнтом і розмиттям за альбомним екраном «Деталі»</string>
     <string name="settings_gestures">Жести</string>
     <string name="settings_gestures_desc">Проведіть пальцем, щоб пропустити</string>
     <string name="settings_ignore_mediastore_covers">Показати зображення пісні замість зображення альбому</string>
@@ -2017,10 +2017,7 @@
     <string name="batchedittagssheet_enable_fields_you_want">Увімкніть поля, які потрібно оновити. Вимкнені поля залишаються без змін.</string>
     <string name="batchedittagssheet_tags">Теги</string>
     <string name="batchedittagssheet_batch_artwork_preview">Пакетний попередній перегляд ілюстрації</string>
-    <string name="deviceconfigurationbottomsheet_supported_formats_fixedbandeq_text">Supported formats:
-• FixedBandEQ text (AutoEQ)
-• JSON format
-• CSV (10 band values)</string>
+    <string name="deviceconfigurationbottomsheet_supported_formats_fixedbandeq_text">Supported formats: • FixedBandEQ text (AutoEQ) • JSON format • CSV (10 band values)</string>
     <string name="deviceconfigurationbottomsheet_paste_eq_data_here">Вставте дані еквалайзера сюди...</string>
     <string name="deviceconfigurationbottomsheet_open_autoeqapp">Відкрийте autoeq.app</string>
     <string name="deviceconfigurationbottomsheet_export_eq_profile">Експорт профілю еквалайзера</string>
@@ -2239,8 +2236,7 @@
     <string name="lyricssourcesettingsscreen_lyrics_api_priority">Лірика API Пріоритет</string>
     <string name="lyricssourcesettingsscreen_choose_which_online_lyrics">Виберіть тексти пісень в Інтернеті API для пошуку в першу чергу</string>
     <string name="lyricssourcesettingsscreen_retry_using_fallbacks">Повторіть спробу, використовуючи запасні варіанти</string>
-    <string name="lyricssourcesettingsscreen_embedded_lyrics_are_stored">• Embedded lyrics are stored in your audio files
-</string>
+    <string name="lyricssourcesettingsscreen_embedded_lyrics_are_stored">• Embedded lyrics are stored in your audio files</string>
     <string name="miniplayercustomizationsettingsscreen_miniplayer_theme">Тема MiniPlayer</string>
     <string name="miniplayercustomizationsettingsscreen_choose_between_rhythm_default">Виберіть тему Rhythm за замовчуванням або тему Expressive</string>
     <string name="miniplayercustomizationsettingsscreen_integrated_directly_into_the">Інтегровано безпосередньо у фоновий режим MiniPlayer</string>
@@ -2885,4 +2881,9 @@
     <string name="settings_rhythm_guard_first_break_dialog_turn_off">Вимкнути Rhytm Guard</string>
     <string name="settings_rhythm_guard_locked_during_break">Заблоковано протягом музичної паузи</string>
     <string name="lyrically_sources_title">Ліричні Джерела</string>
+    <string name="updates_channel_stable_title">Стабільна</string>
+    <string name="updates_channel_stable_desc">Отримувати лише стабільні релізи.</string>
+    <string name="updates_channel_beta_desc">Отримувати пререлізи та реліз-кандидати.</string>
+    <string name="updates_channel_nightly_desc">Отримувати найновіші нічні збірки, комільовані з головної гілки.</string>
+    <string name="settings_album_hide_about">Приховати розділ «Про альбом»</string>
 </resources>

@@ -2,6 +2,10 @@ package chromahub.rhythm.app.shared.presentation.components.bottomsheets
 
 import chromahub.rhythm.app.shared.presentation.components.icons.RhythmIcons
 import chromahub.rhythm.app.shared.presentation.components.icons.Icon
+import chromahub.rhythm.app.shared.presentation.components.common.RhythmGroupedButton
+import chromahub.rhythm.app.shared.presentation.components.common.RhythmButtonWeighted
+import chromahub.rhythm.app.shared.presentation.components.common.RhythmButtonSize
+import chromahub.rhythm.app.shared.presentation.components.common.RhythmButtonType
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
@@ -296,16 +300,19 @@ fun UpdateBottomSheet(
                 Spacer(modifier = Modifier.height(12.dp))
             }
 
-            // Later button
             item {
-                TextButton(
-                    onClick = onDismiss,
-                    modifier = Modifier.fillMaxWidth()
+                RhythmGroupedButton(
+                    modifier = Modifier.fillMaxWidth(),
+                    size = RhythmButtonSize.Large
                 ) {
-                    Text(
-                        text = stringResource(R.string.bottomsheet_lyrics_later),
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    RhythmButtonWeighted(
+                        onClick = onDismiss,
+                        weight = 1f,
+                        isFirst = true,
+                        isLast = true,
+                        type = RhythmButtonType.Tonal,
+                        icon = RhythmIcons.Close,
+                        text = stringResource(R.string.bottomsheet_lyrics_later)
                     )
                 }
             }

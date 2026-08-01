@@ -12,9 +12,16 @@ object WikipediaProvider {
 
     suspend fun getAlbumDescription(albumTitle: String, artistName: String?): String? = withContext(Dispatchers.IO) {
         try {
+            // Clean album title (strip Deluxe, Remastered, Bonus Track Version, etc.)
+            val cleanedTitle = albumTitle
+                .replace(Regex("(?i)\\s*[\\[\\(](deluxe|remastered|expanded|anniversary|bonus track|edition|special|explicit|live|version)[\\]\\)]"), "")
+                .trim()
+
             // Try precise queries first: "Album (Artist album)" or "Album (Artist)"
-            if (artistName != null) {
+            if (!artistName.isNullOrBlank()) {
                 val preciseQueries = listOf(
+                    "$cleanedTitle ($artistName album)",
+                    "$cleanedTitle ($artistName)",
                     "$albumTitle ($artistName album)",
                     "$albumTitle ($artistName)"
                 )
@@ -28,13 +35,15 @@ object WikipediaProvider {
 
             // Try generic queries: "Album (album)" or just "Album"
             val genericQueries = listOf(
+                "$cleanedTitle (album)",
+                cleanedTitle,
                 "$albumTitle (album)",
                 albumTitle
             )
             for (query in genericQueries) {
                 val summary = fetchPageSummary(query)
                 if (summary != null && !summary.contains("may refer to", ignoreCase = true)) {
-                    if (artistName != null) {
+                    if (!artistName.isNullOrBlank()) {
                         if (summary.contains(artistName, ignoreCase = true)) {
                             return@withContext summary
                         }

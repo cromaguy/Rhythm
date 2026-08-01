@@ -173,6 +173,7 @@ fun ExperimentalFeaturesScreen(
     val enableAlbumEditing by appSettings.enableAlbumEditing.collectAsState()
     val skipSilenceEnabled by appSettings.skipSilenceEnabled.collectAsState()
     val replayGain by appSettings.replayGain.collectAsState()
+    val isAudioOffloadActive by appSettings.isAudioOffloadActive.collectAsState()
     val audioRoutingMode by appSettings.audioRoutingMode.collectAsState()
     val haptic = LocalHapticFeedback.current
     
@@ -210,17 +211,14 @@ fun ExperimentalFeaturesScreen(
                         SettingItem(
                             MaterialSymbolIcon("hearing"),
                             context.getString(R.string.settings_skip_silence),
-                            context.getString(R.string.settings_skip_silence_desc),
-                            toggleState = skipSilenceEnabled,
+                            if (isAudioOffloadActive) "Disabled while Audio Offload is active" else context.getString(R.string.settings_skip_silence_desc),
+                            toggleState = if (isAudioOffloadActive) false else skipSilenceEnabled,
                             onToggleChange = {
-                                appSettings.setSkipSilenceEnabled(it)
-                            }
-                        ),
-                        SettingItem(
-                            MaterialSymbolIcon("volume_up"),
-                            context.getString(R.string.replay_gain),
-                            context.getString(R.string.replay_gain_desc),
-                            onClick = { onNavigateTo(SettingsRoutes.REPLAY_GAIN) }
+                                if (!isAudioOffloadActive) {
+                                    appSettings.setSkipSilenceEnabled(it)
+                                }
+                            },
+                            enabled = !isAudioOffloadActive
                         )
                     )
                 )
@@ -247,6 +245,13 @@ fun ExperimentalFeaturesScreen(
                 SettingGroup(
                     title = context.getString(R.string.exp_developer_debugging),
                     items = listOf(
+                        SettingItem(
+                            MaterialSymbolIcon("running_with_errors"),
+                            context.getString(R.string.exp_track_error_checker),
+                            context.getString(R.string.exp_track_error_checker_desc),
+                            toggleState = appSettings.trackErrorCheckerEnabled.collectAsState().value,
+                            onToggleChange = { appSettings.setTrackErrorCheckerEnabled(it) }
+                        ),
                         SettingItem(
                             RhythmIcons.Code,
                             context.getString(R.string.exp_codec_monitoring),
@@ -368,108 +373,7 @@ fun ExperimentalFeaturesScreen(
 
 
 
-            item(key = "experimental_audio_routing_section") {
-                Spacer(modifier = Modifier.height(24.dp))
-                Text(
-                    text = context.getString(R.string.settings_audio_routing),
-                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(start = 16.dp, bottom = 8.dp)
-                )
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(18.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(20.dp)
-                    ) {
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(16.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Surface(
-                                modifier = Modifier.size(40.dp),
-                                shape = RoundedCornerShape(34.dp),
-                                color = MaterialTheme.colorScheme.surfaceContainerHighest,
-                                tonalElevation = 0.dp
-                            ) {
-                                Box(
-                                    contentAlignment = Alignment.Center,
-                                    modifier = Modifier.fillMaxSize()
-                                ) {
-                                    Icon(
-                                        imageVector = RhythmIcons.Headphones,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(24.dp),
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                            }
-                            Column {
-                                Text(
-                                    text = context.getString(R.string.settings_dac_usb_audio),
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Medium,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                Text(
-                                    text = context.getString(R.string.settings_dac_usb_audio_desc),
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
 
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        ExpressiveButtonGroup(
-                            items = listOf(context.getString(R.string.settings_audio_routing_default), context.getString(R.string.settings_audio_routing_app), context.getString(R.string.settings_audio_routing_system)),
-                            selectedIndex = when (audioRoutingMode) {
-                                "default" -> 0
-                                "app" -> 1
-                                "system" -> 2
-                                else -> 0
-                            },
-                            onItemClick = { index ->
-                                when (index) {
-                                    0 -> {
-                                        appSettings.setAudioRoutingMode("default")
-                                        showRestartDialog = true
-                                        restartDialogMessage = "Audio routing changed to Default. Restart the app to apply the changes."
-                                    }
-                                    1 -> {
-                                        appSettings.setAudioRoutingMode("app")
-                                        showRestartDialog = true
-                                        restartDialogMessage = "Audio routing changed to App mode. Restart the app to apply the changes."
-                                    }
-                                    2 -> {
-                                        appSettings.setAudioRoutingMode("system")
-                                        showRestartDialog = true
-                                        restartDialogMessage = "Audio routing changed to System. Restart the app to apply the changes."
-                                    }
-                                }
-                            },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        Text(
-                            text = when (audioRoutingMode) {
-                                "app" -> context.getString(R.string.settings_audio_routing_app_desc)
-                                "system" -> context.getString(R.string.settings_audio_routing_system_desc)
-                                else -> context.getString(R.string.settings_audio_routing_default_desc)
-                            },
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-            }
             
             item {
                 Spacer(modifier = Modifier.height(16.dp))

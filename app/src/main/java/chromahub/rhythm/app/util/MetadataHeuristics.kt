@@ -15,7 +15,7 @@ object MetadataHeuristics {
         if (filePath.isNullOrBlank()) return null
 
         val extension = filePath.substringAfterLast('.', "").lowercase()
-        if (extension !in setOf("opus", "ogg", "oga")) {
+        if (extension !in setOf("opus", "ogg", "oga", "opa")) {
             return null
         }
 

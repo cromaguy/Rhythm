@@ -52,6 +52,7 @@ fun PlaybackSettingsScreen(
     val hapticFeedback = LocalHapticFeedback.current
     val musicViewModel: MusicViewModel = viewModel()
 
+    val replayGain by appSettings.replayGain.collectAsState()
     val repeatModePersistence by appSettings.repeatModePersistence.collectAsState()
     val shuffleModePersistence by appSettings.shuffleModePersistence.collectAsState()
     val useHoursInTimeFormat by appSettings.useHoursInTimeFormat.collectAsState()
@@ -160,7 +161,16 @@ fun PlaybackSettingsScreen(
                         onToggleChange = { if (!isOffloadEnforced) appSettings.setCrossfadeOnSkip(it) },
                         enabled = crossfadeEnabled && !isOffloadEnforced
                     ),
-
+                    SettingItem(
+                        MaterialSymbolIcon("volume_up"),
+                        context.getString(R.string.replay_gain),
+                        when {
+                            isOffloadEnforced -> "Disabled under Lite Mode to conserve battery."
+                            isAudioOffloadActive && !replayGain -> "${context.getString(R.string.replay_gain_desc)}\n(Enabling will disable hardware Audio Offload)"
+                            else -> context.getString(R.string.replay_gain_desc)
+                        },
+                        onClick = { onNavigateTo(SettingsRoutes.REPLAY_GAIN) }
+                    )
                 )
             ),
             SettingGroup(

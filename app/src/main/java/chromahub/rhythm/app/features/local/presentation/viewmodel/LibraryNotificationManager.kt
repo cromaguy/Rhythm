@@ -89,6 +89,11 @@ class LibraryNotificationManager(private val context: Application) {
         indeterminate: Boolean = true,
         requestCode: Int = notificationId
     ) {
+        val appSettings = chromahub.rhythm.app.shared.data.model.AppSettings.getInstance(context)
+        if (!appSettings.libraryOperationsNotificationsEnabled.value) {
+            return
+        }
+
         ensureOperationsNotificationChannel()
         operationNotificationDismissJobs.remove(notificationId)?.cancel()
 

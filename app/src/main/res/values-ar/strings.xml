@@ -2017,10 +2017,7 @@
     <string name="batchedittagssheet_enable_fields_you_want">قم بتمكين الحقول التي تريد تحديثها. تبقى الحقول المعطلة دون تغيير.</string>
     <string name="batchedittagssheet_tags">العلامات</string>
     <string name="batchedittagssheet_batch_artwork_preview">معاينة دفعة العمل الفني</string>
-    <string name="deviceconfigurationbottomsheet_supported_formats_fixedbandeq_text">Supported formats:
-• FixedBandEQ text (AutoEQ)
-• JSON format
-• CSV (10 band values)</string>
+    <string name="deviceconfigurationbottomsheet_supported_formats_fixedbandeq_text">Supported formats: • FixedBandEQ text (AutoEQ) • JSON format • CSV (10 band values)</string>
     <string name="deviceconfigurationbottomsheet_paste_eq_data_here">الصق بيانات المعادل هنا...</string>
     <string name="deviceconfigurationbottomsheet_open_autoeqapp">افتح تطبيق autoeq.app</string>
     <string name="deviceconfigurationbottomsheet_export_eq_profile">تصدير ملف تعريف المعادل</string>
@@ -2239,8 +2236,7 @@
     <string name="lyricssourcesettingsscreen_lyrics_api_priority">كلمات API الأولوية</string>
     <string name="lyricssourcesettingsscreen_choose_which_online_lyrics">اختر كلمات الأغاني الموجودة على الإنترنت API للبحث عنها أولاً</string>
     <string name="lyricssourcesettingsscreen_retry_using_fallbacks">أعد المحاولة باستخدام الإجراءات الاحتياطية</string>
-    <string name="lyricssourcesettingsscreen_embedded_lyrics_are_stored">• Embedded lyrics are stored in your audio files
-</string>
+    <string name="lyricssourcesettingsscreen_embedded_lyrics_are_stored">• Embedded lyrics are stored in your audio files</string>
     <string name="miniplayercustomizationsettingsscreen_miniplayer_theme">موضوع MiniPlayer</string>
     <string name="miniplayercustomizationsettingsscreen_choose_between_rhythm_default">اختر بين Rhythm السمة الافتراضية أو التعبيرية</string>
     <string name="miniplayercustomizationsettingsscreen_integrated_directly_into_the">مدمج مباشرة في خلفية MiniPlayer</string>

@@ -967,6 +967,7 @@ fun SettingsScreenWrapper(
 ) {
     val configuration = LocalConfiguration.current
     val isTablet = configuration.screenWidthDp >= 600
+    val isLandscapeTablet = isTablet && configuration.screenWidthDp > configuration.screenHeightDp
 
     var currentRoute by rememberSaveable { mutableStateOf<String?>(null) }
     var showSleepTimerBottomSheet by rememberSaveable { mutableStateOf(false) }
@@ -1032,7 +1033,7 @@ fun SettingsScreenWrapper(
         }
     }
 
-    if (isTablet) {
+    if (isLandscapeTablet) {
         // Tablet layout: Master-detail with settings always visible on left
         Row(modifier = Modifier.fillMaxSize()) {
             // Master pane - always visible settings list
