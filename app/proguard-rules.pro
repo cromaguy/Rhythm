@@ -31,6 +31,10 @@
 # Keep PlaybackEvent inside PlaybackStatsRepository (nested Gson serialization target)
 -keep class chromahub.rhythm.app.shared.data.repository.PlaybackStatsRepository$PlaybackEvent { *; }
 
+# ART on Android 16 rejects the R8-optimized form of this oversized Compose
+# entry point with a VerifyError when the full player is first composed.
+-keep class chromahub.rhythm.app.shared.presentation.screens.player.MaterialPlayerScreenKt { *; }
+
 # Keep classes and fields annotated with @SerializedName to prevent Gson reflection issues
 -keep class * {
     @com.google.gson.annotations.SerializedName <fields>;
