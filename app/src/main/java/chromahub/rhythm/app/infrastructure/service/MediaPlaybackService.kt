@@ -202,6 +202,7 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
         currentPlainLyricsLines = emptyList()
         currentLyricIndex = -1
         currentLyricsSource = null
+        serviceBtCanonicalSong = null
         serviceLyricsLoadedSongId = null
         serviceRomanizationLoadedSongId = null
         serviceRomanizationAttemptCount = 0
@@ -1138,10 +1139,11 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
                 }
                 
                 val transitionMediaId = mediaItem?.mediaId
-                if (
-                    reason == Player.MEDIA_ITEM_TRANSITION_REASON_PLAYLIST_CHANGED &&
-                    transitionMediaId != null &&
-                    transitionMediaId == lastHandledPlayerTransitionMediaId
+                if (isBluetoothMetadataTransition(
+                        mediaItem = mediaItem,
+                        reason = reason,
+                        lastHandledMediaId = lastHandledPlayerTransitionMediaId
+                    )
                 ) {
                     Log.d(TAG, "Ignoring metadata-only player transition for mediaId=$transitionMediaId")
                     return
@@ -2143,6 +2145,15 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
         }
 
         /**
+         * Replaces metadata without treating the service-owned lyric update as an external queue
+         * edit. The normal override must continue restoring the real queue for app/controller
+         * edits while legacy car mode exposes its temporary single-item queue.
+         */
+        fun replaceLyricMetadata(index: Int, mediaItem: MediaItem) {
+            super.replaceMediaItem(index, mediaItem)
+        }
+
+        /**
          * Queue edits originate from the app's normal controller. Restore the real playlist
          * before forwarding one so adding, removing, or reordering while legacy mode is on
          * never applies to the temporary single-item AVRCP view.
@@ -3137,10 +3148,11 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
     override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
         super.onMediaItemTransition(mediaItem, reason)
         val transitionMediaId = mediaItem?.mediaId
-        if (
-            reason == Player.MEDIA_ITEM_TRANSITION_REASON_PLAYLIST_CHANGED &&
-            transitionMediaId != null &&
-            transitionMediaId == lastHandledControllerTransitionMediaId
+        if (isBluetoothMetadataTransition(
+                mediaItem = mediaItem,
+                reason = reason,
+                lastHandledMediaId = lastHandledControllerTransitionMediaId
+            )
         ) {
             Log.d(TAG, "Ignoring metadata-only controller transition for mediaId=$transitionMediaId")
             return
@@ -3170,11 +3182,44 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
         if (isPlaying) startBluetoothLyricsLoop() else stopBluetoothLyricsLoop()
     }
 
-    private val USE_FORWARDING_METADATA = true
+    /**
+     * Android 16's legacy MediaSession -> AVRCP bridge is more reliable when it observes a real
+     * same-item metadata replacement. Older releases keep the listener-only path that is already
+     * proven on HyperOS/Android 14. The replacement is metadata-only and preserves playback.
+     */
+    private fun useForwardingBluetoothMetadata(): Boolean = Build.VERSION.SDK_INT < 36
     private var bluetoothLyricsLoopJob: kotlinx.coroutines.Job? = null
     private var lastServiceBtLyricLine: String? = null
     private var lastServiceBtLyricSongId: String? = null
     private var lastServiceBtAppliedSongId: String? = null
+    private var serviceBtCanonicalSong: Song? = null
+
+    /**
+     * Replacing only the current item's metadata is reported by ExoPlayer as a SEEK transition
+     * when its window UID changes, even though playback never seeks. Some player implementations
+     * instead report PLAYLIST_CHANGED. Ignore either form only while it still targets the song
+     * whose Bluetooth lyric metadata the service owns.
+     */
+    private fun isBluetoothMetadataTransition(
+        mediaItem: MediaItem?,
+        reason: Int,
+        lastHandledMediaId: String?
+    ): Boolean {
+        val mediaId = mediaItem?.mediaId ?: return false
+        val isMetadataReason =
+            reason == Player.MEDIA_ITEM_TRANSITION_REASON_SEEK ||
+                reason == Player.MEDIA_ITEM_TRANSITION_REASON_PLAYLIST_CHANGED
+        if (!isMetadataReason) return false
+
+        val targetsServiceOwnedSong =
+            mediaId == lastServiceBtAppliedSongId ||
+                mediaId == lastServiceBtLyricSongId ||
+                mediaId == serviceBtCanonicalSong?.id
+        val repeatedPlaylistCallback =
+            reason == Player.MEDIA_ITEM_TRANSITION_REASON_PLAYLIST_CHANGED &&
+                mediaId == lastHandledMediaId
+        return targetsServiceOwnedSong || repeatedPlaylistCallback
+    }
 
     private val serviceMusicRepository by lazy {
         chromahub.rhythm.app.features.local.data.repository.MusicRepository(applicationContext)
@@ -3206,6 +3251,11 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
 
     private fun startBluetoothLyricsLoop() {
         if (bluetoothLyricsLoopJob?.isActive == true) return
+        Log.i(
+            TAG,
+            "Bluetooth lyrics loop started: sdk=${Build.VERSION.SDK_INT}, " +
+                "metadataPath=${if (useForwardingBluetoothMetadata()) "forwarding" else "replace"}"
+        )
         bluetoothLyricsLoopJob = serviceScope.launch {
             while (isActive) {
                 try {
@@ -3221,6 +3271,7 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
     private fun stopBluetoothLyricsLoop() {
         bluetoothLyricsLoopJob?.cancel()
         bluetoothLyricsLoopJob = null
+        Log.i(TAG, "Bluetooth lyrics loop stopped")
     }
 
     private fun ensureServiceLyricsLoaded(song: Song, initialDelayMs: Long = 1200L) {
@@ -3441,7 +3492,10 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
     private fun tickBluetoothLyrics() {
         if (!::player.isInitialized || !::appSettings.isInitialized) return
         val item = player.currentMediaItem ?: return
-        val song = convertMediaItemToSong(item) ?: return
+        val observedSong = convertMediaItemToSong(item) ?: return
+        val song = serviceBtCanonicalSong
+            ?.takeIf { it.id == observedSong.id }
+            ?: observedSong.also { serviceBtCanonicalSong = it }
         val enabled = appSettings.bluetoothLyricsEnabled.value
         if (!enabled) {
             if (lastServiceBtAppliedSongId != null) restoreServiceBtMetadata(song)
@@ -3450,12 +3504,18 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
             return
         }
         ensureServiceLyricsLoaded(song)
-        val line = resolveServiceBtLyricLine(
-            player.currentPosition + resolvedBluetoothLyricsOffsetMs()
-        )
+        val offsetMs = resolvedBluetoothLyricsOffsetMs()
+        val playbackPositionMs = player.currentPosition
+        val line = resolveServiceBtLyricLine(playbackPositionMs + offsetMs)
         if (song.id == lastServiceBtLyricSongId && line == lastServiceBtLyricLine) return
         lastServiceBtLyricSongId = song.id
         lastServiceBtLyricLine = line
+        Log.i(
+            TAG,
+            "Bluetooth lyric publish: mediaId=${song.id}, positionMs=$playbackPositionMs, " +
+                "offsetMs=$offsetMs, source=$currentLyricsSource, " +
+                "mode=${appSettings.bluetoothLyricsTextMode.value}, line=${line.orEmpty()}"
+        )
         if (appSettings.broadcastStatusEnabled.value) {
             statusBroadcaster.broadcastMetadataChanged(
                 song = song,
@@ -3515,16 +3575,24 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
             // Avoid leaving AVRCP displays stuck on "No lyrics" during instrumental gaps.
             val title = line?.takeIf { it.isNotBlank() } ?: song.title.ifBlank { merged }
             val forwarding = player as? RhythmForwardingPlayer
-            if (USE_FORWARDING_METADATA && forwarding != null) {
+            // Player transition callbacks can be asynchronous. Mark this before dispatch so the
+            // first lyric update after a cold start cannot clear its own freshly loaded lyrics.
+            lastServiceBtAppliedSongId = song.id
+            if (useForwardingBluetoothMetadata() && forwarding != null) {
                 forwarding.injectLyricMetadata(title, merged)
             } else {
                 val updated = current.mediaMetadata.buildUpon()
                     .setTitle(title)
                     .setArtist(merged)
+                    .setExtras(buildServiceBtCanonicalMetadataExtras(song, current.mediaMetadata.extras))
                     .build()
-                player.replaceMediaItem(idx, current.buildUpon().setMediaMetadata(updated).build())
+                val updatedItem = current.buildUpon().setMediaMetadata(updated).build()
+                if (forwarding != null) {
+                    forwarding.replaceLyricMetadata(idx, updatedItem)
+                } else {
+                    player.replaceMediaItem(idx, updatedItem)
+                }
             }
-            lastServiceBtAppliedSongId = song.id
         } catch (e: Exception) {
             Log.w(TAG, "Failed to apply Bluetooth lyric metadata", e)
         }
@@ -3533,7 +3601,7 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
     private fun restoreServiceBtMetadata(song: Song) {
         try {
             val forwarding = player as? RhythmForwardingPlayer
-            if (USE_FORWARDING_METADATA && forwarding != null) {
+            if (useForwardingBluetoothMetadata() && forwarding != null) {
                 forwarding.clearLyricMetadata()
                 lastServiceBtAppliedSongId = null
                 return
@@ -3549,13 +3617,28 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
             val restored = md.buildUpon()
                 .setTitle(song.title)
                 .setArtist(song.artist)
+                .setExtras(buildServiceBtCanonicalMetadataExtras(song, md.extras))
                 .build()
-            player.replaceMediaItem(idx, current.buildUpon().setMediaMetadata(restored).build())
+            val restoredItem = current.buildUpon().setMediaMetadata(restored).build()
+            if (forwarding != null) {
+                forwarding.replaceLyricMetadata(idx, restoredItem)
+            } else {
+                player.replaceMediaItem(idx, restoredItem)
+            }
         } catch (e: Exception) {
             Log.w(TAG, "Failed to restore standard metadata", e)
         } finally {
             lastServiceBtAppliedSongId = null
         }
+    }
+
+    private fun buildServiceBtCanonicalMetadataExtras(
+        song: Song,
+        existingExtras: Bundle?
+    ): Bundle = Bundle(existingExtras ?: Bundle()).apply {
+        putString(METADATA_EXTRA_ORIGINAL_TITLE, song.title)
+        putString(METADATA_EXTRA_ORIGINAL_ARTIST, song.artist)
+        putString(METADATA_EXTRA_ORIGINAL_ALBUM, song.album)
     }
     
     /**

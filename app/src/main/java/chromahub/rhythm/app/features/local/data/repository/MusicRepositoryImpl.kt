@@ -5844,8 +5844,17 @@ class MusicRepository(context: Context) {
         try {
             // Find the song in MediaStore to get its path
             val projection = arrayOf(MediaStore.Audio.Media._ID, MediaStore.Audio.Media.DATA)
-            val selection = "${MediaStore.Audio.Media.TITLE} = ? AND ${MediaStore.Audio.Media.ARTIST} = ?"
-            val selectionArgs = arrayOf(title, artist)
+            val numericSongId = songId?.toLongOrNull()
+            val selection = if (numericSongId != null) {
+                "${MediaStore.Audio.Media._ID} = ?"
+            } else {
+                "${MediaStore.Audio.Media.TITLE} = ? AND ${MediaStore.Audio.Media.ARTIST} = ?"
+            }
+            val selectionArgs = if (numericSongId != null) {
+                arrayOf(numericSongId.toString())
+            } else {
+                arrayOf(title, artist)
+            }
             
             context.contentResolver.query(
                 MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
