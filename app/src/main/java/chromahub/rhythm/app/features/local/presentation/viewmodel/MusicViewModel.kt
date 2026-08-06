@@ -4800,18 +4800,10 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
         val pref = appSettings.contextQueuePreference.value
         val maxSize = appSettings.contextQueueSize.value.coerceAtLeast(1)
 
-        // If the song appears in recently played, prefer that short recent list
-        if (_recentlyPlayed.value.any { it.id == song.id }) {
-            val recentlyPlayedSongs = _recentlyPlayed.value.take(20)
-            val startIndex = recentlyPlayedSongs.indexOfFirst { it.id == song.id }
-            if (startIndex != -1) {
-                val reordered = listOf(song) + recentlyPlayedSongs.filter { it.id != song.id }
-                Log.d(TAG, "Created queue from recently played with ${reordered.size} songs")
-                return persistContextualQueueIfRequested(reordered.take(maxSize))
-            }
-        }
-
-        // Album context (preserve natural ordering)
+        // Playback history is an exclusion signal for continuation, never an upcoming queue.
+        // playSong() records the selected song before reaching this method, so treating any
+        // recent match as context would replay the user's history after every song selection.
+        // Prefer the selected song's album when it provides a real context.
         val albumSongs = _songs.value.filter { it.album == song.album && it.artist == song.artist }
         if (albumSongs.size > 1) {
             val sortedAlbumSongs = albumSongs.sortedWith { a, b -> compareByDiscThenTrack(a, b) }
@@ -8187,11 +8179,12 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                 val mediaItem = song.toMediaItem()
 
                 // Calculate the position to insert (right after current song)
-                val currentIndex = controller.currentMediaItemIndex
-                val insertIndex = if (currentIndex >= 0) currentIndex + 1 else 0
+                val controllerCurrentIndex = controller.currentMediaItemIndex
+                val controllerInsertIndex =
+                    if (controllerCurrentIndex >= 0) controllerCurrentIndex + 1 else 0
 
                 // Add to media controller queue at specific position
-                controller.addMediaItem(insertIndex, mediaItem)
+                controller.addMediaItem(controllerInsertIndex, mediaItem)
 
                 // If nothing is currently playing, start playback
                 if (controller.playbackState == Player.STATE_IDLE || controller.playbackState == Player.STATE_ENDED) {
@@ -8210,7 +8203,17 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                 } else {
                     // When shuffle is disabled, we can safely update the queue manually
                     val currentQueueSongs = _currentQueue.value.songs.toMutableList()
-                    val currentQueueIndex = controller.currentMediaItemIndex.coerceAtLeast(0) // Use MediaController index
+                    // Legacy car mode exposes index 0 regardless of the real queue position.
+                    // Keep the full cached queue in its own coordinate space.
+                    val cachedQueueIndex = _currentQueue.value.currentIndex
+                    val currentQueueIndex = if (
+                        isBluetoothLyricsLegacyCarModeActive() &&
+                        cachedQueueIndex in currentQueueSongs.indices
+                    ) {
+                        cachedQueueIndex
+                    } else {
+                        controller.currentMediaItemIndex.coerceAtLeast(0)
+                    }
                     val queueInsertIndex = if (currentQueueIndex >= 0 && currentQueueIndex < currentQueueSongs.size) {
                         currentQueueIndex + 1
                     } else {
@@ -8225,7 +8228,10 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                 }
 
                 // Verify queue sync
-                if (controller.mediaItemCount != _currentQueue.value.songs.size) {
+                if (
+                    !isBluetoothLyricsLegacyCarModeActive() &&
+                    controller.mediaItemCount != _currentQueue.value.songs.size
+                ) {
                     Log.w(TAG, "Queue size mismatch after playNext - MediaController: ${controller.mediaItemCount}, ViewModel: ${_currentQueue.value.songs.size}")
                 }
                 val toastContext = getApplication<android.app.Application>().applicationContext

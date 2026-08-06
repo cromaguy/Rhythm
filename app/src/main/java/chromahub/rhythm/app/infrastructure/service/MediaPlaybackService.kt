@@ -2202,8 +2202,16 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
         }
 
         override fun addMediaItem(index: Int, mediaItem: MediaItem) {
+            val resolvedIndex = resolveLegacyQueueInsertionIndex(
+                requestedIndex = index,
+                legacyQueueCollapsed = btVirtualQueueActive() &&
+                    !isMutatingBtVirtualQueue &&
+                    btVirtualOriginalQueue != null,
+                currentOriginalIndex = btVirtualCurrentOriginalIndex,
+                originalQueueSize = btVirtualOriginalQueue?.size ?: 0
+            )
             restoreBeforeExternalQueueMutation()
-            super.addMediaItem(index, mediaItem)
+            super.addMediaItem(resolvedIndex, mediaItem)
         }
 
         override fun addMediaItems(mediaItems: List<MediaItem>) {
@@ -2212,8 +2220,16 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
         }
 
         override fun addMediaItems(index: Int, mediaItems: List<MediaItem>) {
+            val resolvedIndex = resolveLegacyQueueInsertionIndex(
+                requestedIndex = index,
+                legacyQueueCollapsed = btVirtualQueueActive() &&
+                    !isMutatingBtVirtualQueue &&
+                    btVirtualOriginalQueue != null,
+                currentOriginalIndex = btVirtualCurrentOriginalIndex,
+                originalQueueSize = btVirtualOriginalQueue?.size ?: 0
+            )
             restoreBeforeExternalQueueMutation()
-            super.addMediaItems(index, mediaItems)
+            super.addMediaItems(resolvedIndex, mediaItems)
         }
 
         override fun moveMediaItem(currentIndex: Int, newIndex: Int) {
