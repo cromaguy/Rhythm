@@ -9,7 +9,7 @@
     <string name="media3_notification_channel_name">En cours de lecture</string>
     <string name="media3_notification_channel_description">Commandes de lecture au premier plan, actions de recherche et pochettes d\'album</string>
     <!-- Widget strings -->
-    <string name="widget_description_glance">Rhythm Musique – Contrôlez la lecture avec 9 mises en page réactives, une conception Material 3 et des mises à jour d\'état en temps réel</string>
+    <string name="widget_description_glance">Découvrez ce qui passe et contrôlez votre musique depuis votre écran d\'accueil : lecture, pause, saut de piste, et bien plus encore.</string>
     <string name="widget_name_glance">Rhythm Musique</string>
     <string name="unknown_artist">Artiste inconnu</string>
     <string name="play_pause">Lecture/Pause</string>
@@ -2859,4 +2859,6 @@
     <string name="about_copy_system_info">Copier les informations système</string>
     <string name="about_copy_system_info_desc">Copier toutes les informations relatives à la version et au matériel dans le presse-papiers</string>
     <string name="cd_copy">Copier</string>
+    <string name="widget_tip_cookie_corners">Choisissez l\'action associée aux coins inférieurs du widget « cookie » : passer, lire en aléatoire, répéter, ajouter aux favoris ou les masquer</string>
+    <string name="widget_tip_stats_widget">Choisissez la période et le badge en bas d\'écran affichés par le widget de statistiques</string>
 </resources>
