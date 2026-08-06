@@ -54,6 +54,7 @@ import androidx.core.app.NotificationCompat
 import androidx.media3.common.AudioAttributes as ExoAudioAttributes
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import chromahub.rhythm.app.util.BluetoothMetadataRateLimiter
 import chromahub.rhythm.app.util.BluetoothLyricsFormatter
 import chromahub.rhythm.app.util.GsonUtils
 import chromahub.rhythm.app.util.LyricsRomanizationPolicy
@@ -1251,6 +1252,7 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
                 if (mode == previous) return@collect
                 previous = mode
                 lastServiceBtLyricLine = null
+                bluetoothMetadataRateLimiter.reset()
 
                 val needsRomanization =
                     mode == BluetoothLyricsTextMode.ROMANIZATION &&
@@ -3181,6 +3183,7 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
         lastServiceBtLyricLine = null
         lastServiceBtLyricSongId = null
         lastServiceBtAppliedSongId = null
+        bluetoothMetadataRateLimiter.reset()
         Log.d(TAG, "Media item transitioned: ${mediaItem?.mediaMetadata?.title}, reason=$reason")
         
         // Update custom layout when song changes to reflect correct favorite state
@@ -3211,6 +3214,8 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
     private var lastServiceBtLyricSongId: String? = null
     private var lastServiceBtAppliedSongId: String? = null
     private var serviceBtCanonicalSong: Song? = null
+    private val bluetoothMetadataRateLimiter =
+        BluetoothMetadataRateLimiter(minimumIntervalMs = 1_500L)
 
     /**
      * Replacing only the current item's metadata is reported by ExoPlayer as a SEEK transition
@@ -3519,15 +3524,23 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
             if (lastServiceBtAppliedSongId != null) restoreServiceBtMetadata(song)
             lastServiceBtLyricLine = null
             lastServiceBtLyricSongId = null
+            bluetoothMetadataRateLimiter.reset()
             return
         }
         ensureServiceLyricsLoaded(song)
         val offsetMs = resolvedBluetoothLyricsOffsetMs()
         val playbackPositionMs = player.currentPosition
         val line = resolveServiceBtLyricLine(playbackPositionMs + offsetMs)
-        if (song.id == lastServiceBtLyricSongId && line == lastServiceBtLyricLine) return
         lastServiceBtLyricSongId = song.id
         lastServiceBtLyricLine = line
+        if (!bluetoothMetadataRateLimiter.shouldPublish(
+                songId = song.id,
+                line = line,
+                nowMs = SystemClock.elapsedRealtime()
+            )
+        ) {
+            return
+        }
         Log.i(
             TAG,
             "Bluetooth lyric publish: mediaId=${song.id}, positionMs=$playbackPositionMs, " +
