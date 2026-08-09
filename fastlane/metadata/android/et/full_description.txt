@@ -1,0 +1,30 @@
+Sinu muusika, sinu rütm
+
+Kasuta oma muusikakogu täiesti uuel viisil. Rhythm on kaunis ja avatud lähtekoodiga Material You kujunduskeeles muusikapleier audiofiilidele, mis toetab nii kohalikku kui ka voogesituse taasesitust. Naudi kvaliteetset heli ilma jälgimiseta ja täiesti ilma reklaamideta.
+
+🔊 Audiofiili tasemel heli
+• Kõrge eraldusvõimega heli: Säilita algupärased diskreetimissagedused ja bitisügavused puhta, muutmata heli jaoks.
+• Täiustatud ekvalaiser: Täienda oma helikogemust 10-ribalise ekvalaiseri ja enam kui 6000 AutoEQ eelseadistusega, mis on kohandatud sinu konkreetsetele kõrvaklappidele.
+• Tipptasemel taasesitus: Naudi tõelist katkestusteta taasesitust ja kõigi peamiste vormingute tuge (FLAC, ALAC, Opus, WAV, MP3, OGG ja Dolby Atmos/EAC3-JOC).
+
+🎨 Imeilus Material 3 kujundus
+• Dünaamilised värvid: Rakenduse kujundus kohandub kaunilt sinu taustapildi (Android 12+) ja hetkel esitatava albumi kaanepildiga.
+• Sujuv kasutajaliides: Koge väljendusrikkaid kujundeid, sujuvaid animatsioone ja kaasahaaravat segajateta laulusõnade vaadet.
+• Kohanduvad vidinad: Juhi oma muusikat otse avaekraanilt tänapäevases Material 3 kujunduses vidinaga.
+
+📚 Nutikas muusikakogu ja laulusõnad
+• Kahel moel taasesitus: Vaheta sujuvalt oma kohaliku muusikakogu ja voogesitusserverite vahel.
+• Sünkroonitud laulusõnad: Laula kaasa sõnade kaupa esiletõstmisega LRCLibi kaudu või kasuta kohalikku muutmisvaadet kohandatud nihkete jaoks.
+• Täiuslik korrastamine: Sirvi oma muusikat lugude, albumite, esitajate, žanrite, esitusloendite või kaustade järgi.
+• Võimas mitmikvalik:** Halda oma esitusjärjekorda, jaga või kustuta korraga mitu lugu hulgitöötluse abil.
+• Usaldusväärne skannimine: Täismahuline multimeediaskanner tagab, et ühtegi lugu ei jää kunagi leidmata.
+
+⚙️ Rohkelt funktsionaalsust
+• Rhythm Guard: Lõimitud kuulmiskaitsesüsteem vanusepõhise helitugevuse kaitsega.
+• Sisseehitatud metaandmete muutmisvaade koos Deezeri ja YouTube Musicu kaanekujunduse lõimingutega.
+• Unetaimer, taasesituse statistika ja töökindlust parandavad tööriistad kokkujooksmisvaba kasutuskogemuse jaoks.
+• Lihtne järjekorra haldamine ning M3U esitusloendite import ja eksport.
+• Rakendusesisesed automaatsed uuendused otse GitHubist.
+
+🔒 100% privaatne
+Rhythm austab sinu andmeid. Rakenduses pole reklaame, analüütikat ega kontosid. Rakendus töötab täielikult võrguühenduseta ning on uhkelt avaldatud avatud lähtekoodi litsentsi alusel (GPL v3).
