@@ -1,6 +1,6 @@
 Sinu muusika, sinu rütm
 
-Kasuta oma muusikakogu täiesti uuel viisil. Rhythm on kaunis ja avatud lähtekoodiga Material You kujunduskeeles muusikapleier audiofiilidele, mis toetab nii kohalikku kui ka voogesituse taasesitust. Naudi kvaliteetset heli ilma jälgimiseta ja täiesti ilma reklaamideta.
+Kasuta oma muusikakogu täiesti uuel viisil. Rhythm on kaunis ja avatud lähtekoodiga Material You kujunduskeeles muusikapleier melomaanidele, mis toetab nii kohalikku kui ka voogesituse taasesitust. Naudi kvaliteetset heli ilma välise jälitamiseta ja täiesti ilma reklaamideta.
 
 🔊 Audiofiili tasemel heli
 • Kõrge eraldusvõimega heli: Säilita algupärased diskreetimissagedused ja bitisügavused puhta, muutmata heli jaoks.
@@ -13,11 +13,11 @@ Kasuta oma muusikakogu täiesti uuel viisil. Rhythm on kaunis ja avatud lähteko
 • Kohanduvad vidinad: Juhi oma muusikat otse avaekraanilt tänapäevases Material 3 kujunduses vidinaga.
 
 📚 Nutikas muusikakogu ja laulusõnad
-• Kahel moel taasesitus: Vaheta sujuvalt oma kohaliku muusikakogu ja voogesitusserverite vahel.
+• Kahel moel taasesitus: Vaheta sujuvalt oma kohaliku muusikakogu ja voogesitusserverite vahel (Subsonic, Navidrome, Jellyfin).
 • Sünkroonitud laulusõnad: Laula kaasa sõnade kaupa esiletõstmisega LRCLibi kaudu või kasuta kohalikku muutmisvaadet kohandatud nihkete jaoks.
-• Täiuslik korrastamine: Sirvi oma muusikat lugude, albumite, esitajate, žanrite, esitusloendite või kaustade järgi.
+• Täiuslik korrastamine: Sirvi oma muusikat lugude, meeldimiste, esitusloendite, albumite, esitajate, albumi esitajate, kuupäevade või kaustade järgi.
 • Võimas mitmikvalik:** Halda oma esitusjärjekorda, jaga või kustuta korraga mitu lugu hulgitöötluse abil.
-• Usaldusväärne skannimine: Täismahuline multimeediaskanner tagab, et ühtegi lugu ei jää kunagi leidmata.
+• Usaldusväärne skaneerimine: Täismahuline multimeediaskanner tagab, et ühtegi lugu ei jää kunagi leidmata, sealhulgas saad lubatud vorminguid seadistada.
 
 ⚙️ Rohkelt funktsionaalsust
 • Rhythm Guard: Lõimitud kuulmiskaitsesüsteem vanusepõhise helitugevuse kaitsega.
