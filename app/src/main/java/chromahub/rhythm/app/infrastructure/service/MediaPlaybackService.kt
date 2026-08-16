@@ -1863,13 +1863,15 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Log.d(TAG, "Service started with command: ${intent?.action}")
 
-        // Media3 owns notification 1001 after a media item loads; the placeholder is only for cold starts.
-        if (!::player.isInitialized || player.currentMediaItem == null) {
-            startForegroundWithNotification(
-                getString(chromahub.rhythm.app.R.string.service_rhythm_music),
-                getString(chromahub.rhythm.app.R.string.service_starting)
-            )
-        }
+        // MUST always call startForeground() when the service was started via
+        // startForegroundService(). We can't know whether the caller used startService()
+        // or startForegroundService(), so we call it unconditionally to satisfy the FGS
+        // contract and avoid ANR. When Media3 is already managing the notification,
+        // this is harmless — it just posts a placeholder that Media3 will replace.
+        startForegroundWithNotification(
+            getString(chromahub.rhythm.app.R.string.service_rhythm_music),
+            getString(chromahub.rhythm.app.R.string.service_starting)
+        )
         
         when (intent?.action) {
             ACTION_UPDATE_SETTINGS -> {

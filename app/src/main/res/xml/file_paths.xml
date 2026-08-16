@@ -10,4 +10,8 @@
     
     <!-- External cache directory -->
     <external-cache-path name="external_cache" path="." />
-</paths> 
+
+    <!-- Artwork published to the system media controls. -->
+    <files-path name="embedded_artwork_files" path="embedded_artwork/" />
+    <cache-path name="embedded_artwork_cache" path="embedded_artwork/" />
+</paths>

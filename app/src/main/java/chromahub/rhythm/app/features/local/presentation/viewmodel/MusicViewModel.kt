@@ -20,6 +20,7 @@ import chromahub.rhythm.app.shared.data.model.AutoEQProfile
 import chromahub.rhythm.app.util.AutoEQManager
 import android.util.LruCache
 import androidx.core.net.toUri
+import androidx.core.content.FileProvider
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.media3.common.C
@@ -31,6 +32,7 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
 import chromahub.rhythm.app.R
+import chromahub.rhythm.app.BuildConfig
 import chromahub.rhythm.app.activities.MainActivity
 import chromahub.rhythm.app.activities.RhythmGuardTimeoutActivity
 import chromahub.rhythm.app.shared.data.model.Album
@@ -4241,7 +4243,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                 .setTitle(lyricLine?.takeIf { it.isNotBlank() } ?: DEFAULT_BLUETOOTH_LYRIC_LINE)
                 .setArtist(mergeSongTitleAndArtist(song))
                 .setAlbumTitle(song.album)
-                .setArtworkUri(song.artworkUri ?: currentItem.mediaMetadata.artworkUri)
+                .setArtworkUri(firstReadableArtworkUri(song.artworkUri, currentItem.mediaMetadata.artworkUri))
                 .setExtras(buildCanonicalMetadataExtras(song, currentItem.mediaMetadata.extras))
                 .build()
 
@@ -4288,7 +4290,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                 .setTitle(targetSong.title)
                 .setArtist(targetSong.artist)
                 .setAlbumTitle(targetSong.album)
-                .setArtworkUri(targetSong.artworkUri ?: currentMetadata.artworkUri)
+                .setArtworkUri(firstReadableArtworkUri(targetSong.artworkUri, currentMetadata.artworkUri))
                 .setExtras(buildCanonicalMetadataExtras(targetSong, currentMetadata.extras))
                 .build()
 
@@ -4483,10 +4485,45 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                     .setArtist(this.artist)
                     .setAlbumTitle(this.album)
                     .setDurationMs(this.duration)
-                    .setArtworkUri(this.artworkUri)
+                    .setArtworkUri(firstReadableArtworkUri(this.artworkUri))
                     .build()
             )
             .build()
+    }
+
+    /**
+     * Do not publish a deleted app-private artwork file to MediaSession. SystemUI retries media
+     * artwork loads whenever the player metadata changes, so one stale cached file URI turns lyric
+     * metadata updates and shade transitions into repeated FileNotFoundException work.
+     */
+    private fun firstReadableArtworkUri(vararg candidates: Uri?): Uri? {
+        candidates.forEach { uri ->
+            uri ?: return@forEach
+            val isLocalFile = uri.scheme == "file" ||
+                (uri.scheme.isNullOrBlank() && uri.path?.startsWith('/') == true)
+            if (!isLocalFile) return uri
+
+            val file = uri.path?.let(::File)
+                ?.takeIf { it.isFile && it.length() > 0L }
+                ?: return@forEach
+            try {
+                val context = getApplication<Application>()
+                val sharedUri = FileProvider.getUriForFile(
+                    context,
+                    "${BuildConfig.APPLICATION_ID}.provider",
+                    file
+                )
+                context.grantUriPermission(
+                    "com.android.systemui",
+                    sharedUri,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION
+                )
+                return sharedUri
+            } catch (e: IllegalArgumentException) {
+                Log.w(TAG, "Artwork file is outside the shared provider paths: $file", e)
+            }
+        }
+        return null
     }
 
     private fun mediaItemToTransientSong(mediaItem: MediaItem): Song? {
