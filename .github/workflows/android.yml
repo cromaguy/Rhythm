@@ -47,14 +47,21 @@ jobs:
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
 
-    - name: Create private.properties for build
+    - name: Restore signing and private configuration
       env:
+        SIGNING_KEYSTORE: ${{ secrets.SIGNING_KEYSTORE }}
+        SIGNING_PROPERTIES: ${{ secrets.SIGNING_PROPERTIES }}
         PRIVATE_PROPERTIES: ${{ secrets.PRIVATE_PROPERTIES }}
       run: |
+        mkdir -p config/signing .config
+        if [ -n "$SIGNING_KEYSTORE" ] && [ -n "$SIGNING_PROPERTIES" ]; then
+          printf '%s' "$SIGNING_KEYSTORE" | base64 -di > ./config/signing/rhythm_keystore.jks
+          printf '%s' "$SIGNING_PROPERTIES" | base64 -di > ./.config/keystore.properties
+        fi
         if [ -n "$PRIVATE_PROPERTIES" ]; then
-          printf '%s' "$PRIVATE_PROPERTIES" | base64 -di > ./private.properties
+          printf '%s' "$PRIVATE_PROPERTIES" | base64 -di > ./config/signing/private.properties
         else
-          touch ./private.properties
+          touch ./config/signing/private.properties
         fi
 
     - name: Build with Gradle (GitHub flavor only)

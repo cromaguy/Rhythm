@@ -40,8 +40,15 @@ class AudioCapabilitiesMonitor(private val context: Context) {
 
                 // Some devices report the handset model as the sink product name.
                 val remoteName = try {
-                    device.address
-                        .takeIf { it.contains(':') }
+                    // AudioDeviceInfo.address was added in API 28. Keep API 26/27
+                    // Bluetooth output detection functional by falling back to productName.
+                    val address = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                        device.address
+                    } else {
+                        null
+                    }
+                    address
+                        ?.takeIf { it.contains(':') }
                         ?.let {
                             @Suppress("DEPRECATION")
                             BluetoothAdapter.getDefaultAdapter()?.getRemoteDevice(it)?.name

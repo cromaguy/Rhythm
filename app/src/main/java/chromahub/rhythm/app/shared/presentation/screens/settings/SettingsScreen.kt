@@ -198,7 +198,8 @@ fun SettingsScreen(
     val rhythmGuardMode by appSettings.rhythmGuardMode.collectAsState()
     val showSettingsSuggestions by appSettings.showSettingsSuggestions.collectAsState()
     val showKeyboardOnSearchOpen by appSettings.showKeyboardOnSearchOpen.collectAsState()
-    val currentAppLocale = context.resources.configuration.locales[0]
+    val configuration = LocalConfiguration.current
+    val currentAppLocale = configuration.locales[0]
     val currentAppLanguage = currentAppLocale.getDisplayName(currentAppLocale)
     
     var showDefaultScreenDialog by remember { mutableStateOf(false) }
