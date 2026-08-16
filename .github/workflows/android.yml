@@ -60,6 +60,8 @@ jobs:
     - name: Build with Gradle (GitHub flavor only)
       env:
         APPLE_MUSIC_FALLBACK_TOKEN: ${{ secrets.APPLE_MUSIC_FALLBACK_TOKEN }}
+        GITHUB_OWNER: ${{ github.repository_owner }}
+        GITHUB_REPO: ${{ github.event.repository.name }}
       run: ./gradlew assembleGithubRelease assembleGithubDebug
 
     - name: Generate build info

@@ -1,5 +1,6 @@
 package chromahub.rhythm.app.network
 
+import chromahub.rhythm.app.BuildConfig
 import com.google.gson.JsonParser
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -64,7 +65,7 @@ object WikipediaProvider {
             val url = "https://en.wikipedia.org/api/rest_v1/page/summary/$encodedTitle"
             val request = Request.Builder()
                 .url(url)
-                .header("User-Agent", "Rhythm/1.0 (contact: github.com/cromaguy/Rhythm)")
+                .header("User-Agent", "Rhythm/1.0 (contact: github.com/${BuildConfig.GITHUB_OWNER}/${BuildConfig.GITHUB_REPO})")
                 .build()
 
             client.newCall(request).execute().use { response ->

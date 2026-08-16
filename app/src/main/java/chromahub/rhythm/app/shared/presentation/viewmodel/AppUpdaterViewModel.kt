@@ -141,8 +141,8 @@ class AppUpdaterViewModel(application: Application) : AndroidViewModel(applicati
     private val UPDATE_DOWNLOAD_COMPLETION_AUTO_DISMISS_MS = 7000L
     
     // GitHub repository information
-    private val GITHUB_OWNER = "cromaguy"
-    private val GITHUB_REPO = "Rhythm"
+    private val GITHUB_OWNER = BuildConfig.GITHUB_OWNER
+    private val GITHUB_REPO = BuildConfig.GITHUB_REPO
     
     // Update check interval (6 hours)
     private val UPDATE_CHECK_INTERVAL = TimeUnit.HOURS.toMillis(6)
@@ -739,7 +739,7 @@ class AppUpdaterViewModel(application: Application) : AndroidViewModel(applicati
         val cleanedBaseName = BuildConfig.VERSION_NAME.replace(" Beta", "")
         val versionName = "$cleanedBaseName-nightly-r${run.run_number}-$shortSha"
         
-        val downloadUrl = "https://nightly.link/cromaguy/Rhythm/workflows/nightly.yml/main/Rhythm-Nightly-Artifacts.zip"
+        val downloadUrl = "https://nightly.link/${BuildConfig.GITHUB_OWNER}/${BuildConfig.GITHUB_REPO}/workflows/nightly.yml/main/Rhythm-Nightly-Artifacts.zip"
         
         val commitMessage = run.head_commit?.message ?: "New features and performance updates"
         val changelogItems = commitMessage.lines().filter { it.isNotBlank() }.map { it.trim().removePrefix("-").trim() }
@@ -854,7 +854,7 @@ class AppUpdaterViewModel(application: Application) : AndroidViewModel(applicati
                     "Bug fixes and optimizations"
                 ),
                 knownIssues = emptyList(),
-                downloadUrl = "https://github.com/cromaguy/Rhythm/releases",
+                downloadUrl = "https://github.com/${BuildConfig.GITHUB_OWNER}/${BuildConfig.GITHUB_REPO}/releases",
                 apkAssetName = "rhythm-release.apk",
                 apkSize = 0,
                 releaseNotes = "Test update",

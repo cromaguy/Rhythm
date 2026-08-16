@@ -631,8 +631,8 @@ fun AboutScreen(
                         item = SettingItem(
                             icon = RhythmIcons.Code,
                             title = context.getString(R.string.settings_about_view_github),
-                            description = "github.com/cromaguy/Rhythm",
-                            onClick = { openUrl("https://github.com/cromaguy/Rhythm") }
+                            description = "github.com/${BuildConfig.GITHUB_OWNER}/${BuildConfig.GITHUB_REPO}",
+                            onClick = { openUrl("https://github.com/${BuildConfig.GITHUB_OWNER}/${BuildConfig.GITHUB_REPO}") }
                         )
                     ),
                     toMaterial3SettingsItem(
@@ -641,8 +641,8 @@ fun AboutScreen(
                         item = SettingItem(
                             icon = RhythmIcons.BugReport,
                             title = context.getString(R.string.settings_about_report_bug),
-                            description = "github.com/cromaguy/Rhythm/issues",
-                            onClick = { openUrl("https://github.com/cromaguy/Rhythm/issues") }
+                            description = "github.com/${BuildConfig.GITHUB_OWNER}/${BuildConfig.GITHUB_REPO}/issues",
+                            onClick = { openUrl("https://github.com/${BuildConfig.GITHUB_OWNER}/${BuildConfig.GITHUB_REPO}/issues") }
                         )
                     ),
                     toMaterial3SettingsItem(

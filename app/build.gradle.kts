@@ -30,10 +30,10 @@ android {
         val overrideVersionCode = project.findProperty("versionCodeOverride")?.toString()?.toIntOrNull()
         val overrideVersionName = project.findProperty("versionNameOverride")?.toString()
         versionCode = overrideVersionCode ?: 544431173
-        versionName = overrideVersionName ?: "5.4.443.1173 Beta"
+        versionName = overrideVersionName ?: "5.4.443.1173"
 
         val overrideReleaseDate = project.findProperty("releaseDateOverride")?.toString()
-        buildConfigField("String", "RELEASE_DATE", "\"${overrideReleaseDate ?: "2026-07-31"}\"")
+        buildConfigField("String", "RELEASE_DATE", "\"${overrideReleaseDate ?: "2026-08-15"}\"")
 
         val isNightly = project.findProperty("nightly")?.toString() == "true"
         buildConfigField("boolean", "IS_NIGHTLY", isNightly.toString())
@@ -43,6 +43,18 @@ android {
             ?: localProperties.getProperty("APPLE_MUSIC_FALLBACK_TOKEN")
             ?: "eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiIsImtpZCI6IldlYlBsYXlLaWQifQ.eyJpc3MiOiJBTVBXZWJQbGF5IiwiaWF0IjoxNzgxMDMyODU1LCJleHAiOjE3ODQwNTY4NTUsInJvb3RfaHR0cHNfb3JpZ2luIjpbImFwcGxlLmNvbSJdfQ.fiMFcJWkfSlxKP9NVA0UW9CbItD1Rge0SISuepz203XcpU762OqdCpU9M-YkmtKkjRmaIWtjsfGgqZPrlMonpA"
         buildConfigField("String", "APPLE_MUSIC_FALLBACK_TOKEN", "\"$appleMusicToken\"")
+
+        // GitHub Repository info for updates & links (configurable via property, local.properties, env, or default)
+        val githubOwner = project.findProperty("githubOwner")?.toString()
+            ?: localProperties.getProperty("GITHUB_OWNER")
+            ?: System.getenv("GITHUB_OWNER")
+            ?: "cromaguy"
+        val githubRepo = project.findProperty("githubRepo")?.toString()
+            ?: localProperties.getProperty("GITHUB_REPO")
+            ?: System.getenv("GITHUB_REPO")
+            ?: "Rhythm"
+        buildConfigField("String", "GITHUB_OWNER", "\"$githubOwner\"")
+        buildConfigField("String", "GITHUB_REPO", "\"$githubRepo\"")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

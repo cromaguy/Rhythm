@@ -195,7 +195,7 @@ class UpdateNotificationWorker(
             
             
             if (channel == "nightly") {
-                val runsResponse = gitHubApiService.getWorkflowRuns("cromaguy", "Rhythm", "nightly.yml")
+                val runsResponse = gitHubApiService.getWorkflowRuns(BuildConfig.GITHUB_OWNER, BuildConfig.GITHUB_REPO, "nightly.yml")
                 val responseCode = runsResponse.code()
                 Log.d(TAG, "Nightly response code: $responseCode")
                 
@@ -251,16 +251,16 @@ class UpdateNotificationWorker(
             // Fetch latest release based on channel with conditional headers
             val response = if (channel == "beta") {
                 gitHubApiService.getReleasesWithHeaders(
-                    owner = "cromaguy",
-                    repo = "Rhythm",
+                    owner = BuildConfig.GITHUB_OWNER,
+                    repo = BuildConfig.GITHUB_REPO,
                     perPage = 10,
                     ifNoneMatch = lastETag,
                     ifModifiedSince = lastModified
                 )
             } else {
                 gitHubApiService.getLatestReleaseWithHeaders(
-                    owner = "cromaguy",
-                    repo = "Rhythm",
+                    owner = BuildConfig.GITHUB_OWNER,
+                    repo = BuildConfig.GITHUB_REPO,
                     ifNoneMatch = lastETag,
                     ifModifiedSince = lastModified
                 )

@@ -3,6 +3,7 @@ name: Build Release APK
 on:
   push:
     tags: [ 'v*' ]
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -46,6 +47,8 @@ jobs:
       - name: Build app (GitHub and F-Droid flavors)
         env:
           APPLE_MUSIC_FALLBACK_TOKEN: ${{ secrets.APPLE_MUSIC_FALLBACK_TOKEN }}
+          GITHUB_OWNER: ${{ github.repository_owner }}
+          GITHUB_REPO: ${{ github.event.repository.name }}
         run: ./gradlew assembleGithubRelease assembleFdroidRelease --stacktrace
 
       - name: Generate checksums

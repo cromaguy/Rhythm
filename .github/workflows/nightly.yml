@@ -159,6 +159,8 @@ jobs:
         if: steps.check_version.outputs.should_run == 'true'
         env:
           APPLE_MUSIC_FALLBACK_TOKEN: ${{ secrets.APPLE_MUSIC_FALLBACK_TOKEN }}
+          GITHUB_OWNER: ${{ github.repository_owner }}
+          GITHUB_REPO: ${{ github.event.repository.name }}
         run: |
           ./gradlew assembleGithubRelease assembleFdroidRelease \
             -PversionCodeOverride=${{ steps.version_info.outputs.code }} \
