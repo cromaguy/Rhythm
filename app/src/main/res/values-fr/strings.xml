@@ -2977,4 +2977,13 @@
     <string name="settings_use_exact_artwork_colors_desc">Utiliser les couleurs exactes de l\'arrière-plan et du texte telles qu\'elles apparaissent dans le visuel</string>
     <string name="settings_player_thumb_style_desc">Choisissez la forme du curseur de la barre de recherche (cercle, carré, pilule, losange, fleur, cœur…)</string>
     <string name="settings_gesture_disable_unused_desc">Désactivez les gestes que vous n\'utilisez jamais</string>
+    <string name="player_ambient_motion_zoom_desc">Effectuer un zoom progressif et animer en continu les illustrations d\'ambiance</string>
+    <string name="player_accent_background_desc">La couleur exacte de la pochette de l\'album comme arrière-plan</string>
+    <string name="player_merge_controls">Regrouper « Paroles » &amp; « Favoris » dans la barre du bas</string>
+    <string name="player_merge_controls_desc">Déplacer les paroles et les favoris vers la barre du bas</string>
+    <string name="expressiveplayerscreen_lyrics">Afficher/masquer les paroles</string>
+    <string name="licenses_desc_retrofit">Client HTTP à sécurité de types pour Android et Java</string>
+    <string name="licenses_desc_okhttp">Client HTTP pour Android, Kotlin et Java</string>
+    <string name="licenses_desc_gson">Bibliothèque Java de sérialisation/désérialisation pour JSON</string>
+    <string name="licenses_desc_androidx_navigation">Composants de navigation pour les applications Android</string>
 </resources>
