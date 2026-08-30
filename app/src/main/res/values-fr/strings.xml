@@ -537,7 +537,7 @@
     <string name="onboarding_full_tour_prompt_title">Continuer la visite guidée complète de la configuration ?</string>
     <string name="onboarding_full_tour_prompt_desc">La configuration principale est terminée. Continuez pour une personnalisation avancée, ou terminez maintenant et explorez le reste plus tard à partir des paramètres.</string>
     <string name="onboarding_full_tour_prompt_tip_1">La visite complète comprend les options de lecture, de thème, de geste et d\'analyse multimédia.</string>
-    <string name="onboarding_full_tour_prompt_tip_2">Vous pouvez rouvrir la visite Rhythm à tout moment depuis Paramètres &gt; Développeur et débogage.</string>
+    <string name="onboarding_full_tour_prompt_tip_2">Vous pouvez rouvrir la visite Rhythm à tout moment depuis À propos.</string>
     <string name="onboarding_full_tour_prompt_tip_3">Rien ici n’est permanent. Tous les choix peuvent être modifiés ultérieurement.</string>
     <string name="onboarding_continue_full_tour">Continuer la visite complète</string>
     <string name="onboarding_finish_now">Terminer la configuration maintenant</string>
@@ -2984,4 +2984,14 @@
     <string name="licenses_desc_okhttp">Client HTTP pour Android, Kotlin et Java</string>
     <string name="licenses_desc_gson">Bibliothèque Java de sérialisation/désérialisation pour JSON</string>
     <string name="licenses_desc_androidx_navigation">Composants de navigation pour les applications Android</string>
+    <string name="settings_min_duration">Durée Minimale de Musique</string>
+    <string name="settings_min_duration_none">Sans paramètres (tous les fichiers audios)</string>
+    <string name="settings_min_duration_seconds">%1$d secondes</string>
+    <string name="settings_min_duration_minutes">%1$d min %2$d sec</string>
+    <string name="settings_min_duration_minutes_only">%1$d minutes</string>
+    <string name="about_replay_tour">Refaire le Tour de Configuration</string>
+    <string name="about_replay_tour_desc">Refaites le tour de configuration quand vous voulez pour reconfigurer vos préférences</string>
+    <string name="onboarding_expressive_shapes_desc">Appliquez les formes Material 3 pour les albums, cadres, et composants d\'interface</string>
+    <string name="onboarding_autoeq_desc">Calibre l\'audio pour des milliers de models de casques</string>
+    <string name="onboarding_replaygain_desc">Ajuste automatiquement le volume audio entre les chansons</string>
 </resources>
