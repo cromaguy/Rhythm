@@ -155,4 +155,50 @@
         <item quantity="other">Eemalda %1$d lugu</item>
     </plurals>
     <string name="playlist_removed_from_playlist">Eemaldasime „%1$s“ loo esitusloendist</string>
+    <string name="settings_notifications_library_group">Muusikakogu ja uuendused</string>
+    <string name="settings_notification_permission_grant">Võta teavitused kasutusele</string>
+    <plurals name="notification_library_setup_complete_summary">
+        <item quantity="one">Muusikakogu on valmis: %1$d lugu, %2$d album, %3$d esitaja</item>
+        <item quantity="other">Muusikakogu on valmis: %1$d lugu, %2$d albumit, %3$d esitajat</item>
+    </plurals>
+    <string name="notification_playlist_not_found">Eksportimine on katkestatud: sihtesitusloendit ei leidu.</string>
+    <string name="notification_no_playlists_to_export">Eksportimine on katkestatud: varundatavaid asitusloendeid ei leidu.</string>
+    <string name="notification_operation_timed_out">Tegevus aegus. Palun proovi uuesti.</string>
+    <string name="notification_playlist_export_complete">Esitusloend on kenasti varundatud andmeruumi.</string>
+    <plurals name="notification_playlist_export_all_complete">
+        <item quantity="one">%1$d esitusloendi varundamine õnnestus.</item>
+        <item quantity="other">%1$d esitusloendi varundamine õnnestus.</item>
+    </plurals>
+    <string name="notification_streaming_playlist_title">Esitusloend on uuendatud</string>
+    <string name="notification_streaming_playlist_created">Uus esitusloend „%1$s“ on loodud asukohta %2$s</string>
+    <string name="notification_streaming_playlist_updated">Esitusloend „%1$s“ on muudetud asukohas %2$s</string>
+    <string name="notification_streaming_playlist_deleted">Esitusloend „%1$s“ on kustutatud asukohast %2$s</string>
+    <string name="notification_streaming_quality_title">Voogedastuse kvaliteet</string>
+    <string name="notification_streaming_buffering">Puhverdan… Esitan allikast %1$s</string>
+    <string name="notification_streaming_buffering_complete">Valmis esitamiseks!</string>
+    <string name="dialog_cleanup_empty_playlists_title">Kas eemaldad tühjas esitusloendid?</string>
+    <plurals name="dialog_cleanup_empty_playlists_message">
+        <item quantity="one">Järgnevaga eemaldad %1$d tühja esitusloendi. Seda tegevust ei saa tagasi pöörata.</item>
+        <item quantity="other">Järgnevaga eemaldad %1$d tühja esitusloendit. Seda tegevust ei saa tagasi pöörata.</item>
+    </plurals>
+    <string name="dialog_delete_playlist_title">Kas kustutad esitusloendi?</string>
+    <string name="dialog_delete_playlist_message">Kas oled kindel, et kustutad „%1$s“ esitusloendi. Seda tegevust ei saa tagasi pöörata.</string>
+    <string name="streaming_settings_switch_provider_confirm_title">Kas vahetad voogedastuse teenusepakkujat?</string>
+    <string name="streaming_settings_switch_provider_confirm_desc">Senine teenusepakkuja: %1$s\nKas võtad kasutusele: %2$s? Järgnevaga senise teenusepakkuja ühendus katkeb.</string>
+    <string name="settings_song_management">Lugude haldus</string>
+    <string name="settings_manage_songs">Halda lugusid</string>
+    <string name="settings_blocked">keelatud</string>
+    <string name="settings_whitelisted">lubatud</string>
+    <string name="settings_clear_all_songs">Eemalda kõik lood</string>
+    <string name="settings_clear_all_songs_desc">Eemalda kõik %1$s lugu</string>
+    <string name="settings_folder_management">Kaustade haldus</string>
+    <string name="settings_manage_folders">Halda kaustu</string>
+    <string name="settings_manage_songs_desc">%1$d %2$s lugu</string>
+    <string name="settings_manage_folders_desc">%1$d %2$s kausta</string>
+    <string name="settings_add_folder">Lisa kaust</string>
+    <string name="settings_block">blokeeri</string>
+    <string name="settings_whitelist">luba</string>
+    <string name="settings_clear_all_folders">Eemalda kõik kaustad</string>
+    <string name="settings_clear_all_folders_desc">Eemalda kõik %1$s kausta</string>
+    <string name="settings_quick_tips">Kiirsoovitused</string>
 </resources>
