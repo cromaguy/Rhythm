@@ -509,7 +509,8 @@
     <string name="onboarding_library_3">Avancerade visnings- och sorteringsalternativ tillgängliga i Inställningar &gt; Biblioteksinställningar</string>
     <string name="onboarding_library_4">Standardspellistor (nyligen tillagda, mest spelade) kan växlas i Inställningar &gt; Spellistor</string>
     <string name="onboarding_theme_title">Gör Rhythm till din</string>
-    <string name="onboarding_theme_desc">Anpassa Rhythms utseende för att matcha din stil. Välj ditt systemtema, typsnitt eller Material dina dynamiska färger (Android 12+).</string>    <string name="onboarding_more_tuner">Mer anpassning i Inställningar</string>
+    <string name="onboarding_theme_desc">Anpassa Rhythms utseende för att matcha din stil. Välj ditt systemtema, typsnitt eller Material dina dynamiska färger (Android 12+).</string>
+    <string name="onboarding_more_tuner">Mer anpassning i Inställningar</string>
     <string name="onboarding_tuner_1">Anpassade färgscheman och färgextraktion för albumomslag</string>
     <string name="onboarding_tuner_2">Teckensnittsanpassning och typografiinställningar</string>
     <string name="onboarding_tuner_3">Avancerade temaalternativ tillgängliga i Inställningar &gt; Temaanpassning</string>
@@ -783,12 +784,6 @@
     <string name="library_reorder_tabs">Ändra ordning på flikarna för att anpassa din biblioteksupplevelse</string>
     <string name="external_services_desc">Styr vilka externa API-tjänster som är aktiva för att förbättra din musikupplevelse. Slå på/av tjänster för att hantera dataanvändning och funktionalitet.</string>
     <string name="lyrics_source_priority_title">Lyrics Källprioritet</string>
-    <string name="playlist_action_title">Spellista Tryck på Action</string>
-    <string name="playlist_action_desc">Standardbeteende för tryck på spellistan</string>
-    <string name="playlist_action_load_title">Ladda hela spellistan</string>
-    <string name="playlist_action_load_desc">Ladda spellistan och börja från valt spår</string>
-    <string name="playlist_action_single_title">Spela endast denna låt</string>
-    <string name="playlist_action_single_desc">Spela endast valt spår</string>
     <string name="queue_action_title">Kökonfliktåtgärd</string>
     <string name="queue_action_choose">Välj standardkökonfliktåtgärd</string>
     <string name="queue_action_ask_title">Fråga varje gång</string>
@@ -1448,10 +1443,6 @@
     <string name="settings_queue_action_dialog_desc_ask">Fråga innan du byter ut eller förlänger kön för enspårsuppspelning.</string>
     <string name="settings_queue_action_dialog_desc_always">Lägg alltid till enspårsuppspelning i kön.</string>
     <string name="settings_queue_action_dialog_desc_disabled">Inaktiverad när Ersätt kö vid uppspelning är på.</string>
-    <string name="settings_playlist_action_dialog">Spellista Spår Tryckåtgärd</string>
-    <string name="settings_playlist_action_play_all">Ladda hela spellistan i kön</string>
-    <string name="settings_playlist_action_play_one">Spela endast valt spår</string>
-    <string name="settings_playlist_action_ask">Fråga varje gång</string>
     <string name="settings_list_queue_action_dialog">Lista Play Queue Action</string>
     <string name="settings_list_queue_action_replace">Byt ut kö och spela</string>
     <string name="settings_list_queue_action_ask">Fråga varje gång</string>
@@ -1765,7 +1756,6 @@
     <string name="settings_queue_hours_format_desc">Timmar i tidsformat</string>
     <string name="settings_queue_persistence">Fortsatt kö</string>
     <string name="settings_queue_persistence_desc">Återställ kö vid start</string>
-    <string name="settings_playlist_action_dialog_desc">Beteende när du trycker på ett spår i en spellista</string>
     <string name="settings_list_queue_action_dialog_desc">Beteende för lista Spela åtgärder när kön är aktiv</string>
     <!-- Experimental Features Search Strings -->
     <string name="settings_exp_festive_theme">Festligt tema</string>

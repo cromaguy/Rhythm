@@ -496,7 +496,8 @@
     <string name="onboarding_library_3">Opsi tampilan dan penyortiran lanjutan tersedia di Pengaturan &gt; Pengaturan Perpustakaan</string>
     <string name="onboarding_library_4">Daftar putar default (Baru Ditambahkan, Paling Banyak Diputar) dapat diubah di Pengaturan &gt; Daftar Putar</string>
     <string name="onboarding_theme_title">Jadikan Rhythm milik Anda</string>
-    <string name="onboarding_theme_desc">Personalisasikan penampilan Rhythm agar sesuai dengan gaya Anda. Pilih tema sistem, font, atau Material warna dinamis Anda (Android 12+).</string>    <string name="onboarding_more_tuner">Lebih Banyak Kustomisasi di Pengaturan</string>
+    <string name="onboarding_theme_desc">Personalisasikan penampilan Rhythm agar sesuai dengan gaya Anda. Pilih tema sistem, font, atau Material warna dinamis Anda (Android 12+).</string>
+    <string name="onboarding_more_tuner">Lebih Banyak Kustomisasi di Pengaturan</string>
     <string name="onboarding_tuner_1">Skema warna khusus dan ekstraksi warna sampul album</string>
     <string name="onboarding_tuner_2">Kustomisasi font dan pengaturan tipografi</string>
     <string name="onboarding_tuner_3">Opsi tema lanjutan tersedia di Pengaturan &gt; Kustomisasi Tema</string>
@@ -770,12 +771,6 @@
     <string name="library_reorder_tabs">Susun ulang tab untuk menyesuaikan pengalaman perpustakaan Anda</string>
     <string name="external_services_desc">Kontrol layanan API eksternal mana yang aktif untuk menyempurnakan pengalaman musik Anda. Aktifkan/nonaktifkan layanan untuk mengelola penggunaan dan fungsionalitas data.</string>
     <string name="lyrics_source_priority_title">Prioritas Sumber Lirik</string>
-    <string name="playlist_action_title">Daftar Putar Ketuk Tindakan</string>
-    <string name="playlist_action_desc">Perilaku default untuk ketukan daftar putar</string>
-    <string name="playlist_action_load_title">Muat seluruh daftar putar</string>
-    <string name="playlist_action_load_desc">Muat daftar putar dan mulai dari trek yang dipilih</string>
-    <string name="playlist_action_single_title">Mainkan lagu ini saja</string>
-    <string name="playlist_action_single_desc">Hanya memutar track yang dipilih</string>
     <string name="queue_action_title">Aksi Konflik Antrian</string>
     <string name="queue_action_choose">Pilih tindakan konflik antrian default</string>
     <string name="queue_action_ask_title">Tanyakan setiap saat</string>
@@ -1434,10 +1429,6 @@
     <string name="settings_queue_action_dialog_desc_ask">Tanyakan sebelum mengganti atau memperpanjang antrean untuk pemutaran trek tunggal.</string>
     <string name="settings_queue_action_dialog_desc_always">Selalu tambahkan pemutaran trek tunggal ke antrean.</string>
     <string name="settings_queue_action_dialog_desc_disabled">Dinonaktifkan saat Ganti Antrean saat Putar aktif.</string>
-    <string name="settings_playlist_action_dialog">Tindakan Ketuk Lagu Daftar Putar</string>
-    <string name="settings_playlist_action_play_all">Muat daftar putar lengkap ke dalam antrean</string>
-    <string name="settings_playlist_action_play_one">Hanya memutar track yang dipilih</string>
-    <string name="settings_playlist_action_ask">Tanyakan setiap saat</string>
     <string name="settings_list_queue_action_dialog">Daftar Tindakan Antrean Putar</string>
     <string name="settings_list_queue_action_replace">Ganti antrian dan mainkan</string>
     <string name="settings_list_queue_action_ask">Tanyakan setiap saat</string>
@@ -1747,7 +1738,6 @@
     <string name="settings_queue_hours_format_desc">Jam dalam format waktu</string>
     <string name="settings_queue_persistence">Pertahankan Antrian</string>
     <string name="settings_queue_persistence_desc">Pulihkan antrian saat mulai</string>
-    <string name="settings_playlist_action_dialog_desc">Perilaku saat mengetuk trek di dalam daftar putar</string>
     <string name="settings_list_queue_action_dialog_desc">Perilaku untuk tindakan pemutaran daftar saat antrean aktif</string>
     <!-- Experimental Features Search Strings -->
     <string name="settings_exp_festive_theme">Tema Perayaan</string>

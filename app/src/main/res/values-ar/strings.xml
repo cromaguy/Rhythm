@@ -561,7 +561,8 @@
     <string name="onboarding_library_3">تتوفر خيارات العرض والفرز المتقدمة في الإعدادات &gt; إعدادات المكتبة</string>
     <string name="onboarding_library_4">يمكن تبديل قوائم التشغيل الافتراضية (التي تمت إضافتها مؤخرًا، والأكثر تشغيلًا) في الإعدادات &gt; قوائم التشغيل</string>
     <string name="onboarding_theme_title">اجعل Rhythm ملكًا لك</string>
-    <string name="onboarding_theme_desc">قم بتخصيص مظهر Rhythm ليتناسب مع أسلوبك. اختر سمة النظام أو الخط أو Material الألوان الديناميكية (Android 12+).</string>    <string name="onboarding_more_tuner">مزيد من التخصيص في الإعدادات</string>
+    <string name="onboarding_theme_desc">قم بتخصيص مظهر Rhythm ليتناسب مع أسلوبك. اختر سمة النظام أو الخط أو Material الألوان الديناميكية (Android 12+).</string>
+    <string name="onboarding_more_tuner">مزيد من التخصيص في الإعدادات</string>
     <string name="onboarding_tuner_1">أنظمة الألوان المخصصة واستخراج ألوان صورة الألبوم</string>
     <string name="onboarding_tuner_2">تخصيص الخط وإعدادات الطباعة</string>
     <string name="onboarding_tuner_3">تتوفر خيارات السمة المتقدمة في الإعدادات &gt; تخصيص السمة</string>
@@ -835,12 +836,6 @@
     <string name="library_reorder_tabs">أعد ترتيب علامات التبويب لتخصيص تجربة مكتبتك</string>
     <string name="external_services_desc">يمكنك التحكم في خدمات API الخارجية النشطة لتحسين تجربتك الموسيقية. قم بتشغيل/إيقاف تشغيل الخدمات لإدارة استخدام البيانات ووظائفها.</string>
     <string name="lyrics_source_priority_title">أولوية مصدر الكلمات</string>
-    <string name="playlist_action_title">قائمة التشغيل اضغط على الإجراء</string>
-    <string name="playlist_action_desc">السلوك الافتراضي لنقرات قائمة التشغيل</string>
-    <string name="playlist_action_load_title">تحميل قائمة التشغيل بأكملها</string>
-    <string name="playlist_action_load_desc">قم بتحميل قائمة التشغيل وابدأ من المسار المحدد</string>
-    <string name="playlist_action_single_title">تشغيل هذه الأغنية فقط</string>
-    <string name="playlist_action_single_desc">تشغيل المسار المحدد فقط</string>
     <string name="queue_action_title">إجراءات تعارض قائمة الانتظار</string>
     <string name="queue_action_choose">حدد إجراء تعارض قائمة الانتظار الافتراضي</string>
     <string name="queue_action_ask_title">اسأل في كل مرة</string>
@@ -1504,10 +1499,6 @@
     <string name="settings_queue_action_dialog_desc_ask">اسأل قبل استبدال قائمة الانتظار أو توسيعها لتشغيل المسار الفردي.</string>
     <string name="settings_queue_action_dialog_desc_always">قم دائمًا بإضافة تشغيل المسار الفردي إلى قائمة الانتظار.</string>
     <string name="settings_queue_action_dialog_desc_disabled">يتم تعطيله أثناء تشغيل قائمة الانتظار البديلة أثناء التشغيل.</string>
-    <string name="settings_playlist_action_dialog">مسار قائمة التشغيل اضغط على الإجراء</string>
-    <string name="settings_playlist_action_play_all">تحميل قائمة التشغيل الكاملة في قائمة الانتظار</string>
-    <string name="settings_playlist_action_play_one">تشغيل المسار المحدد فقط</string>
-    <string name="settings_playlist_action_ask">اسأل في كل مرة</string>
     <string name="settings_list_queue_action_dialog">إجراء قائمة انتظار التشغيل</string>
     <string name="settings_list_queue_action_replace">استبدال قائمة الانتظار واللعب</string>
     <string name="settings_list_queue_action_ask">اسأل في كل مرة</string>
@@ -1837,7 +1828,6 @@
     <string name="settings_queue_hours_format_desc">الساعات بتنسيق زمني</string>
     <string name="settings_queue_persistence">قائمة الانتظار المستمرة</string>
     <string name="settings_queue_persistence_desc">استعادة قائمة الانتظار عند البداية</string>
-    <string name="settings_playlist_action_dialog_desc">السلوك عند النقر على مسار داخل قائمة التشغيل</string>
     <string name="settings_list_queue_action_dialog_desc">سلوك إجراءات تشغيل القائمة عندما تكون قائمة الانتظار نشطة</string>
     <!-- Experimental Features Search Strings -->
     <string name="settings_exp_festive_theme">موضوع احتفالي</string>

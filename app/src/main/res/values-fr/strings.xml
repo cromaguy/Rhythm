@@ -797,12 +797,6 @@
     <string name="library_reorder_tabs">Réorganiser les onglets pour personnaliser votre expérience de bibliothèque</string>
     <string name="external_services_desc">Choisissez les services en ligne utilisés par Rhythm pour les paroles, les photos d\'artistes et les pochettes d\'album animées. Désactivez ceux dont vous n\'avez pas besoin afin de réduire la consommation de données.</string>
     <string name="lyrics_source_priority_title">Priorité à la source des paroles</string>
-    <string name="playlist_action_title">Action de clic sur la liste de lecture</string>
-    <string name="playlist_action_desc">Comportement par défaut pour les taps de playlist</string>
-    <string name="playlist_action_load_title">Charger la playlist entière</string>
-    <string name="playlist_action_load_desc">Charger la liste de lecture et démarrer à partir de la piste sélectionnée</string>
-    <string name="playlist_action_single_title">Jouez uniquement cette chanson</string>
-    <string name="playlist_action_single_desc">Lire uniquement la piste sélectionnée</string>
     <string name="queue_action_title">Action de conflit de file d\'attente</string>
     <string name="queue_action_choose">Sélectionnez l\'action de conflit de file d\'attente par défaut</string>
     <string name="queue_action_ask_title">Demandez à chaque fois</string>
@@ -1463,10 +1457,6 @@
     <string name="settings_queue_action_dialog_desc_ask">Renseignez-vous avant de remplacer ou d\'étendre la file d\'attente pour la lecture d\'une seule piste.</string>
     <string name="settings_queue_action_dialog_desc_always">Ajoutez toujours la lecture d\'une seule piste à la file d\'attente.</string>
     <string name="settings_queue_action_dialog_desc_disabled">Désactivé lorsque Remplacer la file d\'attente lors de la lecture est activé.</string>
-    <string name="settings_playlist_action_dialog">Action Tap sur la piste de la liste de lecture</string>
-    <string name="settings_playlist_action_play_all">Charger la playlist complète dans la file d\'attente</string>
-    <string name="settings_playlist_action_play_one">Lire uniquement la piste sélectionnée</string>
-    <string name="settings_playlist_action_ask">Demandez à chaque fois</string>
     <string name="settings_list_queue_action_dialog">Action de la liste de lecture de la file d\'attente</string>
     <string name="settings_list_queue_action_replace">Remplacer la file d\'attente et jouer</string>
     <string name="settings_list_queue_action_ask">Demandez à chaque fois</string>
@@ -1784,7 +1774,6 @@
     <string name="settings_queue_hours_format_desc">Heures au format heure</string>
     <string name="settings_queue_persistence">Persister la file d\'attente</string>
     <string name="settings_queue_persistence_desc">Restaurer la file d\'attente au démarrage</string>
-    <string name="settings_playlist_action_dialog_desc">Comportement lorsque vous appuyez sur une piste dans une liste de lecture</string>
     <string name="settings_list_queue_action_dialog_desc">Comportement des actions de lecture de liste lorsque la file d\'attente est active</string>
     <!-- Experimental Features Search Strings -->
     <string name="settings_exp_festive_theme">Thème festif</string>

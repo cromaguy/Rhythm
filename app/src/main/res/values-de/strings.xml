@@ -509,7 +509,8 @@
     <string name="onboarding_library_3">Erweiterte Anzeige- und Sortieroptionen verfügbar unter Einstellungen &gt; Bibliothekseinstellungen</string>
     <string name="onboarding_library_4">Standard-Wiedergabelisten (zuletzt hinzugefügt, am häufigsten gespielt) können unter „Einstellungen“ &gt; „Wiedergabelisten“ umgeschaltet werden</string>
     <string name="onboarding_theme_title">Machen Sie Rhythm zu Ihrem</string>
-    <string name="onboarding_theme_desc">Passen Sie das Erscheinungsbild von Rhythm an Ihren Stil an. Wählen Sie Ihr Systemdesign, Ihre Schriftart oder Material Ihre dynamischen Farben (Android 12+).</string>    <string name="onboarding_more_tuner">Weitere Anpassungsmöglichkeiten in den Einstellungen</string>
+    <string name="onboarding_theme_desc">Passen Sie das Erscheinungsbild von Rhythm an Ihren Stil an. Wählen Sie Ihr Systemdesign, Ihre Schriftart oder Material Ihre dynamischen Farben (Android 12+).</string>
+    <string name="onboarding_more_tuner">Weitere Anpassungsmöglichkeiten in den Einstellungen</string>
     <string name="onboarding_tuner_1">Benutzerdefinierte Farbschemata und Farbextraktion für Albumcover</string>
     <string name="onboarding_tuner_2">Schriftartanpassung und Typografieeinstellungen</string>
     <string name="onboarding_tuner_3">Erweiterte Designoptionen verfügbar unter Einstellungen &gt; Designanpassung</string>
@@ -783,12 +784,6 @@
     <string name="library_reorder_tabs">Ordnen Sie die Registerkarten neu an, um Ihr Bibliothekserlebnis anzupassen</string>
     <string name="external_services_desc">Steuern Sie, welche externen API-Dienste aktiv sind, um Ihr Musikerlebnis zu verbessern. Schalten Sie Dienste ein/aus, um die Datennutzung und Funktionalität zu verwalten.</string>
     <string name="lyrics_source_priority_title">Songtext-Quellenpriorität</string>
-    <string name="playlist_action_title">Wiedergabeliste Tippen Sie auf Aktion</string>
-    <string name="playlist_action_desc">Standardverhalten für Playlist-Tips</string>
-    <string name="playlist_action_load_title">Gesamte Playlist laden</string>
-    <string name="playlist_action_load_desc">Wiedergabeliste laden und mit dem ausgewählten Titel beginnen</string>
-    <string name="playlist_action_single_title">Spielen Sie nur dieses Lied</string>
-    <string name="playlist_action_single_desc">Nur ausgewählten Titel abspielen</string>
     <string name="queue_action_title">Warteschlangenkonfliktaktion</string>
     <string name="queue_action_choose">Wählen Sie die Standardaktion für Warteschlangenkonflikte aus</string>
     <string name="queue_action_ask_title">Fragen Sie jedes Mal</string>
@@ -1448,10 +1443,6 @@
     <string name="settings_queue_action_dialog_desc_ask">Fragen Sie nach, bevor Sie die Warteschlange für Einzeltitelwiedergabe ersetzen oder erweitern.</string>
     <string name="settings_queue_action_dialog_desc_always">Fügen Sie der Warteschlange immer die Einzeltitelwiedergabe hinzu.</string>
     <string name="settings_queue_action_dialog_desc_disabled">Deaktiviert, wenn „Warteschlange bei Wiedergabe ersetzen“ aktiviert ist.</string>
-    <string name="settings_playlist_action_dialog">Playlist-Track-Tap-Aktion</string>
-    <string name="settings_playlist_action_play_all">Vollständige Wiedergabeliste in die Warteschlange laden</string>
-    <string name="settings_playlist_action_play_one">Nur ausgewählten Titel abspielen</string>
-    <string name="settings_playlist_action_ask">Fragen Sie jedes Mal</string>
     <string name="settings_list_queue_action_dialog">Aktion „Wiedergabewarteschlange auflisten“</string>
     <string name="settings_list_queue_action_replace">Ersetzen Sie die Warteschlange und spielen Sie</string>
     <string name="settings_list_queue_action_ask">Fragen Sie jedes Mal</string>
@@ -1765,7 +1756,6 @@
     <string name="settings_queue_hours_format_desc">Stunden im Zeitformat</string>
     <string name="settings_queue_persistence">Persist-Warteschlange</string>
     <string name="settings_queue_persistence_desc">Warteschlange beim Start wiederherstellen</string>
-    <string name="settings_playlist_action_dialog_desc">Verhalten beim Tippen auf einen Titel innerhalb einer Playlist</string>
     <string name="settings_list_queue_action_dialog_desc">Verhalten für Listen-Play-Aktionen, wenn die Warteschlange aktiv ist</string>
     <!-- Experimental Features Search Strings -->
     <string name="settings_exp_festive_theme">Festliches Thema</string>

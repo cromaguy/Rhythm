@@ -535,7 +535,8 @@
     <string name="onboarding_library_3">Розширені параметри відображення та сортування доступні в меню «Налаштування» &gt; «Налаштування бібліотеки».</string>
     <string name="onboarding_library_4">Списки відтворення за умовчанням (Нещодавно додані, Найчастіше відтворювані) можна перемикати в меню «Налаштування» &gt; «Списки відтворення»</string>
     <string name="onboarding_theme_title">Зробіть Rhythm своїм</string>
-    <string name="onboarding_theme_desc">Персоналізуйте зовнішність Rhythm відповідно до свого стилю. Виберіть тему системи, шрифт або Material динамічні кольори (Android 12+).</string>    <string name="onboarding_more_tuner">Більше налаштувань у налаштуваннях</string>
+    <string name="onboarding_theme_desc">Персоналізуйте зовнішність Rhythm відповідно до свого стилю. Виберіть тему системи, шрифт або Material динамічні кольори (Android 12+).</string>
+    <string name="onboarding_more_tuner">Більше налаштувань у налаштуваннях</string>
     <string name="onboarding_tuner_1">Користувальницькі колірні схеми та виділення кольорів обкладинок альбомів</string>
     <string name="onboarding_tuner_2">Налаштування шрифтів і типографіки</string>
     <string name="onboarding_tuner_3">Розширені параметри теми доступні в меню «Налаштування» &gt; «Налаштування теми».</string>
@@ -809,12 +810,6 @@
     <string name="library_reorder_tabs">Змініть порядок вкладок, щоб налаштувати бібліотеку</string>
     <string name="external_services_desc">Контролюйте, які зовнішні служби API активні, щоб покращити ваш музичний досвід. Увімкніть/вимкніть служби, щоб керувати використанням даних і функціями.</string>
     <string name="lyrics_source_priority_title">Пріоритет джерела тексту</string>
-    <string name="playlist_action_title">Список відтворення Натисніть Дія</string>
-    <string name="playlist_action_desc">Поведінка за замовчуванням для натискань списку відтворення</string>
-    <string name="playlist_action_load_title">Завантажити весь список відтворення</string>
-    <string name="playlist_action_load_desc">Завантажити список відтворення та почати з вибраного треку</string>
-    <string name="playlist_action_single_title">Відтворити лише цю пісню</string>
-    <string name="playlist_action_single_desc">Відтворення лише вибраного треку</string>
     <string name="queue_action_title">Дія щодо конфлікту черги</string>
     <string name="queue_action_choose">Виберіть дію за умовчанням у разі конфлікту черги</string>
     <string name="queue_action_ask_title">Запитуйте щоразу</string>
@@ -1476,10 +1471,6 @@
     <string name="settings_queue_action_dialog_desc_ask">Запитувати перед заміною або розширенням черги для відтворення однієї доріжки.</string>
     <string name="settings_queue_action_dialog_desc_always">Завжди додавайте в чергу відтворення однієї доріжки.</string>
     <string name="settings_queue_action_dialog_desc_disabled">Вимкнено, коли ввімкнено функцію заміни черги у Play.</string>
-    <string name="settings_playlist_action_dialog">Дія дотику доріжки списку відтворення</string>
-    <string name="settings_playlist_action_play_all">Завантажити повний список відтворення в чергу</string>
-    <string name="settings_playlist_action_play_one">Відтворення лише вибраного треку</string>
-    <string name="settings_playlist_action_ask">Запитуйте кожного разу</string>
     <string name="settings_list_queue_action_dialog">Дія черги відтворення списку</string>
     <string name="settings_list_queue_action_replace">Замініть чергу та грайте</string>
     <string name="settings_list_queue_action_ask">Запитуйте кожного разу</string>
@@ -1801,7 +1792,6 @@
     <string name="settings_queue_hours_format_desc">Години у форматі часу</string>
     <string name="settings_queue_persistence">Черга збереження</string>
     <string name="settings_queue_persistence_desc">Відновити чергу під час запуску</string>
-    <string name="settings_playlist_action_dialog_desc">Поведінка під час торкання доріжки в списку відтворення</string>
     <string name="settings_list_queue_action_dialog_desc">Поведінка для дій відтворення списку, коли черга активна</string>
     <!-- Experimental Features Search Strings -->
     <string name="settings_exp_festive_theme">Святкова тема</string>

@@ -797,12 +797,6 @@
     <string name="library_reorder_tabs">Reordena las pestañas para personalizar tu experiencia en la biblioteca</string>
     <string name="external_services_desc">Controla qué servicios externos API están activos para mejorar tu experiencia musical. Active o desactive los servicios para administrar el uso y la funcionalidad de los datos.</string>
     <string name="lyrics_source_priority_title">Prioridad de fuente de letras</string>
-    <string name="playlist_action_title">Acción de tocar la lista de reproducción</string>
-    <string name="playlist_action_desc">Comportamiento predeterminado para toques en listas de reproducción</string>
-    <string name="playlist_action_load_title">Cargar lista de reproducción completa</string>
-    <string name="playlist_action_load_desc">Cargar lista de reproducción y comenzar desde la pista seleccionada</string>
-    <string name="playlist_action_single_title">Reproduce solo esta canción</string>
-    <string name="playlist_action_single_desc">Reproducir solo la pista seleccionada</string>
     <string name="queue_action_title">Acción de conflicto de cola</string>
     <string name="queue_action_choose">Seleccione la acción de conflicto de cola predeterminada</string>
     <string name="queue_action_ask_title">Pregunta cada vez</string>
@@ -1463,10 +1457,6 @@
     <string name="settings_queue_action_dialog_desc_ask">Pregunte antes de reemplazar o ampliar la cola para reproducción de una sola pista.</string>
     <string name="settings_queue_action_dialog_desc_always">Agregue siempre la reproducción de una sola pista a la cola.</string>
     <string name="settings_queue_action_dialog_desc_disabled">Deshabilitado mientras Reemplazar cola en reproducción está activado.</string>
-    <string name="settings_playlist_action_dialog">Acción de tocar la pista de la lista de reproducción</string>
-    <string name="settings_playlist_action_play_all">Cargar lista de reproducción completa en la cola</string>
-    <string name="settings_playlist_action_play_one">Reproducir solo la pista seleccionada</string>
-    <string name="settings_playlist_action_ask">Pregunta cada vez</string>
     <string name="settings_list_queue_action_dialog">Acción de lista de cola de reproducción</string>
     <string name="settings_list_queue_action_replace">Reemplazar cola y reproducir</string>
     <string name="settings_list_queue_action_ask">Pregunta cada vez</string>
@@ -1784,7 +1774,6 @@
     <string name="settings_queue_hours_format_desc">Horas en formato de hora</string>
     <string name="settings_queue_persistence">Cola persistente</string>
     <string name="settings_queue_persistence_desc">Restaurar cola al inicio</string>
-    <string name="settings_playlist_action_dialog_desc">Comportamiento al tocar una pista dentro de una lista de reproducción</string>
     <string name="settings_list_queue_action_dialog_desc">Comportamiento de las acciones de reproducción de lista cuando la cola está activa</string>
     <!-- Experimental Features Search Strings -->
     <string name="settings_exp_festive_theme">Tema festivo</string>

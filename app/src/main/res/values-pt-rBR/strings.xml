@@ -522,7 +522,8 @@
     <string name="onboarding_library_3">Opções avançadas de exibição e classificação disponíveis em Configurações &gt; Configurações da biblioteca</string>
     <string name="onboarding_library_4">As listas de reprodução padrão (adicionadas recentemente, mais reproduzidas) podem ser alternadas em Configurações &gt; Listas de reprodução</string>
     <string name="onboarding_theme_title">Faça Rhythm seu</string>
-    <string name="onboarding_theme_desc">Personalize a aparência de Rhythm para combinar com seu estilo. Escolha o tema do sistema, fonte ou Material Suas cores dinâmicas (Android 12+).</string>    <string name="onboarding_more_tuner">Mais personalização nas configurações</string>
+    <string name="onboarding_theme_desc">Personalize a aparência de Rhythm para combinar com seu estilo. Escolha o tema do sistema, fonte ou Material Suas cores dinâmicas (Android 12+).</string>
+    <string name="onboarding_more_tuner">Mais personalização nas configurações</string>
     <string name="onboarding_tuner_1">Esquemas de cores personalizados e extração de cores da arte do álbum</string>
     <string name="onboarding_tuner_2">Personalização de fontes e configurações de tipografia</string>
     <string name="onboarding_tuner_3">Opções avançadas de tema disponíveis em Configurações &gt; Personalização do tema</string>
@@ -796,12 +797,6 @@
     <string name="library_reorder_tabs">Reordene as guias para personalizar sua experiência na biblioteca</string>
     <string name="external_services_desc">Controle quais serviços API externos estão ativos para aprimorar sua experiência musical. Ative/desative serviços para gerenciar o uso e a funcionalidade de dados.</string>
     <string name="lyrics_source_priority_title">Prioridade da fonte das letras</string>
-    <string name="playlist_action_title">Ação de toque na lista de reprodução</string>
-    <string name="playlist_action_desc">Comportamento padrão para toques na playlist</string>
-    <string name="playlist_action_load_title">Carregue a playlist inteira</string>
-    <string name="playlist_action_load_desc">Carregue a lista de reprodução e comece a partir da faixa selecionada</string>
-    <string name="playlist_action_single_title">Toque apenas esta música</string>
-    <string name="playlist_action_single_desc">Reproduzir apenas a faixa selecionada</string>
     <string name="queue_action_title">Ação de conflito de fila</string>
     <string name="queue_action_choose">Selecione a ação de conflito de fila padrão</string>
     <string name="queue_action_ask_title">Pergunte sempre</string>
@@ -1462,10 +1457,6 @@
     <string name="settings_queue_action_dialog_desc_ask">Pergunte antes de substituir ou estender a fila para reprodução de faixa única.</string>
     <string name="settings_queue_action_dialog_desc_always">Sempre adicione reprodução de faixa única à fila.</string>
     <string name="settings_queue_action_dialog_desc_disabled">Desativado enquanto Substituir fila ao reproduzir estiver ativado.</string>
-    <string name="settings_playlist_action_dialog">Ação de toque na faixa da lista de reprodução</string>
-    <string name="settings_playlist_action_play_all">Carregar a playlist completa na fila</string>
-    <string name="settings_playlist_action_play_one">Reproduzir apenas a faixa selecionada</string>
-    <string name="settings_playlist_action_ask">Pergunte sempre</string>
     <string name="settings_list_queue_action_dialog">Listar ação da fila de reprodução</string>
     <string name="settings_list_queue_action_replace">Substitua a fila e jogue</string>
     <string name="settings_list_queue_action_ask">Pergunte sempre</string>
@@ -1783,7 +1774,6 @@
     <string name="settings_queue_hours_format_desc">Horas em formato de hora</string>
     <string name="settings_queue_persistence">Persistir na fila</string>
     <string name="settings_queue_persistence_desc">Restaurar fila no início</string>
-    <string name="settings_playlist_action_dialog_desc">Comportamento ao tocar em uma faixa dentro de uma playlist</string>
     <string name="settings_list_queue_action_dialog_desc">Comportamento para ações de reprodução de lista quando a fila está ativa</string>
     <!-- Experimental Features Search Strings -->
     <string name="settings_exp_festive_theme">Tema festivo</string>

@@ -496,7 +496,8 @@
     <string name="onboarding_library_3">설정 &gt; 라이브러리 설정에서 고급 표시 및 정렬 옵션을 사용할 수 있습니다.</string>
     <string name="onboarding_library_4">기본 재생 목록(최근 추가, 최다 재생)은 설정 &gt; 재생 목록에서 전환할 수 있습니다.</string>
     <string name="onboarding_theme_title">Rhythm을(를) 당신의 것으로 만드세요</string>
-    <string name="onboarding_theme_desc">귀하의 스타일에 맞게 Rhythm의 외모를 맞춤화하세요. 시스템 테마, 글꼴 또는 Material 동적 색상(Android 12+)을 선택하세요.</string>    <string name="onboarding_more_tuner">설정의 추가 사용자 정의</string>
+    <string name="onboarding_theme_desc">귀하의 스타일에 맞게 Rhythm의 외모를 맞춤화하세요. 시스템 테마, 글꼴 또는 Material 동적 색상(Android 12+)을 선택하세요.</string>
+    <string name="onboarding_more_tuner">설정의 추가 사용자 정의</string>
     <string name="onboarding_tuner_1">사용자 정의 색 구성표 및 앨범 아트 색상 추출</string>
     <string name="onboarding_tuner_2">글꼴 사용자 정의 및 타이포그래피 설정</string>
     <string name="onboarding_tuner_3">설정 &gt; 테마 사용자 정의에서 고급 테마 옵션을 사용할 수 있습니다.</string>
@@ -770,12 +771,6 @@
     <string name="library_reorder_tabs">탭을 재정렬하여 도서관 경험을 맞춤화하세요</string>
     <string name="external_services_desc">음악 경험을 향상시키기 위해 활성화된 외부 API 서비스를 제어합니다. 서비스를 켜거나 끄고 데이터 사용량 및 기능을 관리하세요.</string>
     <string name="lyrics_source_priority_title">가사 소스 우선순위</string>
-    <string name="playlist_action_title">재생 목록 탭 동작</string>
-    <string name="playlist_action_desc">재생 목록 탭의 기본 동작</string>
-    <string name="playlist_action_load_title">전체 재생목록 로드</string>
-    <string name="playlist_action_load_desc">재생 목록 로드 및 선택한 트랙부터 시작</string>
-    <string name="playlist_action_single_title">이 노래만 재생</string>
-    <string name="playlist_action_single_desc">선택한 트랙만 재생</string>
     <string name="queue_action_title">대기열 충돌 조치</string>
     <string name="queue_action_choose">기본 대기열 충돌 작업 선택</string>
     <string name="queue_action_ask_title">매번 물어보세요</string>
@@ -1434,10 +1429,6 @@
     <string name="settings_queue_action_dialog_desc_ask">단일 트랙 재생을 위해 대기열을 교체하거나 확장하기 전에 문의하세요.</string>
     <string name="settings_queue_action_dialog_desc_always">항상 단일 트랙 재생을 대기열에 추가하세요.</string>
     <string name="settings_queue_action_dialog_desc_disabled">재생 시 대기열 교체가 켜져 있는 동안에는 비활성화됩니다.</string>
-    <string name="settings_playlist_action_dialog">재생 목록 트랙 탭 동작</string>
-    <string name="settings_playlist_action_play_all">전체 재생 목록을 대기열에 로드</string>
-    <string name="settings_playlist_action_play_one">선택한 트랙만 재생</string>
-    <string name="settings_playlist_action_ask">매번 물어보세요</string>
     <string name="settings_list_queue_action_dialog">재생 대기열 작업 나열</string>
     <string name="settings_list_queue_action_replace">대기열 교체 및 플레이</string>
     <string name="settings_list_queue_action_ask">매번 물어보세요</string>
@@ -1747,7 +1738,6 @@
     <string name="settings_queue_hours_format_desc">시간 형식의 시간</string>
     <string name="settings_queue_persistence">지속 대기열</string>
     <string name="settings_queue_persistence_desc">시작 시 대기열 복원</string>
-    <string name="settings_playlist_action_dialog_desc">재생 목록 내 트랙을 탭할 때의 동작</string>
     <string name="settings_list_queue_action_dialog_desc">대기열이 활성화된 경우 목록 재생 작업의 동작</string>
     <!-- Experimental Features Search Strings -->
     <string name="settings_exp_festive_theme">축제 테마</string>

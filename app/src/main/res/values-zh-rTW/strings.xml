@@ -771,12 +771,6 @@
     <string name="library_reorder_tabs">重新排序分頁標籤以自訂您的音樂庫體驗</string>
     <string name="external_services_desc">控制哪些外部 API 服務處於活動狀態以增強您的音樂體驗。開啟/關閉服務以管理資料使用和功能。</string>
     <string name="lyrics_source_priority_title">歌詞來源優先</string>
-    <string name="playlist_action_title">播放清單點選操作</string>
-    <string name="playlist_action_desc">播放清單點擊的預設行為</string>
-    <string name="playlist_action_load_title">載入整個播放清單</string>
-    <string name="playlist_action_load_desc">載入播放清單並從選定的曲目開始</string>
-    <string name="playlist_action_single_title">只播放這首歌</string>
-    <string name="playlist_action_single_desc">僅播放選定的曲目</string>
     <string name="queue_action_title">佇列衝突操作</string>
     <string name="queue_action_choose">選擇預設的佇列衝突處置</string>
     <string name="queue_action_ask_title">每次詢問</string>
@@ -1435,10 +1429,6 @@
     <string name="settings_queue_action_dialog_desc_ask">曲目播放時，在替換或延伸播放佇列以前先詢問。</string>
     <string name="settings_queue_action_dialog_desc_always">始終將單軌播放新增至佇列。</string>
     <string name="settings_queue_action_dialog_desc_disabled">當「播放時替換佇列」開啟時停用。</string>
-    <string name="settings_playlist_action_dialog">播放清單追蹤點擊操作</string>
-    <string name="settings_playlist_action_play_all">將完整播放清單載入到佇列中</string>
-    <string name="settings_playlist_action_play_one">僅播放選定的曲目</string>
-    <string name="settings_playlist_action_ask">每次詢問</string>
     <string name="settings_list_queue_action_dialog">列出播放佇列操作</string>
     <string name="settings_list_queue_action_replace">替換佇列並播放</string>
     <string name="settings_list_queue_action_ask">每次詢問</string>
@@ -1748,7 +1738,6 @@
     <string name="settings_queue_hours_format_desc">時間格式的小時</string>
     <string name="settings_queue_persistence">永久佇列</string>
     <string name="settings_queue_persistence_desc">啟動時恢復佇列</string>
-    <string name="settings_playlist_action_dialog_desc">點選播放清單中的曲目時的行為</string>
     <string name="settings_list_queue_action_dialog_desc">佇列處於活動狀態時清單播放操作的行為</string>
     <!-- Experimental Features Search Strings -->
     <string name="settings_exp_festive_theme">節慶主題</string>

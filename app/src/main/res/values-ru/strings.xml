@@ -535,7 +535,8 @@
     <string name="onboarding_library_3">Расширенные параметры отображения и сортировки доступны в «Настройки» &gt; «Настройки библиотеки»</string>
     <string name="onboarding_library_4">Плейлисты по умолчанию («Недавно добавленные», «Самые воспроизводимые») можно переключать в «Настройки» &gt; «Списки воспроизведения»</string>
     <string name="onboarding_theme_title">Сделайте Rhythm своим</string>
-    <string name="onboarding_theme_desc">Настройте внешний вид Rhythm в соответствии со своим стилем. Выберите системную тему, шрифт или динамические цвета Material You (Android 12+).</string>    <string name="onboarding_more_tuner">Дополнительные настройки в настройках</string>
+    <string name="onboarding_theme_desc">Настройте внешний вид Rhythm в соответствии со своим стилем. Выберите системную тему, шрифт или динамические цвета Material You (Android 12+).</string>
+    <string name="onboarding_more_tuner">Дополнительные настройки в настройках</string>
     <string name="onboarding_tuner_1">Пользовательские цветовые схемы и извлечение цвета обложек альбомов</string>
     <string name="onboarding_tuner_2">Кастомизация шрифта и настройки типографики</string>
     <string name="onboarding_tuner_3">Расширенные параметры темы доступны в «Настройки» &gt; «Настройка темы»</string>
@@ -809,12 +810,6 @@
     <string name="library_reorder_tabs">Измените порядок вкладок, чтобы персонализировать работу с библиотекой</string>
     <string name="external_services_desc">Управляйте активными внешними службами API, чтобы улучшить качество прослушивания музыки. Включайте и выключайте службы для управления использованием данных и функциональностью.</string>
     <string name="lyrics_source_priority_title">Приоритет источника текстов</string>
-    <string name="playlist_action_title">Действие по касанию плейлиста</string>
-    <string name="playlist_action_desc">Поведение по умолчанию для касаний плейлиста</string>
-    <string name="playlist_action_load_title">Загрузить весь плейлист</string>
-    <string name="playlist_action_load_desc">Загрузите плейлист и начните с выбранного трека</string>
-    <string name="playlist_action_single_title">Воспроизвести только эту песню</string>
-    <string name="playlist_action_single_desc">Воспроизведение только выбранного трека</string>
     <string name="queue_action_title">Действие при конфликте очереди</string>
     <string name="queue_action_choose">Выберите действие по умолчанию при конфликте очереди</string>
     <string name="queue_action_ask_title">Спрашивайте каждый раз</string>
@@ -1476,10 +1471,6 @@
     <string name="settings_queue_action_dialog_desc_ask">Спросите, прежде чем заменять или расширять очередь для воспроизведения одной дорожки.</string>
     <string name="settings_queue_action_dialog_desc_always">Всегда добавляйте в очередь воспроизведение одной дорожки.</string>
     <string name="settings_queue_action_dialog_desc_disabled">Отключено, пока включена функция «Заменить очередь при воспроизведении».</string>
-    <string name="settings_playlist_action_dialog">Действие по касанию трека в списке воспроизведения</string>
-    <string name="settings_playlist_action_play_all">Загрузить полный плейлист в очередь</string>
-    <string name="settings_playlist_action_play_one">Воспроизведение только выбранного трека</string>
-    <string name="settings_playlist_action_ask">Спрашивать каждый раз</string>
     <string name="settings_list_queue_action_dialog">Действие списка воспроизведения в очереди</string>
     <string name="settings_list_queue_action_replace">Заменить очередь и играть</string>
     <string name="settings_list_queue_action_ask">Спрашивать каждый раз</string>
@@ -1801,7 +1792,6 @@
     <string name="settings_queue_hours_format_desc">Часы в формате времени</string>
     <string name="settings_queue_persistence">Сохранить очередь</string>
     <string name="settings_queue_persistence_desc">Восстановление очереди при запуске</string>
-    <string name="settings_playlist_action_dialog_desc">Поведение при нажатии на трек внутри плейлиста</string>
     <string name="settings_list_queue_action_dialog_desc">Поведение действий воспроизведения списка, когда очередь активна</string>
     <!-- Experimental Features Search Strings -->
     <string name="settings_exp_festive_theme">Праздничная тема</string>

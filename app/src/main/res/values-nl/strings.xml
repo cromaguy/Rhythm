@@ -509,7 +509,8 @@
     <string name="onboarding_library_3">Geavanceerde weergave- en sorteeropties beschikbaar in Instellingen &gt; Bibliotheekinstellingen</string>
     <string name="onboarding_library_4">Standaardafspeellijsten (recent toegevoegd, meest afgespeeld) kunnen worden gewijzigd in Instellingen &gt; Afspeellijsten</string>
     <string name="onboarding_theme_title">Maak Rhythm van jou</string>
-    <string name="onboarding_theme_desc">Personaliseer het uiterlijk van Rhythm zodat het bij jouw stijl past. Kies uw systeemthema, lettertype of Material uw dynamische kleuren (Android 12+).</string>    <string name="onboarding_more_tuner">Meer maatwerk in Instellingen</string>
+    <string name="onboarding_theme_desc">Personaliseer het uiterlijk van Rhythm zodat het bij jouw stijl past. Kies uw systeemthema, lettertype of Material uw dynamische kleuren (Android 12+).</string>
+    <string name="onboarding_more_tuner">Meer maatwerk in Instellingen</string>
     <string name="onboarding_tuner_1">Aangepaste kleurenschema\'s en kleurextractie van albumhoezen</string>
     <string name="onboarding_tuner_2">Lettertypeaanpassing en typografie-instellingen</string>
     <string name="onboarding_tuner_3">Geavanceerde thema-opties beschikbaar in Instellingen &gt; Thema-aanpassing</string>
@@ -783,12 +784,6 @@
     <string name="library_reorder_tabs">Herschik de tabbladen om uw bibliotheekervaring aan te passen</string>
     <string name="external_services_desc">Bepaal welke externe API-services actief zijn om uw muziekervaring te verbeteren. Schakel services in/uit om het datagebruik en de functionaliteit te beheren.</string>
     <string name="lyrics_source_priority_title">Prioriteit van songtekstbron</string>
-    <string name="playlist_action_title">Afspeellijst Tikactie</string>
-    <string name="playlist_action_desc">Standaardgedrag voor het tikken op afspeellijsten</string>
-    <string name="playlist_action_load_title">Laad de volledige afspeellijst</string>
-    <string name="playlist_action_load_desc">Laad de afspeellijst en begin vanaf het geselecteerde nummer</string>
-    <string name="playlist_action_single_title">Speel alleen dit nummer</string>
-    <string name="playlist_action_single_desc">Speel alleen het geselecteerde nummer af</string>
     <string name="queue_action_title">Actie wachtrijconflict</string>
     <string name="queue_action_choose">Selecteer de standaardwachtrijconflictactie</string>
     <string name="queue_action_ask_title">Vraag het elke keer</string>
@@ -1448,10 +1443,6 @@
     <string name="settings_queue_action_dialog_desc_ask">Vraag dit voordat u de wachtrij voor het afspelen van één nummer vervangt of verlengt.</string>
     <string name="settings_queue_action_dialog_desc_always">Voeg altijd single-track play toe aan de wachtrij.</string>
     <string name="settings_queue_action_dialog_desc_disabled">Uitgeschakeld terwijl Wachtrij vervangen bij afspelen is ingeschakeld.</string>
-    <string name="settings_playlist_action_dialog">Afspeellijst Track Tikactie</string>
-    <string name="settings_playlist_action_play_all">Laad de volledige afspeellijst in de wachtrij</string>
-    <string name="settings_playlist_action_play_one">Speel alleen het geselecteerde nummer af</string>
-    <string name="settings_playlist_action_ask">Vraag het elke keer</string>
     <string name="settings_list_queue_action_dialog">Actie lijst afspeelwachtrij</string>
     <string name="settings_list_queue_action_replace">Vervang wachtrij en speel af</string>
     <string name="settings_list_queue_action_ask">Vraag het elke keer</string>
@@ -1765,7 +1756,6 @@
     <string name="settings_queue_hours_format_desc">Uren in tijdformaat</string>
     <string name="settings_queue_persistence">Wachtrij aanhouden</string>
     <string name="settings_queue_persistence_desc">Wachtrij bij starten herstellen</string>
-    <string name="settings_playlist_action_dialog_desc">Gedrag bij het tikken op een nummer in een afspeellijst</string>
     <string name="settings_list_queue_action_dialog_desc">Gedrag voor lijstafspeelacties wanneer wachtrij actief is</string>
     <!-- Experimental Features Search Strings -->
     <string name="settings_exp_festive_theme">Feestelijk thema</string>

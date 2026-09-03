@@ -496,7 +496,8 @@
     <string name="onboarding_library_3">Tùy chọn hiển thị và sắp xếp nâng cao có sẵn trong Cài đặt &gt; Cài đặt thư viện</string>
     <string name="onboarding_library_4">Bạn có thể bật tắt danh sách phát mặc định (Được thêm gần đây, Được phát nhiều nhất) trong Cài đặt &gt; Danh sách phát</string>
     <string name="onboarding_theme_title">Biến Rhythm thành của bạn</string>
-    <string name="onboarding_theme_desc">Cá nhân hóa ngoại hình của Rhythm để phù hợp với phong cách của bạn. Chọn chủ đề hệ thống, phông chữ hoặc Material Màu động của bạn (Android 12+).</string>    <string name="onboarding_more_tuner">Tùy chỉnh thêm trong Cài đặt</string>
+    <string name="onboarding_theme_desc">Cá nhân hóa ngoại hình của Rhythm để phù hợp với phong cách của bạn. Chọn chủ đề hệ thống, phông chữ hoặc Material Màu động của bạn (Android 12+).</string>
+    <string name="onboarding_more_tuner">Tùy chỉnh thêm trong Cài đặt</string>
     <string name="onboarding_tuner_1">Phối màu tùy chỉnh và trích xuất màu ảnh bìa album</string>
     <string name="onboarding_tuner_2">Cài đặt tùy chỉnh phông chữ và kiểu chữ</string>
     <string name="onboarding_tuner_3">Tùy chọn chủ đề nâng cao có sẵn trong Cài đặt &gt; Tùy chỉnh chủ đề</string>
@@ -770,12 +771,6 @@
     <string name="library_reorder_tabs">Sắp xếp lại các tab để tùy chỉnh trải nghiệm thư viện của bạn</string>
     <string name="external_services_desc">Kiểm soát những dịch vụ API bên ngoài nào đang hoạt động để nâng cao trải nghiệm âm nhạc của bạn. Bật/tắt dịch vụ để quản lý chức năng và mức sử dụng dữ liệu.</string>
     <string name="lyrics_source_priority_title">Ưu tiên nguồn lời bài hát</string>
-    <string name="playlist_action_title">Danh sách phát Hành động nhấn</string>
-    <string name="playlist_action_desc">Hành vi mặc định cho các thao tác nhấn vào danh sách phát</string>
-    <string name="playlist_action_load_title">Tải toàn bộ danh sách phát</string>
-    <string name="playlist_action_load_desc">Tải danh sách phát và bắt đầu từ bản nhạc đã chọn</string>
-    <string name="playlist_action_single_title">Chỉ phát bài hát này</string>
-    <string name="playlist_action_single_desc">Chỉ phát bản nhạc đã chọn</string>
     <string name="queue_action_title">Hành động xung đột hàng đợi</string>
     <string name="queue_action_choose">Chọn hành động xung đột hàng đợi mặc định</string>
     <string name="queue_action_ask_title">Hỏi mỗi lần</string>
@@ -1434,10 +1429,6 @@
     <string name="settings_queue_action_dialog_desc_ask">Hãy hỏi trước khi thay thế hoặc kéo dài hàng đợi để phát một bản nhạc.</string>
     <string name="settings_queue_action_dialog_desc_always">Luôn thêm bản nhạc đơn vào hàng đợi.</string>
     <string name="settings_queue_action_dialog_desc_disabled">Bị tắt khi Hàng đợi thay thế trên Play đang bật.</string>
-    <string name="settings_playlist_action_dialog">Danh sách phát Theo dõi Hành động Nhấn</string>
-    <string name="settings_playlist_action_play_all">Tải toàn bộ danh sách phát vào hàng đợi</string>
-    <string name="settings_playlist_action_play_one">Chỉ phát bản nhạc đã chọn</string>
-    <string name="settings_playlist_action_ask">Hỏi mỗi lần</string>
     <string name="settings_list_queue_action_dialog">Danh sách hành động xếp hàng chơi</string>
     <string name="settings_list_queue_action_replace">Thay thế hàng đợi và chơi</string>
     <string name="settings_list_queue_action_ask">Hỏi mỗi lần</string>
@@ -1747,7 +1738,6 @@
     <string name="settings_queue_hours_format_desc">Giờ ở định dạng thời gian</string>
     <string name="settings_queue_persistence">Hàng đợi kiên trì</string>
     <string name="settings_queue_persistence_desc">Khôi phục hàng đợi khi bắt đầu</string>
-    <string name="settings_playlist_action_dialog_desc">Hành vi khi nhấn vào một bản nhạc trong danh sách phát</string>
     <string name="settings_list_queue_action_dialog_desc">Hành vi của danh sách Hành động phát khi hàng đợi đang hoạt động</string>
     <!-- Experimental Features Search Strings -->
     <string name="settings_exp_festive_theme">Chủ đề lễ hội</string>

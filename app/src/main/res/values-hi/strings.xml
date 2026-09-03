@@ -509,7 +509,8 @@
     <string name="onboarding_library_3">सेटिंग्स &gt; लाइब्रेरी सेटिंग्स में उन्नत प्रदर्शन और सॉर्टिंग विकल्प उपलब्ध हैं</string>
     <string name="onboarding_library_4">डिफ़ॉल्ट प्लेलिस्ट (हाल ही में जोड़े गए, सबसे ज्यादा खेले गए) को सेटिंग्स&gt; प्लेलिस्ट में टॉगल किया जा सकता है</string>
     <string name="onboarding_theme_title">Rhythm को अपना बनाएं</string>
-    <string name="onboarding_theme_desc">अपनी शैली से मेल खाने के लिए Rhythm के स्वरूप को वैयक्तिकृत करें। अपना सिस्टम थीम, फ़ॉन्ट, या Material आप गतिशील रंग (Android 12+) चुनें।</string>    <string name="onboarding_more_tuner">सेटिंग्स में अधिक अनुकूलन</string>
+    <string name="onboarding_theme_desc">अपनी शैली से मेल खाने के लिए Rhythm के स्वरूप को वैयक्तिकृत करें। अपना सिस्टम थीम, फ़ॉन्ट, या Material आप गतिशील रंग (Android 12+) चुनें।</string>
+    <string name="onboarding_more_tuner">सेटिंग्स में अधिक अनुकूलन</string>
     <string name="onboarding_tuner_1">कस्टम रंग योजनाएं और एल्बम कला रंग निष्कर्षण</string>
     <string name="onboarding_tuner_2">फ़ॉन्ट अनुकूलन और टाइपोग्राफी सेटिंग्स</string>
     <string name="onboarding_tuner_3">उन्नत थीम विकल्प सेटिंग्स &gt; थीम अनुकूलन में उपलब्ध हैं</string>
@@ -783,12 +784,6 @@
     <string name="library_reorder_tabs">अपने पुस्तकालय अनुभव को अनुकूलित करने के लिए टैब को पुन: व्यवस्थित करें</string>
     <string name="external_services_desc">नियंत्रित करें कि आपके संगीत अनुभव को बेहतर बनाने के लिए कौन सी बाहरी API सेवाएँ सक्रिय हैं। डेटा उपयोग और कार्यक्षमता को प्रबंधित करने के लिए सेवाओं को चालू/बंद करें।</string>
     <string name="lyrics_source_priority_title">गीत स्रोत प्राथमिकता</string>
-    <string name="playlist_action_title">प्लेलिस्ट टैप एक्शन</string>
-    <string name="playlist_action_desc">प्लेलिस्ट टैप के लिए डिफ़ॉल्ट व्यवहार</string>
-    <string name="playlist_action_load_title">संपूर्ण प्लेलिस्ट लोड करें</string>
-    <string name="playlist_action_load_desc">प्लेलिस्ट लोड करें और चयनित ट्रैक से प्रारंभ करें</string>
-    <string name="playlist_action_single_title">केवल यही गाना बजाएँ</string>
-    <string name="playlist_action_single_desc">केवल चयनित ट्रैक ही चलाएं</string>
     <string name="queue_action_title">कतार संघर्ष कार्रवाई</string>
     <string name="queue_action_choose">डिफ़ॉल्ट कतार संघर्ष कार्रवाई का चयन करें</string>
     <string name="queue_action_ask_title">हर बार पूछें</string>
@@ -1448,10 +1443,6 @@
     <string name="settings_queue_action_dialog_desc_ask">सिंगल-ट्रैक प्ले के लिए कतार को बदलने या बढ़ाने से पहले पूछें।</string>
     <string name="settings_queue_action_dialog_desc_always">हमेशा कतार में सिंगल-ट्रैक प्ले जोड़ें।</string>
     <string name="settings_queue_action_dialog_desc_disabled">प्ले पर रिप्लेस क्यू चालू होने पर अक्षम।</string>
-    <string name="settings_playlist_action_dialog">प्लेलिस्ट ट्रैक टैप एक्शन</string>
-    <string name="settings_playlist_action_play_all">पूरी प्लेलिस्ट को कतार में लोड करें</string>
-    <string name="settings_playlist_action_play_one">केवल चयनित ट्रैक ही चलाएं</string>
-    <string name="settings_playlist_action_ask">हर बार पूछें</string>
     <string name="settings_list_queue_action_dialog">लिस्ट प्ले क्यू एक्शन</string>
     <string name="settings_list_queue_action_replace">कतार बदलें और खेलें</string>
     <string name="settings_list_queue_action_ask">हर बार पूछें</string>
@@ -1765,7 +1756,6 @@
     <string name="settings_queue_hours_format_desc">समय प्रारूप में घंटे</string>
     <string name="settings_queue_persistence">कतार बनी रहे</string>
     <string name="settings_queue_persistence_desc">प्रारंभ पर कतार बहाल करें</string>
-    <string name="settings_playlist_action_dialog_desc">प्लेलिस्ट के अंदर किसी ट्रैक को टैप करते समय व्यवहार</string>
     <string name="settings_list_queue_action_dialog_desc">सूची के लिए व्यवहार, कतार सक्रिय होने पर क्रियाएं करें</string>
     <!-- Experimental Features Search Strings -->
     <string name="settings_exp_festive_theme">उत्सव थीम</string>

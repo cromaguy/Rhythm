@@ -535,7 +535,8 @@
     <string name="onboarding_library_3">Zaawansowane opcje wyświetlania i sortowania dostępne w Ustawieniach &gt; Ustawienia biblioteki</string>
     <string name="onboarding_library_4">Domyślne listy odtwarzania (ostatnio dodane, najczęściej odtwarzane) można przełączać w Ustawieniach &gt; Listy odtwarzania</string>
     <string name="onboarding_theme_title">Spraw, by Rhythm był Twój</string>
-    <string name="onboarding_theme_desc">Spersonalizuj wygląd Rhythm, aby dopasować go do swojego stylu. Wybierz motyw systemu, czcionkę lub dynamiczne kolory (Android 12+).</string>    <string name="onboarding_more_tuner">Więcej personalizacji w Ustawieniach</string>
+    <string name="onboarding_theme_desc">Spersonalizuj wygląd Rhythm, aby dopasować go do swojego stylu. Wybierz motyw systemu, czcionkę lub dynamiczne kolory (Android 12+).</string>
+    <string name="onboarding_more_tuner">Więcej personalizacji w Ustawieniach</string>
     <string name="onboarding_tuner_1">Niestandardowe schematy kolorów i ekstrakcja kolorów okładek albumów</string>
     <string name="onboarding_tuner_2">Dostosowywanie czcionek i ustawienia typografii</string>
     <string name="onboarding_tuner_3">Zaawansowane opcje motywu dostępne w Ustawieniach &gt; Dostosowywanie motywu</string>
@@ -809,12 +810,6 @@
     <string name="library_reorder_tabs">Zmień kolejność kart, aby dostosować sposób korzystania z biblioteki</string>
     <string name="external_services_desc">Kontroluj, które zewnętrzne usługi API są aktywne, aby poprawić Twoje wrażenia muzyczne. Włącz/wyłącz usługi, aby zarządzać wykorzystaniem danych i funkcjonalnością.</string>
     <string name="lyrics_source_priority_title">Priorytet źródła tekstów</string>
-    <string name="playlist_action_title">Lista odtwarzania Kliknij Akcja</string>
-    <string name="playlist_action_desc">Domyślne zachowanie w przypadku kliknięć w listę odtwarzania</string>
-    <string name="playlist_action_load_title">Załaduj całą listę odtwarzania</string>
-    <string name="playlist_action_load_desc">Załaduj listę odtwarzania i rozpocznij od wybranego utworu</string>
-    <string name="playlist_action_single_title">Odtwórz tylko ten utwór</string>
-    <string name="playlist_action_single_desc">Odtwórz tylko wybrany utwór</string>
     <string name="queue_action_title">Akcja dotycząca konfliktu w kolejce</string>
     <string name="queue_action_choose">Wybierz domyślną akcję konfliktu kolejki</string>
     <string name="queue_action_ask_title">Pytaj za każdym razem</string>
@@ -1476,10 +1471,6 @@
     <string name="settings_queue_action_dialog_desc_ask">Zapytaj przed wymianą lub przedłużeniem kolejki w celu odtwarzania pojedynczego utworu.</string>
     <string name="settings_queue_action_dialog_desc_always">Zawsze dodawaj do kolejki odtwarzanie pojedynczego utworu.</string>
     <string name="settings_queue_action_dialog_desc_disabled">Wyłączone, gdy włączona jest opcja Zamień kolejkę podczas odtwarzania.</string>
-    <string name="settings_playlist_action_dialog">Lista odtwarzania Utwór Dotknij akcji</string>
-    <string name="settings_playlist_action_play_all">Załaduj pełną playlistę do kolejki</string>
-    <string name="settings_playlist_action_play_one">Odtwórz tylko wybrany utwór</string>
-    <string name="settings_playlist_action_ask">Pytaj za każdym razem</string>
     <string name="settings_list_queue_action_dialog">Lista akcji w kolejce odtwarzania</string>
     <string name="settings_list_queue_action_replace">Zamień kolejkę i graj</string>
     <string name="settings_list_queue_action_ask">Pytaj za każdym razem</string>
@@ -1801,7 +1792,6 @@
     <string name="settings_queue_hours_format_desc">Godziny w formacie czasu</string>
     <string name="settings_queue_persistence">Utrzymuj kolejkę</string>
     <string name="settings_queue_persistence_desc">Przywróć kolejkę na starcie</string>
-    <string name="settings_playlist_action_dialog_desc">Zachowanie po dotknięciu utworu na liście odtwarzania</string>
     <string name="settings_list_queue_action_dialog_desc">Zachowanie listy Odtwórz akcje, gdy kolejka jest aktywna</string>
     <!-- Experimental Features Search Strings -->
     <string name="settings_exp_festive_theme">Motyw świąteczny</string>

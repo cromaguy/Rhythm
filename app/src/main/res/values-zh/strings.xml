@@ -771,12 +771,6 @@
     <string name="library_reorder_tabs">重新排序选项卡以定制您的音乐库体验</string>
     <string name="external_services_desc">控制哪些外部 API 服务处于活动状态以增强您的音乐体验。打开/关闭服务以管理数据使用和功能。</string>
     <string name="lyrics_source_priority_title">歌词优先来源</string>
-    <string name="playlist_action_title">播放列表点击操作</string>
-    <string name="playlist_action_desc">点击播放列表的默认行为</string>
-    <string name="playlist_action_load_title">加载整个播放列表</string>
-    <string name="playlist_action_load_desc">加载播放列表并从选定的曲目开始</string>
-    <string name="playlist_action_single_title">只播放这首歌</string>
-    <string name="playlist_action_single_desc">仅播放选定的曲目</string>
     <string name="queue_action_title">队列冲突操作</string>
     <string name="queue_action_choose">选择默认队列冲突动作</string>
     <string name="queue_action_ask_title">每次都询问</string>
@@ -1435,10 +1429,6 @@
     <string name="settings_queue_action_dialog_desc_ask">在更换或扩展单轨播放队列之前询问。</string>
     <string name="settings_queue_action_dialog_desc_always">始终将单轨播放添加到队列中。</string>
     <string name="settings_queue_action_dialog_desc_disabled">当“播放时替换队列”打开时禁用。</string>
-    <string name="settings_playlist_action_dialog">播放列表跟踪点击操作</string>
-    <string name="settings_playlist_action_play_all">将完整播放列表加载到队列中</string>
-    <string name="settings_playlist_action_play_one">仅播放选定的曲目</string>
-    <string name="settings_playlist_action_ask">每次都询问</string>
     <string name="settings_list_queue_action_dialog">列出播放队列操作</string>
     <string name="settings_list_queue_action_replace">替换队列并播放</string>
     <string name="settings_list_queue_action_ask">每次都询问</string>
@@ -1748,7 +1738,6 @@
     <string name="settings_queue_hours_format_desc">时间格式的小时</string>
     <string name="settings_queue_persistence">持久队列</string>
     <string name="settings_queue_persistence_desc">启动时恢复队列</string>
-    <string name="settings_playlist_action_dialog_desc">点击播放列表中的曲目时的行为</string>
     <string name="settings_list_queue_action_dialog_desc">队列处于活动状态时列表播放操作的行为</string>
     <!-- Experimental Features Search Strings -->
     <string name="settings_exp_festive_theme">节日主题</string>

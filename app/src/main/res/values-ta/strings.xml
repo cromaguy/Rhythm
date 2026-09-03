@@ -509,7 +509,8 @@
     <string name="onboarding_library_3">மேம்பட்ட காட்சி மற்றும் வரிசையாக்க விருப்பங்கள் அமைப்புகள் &gt; நூலக அமைப்புகளில் கிடைக்கும்</string>
     <string name="onboarding_library_4">இயல்புநிலை பிளேலிஸ்ட்கள் (சமீபத்தில் சேர்க்கப்பட்டவை, அதிகம் விளையாடியவை) அமைப்புகள் &gt; பிளேலிஸ்ட்களில் மாற்றலாம்</string>
     <string name="onboarding_theme_title">Rhythm ஐ உங்களுடையதாக ஆக்குங்கள்</string>
-    <string name="onboarding_theme_desc">உங்கள் பாணியைப் பொருத்த Rhythm இன் தோற்றத்தைத் தனிப்பயனாக்குங்கள். உங்கள் சிஸ்டம் தீம், எழுத்துரு அல்லது Material யூ டைனமிக் நிறங்களை (Android 12+) தேர்வு செய்யவும்.</string>    <string name="onboarding_more_tuner">அமைப்புகளில் மேலும் தனிப்பயனாக்கம்</string>
+    <string name="onboarding_theme_desc">உங்கள் பாணியைப் பொருத்த Rhythm இன் தோற்றத்தைத் தனிப்பயனாக்குங்கள். உங்கள் சிஸ்டம் தீம், எழுத்துரு அல்லது Material யூ டைனமிக் நிறங்களை (Android 12+) தேர்வு செய்யவும்.</string>
+    <string name="onboarding_more_tuner">அமைப்புகளில் மேலும் தனிப்பயனாக்கம்</string>
     <string name="onboarding_tuner_1">தனிப்பயன் வண்ணத் திட்டங்கள் மற்றும் ஆல்பம் கலை வண்ணப் பிரித்தெடுத்தல்</string>
     <string name="onboarding_tuner_2">எழுத்துரு தனிப்பயனாக்கம் மற்றும் அச்சுக்கலை அமைப்புகள்</string>
     <string name="onboarding_tuner_3">மேம்பட்ட தீம் விருப்பத்தேர்வுகள் அமைப்புகள் &gt; தீம் தனிப்பயனாக்கம்</string>
@@ -783,12 +784,6 @@
     <string name="library_reorder_tabs">உங்கள் நூலக அனுபவத்தைத் தனிப்பயனாக்க தாவல்களை மறுவரிசைப்படுத்தவும்</string>
     <string name="external_services_desc">உங்கள் இசை அனுபவத்தை மேம்படுத்த எந்த வெளிப்புற API சேவைகள் செயலில் உள்ளன என்பதைக் கட்டுப்படுத்தவும். தரவு பயன்பாடு மற்றும் செயல்பாட்டை நிர்வகிக்க, சேவைகளை இயக்க/முடக்கு.</string>
     <string name="lyrics_source_priority_title">பாடல் வரிகள் மூல முன்னுரிமை</string>
-    <string name="playlist_action_title">பிளேலிஸ்ட் டேப் ஆக்ஷன்</string>
-    <string name="playlist_action_desc">பிளேலிஸ்ட் தட்டுகளுக்கான இயல்புநிலை நடத்தை</string>
-    <string name="playlist_action_load_title">முழு பிளேலிஸ்ட்டையும் ஏற்றவும்</string>
-    <string name="playlist_action_load_desc">பிளேலிஸ்ட்டை ஏற்றி, தேர்ந்தெடுக்கப்பட்ட டிராக்கிலிருந்து தொடங்கவும்</string>
-    <string name="playlist_action_single_title">இந்தப் பாடலை மட்டும் இசைக்கவும்</string>
-    <string name="playlist_action_single_desc">தேர்ந்தெடுத்த டிராக்கை மட்டும் இயக்கவும்</string>
     <string name="queue_action_title">வரிசை மோதல் நடவடிக்கை</string>
     <string name="queue_action_choose">இயல்புநிலை வரிசை மோதல் செயலைத் தேர்ந்தெடுக்கவும்</string>
     <string name="queue_action_ask_title">ஒவ்வொரு முறையும் கேளுங்கள்</string>
@@ -1448,10 +1443,6 @@
     <string name="settings_queue_action_dialog_desc_ask">சிங்கிள்-டிராக் விளையாட்டிற்கான வரிசையை மாற்றும் அல்லது நீட்டிக்கும் முன் கேளுங்கள்.</string>
     <string name="settings_queue_action_dialog_desc_always">எப்பொழுதும் ஒற்றை-தட நாடகத்தை வரிசையில் சேர்க்கவும்.</string>
     <string name="settings_queue_action_dialog_desc_disabled">Play இல் Replace வரிசை இயக்கத்தில் இருக்கும்போது முடக்கப்பட்டது.</string>
-    <string name="settings_playlist_action_dialog">பிளேலிஸ்ட் ட்ராக் டேப் ஆக்ஷன்</string>
-    <string name="settings_playlist_action_play_all">முழு பிளேலிஸ்ட்டையும் வரிசையில் ஏற்றவும்</string>
-    <string name="settings_playlist_action_play_one">தேர்ந்தெடுத்த டிராக்கை மட்டும் இயக்கவும்</string>
-    <string name="settings_playlist_action_ask">ஒவ்வொரு முறையும் கேளுங்கள்</string>
     <string name="settings_list_queue_action_dialog">பட்டியல் ப்ளே க்யூ ஆக்ஷன்</string>
     <string name="settings_list_queue_action_replace">வரிசையை மாற்றி விளையாடு</string>
     <string name="settings_list_queue_action_ask">ஒவ்வொரு முறையும் கேளுங்கள்</string>
@@ -1765,7 +1756,6 @@
     <string name="settings_queue_hours_format_desc">நேர வடிவத்தில் மணிநேரம்</string>
     <string name="settings_queue_persistence">தொடர் வரிசை</string>
     <string name="settings_queue_persistence_desc">தொடக்கத்தில் வரிசையை மீட்டெடுக்கவும்</string>
-    <string name="settings_playlist_action_dialog_desc">ஒரு பிளேலிஸ்ட்டில் ஒரு தடத்தைத் தட்டும்போது நடத்தை</string>
     <string name="settings_list_queue_action_dialog_desc">பட்டியலுக்கான நடத்தை வரிசை செயலில் இருக்கும்போது செயல்களை இயக்கவும்</string>
     <!-- Experimental Features Search Strings -->
     <string name="settings_exp_festive_theme">பண்டிகை தீம்</string>
