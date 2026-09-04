@@ -182,7 +182,13 @@ class StreamingNotificationManager(private val context: Context) {
     /**
      * Update sync progress notification
      */
-    fun updateSyncProgress(songCount: Int, albumCount: Int, artistCount: Int) {
+    fun updateSyncProgress(
+        songCount: Int,
+        albumCount: Int,
+        artistCount: Int,
+        current: Int = 0,
+        total: Int = 0
+    ) {
         val notification = NotificationCompat.Builder(context, STREAMING_CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(context.getString(R.string.notification_streaming_sync_title))
@@ -199,7 +205,11 @@ class StreamingNotificationManager(private val context: Context) {
             .setCategory(NotificationCompat.CATEGORY_PROGRESS)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setOngoing(true)
-            .setProgress(100, 50, false) // Determinate if we can calculate
+            .setProgress(
+                if (total > 0) total else 100,
+                if (total > 0) current else 0,
+                total <= 0
+            )
             .setOnlyAlertOnce(true)
             .setSilent(true)
             .build()

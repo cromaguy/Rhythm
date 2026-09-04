@@ -75,6 +75,9 @@ class StreamingMusicViewModel(application: Application) : AndroidViewModel(appli
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
+    private val _syncProgress = MutableStateFlow(StreamingSyncProgress())
+    val syncProgress: StateFlow<StreamingSyncProgress> = _syncProgress.asStateFlow()
+
     private val _hasLoadedHomeContent = MutableStateFlow(false)
     val hasLoadedHomeContent: StateFlow<Boolean> = _hasLoadedHomeContent.asStateFlow()
 
@@ -490,6 +493,10 @@ class StreamingMusicViewModel(application: Application) : AndroidViewModel(appli
         viewModelScope.launch {
             _isLoading.value = true
             _hasLoadedLibrary.value = false
+            val serviceName = getSourceTypeName(_currentService.value)
+            _syncProgress.value = StreamingSyncProgress(isSyncing = true)
+            notificationManager.notifySyncStarted(serviceName)
+            var syncSuccess = false
             
             try {
                 if (!checkAndSyncAuthentication()) {
@@ -501,9 +508,30 @@ class StreamingMusicViewModel(application: Application) : AndroidViewModel(appli
                     return@launch
                 }
 
-                // Pull the provider catalog first so artist/album counts come from actual songs.
+                // 1. First fetch artists directly from provider so they are available immediately
                 try {
-                    repository.syncCatalog(limit = 5_000)
+                    repository.syncArtists()
+                } catch (e: Exception) {
+                    Log.e("StreamingMusicViewModel", "syncArtists failed", e)
+                }
+
+                // 2. Pull the provider catalog with live progress callbacks
+                try {
+                    repository.syncCatalog(limit = 5_000) { current, total, songCount ->
+                        _syncProgress.value = StreamingSyncProgress(
+                            isSyncing = true,
+                            current = current,
+                            total = total,
+                            songsCount = songCount
+                        )
+                        notificationManager.updateSyncProgress(
+                            songCount = songCount,
+                            albumCount = current,
+                            artistCount = total,
+                            current = current,
+                            total = total
+                        )
+                    }
                 } catch (e: Exception) {
                     Log.e("StreamingMusicViewModel", "syncCatalog failed", e)
                 }
@@ -583,9 +611,18 @@ class StreamingMusicViewModel(application: Application) : AndroidViewModel(appli
                 } else if (catalogArtists.isNotEmpty()) {
                     catalogArtists
                 } else {
-                    repository.searchArtists("")
-                        .filterIsInstance<StreamingArtist>()
-                        .distinctBy { it.id }
+                    val directArtists = try {
+                        repository.syncArtists()
+                    } catch (_: Exception) {
+                        emptyList()
+                    }
+                    if (directArtists.isNotEmpty()) {
+                        directArtists
+                    } else {
+                        repository.searchArtists("")
+                            .filterIsInstance<StreamingArtist>()
+                            .distinctBy { it.id }
+                    }
                 }
 
                 val resolvedPlaylists = when {
@@ -614,9 +651,15 @@ class StreamingMusicViewModel(application: Application) : AndroidViewModel(appli
                 if (_featuredPlaylists.value.isEmpty()) {
                     _featuredPlaylists.value = resolvedPlaylists
                 }
+                syncSuccess = true
             } catch (e: Exception) {
                 _error.value = "Failed to load library: ${e.message}"
+                notificationManager.notifySyncFailed(e.message)
             } finally {
+                _syncProgress.value = StreamingSyncProgress(isSyncing = false)
+                if (syncSuccess) {
+                    notificationManager.notifySyncComplete(_allSongs.value.size, serviceName)
+                }
                 _hasLoadedLibrary.value = true
                 _isLoading.value = false
             }
@@ -1631,3 +1674,13 @@ data class StreamingSearchResults(
     val totalCount: Int
         get() = songs.size + albums.size + artists.size + playlists.size
 }
+
+/**
+ * Live library sync progress state.
+ */
+data class StreamingSyncProgress(
+    val isSyncing: Boolean = false,
+    val current: Int = 0,
+    val total: Int = 0,
+    val songsCount: Int = 0
+)

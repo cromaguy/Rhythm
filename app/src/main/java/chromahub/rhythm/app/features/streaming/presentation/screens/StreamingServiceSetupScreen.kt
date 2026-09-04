@@ -296,12 +296,29 @@ fun StreamingServiceSetupScreen(
                             ),
                             shape = RoundedCornerShape(18.dp)
                         ) {
-                            Text(
-                                text = error.orEmpty(),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onErrorContainer,
-                                modifier = Modifier.padding(16.dp)
-                            )
+                            Column(modifier = Modifier.padding(16.dp)) {
+                                Text(
+                                    text = error.orEmpty(),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onErrorContainer
+                                )
+                                val isDomainUrl = remember(serverUrl) {
+                                    val clean = serverUrl.trim().lowercase()
+                                        .removePrefix("http://")
+                                        .removePrefix("https://")
+                                        .substringBefore(":")
+                                        .substringBefore("/")
+                                    clean.isNotEmpty() && !clean.matches(Regex("^(\\d{1,3}\\.){3}\\d{1,3}$")) && clean != "localhost"
+                                }
+                                if (isDomainUrl) {
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Text(
+                                        text = stringResource(id = R.string.streaming_service_setup_lan_hairpin_tip),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.85f)
+                                    )
+                                }
+                            }
                         }
                     }
                 }

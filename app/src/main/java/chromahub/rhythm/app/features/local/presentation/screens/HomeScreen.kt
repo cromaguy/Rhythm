@@ -772,6 +772,7 @@ private fun StreamingHomeBody(
     val rawNewReleases = vm?.newReleases?.collectAsState()?.value ?: emptyList()
     val rawArtists = vm?.followedArtists?.collectAsState()?.value ?: emptyList()
     val rawPlaylists = vm?.savedPlaylists?.collectAsState()?.value ?: emptyList()
+    val syncProgress = vm?.syncProgress?.collectAsState()?.value ?: chromahub.rhythm.app.features.streaming.presentation.viewmodel.StreamingSyncProgress()
 
     val streamingSongById = remember(rawAllSongs, rawRecommendations, rawNewReleases) {
         (rawAllSongs + rawRecommendations + rawNewReleases.flatMap { it.tracks })
@@ -861,22 +862,45 @@ private fun StreamingHomeBody(
                 .padding(horizontal = horizontalPadding),
             verticalArrangement = Arrangement.spacedBy(sectionSpacing)
         ) {
-        when {
-            isLoading && songs.isEmpty() -> {
-                StreamingServiceStateCard(
-                    title = context.getString(R.string.streaming_home_no_content_title),
-                    subtitle = context.getString(R.string.streaming_home_widget_empty_hint),
-                    showProgressIndicator = true
+        if (syncProgress.isSyncing) {
+            val syncSubtitle = if (syncProgress.total > 0) {
+                context.getString(
+                    R.string.streaming_sync_progress_format,
+                    syncProgress.current,
+                    syncProgress.total,
+                    syncProgress.songsCount
                 )
+            } else if (syncProgress.songsCount > 0) {
+                "${syncProgress.songsCount} songs found"
+            } else {
+                context.getString(R.string.streaming_home_widget_empty_hint)
             }
+            StreamingServiceStateCard(
+                title = context.getString(R.string.streaming_sync_progress_title, serviceName),
+                subtitle = syncSubtitle,
+                icon = MaterialSymbolIcon("sync", filled = true),
+                iconContainerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f),
+                iconTint = MaterialTheme.colorScheme.primary,
+                showProgressIndicator = true
+            )
+        } else {
+            when {
+                isLoading && songs.isEmpty() -> {
+                    StreamingServiceStateCard(
+                        title = context.getString(R.string.streaming_home_no_content_title),
+                        subtitle = context.getString(R.string.streaming_home_widget_empty_hint),
+                        showProgressIndicator = true
+                    )
+                }
 
-            errorMessage != null && songs.isEmpty() -> {
-                StreamingServiceStateCard(
-                    title = errorMessage,
-                    subtitle = context.getString(R.string.streaming_home_widget_empty_hint),
-                    actionText = context.getString(R.string.streaming_service_setup_reconnect),
-                    onAction = { onConfigureService(serviceName) }
-                )
+                errorMessage != null && songs.isEmpty() -> {
+                    StreamingServiceStateCard(
+                        title = errorMessage,
+                        subtitle = context.getString(R.string.streaming_home_widget_empty_hint),
+                        actionText = context.getString(R.string.streaming_service_setup_reconnect),
+                        onAction = { onConfigureService(serviceName) }
+                    )
+                }
             }
         }
 

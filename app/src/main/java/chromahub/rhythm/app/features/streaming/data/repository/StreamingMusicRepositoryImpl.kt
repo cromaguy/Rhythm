@@ -1067,7 +1067,10 @@ class StreamingMusicRepositoryImpl(
 
     override suspend fun getSongById(id: String): PlayableItem? = songCache[id]
 
-    override suspend fun syncCatalog(limit: Int): List<StreamingSong> {
+    override suspend fun syncCatalog(
+        limit: Int,
+        onProgress: ((current: Int, total: Int, songsCount: Int) -> Unit)?
+    ): List<StreamingSong> {
         if (appSettings.offlineMode.value) {
             val downloadedList = downloadedSongsMap.values.toList()
             replaceCatalog(downloadedList)
@@ -1079,11 +1082,11 @@ class StreamingMusicRepositoryImpl(
             return emptyList()
         }
 
-        // Sync artist images from provider first so that derived catalog artists pick them up
-        syncArtistArtworkCache(serviceId)
+        // Sync artists directly from provider first so all artists appear immediately
+        syncArtists()
 
         val providerSongs = when (serviceId) {
-            StreamingServiceId.SUBSONIC -> subsonicClient.fetchLibrarySongs(limit)
+            StreamingServiceId.SUBSONIC -> subsonicClient.fetchLibrarySongs(limit, onProgress)
             StreamingServiceId.JELLYFIN -> jellyfinClient.fetchLibrarySongs(limit)
             else -> Result.success(emptyList())
         }.getOrElse { emptyList() }
@@ -1240,7 +1243,9 @@ class StreamingMusicRepositoryImpl(
             albumsFlow.value = buildAlbumItems(serviceId, songs)
         }
         val rawArtists = buildArtistItems(serviceId, songs)
-        artistsFlow.value = rawArtists
+        if (artistsFlow.value.isEmpty() || rawArtists.size >= artistsFlow.value.size) {
+            artistsFlow.value = rawArtists
+        }
         playlistsFlow.value = emptyList()
 
         updateLikedSongsFlow()
@@ -1884,15 +1889,14 @@ class StreamingMusicRepositoryImpl(
         artistsFlow.value = enrichedArtists
     }
 
-    private suspend fun syncArtistArtworkCache(serviceId: String) {
-        try {
+    override suspend fun syncArtists(): List<StreamingArtist> {
+        val serviceId = activeServiceId()
+        if (!isServiceConnected(serviceId)) return emptyList()
+
+        return try {
             val providerArtists = when (serviceId) {
-                StreamingServiceId.SUBSONIC -> {
-                    subsonicClient.getArtists().getOrNull()
-                }
-                StreamingServiceId.JELLYFIN -> {
-                    jellyfinClient.searchArtists("", limit = 1000).getOrNull()
-                }
+                StreamingServiceId.SUBSONIC -> subsonicClient.getArtists().getOrNull()
+                StreamingServiceId.JELLYFIN -> jellyfinClient.searchArtists("", limit = 1000).getOrNull()
                 else -> null
             }
             providerArtists?.forEach { artist ->
@@ -1900,10 +1904,23 @@ class StreamingMusicRepositoryImpl(
                     artistArtworkCache[normalizeKey(artist.name)] = artist.artworkUrl
                 }
             }
-            Log.d("StreamingMusicRepo", "Synced ${providerArtists?.size ?: 0} artist images from provider")
+            if (!providerArtists.isNullOrEmpty()) {
+                val directArtists = providerArtists.map { mapProviderArtist(serviceId, it) }
+                artistsFlow.value = directArtists
+                updateFollowedArtistsFlow()
+                Log.d("StreamingMusicRepo", "Synced ${directArtists.size} artists directly from provider")
+                directArtists
+            } else {
+                emptyList()
+            }
         } catch (e: Exception) {
-            Log.w("StreamingMusicRepo", "Failed to sync artist artwork cache", e)
+            Log.w("StreamingMusicRepo", "Failed to sync artists from provider", e)
+            emptyList()
         }
+    }
+
+    private suspend fun syncArtistArtworkCache(serviceId: String) {
+        syncArtists()
     }
 
     private companion object {

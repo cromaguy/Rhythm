@@ -1484,6 +1484,9 @@
     <string name="streaming_service_setup_reconnect">Reconnect</string>
     <string name="streaming_service_setup_disconnect">Disconnect</string>
     <string name="streaming_service_setup_connected_as">Connected as %1$s</string>
+    <string name="streaming_service_setup_lan_hairpin_tip">Tip: If connecting to a domain name fails on local Wi-Fi but works on mobile data, your router may lack NAT loopback (Hairpin NAT). Try using your server\'s local IP address (e.g. 192.168.x.x) or configure local DNS.</string>
+    <string name="streaming_sync_progress_format">Syncing library: %1$d / %2$d items (%3$d songs)</string>
+    <string name="streaming_sync_progress_title">Syncing with %1$s…</string>
     <string name="streaming_home_selected_service_unavailable">Selected service is not connected</string>
     <string name="streaming_home_connect_selected_service">Connect %1$s to load Home and Search.</string>
     <string name="streaming_home_widget_recommended_empty">Nothing to discover yet</string>
