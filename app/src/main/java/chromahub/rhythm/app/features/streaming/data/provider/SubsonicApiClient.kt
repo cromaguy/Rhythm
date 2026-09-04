@@ -712,6 +712,9 @@ class SubsonicApiClient(context: Context) {
         if (id.isBlank()) return null
 
         val coverArtId = song.optString("coverArt").takeIf { it.isNotBlank() }
+            ?: song.optString("albumId").takeIf { it.isNotBlank() }
+            ?: song.optString("parent").takeIf { it.isNotBlank() }
+            ?: id
         
         val rawTrack = song.optString("track", "")
         val trackNum = song.optInt("track", 0).takeIf { it > 0 }

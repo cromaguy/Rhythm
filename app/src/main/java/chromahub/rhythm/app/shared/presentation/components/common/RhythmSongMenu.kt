@@ -62,7 +62,10 @@ fun RhythmSongMenuContent(
     onGoToArtist: (() -> Unit)? = null,
     onAddToBlacklist: (() -> Unit)? = null,
     onDeleteSong: (() -> Unit)? = null,
-    onShare: (() -> Unit)? = null
+    onShare: (() -> Unit)? = null,
+    isDownloaded: Boolean? = null,
+    isDownloading: Boolean = false,
+    onToggleDownload: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
     val haptic = LocalHapticFeedback.current
@@ -147,6 +150,28 @@ fun RhythmSongMenuContent(
                     icon = RhythmIcons.AddToPlaylist,
                     iconBgColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f),
                     iconTint = MaterialTheme.colorScheme.onPrimaryContainer,
+                    onClick = action
+                )
+            )
+        }
+        onToggleDownload?.let { action ->
+            val downloaded = isDownloaded == true
+            add(
+                SongMenuItem(
+                    title = when {
+                        isDownloading -> stringResource(R.string.streaming_downloading)
+                        downloaded -> stringResource(R.string.streaming_remove_download)
+                        else -> stringResource(R.string.streaming_download)
+                    },
+                    icon = when {
+                        isDownloading -> MaterialSymbolIcon("sync")
+                        downloaded -> MaterialSymbolIcon("download_done", filled = true)
+                        else -> MaterialSymbolIcon("download")
+                    },
+                    iconBgColor = if (downloaded) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f)
+                        else MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.6f),
+                    iconTint = if (downloaded) MaterialTheme.colorScheme.onPrimaryContainer
+                        else MaterialTheme.colorScheme.onSecondaryContainer,
                     onClick = action
                 )
             )

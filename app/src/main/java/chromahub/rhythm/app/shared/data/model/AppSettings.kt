@@ -6181,12 +6181,13 @@ private val _autoCheckForUpdates = MutableStateFlow(prefs.getBoolean(KEY_AUTO_CH
     }
 
     private val defaultStreamingHomeSectionOrder = listOf(
-        "DISCOVER", "RECENTLY_PLAYED", "ARTISTS", "PLAYLISTS", "RHYTHM_GUARD", "RHYTHM_STATS", "NEW_RELEASES"
+        "DISCOVER", "RECENTLY_PLAYED", "ARTISTS", "RHYTHM_GUARD", "RHYTHM_STATS", "NEW_RELEASES"
     )
 
     private fun normalizeStreamingHomeSectionOrder(rawSections: List<String>): List<String> {
         val normalized = rawSections
             .map(String::trim)
+            .filter { it != "PLAYLISTS" && it.isNotBlank() }
             .map {
                 when (it) {
                     "STATS" -> "RHYTHM_STATS"
@@ -6195,7 +6196,6 @@ private val _autoCheckForUpdates = MutableStateFlow(prefs.getBoolean(KEY_AUTO_CH
                     else -> it
                 }
             }
-            .filter { it.isNotBlank() }
 
         return (normalized + defaultStreamingHomeSectionOrder).distinct()
     }

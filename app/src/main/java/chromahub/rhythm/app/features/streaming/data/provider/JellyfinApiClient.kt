@@ -162,7 +162,7 @@ class JellyfinApiClient(context: Context) {
                     val totalRecordCount = response.optInt("TotalRecordCount", -1)
                     startIndex += pageArtists.size
 
-                    if (totalRecordCount >= 0 && startIndex >= totalRecordCount) break
+                    if (totalRecordCount > 0 && startIndex >= totalRecordCount) break
                     val limitParam = params["limit"]?.toIntOrNull().orZero()
                     if (limitParam > 0 && pageArtists.size < limitParam) break
                 }
@@ -875,6 +875,11 @@ class JellyfinApiClient(context: Context) {
                     }
                 }
 
+                val songAlbumId = song.optString("AlbumId", "").takeIf { it.isNotBlank() }
+                    ?: song.optString("ParentId", "").takeIf { it.isNotBlank() }
+                val hasSongPrimary = song.optJSONObject("ImageTags")?.has("Primary") == true
+                val imageItemId = if (hasSongPrimary) id else (songAlbumId ?: id)
+
                 add(
                     ProviderSong(
                         providerId = id,
@@ -882,9 +887,8 @@ class JellyfinApiClient(context: Context) {
                         artist = artist,
                         album = album,
                         durationMs = durationMs,
-                        artworkUrl = buildImageUrl(id),
-                        albumId = song.optString("AlbumId", "").takeIf { it.isNotBlank() }
-                            ?: song.optString("ParentId", "").takeIf { it.isNotBlank() },
+                        artworkUrl = buildImageUrl(imageItemId),
+                        albumId = songAlbumId,
                         albumArtist = song.optString("AlbumArtist", "").takeIf { it.isNotBlank() },
                         isFavorite = isFavorite,
                         trackNumber = trackNum,
@@ -981,6 +985,9 @@ class JellyfinApiClient(context: Context) {
         startIndex: Int = 0
     ): Map<String, String> {
         return buildMap {
+            credentials?.userId?.takeIf { it.isNotBlank() }?.let {
+                put("userId", it)
+            }
             if (!query.isNullOrBlank()) {
                 put("searchTerm", query)
             }

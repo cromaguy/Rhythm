@@ -18,6 +18,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.os.Build
 import androidx.compose.animation.AnimatedContent
+import chromahub.rhythm.app.features.streaming.presentation.viewmodel.StreamingMusicViewModel
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.EaseInOutQuart
@@ -133,6 +134,7 @@ fun RhythmNavigation(
     modifier: Modifier = Modifier,
     musicViewModel: MusicViewModel = viewModel(),
     themeViewModel: ThemeViewModel = viewModel(),
+    streamingMusicViewModel: StreamingMusicViewModel = viewModel(),
     navigateToSettingsTrigger: Boolean = false,
     onSettingsNavigationComplete: (() -> Unit)? = null
 ) {
@@ -198,7 +200,8 @@ fun RhythmNavigation(
                             LocalNavigation(
                                 viewModel = musicViewModel,
                                 themeViewModel = themeViewModel,
-                                appSettings = appSettings
+                                appSettings = appSettings,
+                                streamingMusicViewModel = streamingMusicViewModel
                             )
                         }
 
@@ -207,7 +210,8 @@ fun RhythmNavigation(
                             LocalNavigation(
                                 viewModel = musicViewModel,
                                 themeViewModel = themeViewModel,
-                                appSettings = appSettings
+                                appSettings = appSettings,
+                                streamingMusicViewModel = streamingMusicViewModel
                             )
                         }
                     }

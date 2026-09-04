@@ -26,6 +26,15 @@ import chromahub.rhythm.app.shared.data.model.Song
  * to local model types and fed into the existing screens.
  */
 
+private fun safeParseArtworkUri(uriString: String?): Uri? {
+    if (uriString.isNullOrBlank()) return null
+    return if (uriString.startsWith("/") && !uriString.startsWith("file:")) {
+        Uri.fromFile(java.io.File(uriString))
+    } else {
+        Uri.parse(uriString)
+    }
+}
+
 fun StreamingSong.toLibrarySong(): Song {
     val playbackUri = when {
         !streamingUrl.isNullOrBlank() -> (streamingUrl).toUri()
@@ -41,7 +50,7 @@ fun StreamingSong.toLibrarySong(): Song {
         albumId = albumId.orEmpty().takeIf { it.isNotBlank() } ?: "${sourceType.name}:${artist.lowercase()}:${album.lowercase()}",
         duration = duration,
         uri = playbackUri,
-        artworkUri = artworkUri?.takeIf { it.isNotBlank() }?.let(Uri::parse),
+        artworkUri = safeParseArtworkUri(artworkUri),
         albumArtist = albumArtist,
         trackNumber = trackNumber ?: 0,
         year = year ?: 0,
@@ -78,7 +87,7 @@ fun StreamingPlaylist.toLibraryPlaylist(context: Context): Playlist {
         songs = displaySongs,
         dateCreated = externalId?.hashCode()?.toLong() ?: id.hashCode().toLong(),
         dateModified = snapshotId?.hashCode()?.toLong() ?: songCount.toLong(),
-        artworkUri = artworkUri?.takeIf { it.isNotBlank() }?.let(Uri::parse)
+        artworkUri = safeParseArtworkUri(artworkUri)
     )
 }
 
@@ -105,7 +114,7 @@ fun StreamingAlbum.toLibraryAlbum(librarySongs: List<Song>): Album {
         id = id,
         title = title,
         artist = artist,
-        artworkUri = artworkUri?.takeIf { it.isNotBlank() }?.let(Uri::parse),
+        artworkUri = safeParseArtworkUri(artworkUri),
         year = year ?: 0,
         songs = matchingSongs,
         numberOfSongs = displayedSongCount
@@ -140,7 +149,7 @@ fun StreamingArtist.toLibraryArtist(
     return Artist(
         id = id,
         name = name,
-        artworkUri = artworkUri?.takeIf { it.isNotBlank() }?.let(Uri::parse),
+        artworkUri = safeParseArtworkUri(artworkUri),
         albums = matchingAlbums,
         songs = matchingSongs,
         numberOfAlbums = if (albumCount > 0) albumCount else matchingAlbums.size,

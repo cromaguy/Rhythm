@@ -22,25 +22,34 @@ import androidx.compose.ui.graphics.Color
 
 @Composable
 fun RhythmWavyProgressLoader(
-    progress: Float,
+    progress: Float?,
     modifier: Modifier = Modifier,
     indicatorColor: Color = MaterialTheme.colorScheme.onPrimaryContainer,
     trackColor: Color = indicatorColor.copy(alpha = 0.2f),
     centerContent: @Composable BoxScope.() -> Unit = {}
 ) {
-    val progressValue = progress.coerceIn(0f, 1f)
+    val progressValue = progress?.coerceIn(0f, 1f)
     val currentProgress by rememberUpdatedState(progressValue)
 
     Box(
         modifier = modifier,
         contentAlignment = Alignment.Center
     ) {
-        CircularWavyProgressIndicator(
-            progress = { currentProgress },
-            modifier = Modifier.fillMaxSize(),
-            color = indicatorColor,
-            trackColor = trackColor
-        )
+        val prog = currentProgress
+        if (prog != null) {
+            CircularWavyProgressIndicator(
+                progress = { prog },
+                modifier = Modifier.fillMaxSize(),
+                color = indicatorColor,
+                trackColor = trackColor
+            )
+        } else {
+            CircularWavyProgressIndicator(
+                modifier = Modifier.fillMaxSize(),
+                color = indicatorColor,
+                trackColor = trackColor
+            )
+        }
         Box(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center,

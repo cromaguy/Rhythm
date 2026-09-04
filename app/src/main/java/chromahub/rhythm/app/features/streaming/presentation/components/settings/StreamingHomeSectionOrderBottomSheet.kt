@@ -84,7 +84,6 @@ private const val STREAMING_SECTION_NEW_RELEASES = "NEW_RELEASES"
 private val defaultStreamingReorderableSections = listOf(
     STREAMING_SECTION_RECENTLY_PLAYED,
     STREAMING_SECTION_ARTISTS,
-    STREAMING_SECTION_PLAYLISTS,
     STREAMING_SECTION_RHYTHM_GUARD,
     STREAMING_SECTION_RHYTHM_STATS,
     STREAMING_SECTION_NEW_RELEASES
@@ -117,14 +116,13 @@ fun StreamingHomeSectionOrderBottomSheet(
     val showNewReleases by appSettings.streamingHomeShowNewReleases.collectAsState()
     val showPlaylists by appSettings.streamingHomeShowPlaylists.collectAsState()
 
-    val fixedSections = setOf("GREETING", STREAMING_SECTION_DISCOVER)
+    val fixedSections = setOf("GREETING", STREAMING_SECTION_DISCOVER, STREAMING_SECTION_PLAYLISTS)
     var reorderableList by remember(sectionOrder) {
         mutableStateOf(sectionOrder.filter { it !in fixedSections }.toList())
     }
     var visibilityMap by remember(
         showDiscover,
         showArtists,
-        showPlaylists,
         showRhythmGuard,
         showRhythmStats,
         showRecentlyPlayed,
@@ -134,7 +132,6 @@ fun StreamingHomeSectionOrderBottomSheet(
             mapOf(
                 STREAMING_SECTION_DISCOVER to showDiscover,
                 STREAMING_SECTION_ARTISTS to showArtists,
-                STREAMING_SECTION_PLAYLISTS to showPlaylists,
                 STREAMING_SECTION_RHYTHM_GUARD to showRhythmGuard,
                 STREAMING_SECTION_RHYTHM_STATS to showRhythmStats,
                 STREAMING_SECTION_RECENTLY_PLAYED to showRecentlyPlayed,
@@ -413,7 +410,6 @@ fun StreamingHomeSectionOrderBottomSheet(
                             visibilityMap = mapOf(
                                 STREAMING_SECTION_DISCOVER to true,
                                 STREAMING_SECTION_ARTISTS to true,
-                                STREAMING_SECTION_PLAYLISTS to true,
                                 STREAMING_SECTION_RHYTHM_GUARD to true,
                                 STREAMING_SECTION_RHYTHM_STATS to true,
                                 STREAMING_SECTION_RECENTLY_PLAYED to true,
@@ -434,7 +430,7 @@ fun StreamingHomeSectionOrderBottomSheet(
                             appSettings.setStreamingHomeSectionOrder(finalOrder)
                             appSettings.setStreamingHomeShowRecommended(visibilityMap[STREAMING_SECTION_DISCOVER] ?: true)
                             appSettings.setStreamingHomeShowArtists(visibilityMap[STREAMING_SECTION_ARTISTS] ?: true)
-                            appSettings.setStreamingHomeShowPlaylists(visibilityMap[STREAMING_SECTION_PLAYLISTS] ?: true)
+                            appSettings.setStreamingHomeShowPlaylists(false)
                             appSettings.setStreamingHomeShowRhythmGuard(visibilityMap[STREAMING_SECTION_RHYTHM_GUARD] ?: true)
                             appSettings.setStreamingHomeShowRhythmStats(visibilityMap[STREAMING_SECTION_RHYTHM_STATS] ?: true)
                             appSettings.setStreamingHomeShowRecentlyPlayed(visibilityMap[STREAMING_SECTION_RECENTLY_PLAYED] ?: true)

@@ -27,6 +27,9 @@ import chromahub.rhythm.app.features.streaming.presentation.model.StreamingServi
 import chromahub.rhythm.app.features.streaming.presentation.viewmodel.StreamingMusicViewModel
 import chromahub.rhythm.app.shared.presentation.components.Material3SettingsGroup
 import chromahub.rhythm.app.shared.presentation.components.Material3SettingsItem
+import chromahub.rhythm.app.features.streaming.presentation.screens.toLibrarySong
+import chromahub.rhythm.app.features.streaming.presentation.screens.toLibraryAlbum
+import chromahub.rhythm.app.features.streaming.presentation.screens.toLibraryArtist
 import chromahub.rhythm.app.util.ArtistSeparator
 
 import android.widget.Toast
@@ -303,7 +306,6 @@ fun HomeScreen(
     val showAppIcon by appSettings.homeShowAppIcon.collectAsState()
     val iconVisibilityMode by appSettings.homeAppIconVisibility.collectAsState()
     val floatingNavigationBar by appSettings.floatingNavigationBar.collectAsState()
-    val streamingDisconnected = isStreamingMode && !streamingServiceConnected && !streamingIsLoading
 
     // State for AddToPlaylist bottom sheet
     var showAddToPlaylistSheet by remember { mutableStateOf(false) }
@@ -410,13 +412,33 @@ fun HomeScreen(
 
 
 
+    val homeDownloadedSongs = streamingViewModel?.downloadedSongs?.collectAsState()?.value ?: emptyList()
+    val homeDownloadingSongIds = streamingViewModel?.downloadingSongIds?.collectAsState()?.value ?: emptySet()
+    val homeDownloadedSongIds = remember(homeDownloadedSongs) { homeDownloadedSongs.map { it.id }.toSet() }
+
     // Song info bottom sheet
     if (showSongInfoSheet && selectedSongForPlaylist != null) {
+        val songForInfo = selectedSongForPlaylist!!
         SongInfoBottomSheet(
-            song = selectedSongForPlaylist,
+            song = songForInfo,
             onDismiss = { showSongInfoSheet = false },
             appSettings = AppSettings.getInstance(context),
             isStreamingMode = isStreamingMode,
+            isDownloaded = homeDownloadedSongIds.contains(songForInfo.id),
+            isDownloading = homeDownloadingSongIds.contains(songForInfo.id),
+            onToggleDownload = if (isStreamingMode && streamingViewModel != null) ({
+                if (homeDownloadedSongIds.contains(songForInfo.id)) {
+                    streamingViewModel.removeDownload(songForInfo.id)
+                } else {
+                    val orig = streamingViewModel.allSongs.value.firstOrNull { it.id == songForInfo.id }
+                        ?: streamingViewModel.recommendations.value.firstOrNull { it.id == songForInfo.id }
+                    if (orig != null) {
+                        streamingViewModel.downloadSong(orig)
+                    } else {
+                        streamingViewModel.downloadSongById(songForInfo.id)
+                    }
+                }
+            }) else null,
             onEditSong = { title, artist, album, genre, year, trackNumber, artworkUri, removeArtwork, albumArtist, composer, discNumber, onComplete ->
                 pendingMetadataEditCompleteCallback = onComplete
                 musicViewModel.saveMetadataChanges(
@@ -524,20 +546,27 @@ fun HomeScreen(
     }
 
     if (showHomeSectionOrderSheet) {
-        HomeSectionOrderBottomSheet(
-            onDismiss = { showHomeSectionOrderSheet = false },
-            appSettings = AppSettings.getInstance(context)
-        )
+        if (isStreamingMode) {
+            chromahub.rhythm.app.features.streaming.presentation.components.settings.StreamingHomeSectionOrderBottomSheet(
+                onDismiss = { showHomeSectionOrderSheet = false },
+                appSettings = AppSettings.getInstance(context)
+            )
+        } else {
+            HomeSectionOrderBottomSheet(
+                onDismiss = { showHomeSectionOrderSheet = false },
+                appSettings = AppSettings.getInstance(context)
+            )
+        }
     }
 
     CollapsibleHeaderScreen(
-        title = if (streamingDisconnected) "" else if (isStreamingMode) context.getString(R.string.streaming_integration_title) else context.getString(R.string.home_title),
+        title = if (isStreamingMode) context.getString(R.string.streaming_integration_title) else context.getString(R.string.home_title),
         headerDisplayMode = headerDisplayMode,
-        alwaysCollapsed = streamingDisconnected,
+        alwaysCollapsed = false,
         showAppIcon = showAppIcon,
         iconVisibilityMode = iconVisibilityMode,
         actions = {
-            val showReorder = !isLandscapeTablet && !streamingDisconnected
+            val showReorder = !isLandscapeTablet
             val showSettings = !isTablet && floatingNavigationBar
 
             if (showReorder) {
@@ -590,7 +619,7 @@ fun HomeScreen(
                 albums = streamingAlbums,
                 artists = streamingArtists,
                 playlists = streamingPlaylists,
-                recentlyPlayed = streamingRecentlyPlayed.ifEmpty { recentlyPlayed },
+                recentlyPlayed = if (streamingRecentlyPlayed.isNotEmpty()) streamingRecentlyPlayed else recentlyPlayed,
                 serviceName = streamingServiceName,
                 serviceConnected = streamingServiceConnected,
                 isLoading = streamingIsLoading,
@@ -772,26 +801,78 @@ private fun StreamingHomeBody(
     val rawNewReleases = vm?.newReleases?.collectAsState()?.value ?: emptyList()
     val rawArtists = vm?.followedArtists?.collectAsState()?.value ?: emptyList()
     val rawPlaylists = vm?.savedPlaylists?.collectAsState()?.value ?: emptyList()
+    val rawDownloadedSongs = vm?.downloadedSongs?.collectAsState()?.value ?: emptyList()
+    val rawDownloadedAlbums = vm?.downloadedAlbums?.collectAsState()?.value ?: emptyList()
+    val rawDownloadedArtists = vm?.downloadedArtists?.collectAsState()?.value ?: emptyList()
     val syncProgress = vm?.syncProgress?.collectAsState()?.value ?: chromahub.rhythm.app.features.streaming.presentation.viewmodel.StreamingSyncProgress()
+    val isSyncing = syncProgress.isSyncing
 
-    val streamingSongById = remember(rawAllSongs, rawRecommendations, rawNewReleases) {
-        (rawAllSongs + rawRecommendations + rawNewReleases.flatMap { it.tracks })
+    val streamingSongById = remember(rawAllSongs, rawRecommendations, rawNewReleases, rawDownloadedSongs) {
+        (rawAllSongs + rawRecommendations + rawNewReleases.flatMap { it.tracks } + rawDownloadedSongs)
             .distinctBy { it.id }
             .associateBy { it.id }
     }
-    val streamingAlbumById = remember(rawNewReleases) { rawNewReleases.associateBy { it.id } }
-    val streamingArtistById = remember(rawArtists) { rawArtists.associateBy { it.id } }
+    val streamingAlbumById = remember(rawNewReleases, rawDownloadedAlbums) {
+        (rawNewReleases + rawDownloadedAlbums).distinctBy { it.id }.associateBy { it.id }
+    }
+    val streamingArtistById = remember(rawArtists, rawDownloadedArtists) {
+        (rawArtists + rawDownloadedArtists).distinctBy { it.id }.associateBy { it.id }
+    }
     val streamingPlaylistById = remember(rawPlaylists) { rawPlaylists.associateBy { it.id } }
+
+    val offlineMode by appSettings.offlineMode.collectAsState()
+    val isEffectivelyOffline = !serviceConnected || offlineMode
+
+    val effectiveSongs = remember(isSyncing, isEffectivelyOffline, rawDownloadedSongs, songs) {
+        if (isSyncing || isEffectivelyOffline) {
+            rawDownloadedSongs.map { it.toLibrarySong() }
+        } else {
+            songs
+        }
+    }
+    val effectiveAlbums = remember(isSyncing, isEffectivelyOffline, rawDownloadedAlbums, albums) {
+        if (isSyncing || isEffectivelyOffline) {
+            rawDownloadedAlbums.map { it.toLibraryAlbum(emptyList()) }
+        } else {
+            albums
+        }
+    }
+    val effectiveArtists = remember(isSyncing, isEffectivelyOffline, rawDownloadedArtists, effectiveSongs, effectiveAlbums, artists) {
+        if (isSyncing || isEffectivelyOffline) {
+            rawDownloadedArtists.map {
+                it.toLibraryArtist(
+                    librarySongs = effectiveSongs,
+                    libraryAlbums = effectiveAlbums,
+                    separatorEnabled = false,
+                    separatorDelimiters = ""
+                )
+            }
+        } else {
+            artists
+        }
+    }
+    val effectiveRecentlyPlayed = remember(isSyncing, isEffectivelyOffline, rawDownloadedSongs, recentlyPlayed) {
+        if (isSyncing || isEffectivelyOffline) {
+            val downloadedIds = rawDownloadedSongs.map { it.id }.toSet()
+            recentlyPlayed.filter { it.id in downloadedIds }
+        } else {
+            recentlyPlayed
+        }
+    }
+    val hasStreamingContent = effectiveSongs.isNotEmpty() ||
+        effectiveAlbums.isNotEmpty() ||
+        effectiveArtists.isNotEmpty() ||
+        effectiveRecentlyPlayed.isNotEmpty()
 
     val hasLoadedHomeContent = vm?.hasLoadedHomeContent?.collectAsState()?.value ?: false
     val hasLoadedLibrary = vm?.hasLoadedLibrary?.collectAsState()?.value ?: false
-    LaunchedEffect(vm, serviceConnected, hasLoadedHomeContent) {
-        if (serviceConnected && vm != null && !hasLoadedHomeContent) {
+    LaunchedEffect(vm, hasLoadedHomeContent) {
+        if (vm != null && !hasLoadedHomeContent) {
             vm.loadHomeContent()
         }
     }
-    LaunchedEffect(vm, serviceConnected, hasLoadedLibrary) {
-        if (serviceConnected && vm != null && !hasLoadedLibrary) {
+    LaunchedEffect(vm, hasLoadedLibrary) {
+        if (vm != null && !hasLoadedLibrary) {
             vm.loadLibrary()
         }
     }
@@ -803,8 +884,10 @@ private fun StreamingHomeBody(
 
     val serviceSessions = vm?.serviceSessions?.collectAsState()?.value ?: emptyMap()
     val isAuthenticated = vm?.isAuthenticated?.collectAsState()?.value ?: false
+    val hasOfflineContent = rawDownloadedSongs.isNotEmpty() || rawDownloadedAlbums.isNotEmpty()
+    val hasConfiguredSession = serviceSessions.values.any { it.serverUrl.isNotBlank() }
 
-    if (!serviceConnected && !isLoading) {
+    if (!hasConfiguredSession && !hasOfflineContent) {
         StreamingHomeWelcomeContent(
             modifier = modifier.fillMaxSize(),
             serviceSessions = serviceSessions,
@@ -831,15 +914,55 @@ private fun StreamingHomeBody(
             )
         }
     ) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(scrollState),
-        verticalArrangement = Arrangement.spacedBy(sectionSpacing)
-    ) {
-        if (showDiscoverCarousel && albums.isNotEmpty()) {
+        if (!hasStreamingContent) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(scrollState),
+                contentAlignment = Alignment.Center
+            ) {
+                when {
+                    !serviceConnected || errorMessage != null -> {
+                        EmptyState(
+                            message = context.getString(R.string.streaming_home_selected_service_unavailable),
+                            icon = RhythmIcons.Connectivity.WifiOff,
+                            subtitle = errorMessage?.takeIf { it.isNotBlank() }
+                                ?: context.getString(
+                                    R.string.streaming_home_connect_selected_service,
+                                    serviceName.ifBlank { context.getString(R.string.streaming_not_selected) }
+                                ),
+                            actionLabel = context.getString(R.string.streaming_service_setup_reconnect),
+                            onRefresh = { onConfigureService(serviceName) }
+                        )
+                    }
+                    isSyncing || isLoading -> {
+                        EmptyState(
+                            message = context.getString(R.string.streaming_library_syncing),
+                            icon = MaterialSymbolIcon("sync"),
+                            subtitle = context.getString(R.string.streaming_home_no_content_hint),
+                            actionLabel = null,
+                            onRefresh = null
+                        )
+                    }
+                    else -> {
+                        ModernEmptyState(
+                            icon = MaterialSymbolIcon("cloud_sync", filled = true),
+                            title = context.getString(R.string.streaming_home_no_content_title),
+                            subtitle = context.getString(R.string.streaming_home_no_content_hint)
+                        )
+                    }
+                }
+            }
+        } else {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(scrollState),
+            verticalArrangement = Arrangement.spacedBy(sectionSpacing)
+        ) {
+        if (showDiscoverCarousel && effectiveAlbums.isNotEmpty()) {
             ModernFeaturedSection(
-                albums = albums.take(discoverItemCount),
+                albums = effectiveAlbums.take(discoverItemCount),
                 onAlbumClick = { album ->
                     streamingAlbumById[album.id]?.let(onNavigateToAlbum)
                 },
@@ -862,65 +985,30 @@ private fun StreamingHomeBody(
                 .padding(horizontal = horizontalPadding),
             verticalArrangement = Arrangement.spacedBy(sectionSpacing)
         ) {
-        if (syncProgress.isSyncing) {
-            val syncSubtitle = if (syncProgress.total > 0) {
-                context.getString(
-                    R.string.streaming_sync_progress_format,
-                    syncProgress.current,
-                    syncProgress.total,
-                    syncProgress.songsCount
-                )
-            } else if (syncProgress.songsCount > 0) {
-                "${syncProgress.songsCount} songs found"
-            } else {
-                context.getString(R.string.streaming_home_widget_empty_hint)
-            }
+        if (!isEffectivelyOffline && errorMessage != null && !syncProgress.isSyncing && !isLoading) {
             StreamingServiceStateCard(
-                title = context.getString(R.string.streaming_sync_progress_title, serviceName),
-                subtitle = syncSubtitle,
-                icon = MaterialSymbolIcon("sync", filled = true),
-                iconContainerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f),
-                iconTint = MaterialTheme.colorScheme.primary,
-                showProgressIndicator = true
+                title = errorMessage,
+                subtitle = context.getString(R.string.streaming_home_widget_empty_hint),
+                actionText = context.getString(R.string.streaming_service_setup_reconnect),
+                onAction = { onConfigureService(serviceName) }
             )
-        } else {
-            when {
-                isLoading && songs.isEmpty() -> {
-                    StreamingServiceStateCard(
-                        title = context.getString(R.string.streaming_home_no_content_title),
-                        subtitle = context.getString(R.string.streaming_home_widget_empty_hint),
-                        showProgressIndicator = true
-                    )
-                }
-
-                errorMessage != null && songs.isEmpty() -> {
-                    StreamingServiceStateCard(
-                        title = errorMessage,
-                        subtitle = context.getString(R.string.streaming_home_widget_empty_hint),
-                        actionText = context.getString(R.string.streaming_service_setup_reconnect),
-                        onAction = { onConfigureService(serviceName) }
-                    )
-                }
-            }
         }
-
-        val hasStreamingContent = songs.isNotEmpty() ||
-            albums.isNotEmpty() ||
-            artists.isNotEmpty() ||
-            playlists.isNotEmpty() ||
-            recentlyPlayed.isNotEmpty()
 
         val isTablet = widthSizeClass != WindowWidthSizeClass.Compact || windowScreenWidthDp() >= 600
         val isLandscapeTablet = isTablet && windowScreenWidthDp() > windowScreenHeightDp()
-        val sectionOrder by appSettings.homeSectionOrder.collectAsState()
+        val sectionOrder by appSettings.streamingHomeSectionOrder.collectAsState()
+        val showRecentlyPlayed by appSettings.streamingHomeShowRecentlyPlayed.collectAsState()
+        val showArtists by appSettings.streamingHomeShowArtists.collectAsState()
+        val showNewReleases by appSettings.streamingHomeShowNewReleases.collectAsState()
+        val showRecommended by appSettings.streamingHomeShowRecommended.collectAsState()
 
         @Composable
         fun RenderStreamingSection(sectionId: String) {
             when (sectionId) {
                 "RECENTLY_PLAYED" -> {
-                    if (recentlyPlayed.isNotEmpty()) {
+                    if (effectiveRecentlyPlayed.isNotEmpty()) {
                         ModernRecentlyPlayedSection(
-                            recentlyPlayed = recentlyPlayed,
+                            recentlyPlayed = effectiveRecentlyPlayed,
                             onSongClick = onSongClick,
                             musicViewModel = musicViewModel,
                             coroutineScope = coroutineScope,
@@ -930,19 +1018,23 @@ private fun StreamingHomeBody(
                     }
                 }
                 "NEW_RELEASES" -> {
-                    if (albums.isNotEmpty()) {
+                    if (effectiveAlbums.isNotEmpty()) {
                         Column {
                             ModernSectionTitle(
-                                title = context.getString(R.string.home_new_releases),
-                                subtitle = context.getString(
-                                    R.string.streaming_home_widget_new_releases_subtitle,
-                                    serviceName.ifBlank { context.getString(R.string.streaming_not_selected) }
-                                ),
+                                title = if (isSyncing || isEffectivelyOffline) stringResource(R.string.streaming_downloaded_albums) else context.getString(R.string.home_new_releases),
+                                subtitle = if (isSyncing) {
+                                    stringResource(R.string.streaming_syncing_downloads_subtitle)
+                                } else {
+                                    context.getString(
+                                        R.string.streaming_home_widget_new_releases_subtitle,
+                                        serviceName.ifBlank { context.getString(R.string.streaming_not_selected) }
+                                    )
+                                },
                                 onPlayAll = {
-                                    playQueueFromMapped(albums.flatMap { it.songs }, 0, false)
+                                    playQueueFromMapped(effectiveAlbums.flatMap { it.songs }, 0, false)
                                 },
                                 onShufflePlay = {
-                                    onShuffleQueue(albums.flatMap { it.songs }.mapNotNull { streamingSongById[it.id] })
+                                    onShuffleQueue(effectiveAlbums.flatMap { it.songs }.mapNotNull { streamingSongById[it.id] })
                                 }
                             )
                             Spacer(modifier = Modifier.height(20.dp))
@@ -951,7 +1043,7 @@ private fun StreamingHomeBody(
                                 horizontalArrangement = Arrangement.spacedBy(16.dp)
                             ) {
                                 items(
-                                    items = albums,
+                                    items = effectiveAlbums,
                                     key = { "streaming_album_${it.id}" }
                                 ) { album ->
                                     ModernAlbumCard(
@@ -971,44 +1063,13 @@ private fun StreamingHomeBody(
                             }
                         }
                     }
-
-                    if (playlists.isNotEmpty()) {
-                        if (albums.isNotEmpty()) {
-                            Spacer(modifier = Modifier.height(20.dp))
-                        }
-                        Column {
-                            ModernSectionTitle(
-                                title = context.getString(R.string.settings_tab_playlists),
-                                viewAllAction = onNavigateToLibrary
-                            )
-                            Spacer(modifier = Modifier.height(20.dp))
-                            LazyRow(
-                                contentPadding = PaddingValues(horizontal = 4.dp),
-                                horizontalArrangement = Arrangement.spacedBy(16.dp)
-                            ) {
-                                items(
-                                    items = playlists,
-                                    key = { "streaming_playlist_${it.id}" }
-                                ) { playlist ->
-                                    StreamingHomePlaylistCard(
-                                        playlist = playlist,
-                                        onClick = {
-                                            streamingPlaylistById[playlist.id]?.let { raw ->
-                                                onNavigateToPlaylist(raw)
-                                            }
-                                        }
-                                    )
-                                }
-                            }
-                        }
-                    }
                 }
                 "ARTISTS" -> {
-                    if (artists.isNotEmpty()) {
+                    if (effectiveArtists.isNotEmpty()) {
                         Column {
                             ModernSectionTitle(
                                 title = context.getString(R.string.home_top_artists),
-                                subtitle = context.getString(R.string.home_top_artists_subtitle),
+                                subtitle = if (isSyncing) stringResource(R.string.streaming_syncing_downloads_subtitle) else context.getString(R.string.home_top_artists_subtitle),
                                 viewAllAction = onViewAllArtists
                             )
                             Spacer(modifier = Modifier.height(16.dp))
@@ -1017,7 +1078,7 @@ private fun StreamingHomeBody(
                                 horizontalArrangement = Arrangement.spacedBy(16.dp)
                             ) {
                                 items(
-                                    items = artists,
+                                    items = effectiveArtists,
                                     key = { "streaming_artist_${it.id}" }
                                 ) { artist ->
                                     ModernArtistCard(
@@ -1039,14 +1100,14 @@ private fun StreamingHomeBody(
                         }
                     }
                 }
-                "RECOMMENDED" -> {
-                    if (songs.isNotEmpty()) {
+                "RECOMMENDED", "DISCOVER" -> {
+                    if (!isSyncing && effectiveSongs.isNotEmpty()) {
                         ModernRecommendedSection(
-                            recommendedSongs = songs,
-                            artists = artists,
+                            recommendedSongs = effectiveSongs,
+                            artists = effectiveArtists,
                             onSongClick = { song ->
-                                val index = songs.indexOfFirst { it.id == song.id }.coerceAtLeast(0)
-                                playQueueFromMapped(songs, index, false)
+                                val index = effectiveSongs.indexOfFirst { it.id == song.id }.coerceAtLeast(0)
+                                playQueueFromMapped(effectiveSongs, index, false)
                             },
                             onPlayClick = { songsToPlay ->
                                 playQueueFromMapped(songsToPlay, 0, false)
@@ -1075,8 +1136,8 @@ private fun StreamingHomeBody(
                         }
                     }
                 }
-                "STATS" -> {
-                    if (hasStreamingContent && showRhythmStatsSection) {
+                "STATS", "RHYTHM_STATS" -> {
+                    if (!isSyncing && hasStreamingContent && showRhythmStatsSection) {
                         ModernListeningStatsSection(onClick = onNavigateToStats)
                     }
                 }
@@ -1084,12 +1145,12 @@ private fun StreamingHomeBody(
         }
 
         fun isStreamingSectionVisible(sectionId: String): Boolean = when (sectionId) {
-            "RECENTLY_PLAYED" -> recentlyPlayed.isNotEmpty()
-            "NEW_RELEASES" -> albums.isNotEmpty() || playlists.isNotEmpty()
-            "ARTISTS" -> artists.isNotEmpty()
-            "RECOMMENDED" -> songs.isNotEmpty()
+            "RECENTLY_PLAYED" -> showRecentlyPlayed && effectiveRecentlyPlayed.isNotEmpty()
+            "NEW_RELEASES" -> showNewReleases && effectiveAlbums.isNotEmpty()
+            "ARTISTS" -> showArtists && effectiveArtists.isNotEmpty()
+            "RECOMMENDED", "DISCOVER" -> showRecommended && !isSyncing && effectiveSongs.isNotEmpty()
             "RHYTHM_GUARD" -> hasStreamingContent && showRhythmGuardSection && rhythmGuardMode != AppSettings.RHYTHM_GUARD_MODE_OFF
-            "STATS" -> hasStreamingContent && showRhythmStatsSection
+            "STATS", "RHYTHM_STATS" -> !isSyncing && hasStreamingContent && showRhythmStatsSection
             else -> false
         }
 
@@ -1129,18 +1190,11 @@ private fun StreamingHomeBody(
             }
         }
 
-        if (songs.isEmpty() && albums.isEmpty() && artists.isEmpty() && playlists.isEmpty() && serviceConnected) {
-            ModernEmptyState(
-                icon = MaterialSymbolIcon("cloud_sync", filled = true),
-                title = context.getString(R.string.streaming_home_no_content_title),
-                subtitle = context.getString(R.string.streaming_home_no_content_hint)
-            )
-        }
-
         Spacer(
             modifier = Modifier.height(24.dp + LocalMiniPlayerPadding.current.calculateBottomPadding())
         )
         }
+    }
     }
     }
 }
@@ -1301,66 +1355,6 @@ private fun StreamingHomeWelcomeContent(
     }
 }
 
-@Composable
-private fun StreamingHomePlaylistCard(
-    playlist: chromahub.rhythm.app.shared.data.model.Playlist,
-    onClick: () -> Unit
-) {
-    val context = LocalContext.current
-    val haptic = LocalHapticFeedback.current
-
-    ExpressiveCard(
-        onClick = {
-            HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
-            onClick()
-        },
-        modifier = Modifier
-            .width(150.dp)
-            .height(196.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
-        ),
-        shape = ExpressiveShapes.SquircleLarge
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            M3ImageUtils.TrackImage(
-                imageUrl = playlist.artworkUri,
-                trackName = playlist.name,
-                modifier = Modifier
-                    .size(126.dp)
-                    .fillMaxWidth(),
-                applyExpressiveShape = true
-            )
-
-            Text(
-                text = playlist.name,
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Bold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-
-            val songCount = playlist.songs.size
-            Text(
-                text = pluralStringResource(
-                    R.plurals.streaming_home_widget_playlist_track_count,
-                    songCount,
-                    songCount
-                ),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-        }
-    }
-}
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable

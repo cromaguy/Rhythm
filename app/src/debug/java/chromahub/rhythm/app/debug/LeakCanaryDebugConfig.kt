@@ -64,6 +64,13 @@ object LeakCanaryDebugConfig {
                         className = "android.view.inputmethod.InputMethodManager",
                         fieldName = "mServedInputConnection",
                         description = "InputMethodManager.mServedInputConnection retains destroyed activity view hierarchy (framework bug)."
+                    ),
+                    // Framework quirk: NsdManager internal ServiceHandler / NsdCallbackImpl binder stub
+                    // retained asynchronously by system server after stopServiceDiscovery.
+                    AndroidReferenceMatchers.instanceFieldLeak(
+                        className = "android.net.nsd.NsdManager\$NsdCallbackImpl",
+                        fieldName = "mServHandler",
+                        description = "NsdManager\$NsdCallbackImpl.mServHandler retained asynchronously by system server binder stub."
                     )
                 )
         )

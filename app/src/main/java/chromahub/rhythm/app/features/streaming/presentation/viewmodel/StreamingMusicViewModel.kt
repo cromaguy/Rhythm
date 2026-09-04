@@ -30,6 +30,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
 import android.net.Uri
@@ -38,6 +39,17 @@ import chromahub.rhythm.app.features.local.presentation.viewmodel.MusicViewModel
 import chromahub.rhythm.app.R
 import android.util.Log
 import androidx.core.net.toUri
+import android.content.Context
+import android.net.ConnectivityManager
+import android.net.Network
+import android.net.NetworkCapabilities
+import android.widget.Toast
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withTimeoutOrNull
 
 /**
  * ViewModel for managing streaming music playback and library.
@@ -57,6 +69,120 @@ class StreamingMusicViewModel(application: Application) : AndroidViewModel(appli
     private var playbackHandler: ((List<StreamingSong>, Int) -> Unit)? = null
     private var seekProgressHandler: ((Float) -> Unit)? = null
     private var seekPositionHandler: ((Long) -> Unit)? = null
+    private var wasOffline: Boolean? = null
+    private var networkCallback: ConnectivityManager.NetworkCallback? = null
+    private var networkLostJob: Job? = null
+    private var networkAvailableJob: Job? = null
+    private val authMutex = Mutex()
+    private var lastSuccessfulAuthTimestamp = 0L
+
+    private fun showStatusToast(resId: Int) {
+        viewModelScope.launch(Dispatchers.Main) {
+            Toast.makeText(getApplication(), resId, Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun updateOnlineStatus(isOnline: Boolean) {
+        val previous = wasOffline
+        if (previous == null) {
+            wasOffline = !isOnline
+            return
+        }
+        if (previous && isOnline) {
+            wasOffline = false
+            showStatusToast(R.string.rhythm_go_online_toast)
+        } else if (!previous && !isOnline) {
+            wasOffline = true
+            showStatusToast(R.string.rhythm_go_offline_toast)
+        }
+    }
+
+    fun switchToDownloadedMode() {
+        val downloaded = _downloadedSongs.value
+        val downloadedAlb = if (_downloadedAlbums.value.isNotEmpty()) _downloadedAlbums.value else deriveAlbumsFromSongs(downloaded, limit = 500)
+        val downloadedArt = if (_downloadedArtists.value.isNotEmpty()) _downloadedArtists.value else deriveArtistsFromSongs(downloaded, limit = 500)
+        
+        _downloadedSongs.value = downloaded
+        _downloadedAlbums.value = downloadedAlb
+        _downloadedArtists.value = downloadedArt
+        _allSongs.value = downloaded
+        _savedAlbums.value = downloadedAlb
+        _newReleases.value = downloadedAlb
+        _followedArtists.value = downloadedArt
+        _recommendations.value = downloaded.shuffled().take(24)
+        _savedPlaylists.value = emptyList()
+        _likedSongs.value = emptyList()
+        _isLoading.value = false
+        _syncProgress.value = StreamingSyncProgress(isSyncing = false, stage = StreamingSyncStage.Idle)
+    }
+
+    private fun registerNetworkCallback() {
+        try {
+            val connectivityManager = getApplication<Application>().getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
+            val callback = object : ConnectivityManager.NetworkCallback() {
+                override fun onAvailable(network: Network) {
+                    networkLostJob?.cancel()
+                    networkAvailableJob?.cancel()
+                    networkAvailableJob = viewModelScope.launch {
+                        delay(1500)
+                        if (!NetworkUtils.isNetworkAvailable(getApplication())) return@launch
+                        val serviceId = appSettings.streamingService.value
+                        if (serviceSessionRepository.isConnected(serviceId)) {
+                            val connected = checkAndSyncAuthentication(serviceId, forceCheck = true)
+                            if (connected) {
+                                loadHomeContent()
+                                loadLibrary()
+                            }
+                        }
+                    }
+                }
+
+                override fun onCapabilitiesChanged(network: Network, networkCapabilities: NetworkCapabilities) {
+                    val hasInternet = networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) ||
+                        networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) ||
+                        networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) ||
+                        networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_VPN)
+                    if (hasInternet) {
+                        networkLostJob?.cancel()
+                    }
+                }
+
+                override fun onLost(network: Network) {
+                    // If device still has another active network interface, avoid false offline drops
+                    if (NetworkUtils.isNetworkAvailable(getApplication())) {
+                        return
+                    }
+                    networkLostJob?.cancel()
+                    networkLostJob = viewModelScope.launch {
+                        delay(2500)
+                        val isStillAvail = NetworkUtils.isNetworkAvailable(getApplication())
+                        if (!isStillAvail) {
+                            networkAvailableJob?.cancel()
+                            _isAuthenticated.value = false
+                            updateOnlineStatus(false)
+                            switchToDownloadedMode()
+                        }
+                    }
+                }
+            }
+            networkCallback = callback
+            connectivityManager?.registerDefaultNetworkCallback(callback)
+        } catch (e: Exception) {
+            Log.w("StreamingMusicViewModel", "Failed to register network callback", e)
+        }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        try {
+            networkCallback?.let {
+                val connectivityManager = getApplication<Application>().getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
+                connectivityManager?.unregisterNetworkCallback(it)
+            }
+        } catch (e: Exception) {
+            // Ignore callback unregister error
+        }
+    }
 
     
     // Authentication state
@@ -120,6 +246,15 @@ class StreamingMusicViewModel(application: Application) : AndroidViewModel(appli
     private val _downloadedSongs = MutableStateFlow<List<StreamingSong>>(emptyList())
     val downloadedSongs: StateFlow<List<StreamingSong>> = _downloadedSongs.asStateFlow()
 
+    private val _downloadedAlbums = MutableStateFlow<List<StreamingAlbum>>(emptyList())
+    val downloadedAlbums: StateFlow<List<StreamingAlbum>> = _downloadedAlbums.asStateFlow()
+
+    private val _downloadedArtists = MutableStateFlow<List<StreamingArtist>>(emptyList())
+    val downloadedArtists: StateFlow<List<StreamingArtist>> = _downloadedArtists.asStateFlow()
+
+    private val _downloadingSongIds = MutableStateFlow<Set<String>>(emptySet())
+    val downloadingSongIds: StateFlow<Set<String>> = _downloadingSongIds.asStateFlow()
+
     // All provider songs (full catalog exposed by repository)
     private val _allSongs = MutableStateFlow<List<StreamingSong>>(emptyList())
     val allSongs: StateFlow<List<StreamingSong>> = _allSongs.asStateFlow()
@@ -150,10 +285,57 @@ class StreamingMusicViewModel(application: Application) : AndroidViewModel(appli
     
     init {
         observeSelectedService()
+        registerNetworkCallback()
         // Keep an updated view of the provider catalog exposed by the repository
         viewModelScope.launch {
             repository.getSongs().collect { items ->
                 _allSongs.value = items.filterIsInstance<StreamingSong>()
+            }
+        }
+        // Keep an updated view of provider artists
+        viewModelScope.launch {
+            repository.getArtists().collect { items ->
+                val artists = items.filterIsInstance<StreamingArtist>()
+                if (artists.isNotEmpty() && _followedArtists.value.isEmpty()) {
+                    _followedArtists.value = artists
+                }
+            }
+        }
+        // Keep an updated view of provider albums
+        viewModelScope.launch {
+            repository.getAlbums().collect { items ->
+                val albums = items.filterIsInstance<StreamingAlbum>()
+                if (albums.isNotEmpty() && _savedAlbums.value.isEmpty()) {
+                    _savedAlbums.value = albums
+                }
+            }
+        }
+        // Keep an updated view of downloaded songs
+        viewModelScope.launch {
+            repository.getDownloadedSongs().collect { items ->
+                val downloaded = items.filterIsInstance<StreamingSong>()
+                _downloadedSongs.value = downloaded
+                _downloadedAlbums.value = deriveAlbumsFromSongs(downloaded, limit = 500)
+                _downloadedArtists.value = deriveArtistsFromSongs(downloaded, limit = 500)
+            }
+        }
+        // React immediately to offline mode toggles
+        viewModelScope.launch {
+            appSettings.offlineMode.drop(1).collect { isOffline ->
+                if (isOffline) {
+                    switchToDownloadedMode()
+                } else {
+                    if (NetworkUtils.isNetworkAvailable(getApplication())) {
+                        val serviceId = appSettings.streamingService.value
+                        if (serviceSessionRepository.isConnected(serviceId)) {
+                            val connected = checkAndSyncAuthentication(serviceId, forceCheck = true)
+                            if (connected) {
+                                loadHomeContent()
+                                loadLibrary()
+                            }
+                        }
+                    }
+                }
             }
         }
     }
@@ -170,14 +352,8 @@ class StreamingMusicViewModel(application: Application) : AndroidViewModel(appli
                 _currentService.value = sourceTypeFromServiceId(normalizedServiceId)
 
                 val connected = checkAndSyncAuthentication(normalizedServiceId)
-                if (connected) {
-                    loadHomeContent()
-                } else {
-                    // Keep the user's explicit provider selection even if disconnected.
-                    // Auto-reverting to another connected provider makes provider switching
-                    // appear to do nothing from the Go settings popup flow.
-                    clearContent()
-                }
+                loadHomeContent()
+                loadLibrary()
             }
         }
     }
@@ -261,6 +437,7 @@ class StreamingMusicViewModel(application: Application) : AndroidViewModel(appli
                 }
                 checkAndSyncAuthentication(normalizedServiceId)
                 loadHomeContent()
+                loadLibrary()
                 
                 // Show success notification
                 notificationManager.notifyAuthenticationSuccess(getSourceTypeName(sourceTypeFromServiceId(normalizedServiceId)))
@@ -366,20 +543,20 @@ class StreamingMusicViewModel(application: Application) : AndroidViewModel(appli
             
             try {
                 if (!checkAndSyncAuthentication()) {
-                    clearContent()
+                    switchToDownloadedMode()
                     return@launch
                 }
                 
                 // Check network constraints
                 if (!NetworkUtils.canStream(getApplication(), appSettings.allowCellularStreaming.value)) {
-                    clearContent()
+                    switchToDownloadedMode()
                     _error.value = "Streaming not allowed on current network"
                     return@launch
                 }
                 
                 if (appSettings.offlineMode.value) {
-                    clearContent()
-                    _error.value = "Content loading unavailable in offline mode"
+                    switchToDownloadedMode()
+                    _error.value = null
                     return@launch
                 }
 
@@ -404,27 +581,12 @@ class StreamingMusicViewModel(application: Application) : AndroidViewModel(appli
                 _newReleases.value = newReleases
                 _featuredPlaylists.value = featuredPlaylists
             } catch (e: Exception) {
-                // Check if error is due to stale connection (timeout, connection error)
-                val isConnectionError = e.message?.contains("timeout", ignoreCase = true) == true ||
-                    e.message?.contains("connection", ignoreCase = true) == true ||
-                    e.message?.contains("socket", ignoreCase = true) == true ||
-                    e.cause is java.net.SocketException ||
-                    e.cause is java.net.ConnectException ||
-                    e is java.io.IOException
-                
-                if (isConnectionError) {
-                    // Attempt automatic reconnection by refreshing authentication
-                    _error.value = "Connection lost. Attempting to reconnect..."
-                    delay(1000) // Wait before attempting reconnection
-                    val serviceId = appSettings.streamingService.value
-                    if (checkAndSyncAuthentication(serviceId)) {
-                        // Retry loading content after reconnection
-                        _error.value = null
-                        loadHomeContent()
-                    } else {
-                        _error.value = "Failed to reconnect to streaming service. Please try reconnecting manually."
-                        clearContent()
-                    }
+                Log.e("StreamingMusicViewModel", "loadHomeContent failed", e)
+                val isNetworkDown = !NetworkUtils.isNetworkAvailable(getApplication())
+                if (isNetworkDown) {
+                    switchToDownloadedMode()
+                    updateOnlineStatus(false)
+                    _error.value = "Connection lost. Switched to downloaded content."
                 } else {
                     _error.value = "Failed to load content: ${e.message}"
                 }
@@ -436,10 +598,21 @@ class StreamingMusicViewModel(application: Application) : AndroidViewModel(appli
     }
     
     /**
-     * Refresh home screen content.
+     * Refresh home screen and library content.
      */
     fun refreshHome() {
-        loadHomeContent()
+        viewModelScope.launch {
+            checkAndSyncAuthentication(forceCheck = true)
+            loadHomeContent()
+            loadLibrary()
+        }
+    }
+
+    /**
+     * Refresh library content.
+     */
+    fun refreshLibrary() {
+        loadLibrary()
     }
     
     /**
@@ -494,17 +667,13 @@ class StreamingMusicViewModel(application: Application) : AndroidViewModel(appli
             _isLoading.value = true
             _hasLoadedLibrary.value = false
             val serviceName = getSourceTypeName(_currentService.value)
-            _syncProgress.value = StreamingSyncProgress(isSyncing = true)
+            _syncProgress.value = StreamingSyncProgress(isSyncing = true, stage = StreamingSyncStage.Syncing)
             notificationManager.notifySyncStarted(serviceName)
             var syncSuccess = false
             
             try {
                 if (!checkAndSyncAuthentication()) {
-                    _likedSongs.value = emptyList()
-                    _savedAlbums.value = emptyList()
-                    _followedArtists.value = emptyList()
-                    _savedPlaylists.value = emptyList()
-                    _downloadedSongs.value = emptyList()
+                    switchToDownloadedMode()
                     return@launch
                 }
 
@@ -522,7 +691,8 @@ class StreamingMusicViewModel(application: Application) : AndroidViewModel(appli
                             isSyncing = true,
                             current = current,
                             total = total,
-                            songsCount = songCount
+                            songsCount = songCount,
+                            stage = StreamingSyncStage.Syncing
                         )
                         notificationManager.updateSyncProgress(
                             songCount = songCount,
@@ -647,18 +817,46 @@ class StreamingMusicViewModel(application: Application) : AndroidViewModel(appli
                 _followedArtists.value = resolvedArtists
                 _savedPlaylists.value = resolvedPlaylists
                 _downloadedSongs.value = downloadedSongs
+                _downloadedAlbums.value = deriveAlbumsFromSongs(downloadedSongs, limit = 500)
+                _downloadedArtists.value = deriveArtistsFromSongs(downloadedSongs, limit = 500)
+
+                val catalogSongs = try {
+                    repository.getSongs().first().filterIsInstance<StreamingSong>()
+                } catch (e: Exception) {
+                    emptyList()
+                }
+                if (catalogSongs.isNotEmpty()) {
+                    _allSongs.value = catalogSongs
+                }
 
                 if (_featuredPlaylists.value.isEmpty()) {
                     _featuredPlaylists.value = resolvedPlaylists
                 }
                 syncSuccess = true
             } catch (e: Exception) {
+                Log.e("StreamingMusicViewModel", "loadLibrary failed", e)
                 _error.value = "Failed to load library: ${e.message}"
                 notificationManager.notifySyncFailed(e.message)
+                val isNetworkDown = !NetworkUtils.isNetworkAvailable(getApplication())
+                if (isNetworkDown) {
+                    switchToDownloadedMode()
+                    updateOnlineStatus(false)
+                }
             } finally {
-                _syncProgress.value = StreamingSyncProgress(isSyncing = false)
+                val finalSongsCount = if (syncSuccess) {
+                    _allSongs.value.size.takeIf { it > 0 } ?: _syncProgress.value.songsCount
+                } else {
+                    0
+                }
+                _syncProgress.value = StreamingSyncProgress(
+                    isSyncing = false,
+                    current = if (syncSuccess) _syncProgress.value.total else 0,
+                    total = if (syncSuccess) _syncProgress.value.total else 0,
+                    songsCount = finalSongsCount,
+                    stage = if (syncSuccess) StreamingSyncStage.Complete else if (_error.value != null) StreamingSyncStage.Error else StreamingSyncStage.Idle
+                )
                 if (syncSuccess) {
-                    notificationManager.notifySyncComplete(_allSongs.value.size, serviceName)
+                    notificationManager.notifySyncComplete(finalSongsCount, serviceName)
                 }
                 _hasLoadedLibrary.value = true
                 _isLoading.value = false
@@ -756,12 +954,18 @@ class StreamingMusicViewModel(application: Application) : AndroidViewModel(appli
         }
 
         viewModelScope.launch {
-                if (!checkAndSyncAuthentication()) {
-                    _error.value = "Connect to a streaming service first"
-                    return@launch
-                }
-
             val safeStartIndex = startIndex.coerceIn(0, playableQueue.lastIndex)
+            val selectedTargetSong = playableQueue[safeStartIndex]
+            val isTargetDownloaded = isSongDownloaded(selectedTargetSong.id)
+
+            val normalizedServiceId = normalizeServiceId(appSettings.streamingService.value)
+            val sessionMarkedConnected = serviceSessionRepository.isConnected(normalizedServiceId)
+            val credentialsExist = providerRepository?.isServiceConnected(normalizedServiceId) ?: sessionMarkedConnected
+
+            if (!credentialsExist && !isTargetDownloaded && _downloadedSongs.value.isEmpty()) {
+                _error.value = "Connect to a streaming service first"
+                return@launch
+            }
             val shouldPinStart = pinStartIndex || (shuffle && safeStartIndex > 0)
             val queueToPlay = if (shuffle && playableQueue.size > 1) {
                 if (shouldPinStart) {
@@ -843,10 +1047,41 @@ class StreamingMusicViewModel(application: Application) : AndroidViewModel(appli
      * Resolve songs for an album with repository-first lookup and local fallback.
      */
     suspend fun getAlbumSongs(album: StreamingAlbum): List<StreamingSong> {
-        val songs = repository.getAlbumSongs(album.id)
-        if (songs.isNotEmpty()) {
-            return songs
+        // 1. If the album already contains tracks (derived from songs or downloaded), return immediately
+        if (album.tracks.isNotEmpty()) {
+            return album.tracks
         }
+
+        // 2. Check downloaded songs matching this album (by albumId or by title and artist)
+        val downloadedMatches = _downloadedSongs.value.filter { song ->
+            (song.albumId != null && song.albumId == album.id) ||
+            (song.album.equals(album.title, ignoreCase = true) &&
+                (album.artist.isBlank() || song.artist.equals(album.artist, ignoreCase = true)))
+        }
+        if (downloadedMatches.isNotEmpty()) {
+            return downloadedMatches
+        }
+
+        // 3. Query repository
+        try {
+            val songs = repository.getAlbumSongs(album.id)
+            if (songs.isNotEmpty()) {
+                return songs
+            }
+        } catch (e: Exception) {
+            Log.w("StreamingMusicVM", "Failed to get album songs from repository for ${album.id}", e)
+        }
+
+        // 4. Fallback to all loaded songs in memory
+        val memoryMatches = _allSongs.value.filter { song ->
+            (song.albumId != null && song.albumId == album.id) ||
+            (song.album.equals(album.title, ignoreCase = true) &&
+                (album.artist.isBlank() || song.artist.equals(album.artist, ignoreCase = true)))
+        }
+        if (memoryMatches.isNotEmpty()) {
+            return memoryMatches
+        }
+
         return emptyList()
     }
 
@@ -859,9 +1094,9 @@ class StreamingMusicViewModel(application: Application) : AndroidViewModel(appli
         limit: Int = 40
     ): List<StreamingSong> {
         val safeLimit = limit.coerceAtLeast(1)
-        val cachedArtist = (_followedArtists.value + _searchResults.value.artists)
+        val cachedArtist = (_downloadedArtists.value + _followedArtists.value + _searchResults.value.artists)
             .distinctBy { it.id }
-            .firstOrNull { it.id == artistId }
+            .firstOrNull { it.id == artistId || (artistNameHint != null && it.name.equals(artistNameHint, ignoreCase = true)) }
 
         val embeddedTracks = cachedArtist
             ?.getTopTracks()
@@ -872,28 +1107,52 @@ class StreamingMusicViewModel(application: Application) : AndroidViewModel(appli
             return embeddedTracks.take(safeLimit)
         }
 
-        val repositoryTracks = repository.getArtistTopTracks(artistId, safeLimit)
-            .filter { it.isPlayable }
-            .distinctBy { it.id }
-        if (repositoryTracks.isNotEmpty()) {
-            return repositoryTracks
+        val normalizedHint = artistNameHint?.trim().orEmpty()
+
+        // Check downloaded songs matching this artist
+        val downloadedMatches = _downloadedSongs.value.filter { song ->
+            when {
+                normalizedHint.isNotBlank() -> song.artist.equals(normalizedHint, ignoreCase = true) ||
+                    ArtistSeparator.splitArtistNames(song.artist, enabled = true).any { it.equals(normalizedHint, ignoreCase = true) }
+                cachedArtist != null -> song.artist.equals(cachedArtist.name, ignoreCase = true) ||
+                    ArtistSeparator.splitArtistNames(song.artist, enabled = true).any { it.equals(cachedArtist.name, ignoreCase = true) }
+                else -> artistIdMatchesSongArtist(artistId = artistId, songArtist = song.artist)
+            }
+        }
+        if (downloadedMatches.isNotEmpty()) {
+            return downloadedMatches.take(safeLimit)
         }
 
-        val normalizedHint = artistNameHint?.trim().orEmpty()
-        
+        // If service is connected and not syncing, try repository
+        if (serviceSessionRepository.isConnected(appSettings.streamingService.value) && !_syncProgress.value.isSyncing) {
+            try {
+                val repositoryTracks = repository.getArtistTopTracks(artistId, safeLimit)
+                    .filter { it.isPlayable }
+                    .distinctBy { it.id }
+                if (repositoryTracks.isNotEmpty()) {
+                    return repositoryTracks
+                }
+            } catch (e: Exception) {
+                Log.w("StreamingMusicVM", "getArtistTopTracks repository lookup failed for $artistId", e)
+            }
+        }
+
         // Fallback: match songs by artist name
         val allAvailableSongs = _likedSongs.value +
             _downloadedSongs.value +
+            _allSongs.value +
             _recommendations.value +
             _searchResults.value.songs +
             _queue.value
-        
+
         return allAvailableSongs
             .asSequence()
             .filter {
                 when {
-                    normalizedHint.isNotBlank() -> it.artist.equals(normalizedHint, ignoreCase = true)
-                    cachedArtist != null -> it.artist.equals(cachedArtist.name, ignoreCase = true)
+                    normalizedHint.isNotBlank() -> it.artist.equals(normalizedHint, ignoreCase = true) ||
+                        ArtistSeparator.splitArtistNames(it.artist, enabled = true).any { name -> name.equals(normalizedHint, ignoreCase = true) }
+                    cachedArtist != null -> it.artist.equals(cachedArtist.name, ignoreCase = true) ||
+                        ArtistSeparator.splitArtistNames(it.artist, enabled = true).any { name -> name.equals(cachedArtist.name, ignoreCase = true) }
                     else -> artistIdMatchesSongArtist(artistId = artistId, songArtist = it.artist)
                 }
             }
@@ -910,13 +1169,42 @@ class StreamingMusicViewModel(application: Application) : AndroidViewModel(appli
         artistId: String,
         artistNameHint: String? = null
     ): List<StreamingAlbum> {
-        val resolvedArtistId = if (!artistNameHint.isNullOrBlank()) {
-            val serviceName = artistId.substringBefore("::", _currentService.value.name)
-            repository.buildArtistId(serviceName, artistNameHint)
-        } else {
-            artistId
+        val normalizedHint = artistNameHint?.trim().orEmpty()
+        val downloadedArtistAlbums = _downloadedAlbums.value.filter {
+            it.artist.equals(normalizedHint, ignoreCase = true)
         }
-        return repository.getArtistAlbums(resolvedArtistId)
+
+        // If connected and not syncing, try repository
+        if (serviceSessionRepository.isConnected(appSettings.streamingService.value) && !_syncProgress.value.isSyncing) {
+            try {
+                val resolvedArtistId = if (normalizedHint.isNotBlank()) {
+                    val serviceName = artistId.substringBefore("::", _currentService.value.name)
+                    repository.buildArtistId(serviceName, normalizedHint)
+                } else {
+                    artistId
+                }
+                val repoAlbums = repository.getArtistAlbums(resolvedArtistId)
+                if (repoAlbums.isNotEmpty()) {
+                    return (downloadedArtistAlbums + repoAlbums).distinctBy { it.id }
+                }
+            } catch (e: Exception) {
+                Log.w("StreamingMusicVM", "getArtistAlbums repository lookup failed for $artistId", e)
+            }
+        }
+
+        if (downloadedArtistAlbums.isNotEmpty()) {
+            return downloadedArtistAlbums
+        }
+
+        // Derive from matching downloaded or cached songs
+        val matchingSongs = (_downloadedSongs.value + _allSongs.value).filter {
+            it.artist.equals(normalizedHint, ignoreCase = true)
+        }
+        if (matchingSongs.isNotEmpty()) {
+            return deriveAlbumsFromSongs(matchingSongs, 100)
+        }
+
+        return emptyList()
     }
 
     /**
@@ -927,10 +1215,10 @@ class StreamingMusicViewModel(application: Application) : AndroidViewModel(appli
         artistId: String,
         artistNameHint: String? = null
     ): StreamingArtist? {
-        // Check memory caches first
-        val cached = (_followedArtists.value + _searchResults.value.artists)
+        // Check memory caches first including downloaded artists
+        val cached = (_downloadedArtists.value + _followedArtists.value + _searchResults.value.artists)
             .distinctBy { it.id }
-            .firstOrNull { it.id == artistId }
+            .firstOrNull { it.id == artistId || (artistNameHint != null && it.name.equals(artistNameHint, ignoreCase = true)) }
         if (cached?.artworkUri != null) return cached
 
         return try {
@@ -942,14 +1230,14 @@ class StreamingMusicViewModel(application: Application) : AndroidViewModel(appli
                     StreamingArtist(
                         id = artistItem.id,
                         name = name,
-                        artworkUri = artistItem.artworkUri,
-                        songCount = artistItem.songCount,
-                        albumCount = artistItem.albumCount,
+                        artworkUri = artistItem.artworkUri ?: cached?.artworkUri,
+                        songCount = if (artistItem.songCount > 0) artistItem.songCount else (cached?.songCount ?: 0),
+                        albumCount = if (artistItem.albumCount > 0) artistItem.albumCount else (cached?.albumCount ?: 0),
                         sourceType = _currentService.value
                     )
-                }
+                } ?: cached
         } catch (e: Exception) {
-            null
+            cached
         }
     }
 
@@ -1050,6 +1338,117 @@ class StreamingMusicViewModel(application: Application) : AndroidViewModel(appli
                 _error.value = "Failed to save song: ${e.message}"
             }
         }
+    }
+
+    /**
+     * Download a song for offline playback.
+     */
+    fun downloadSong(song: StreamingSong) {
+        viewModelScope.launch {
+            if (_downloadingSongIds.value.contains(song.id)) return@launch
+            _downloadingSongIds.value = _downloadingSongIds.value + song.id
+            try {
+                val success = repository.downloadSong(song)
+                if (success) {
+                    val downloaded = repository.getDownloadedSongs().first()
+                    _downloadedSongs.value = downloaded
+                    _downloadedAlbums.value = deriveAlbumsFromSongs(downloaded, limit = 500)
+                    _downloadedArtists.value = deriveArtistsFromSongs(downloaded, limit = 500)
+                    if (!_isAuthenticated.value || appSettings.offlineMode.value || !NetworkUtils.isNetworkAvailable(getApplication())) {
+                        switchToDownloadedMode()
+                    }
+                } else {
+                    _error.value = "Failed to download ${song.title}"
+                }
+            } catch (e: Exception) {
+                _error.value = "Download failed: ${e.message}"
+            } finally {
+                _downloadingSongIds.value = _downloadingSongIds.value - song.id
+            }
+        }
+    }
+
+    /**
+     * Download a song by ID for offline playback.
+     */
+    fun downloadSongById(songId: String) {
+        val song = _allSongs.value.firstOrNull { it.id == songId }
+            ?: _likedSongs.value.firstOrNull { it.id == songId }
+            ?: _recommendations.value.firstOrNull { it.id == songId }
+            ?: _queue.value.firstOrNull { it.id == songId }
+        if (song != null) {
+            downloadSong(song)
+        } else {
+            viewModelScope.launch {
+                if (_downloadingSongIds.value.contains(songId)) return@launch
+                _downloadingSongIds.value = _downloadingSongIds.value + songId
+                try {
+                    val success = repository.downloadSong(songId)
+                    if (success) {
+                        val downloaded = repository.getDownloadedSongs().first()
+                        _downloadedSongs.value = downloaded
+                        _downloadedAlbums.value = deriveAlbumsFromSongs(downloaded, limit = 500)
+                        _downloadedArtists.value = deriveArtistsFromSongs(downloaded, limit = 500)
+                        if (!_isAuthenticated.value || appSettings.offlineMode.value || !NetworkUtils.isNetworkAvailable(getApplication())) {
+                            switchToDownloadedMode()
+                        }
+                    }
+                } catch (e: Exception) {
+                    _error.value = "Download failed: ${e.message}"
+                } finally {
+                    _downloadingSongIds.value = _downloadingSongIds.value - songId
+                }
+            }
+        }
+    }
+
+    /**
+     * Remove a downloaded song.
+     */
+    fun removeDownload(songId: String) {
+        viewModelScope.launch {
+            try {
+                val success = repository.removeDownload(songId)
+                if (success) {
+                    val downloaded = repository.getDownloadedSongs().first()
+                    _downloadedSongs.value = downloaded
+                    _downloadedAlbums.value = deriveAlbumsFromSongs(downloaded, limit = 500)
+                    _downloadedArtists.value = deriveArtistsFromSongs(downloaded, limit = 500)
+                    if (!_isAuthenticated.value || appSettings.offlineMode.value || !NetworkUtils.isNetworkAvailable(getApplication())) {
+                        switchToDownloadedMode()
+                    }
+                }
+            } catch (e: Exception) {
+                _error.value = "Failed to remove download: ${e.message}"
+            }
+        }
+    }
+
+    /**
+     * Download multiple songs for offline playback (batch).
+     */
+    fun downloadSongs(songs: List<StreamingSong>) {
+        viewModelScope.launch {
+            songs.forEach { song ->
+                if (!_downloadingSongIds.value.contains(song.id) && !isSongDownloaded(song.id)) {
+                    downloadSong(song)
+                }
+            }
+        }
+    }
+
+    /**
+     * Check if a song is downloaded locally.
+     */
+    fun isSongDownloaded(songId: String): Boolean {
+        return _downloadedSongs.value.any { it.id == songId }
+    }
+
+    /**
+     * Check if a song is currently downloading.
+     */
+    fun isSongDownloading(songId: String): Boolean {
+        return _downloadingSongIds.value.contains(songId)
     }
 
     /**
@@ -1191,20 +1590,6 @@ class StreamingMusicViewModel(application: Application) : AndroidViewModel(appli
     fun saveAlbum(album: StreamingAlbum) {
         // Album logic intentionally disabled for streaming mode cleanup.
     }
-
-    /**
-     * Download a song for offline playback.
-     */
-    fun downloadSong(song: StreamingSong) {
-        viewModelScope.launch {
-            try {
-                repository.downloadSong(song.id)
-                _downloadedSongs.value = repository.getDownloadedSongs().first()
-            } catch (e: Exception) {
-                _error.value = "Download failed: ${e.message}"
-            }
-        }
-    }
     
     /**
      * Set streaming quality.
@@ -1289,7 +1674,6 @@ class StreamingMusicViewModel(application: Application) : AndroidViewModel(appli
         _savedAlbums.value = emptyList()
         _followedArtists.value = emptyList()
         _savedPlaylists.value = emptyList()
-        _downloadedSongs.value = emptyList()
         _queue.value = emptyList()
         _currentSong.value = null
     }
@@ -1308,7 +1692,7 @@ class StreamingMusicViewModel(application: Application) : AndroidViewModel(appli
         _error.value = null
     }
 
-    private fun deriveAlbumsFromSongs(
+    fun deriveAlbumsFromSongs(
         songs: List<StreamingSong>,
         limit: Int
     ): List<StreamingAlbum> {
@@ -1330,11 +1714,13 @@ class StreamingMusicViewModel(application: Application) : AndroidViewModel(appli
                 val firstSong = albumSongs.first()
                 val providerId = firstSong.albumId?.takeIf { it.isNotBlank() }
                 val derivedKey = "derived:${firstSong.sourceType.name}:album:${firstSong.artist.lowercase()}:${firstSong.album.lowercase()}"
+                val albumArt = albumSongs.firstOrNull { it.artworkUri?.startsWith("file:") == true }?.artworkUri
+                    ?: albumSongs.firstNotNullOfOrNull { it.artworkUri }
                 StreamingAlbum(
                     id = providerId ?: derivedKey,
                     title = firstSong.album,
                     artist = firstSong.artist,
-                    artworkUri = albumSongs.firstNotNullOfOrNull { it.artworkUri },
+                    artworkUri = albumArt,
                     songCount = albumSongs.size,
                     year = firstSong.releaseDate?.take(4)?.toIntOrNull(),
                     sourceType = firstSong.sourceType,
@@ -1343,7 +1729,7 @@ class StreamingMusicViewModel(application: Application) : AndroidViewModel(appli
             }
     }
 
-    private suspend fun deriveArtistsFromSongs(
+    fun deriveArtistsFromSongs(
         songs: List<StreamingSong>,
         limit: Int
     ): List<StreamingArtist> {
@@ -1382,10 +1768,13 @@ class StreamingMusicViewModel(application: Application) : AndroidViewModel(appli
                 val artistName = artistSongs.first().second
                 val artistTracks = artistSongs.map { it.first }
                 val artistAlbums = deriveAlbumsFromSongs(artistTracks, limit = 8)
+                val artistArt = artistTracks.firstOrNull { it.artworkUri?.startsWith("file:") == true }?.artworkUri
+                    ?: artistTracks.firstNotNullOfOrNull { it.artworkUri }
+                    ?: artistAlbums.firstNotNullOfOrNull { it.artworkUri }
                 StreamingArtist(
                     id = "derived:${firstSong.sourceType.name}:artist:${artistName.lowercase()}",
                     name = artistName,
-                    artworkUri = null,
+                    artworkUri = artistArt,
                     songCount = artistTracks.size,
                     albumCount = artistAlbums.size,
                     sourceType = firstSong.sourceType,
@@ -1393,15 +1782,13 @@ class StreamingMusicViewModel(application: Application) : AndroidViewModel(appli
                     albums = artistAlbums
                 )
             }
-            .let { derivedArtists ->
-                providerRepository?.enrichArtistsWithDeezerImages(derivedArtists) ?: derivedArtists
-            }
     }
 
-    private suspend fun checkAndSyncAuthentication(
+    suspend fun checkAndSyncAuthentication(
         serviceId: String = appSettings.streamingService.value,
-        retries: Int = AUTH_PING_RETRIES
-    ): Boolean {
+        retries: Int = AUTH_PING_RETRIES,
+        forceCheck: Boolean = false
+    ): Boolean = authMutex.withLock {
         val normalizedServiceId = normalizeServiceId(serviceId)
         val sessionMarkedConnected = serviceSessionRepository.isConnected(normalizedServiceId)
         val credentialsExist = providerRepository?.isServiceConnected(normalizedServiceId)
@@ -1419,7 +1806,24 @@ class StreamingMusicViewModel(application: Application) : AndroidViewModel(appli
                     getSourceTypeName(sourceTypeFromServiceId(normalizedServiceId))
                 )
             }
-            return false
+            switchToDownloadedMode()
+            return@withLock false
+        }
+
+        val isNetworkAvail = NetworkUtils.isNetworkAvailable(getApplication())
+        if (!isNetworkAvail) {
+            _isAuthenticated.value = false
+            _streamingConfig.value = _streamingConfig.value.copy(
+                activeService = sourceTypeFromServiceId(normalizedServiceId),
+                isAuthenticated = false
+            )
+            updateOnlineStatus(false)
+            _error.value = getApplication<Application>().getString(
+                R.string.streaming_home_connect_selected_service,
+                getSourceTypeName(sourceTypeFromServiceId(normalizedServiceId))
+            )
+            switchToDownloadedMode()
+            return@withLock false
         }
 
         // If offline mode is enabled, trust saved credentials without pinging
@@ -1429,41 +1833,71 @@ class StreamingMusicViewModel(application: Application) : AndroidViewModel(appli
                 activeService = sourceTypeFromServiceId(normalizedServiceId),
                 isAuthenticated = true
             )
-            return true
+            return@withLock true
         }
 
+        // Cache hit: If already authenticated and checked recently (< 15 seconds ago), avoid ping stampede
+        val now = System.currentTimeMillis()
+        if (!forceCheck && _isAuthenticated.value && (now - lastSuccessfulAuthTimestamp) < 15_000L) {
+            return@withLock true
+        }
+
+        val wasAlreadyAuthenticated = _isAuthenticated.value
         var connected = false
-        repeat(retries) { attempt ->
-            connected = try {
-                when (normalizedServiceId) {
-                    "SUBSONIC" -> providerRepository?.authenticate() == true
-                    "JELLYFIN" -> providerRepository?.authenticate() == true
-                    else -> false
+
+        for (attempt in 0 until retries) {
+            val authJob = kotlinx.coroutines.withTimeoutOrNull(6000L) {
+                try {
+                    when (normalizedServiceId) {
+                        "SUBSONIC" -> providerRepository?.authenticate() == true
+                        "JELLYFIN" -> providerRepository?.authenticate() == true
+                        else -> false
+                    }
+                } catch (e: Exception) {
+                    Log.w("StreamingMusicViewModel", "Auth ping attempt $attempt failed", e)
+                    false
                 }
-            } catch (e: Exception) {
-                false
             }
-            if (connected) {
-                return@repeat
+            if (authJob == true) {
+                connected = true
+                break
             }
             if (attempt < retries - 1) {
                 delay(AUTH_PING_RETRY_DELAY_MS)
             }
         }
 
-        _isAuthenticated.value = connected
+        if (connected) {
+            lastSuccessfulAuthTimestamp = System.currentTimeMillis()
+            _isAuthenticated.value = true
+            _streamingConfig.value = _streamingConfig.value.copy(
+                activeService = sourceTypeFromServiceId(normalizedServiceId),
+                isAuthenticated = true
+            )
+            updateOnlineStatus(true)
+            _error.value = null
+            return@withLock true
+        }
+
+        // Resiliency Guard: If network is available and session was already active,
+        // do not wipe the library or trigger false offline flaps due to a slow/busy server response
+        if (wasAlreadyAuthenticated && NetworkUtils.isNetworkAvailable(getApplication())) {
+            Log.w("StreamingMusicViewModel", "Auth ping timed out while network is available; maintaining active session")
+            return@withLock true
+        }
+
+        _isAuthenticated.value = false
         _streamingConfig.value = _streamingConfig.value.copy(
             activeService = sourceTypeFromServiceId(normalizedServiceId),
-            isAuthenticated = connected
+            isAuthenticated = false
         )
-
-        if (!connected) {
-            _error.value = getApplication<Application>().getString(
-                R.string.streaming_home_connect_selected_service,
-                getSourceTypeName(sourceTypeFromServiceId(normalizedServiceId))
-            )
-        }
-        return connected
+        updateOnlineStatus(false)
+        _error.value = getApplication<Application>().getString(
+            R.string.streaming_home_connect_selected_service,
+            getSourceTypeName(sourceTypeFromServiceId(normalizedServiceId))
+        )
+        switchToDownloadedMode()
+        return@withLock false
     }
 
     private fun validateCredentials(
@@ -1517,7 +1951,7 @@ class StreamingMusicViewModel(application: Application) : AndroidViewModel(appli
     /**
      * Get display name for SourceType
      */
-    private fun getSourceTypeName(sourceType: SourceType): String {
+    fun getSourceTypeName(sourceType: SourceType): String {
         return when (sourceType) {
             SourceType.SUBSONIC -> "Subsonic"
             SourceType.JELLYFIN -> "Jellyfin"
@@ -1552,7 +1986,8 @@ class StreamingMusicViewModel(application: Application) : AndroidViewModel(appli
     fun playNext(song: StreamingSong, localViewModel: MusicViewModel) {
         viewModelScope.launch {
             try {
-                if (!checkAndSyncAuthentication()) {
+                val isDownloadedSong = isSongDownloaded(song.id) || repository.isDownloaded(song.id)
+                if (!isDownloadedSong && !checkAndSyncAuthentication()) {
                     _error.value = "Connect to a streaming service first"
                     return@launch
                 }
@@ -1600,7 +2035,8 @@ class StreamingMusicViewModel(application: Application) : AndroidViewModel(appli
     fun addSongToQueue(song: StreamingSong, localViewModel: MusicViewModel) {
         viewModelScope.launch {
             try {
-                if (!checkAndSyncAuthentication()) {
+                val isDownloadedSong = isSongDownloaded(song.id) || repository.isDownloaded(song.id)
+                if (!isDownloadedSong && !checkAndSyncAuthentication()) {
                     _error.value = "Connect to a streaming service first"
                     return@launch
                 }
@@ -1673,11 +2109,22 @@ data class StreamingSearchResults(
 }
 
 /**
+ * Stages of library synchronization for streaming services.
+ */
+enum class StreamingSyncStage {
+    Idle,
+    Syncing,
+    Complete,
+    Error
+}
+
+/**
  * Live library sync progress state.
  */
 data class StreamingSyncProgress(
     val isSyncing: Boolean = false,
     val current: Int = 0,
     val total: Int = 0,
-    val songsCount: Int = 0
+    val songsCount: Int = 0,
+    val stage: StreamingSyncStage = StreamingSyncStage.Idle
 )

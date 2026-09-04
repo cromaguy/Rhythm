@@ -2984,5 +2984,18 @@
     <string name="expressive_button_artist_desc">Go to artist details</string>
     <string name="expressive_button_song_info_desc">View and edit song metadata</string>
     <string name="expressive_button_share_desc">Share audio file</string>
-</resources>
 
+    <!-- Streaming Downloads & Offline -->
+    <string name="streaming_download">Download</string>
+    <string name="streaming_downloading">Downloading&#8230;</string>
+    <string name="streaming_remove_download">Remove Download</string>
+    <string name="streaming_downloaded">Downloaded</string>
+    <string name="streaming_offline_banner">Offline mode &#8226; Showing downloaded and cached music</string>
+    <string name="streaming_download_success">Downloaded %1$s</string>
+    <string name="streaming_download_removed">Removed download for %1$s</string>
+    <string name="streaming_download_failed">Failed to download %1$s</string>
+    <string name="rhythm_go_offline_toast">Rhythm Go is offline</string>
+    <string name="rhythm_go_online_toast">Rhythm Go is back online</string>
+    <string name="streaming_downloaded_albums">Downloaded Albums</string>
+    <string name="streaming_syncing_downloads_subtitle">Available while syncing</string>
+</resources>

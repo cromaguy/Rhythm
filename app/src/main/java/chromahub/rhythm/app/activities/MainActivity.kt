@@ -144,12 +144,16 @@ import chromahub.rhythm.app.features.local.presentation.screens.OnboardingScreen
 import chromahub.rhythm.app.features.local.presentation.screens.onboarding.OnboardingStep
 import chromahub.rhythm.app.features.local.presentation.screens.onboarding.PermissionScreenState
 import androidx.core.content.pm.ShortcutManagerCompat
+import chromahub.rhythm.app.features.streaming.presentation.viewmodel.StreamingMusicViewModel
+import chromahub.rhythm.app.features.streaming.presentation.viewmodel.StreamingSyncStage
+import chromahub.rhythm.app.core.domain.model.SourceType
 
 class MainActivity : AppCompatActivity() {
     private val TAG = "MainActivity"
     private val musicViewModel: MusicViewModel by viewModels()
     private val themeViewModel: ThemeViewModel by viewModels()
     private val appUpdaterViewModel: AppUpdaterViewModel by viewModels() // Inject AppUpdaterViewModel
+    private val streamingMusicViewModel: StreamingMusicViewModel by viewModels()
     private lateinit var appSettings: AppSettings // Declare AppSettings
     
     companion object {
@@ -299,6 +303,12 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
                     val scanProgress by musicViewModel.scanProgress.collectAsState()
+                    val isStreamingMode = appMode == "STREAMING"
+                    val streamingSyncProgress by streamingMusicViewModel.syncProgress.collectAsState()
+                    val streamingCurrentService by streamingMusicViewModel.currentService.collectAsState()
+                    val streamingServiceName = remember(streamingCurrentService) {
+                        streamingMusicViewModel.getSourceTypeName(streamingCurrentService)
+                    }
 
                     Box(modifier = Modifier.fillMaxSize()) {
                         AnimatedVisibility(
@@ -311,7 +321,8 @@ class MainActivity : AppCompatActivity() {
                                     // RhythmNavigation handles mode switching between Local and Streaming
                                     RhythmNavigation(
                                         musicViewModel = musicViewModel,
-                                        themeViewModel = themeViewModel
+                                        themeViewModel = themeViewModel,
+                                        streamingMusicViewModel = streamingMusicViewModel
                                     )
                                 },
                                 themeViewModel = themeViewModel,
@@ -321,6 +332,7 @@ class MainActivity : AppCompatActivity() {
                                 onSetIsLoading = { isLoading = it },
                                 onSetIsInitializingApp = { isInitializingApp = it },
                                 musicViewModel = musicViewModel,
+                                streamingViewModel = streamingMusicViewModel,
                                 showMediaScanLoader = showMediaScanLoader,
                                 onShowMediaScanLoaderChange = { showMediaScanLoader = it }
                             )
@@ -381,16 +393,32 @@ class MainActivity : AppCompatActivity() {
                                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                                     )
 
-                                    val preparingScanText = remember(scanProgress) {
-                                        when (scanProgress.stage) {
-                                            is ScanPhase.Songs -> if (scanProgress.total > 0) "Scanning media: ${scanProgress.current} / ${scanProgress.total}" else "Scanning media…"
-                                            is ScanPhase.Incremental -> if (scanProgress.total > 0) "Checking new files: ${scanProgress.current} / ${scanProgress.total}" else "Checking for new music…"
-                                            is ScanPhase.SavingDb -> "Saving database…"
-                                            is ScanPhase.Error -> "Scan error"
-                                            is ScanPhase.PermissionDenied -> "Permission required"
-                                            is ScanPhase.Complete, is ScanPhase.Idle -> null
-                                        }
-                                    }
+                                    val preparingScanText = remember(isStreamingMode, scanProgress, streamingSyncProgress, streamingServiceName) {
+                                         if (isStreamingMode) {
+                                             when (streamingSyncProgress.stage) {
+                                                 StreamingSyncStage.Syncing -> {
+                                                     if (streamingSyncProgress.total > 0) {
+                                                         "Syncing $streamingServiceName: ${streamingSyncProgress.current} / ${streamingSyncProgress.total}"
+                                                     } else if (streamingSyncProgress.songsCount > 0) {
+                                                         "Syncing $streamingServiceName: ${streamingSyncProgress.songsCount} tracks"
+                                                     } else {
+                                                         "Connecting to $streamingServiceName…"
+                                                     }
+                                                 }
+                                                 StreamingSyncStage.Error -> "Sync error"
+                                                 StreamingSyncStage.Complete, StreamingSyncStage.Idle -> null
+                                             }
+                                         } else {
+                                             when (scanProgress.stage) {
+                                                 is ScanPhase.Songs -> if (scanProgress.total > 0) "Scanning media: ${scanProgress.current} / ${scanProgress.total}" else "Scanning media…"
+                                                 is ScanPhase.Incremental -> if (scanProgress.total > 0) "Checking new files: ${scanProgress.current} / ${scanProgress.total}" else "Checking for new music…"
+                                                 is ScanPhase.SavingDb -> "Saving database…"
+                                                 is ScanPhase.Error -> "Scan error"
+                                                 is ScanPhase.PermissionDenied -> "Permission required"
+                                                 is ScanPhase.Complete, is ScanPhase.Idle -> null
+                                             }
+                                         }
+                                     }
 
                                     if (!preparingScanText.isNullOrBlank()) {
                                         Text(
@@ -447,27 +475,55 @@ class MainActivity : AppCompatActivity() {
 
                         var isScanBubbleDismissedManually by remember { mutableStateOf(false) }
 
-                        LaunchedEffect(scanProgress.stage) {
-                            val stage = scanProgress.stage
-                            val isScanning = stage !is ScanPhase.Idle &&
-                                             stage !is ScanPhase.Complete &&
-                                             stage !is ScanPhase.Error &&
-                                             stage !is ScanPhase.PermissionDenied
-
-                            if (isScanning) {
-                                if (!isScanBubbleDismissedManually) {
-                                    showMediaScanLoader = true
+                        LaunchedEffect(isStreamingMode, scanProgress.stage, streamingSyncProgress.stage) {
+                            if (isStreamingMode) {
+                                when (streamingSyncProgress.stage) {
+                                    StreamingSyncStage.Syncing -> {
+                                        if (!isScanBubbleDismissedManually) {
+                                            showMediaScanLoader = true
+                                        }
+                                    }
+                                    StreamingSyncStage.Complete -> {
+                                        if (showMediaScanLoader) {
+                                            delay(2000)
+                                            showMediaScanLoader = false
+                                        }
+                                        isScanBubbleDismissedManually = false
+                                    }
+                                    StreamingSyncStage.Error -> {
+                                        if (showMediaScanLoader) {
+                                            delay(3000)
+                                            showMediaScanLoader = false
+                                        }
+                                        isScanBubbleDismissedManually = false
+                                    }
+                                    StreamingSyncStage.Idle -> {
+                                        showMediaScanLoader = false
+                                        isScanBubbleDismissedManually = false
+                                    }
                                 }
-                            } else if (stage is ScanPhase.Complete) {
-                                if (showMediaScanLoader) {
-                                    delay(2000)
-                                    showMediaScanLoader = false
-                                    appSettings.setInitialMediaScanCompleted(true)
-                                }
-                                isScanBubbleDismissedManually = false
                             } else {
-                                showMediaScanLoader = false
-                                isScanBubbleDismissedManually = false
+                                val stage = scanProgress.stage
+                                val isScanning = stage !is ScanPhase.Idle &&
+                                                 stage !is ScanPhase.Complete &&
+                                                 stage !is ScanPhase.Error &&
+                                                 stage !is ScanPhase.PermissionDenied
+
+                                if (isScanning) {
+                                    if (!isScanBubbleDismissedManually) {
+                                        showMediaScanLoader = true
+                                    }
+                                } else if (stage is ScanPhase.Complete) {
+                                    if (showMediaScanLoader) {
+                                        delay(2000)
+                                        showMediaScanLoader = false
+                                        appSettings.setInitialMediaScanCompleted(true)
+                                    }
+                                    isScanBubbleDismissedManually = false
+                                } else {
+                                    showMediaScanLoader = false
+                                    isScanBubbleDismissedManually = false
+                                }
                             }
                         }
 
@@ -480,48 +536,99 @@ class MainActivity : AppCompatActivity() {
                                 .statusBarsPadding()
                                 .padding(top = 16.dp)
                         ) {
-                            val scanProgressValue = remember(scanProgress) {
-                                when (scanProgress.stage) {
-                                    is ScanPhase.Idle -> 0f
-                                    is ScanPhase.Songs -> {
-                                        if (scanProgress.total > 0) {
-                                            (scanProgress.current.toFloat() / scanProgress.total.toFloat()).coerceIn(0f, 0.85f)
-                                        } else {
-                                            0.1f
+                            val scanProgressValue: Float? = remember(isStreamingMode, scanProgress, streamingSyncProgress) {
+                                if (isStreamingMode) {
+                                    when (streamingSyncProgress.stage) {
+                                        StreamingSyncStage.Idle -> null
+                                        StreamingSyncStage.Syncing -> {
+                                            if (streamingSyncProgress.total > 0) {
+                                                (streamingSyncProgress.current.toFloat() / streamingSyncProgress.total.toFloat()).coerceIn(0.05f, 0.95f)
+                                            } else {
+                                                null
+                                            }
                                         }
+                                        StreamingSyncStage.Complete -> 1.0f
+                                        StreamingSyncStage.Error -> null
                                     }
-                                    is ScanPhase.Incremental -> {
-                                        if (scanProgress.total > 0) {
-                                            0.5f + (scanProgress.current.toFloat() / scanProgress.total.toFloat() * 0.35f)
-                                        } else {
-                                            0.5f
+                                } else {
+                                    when (scanProgress.stage) {
+                                        is ScanPhase.Idle -> null
+                                        is ScanPhase.Songs -> {
+                                            if (scanProgress.total > 0) {
+                                                (scanProgress.current.toFloat() / scanProgress.total.toFloat()).coerceIn(0f, 0.85f)
+                                            } else {
+                                                null
+                                            }
                                         }
+                                        is ScanPhase.Incremental -> {
+                                            if (scanProgress.total > 0) {
+                                                0.5f + (scanProgress.current.toFloat() / scanProgress.total.toFloat() * 0.35f)
+                                            } else {
+                                                null
+                                            }
+                                        }
+                                        is ScanPhase.SavingDb -> null
+                                        is ScanPhase.Complete -> 1.0f
+                                        else -> null
                                     }
-                                    is ScanPhase.SavingDb -> 0.90f
-                                    is ScanPhase.Complete -> 1.0f
-                                    else -> 0.5f
                                 }
                             }
 
-                            val scanLabelText = remember(scanProgress.stage) {
-                                when (scanProgress.stage) {
-                                    is ScanPhase.Songs -> "Scanning Music Library"
-                                    is ScanPhase.Incremental, is ScanPhase.SavingDb -> "Updating Music Library"
-                                    is ScanPhase.Complete -> "Music Library Updated"
-                                    is ScanPhase.Error -> "Scan Error"
-                                    is ScanPhase.PermissionDenied -> "Permission Required"
-                                    else -> "Music Library"
+                            val scanLabelText = remember(isStreamingMode, scanProgress.stage, streamingSyncProgress.stage, streamingServiceName) {
+                                if (isStreamingMode) {
+                                    when (streamingSyncProgress.stage) {
+                                        StreamingSyncStage.Syncing -> "Syncing $streamingServiceName"
+                                        StreamingSyncStage.Complete -> "$streamingServiceName Updated"
+                                        StreamingSyncStage.Error -> "Sync Error"
+                                        StreamingSyncStage.Idle -> streamingServiceName
+                                    }
+                                } else {
+                                    when (scanProgress.stage) {
+                                        is ScanPhase.Songs -> "Scanning Music Library"
+                                        is ScanPhase.Incremental, is ScanPhase.SavingDb -> "Updating Music Library"
+                                        is ScanPhase.Complete -> "Music Library Updated"
+                                        is ScanPhase.Error -> "Scan Error"
+                                        is ScanPhase.PermissionDenied -> "Permission Required"
+                                        else -> "Music Library"
+                                    }
                                 }
                             }
 
-                            val scanStatusText = remember(scanProgress) {
-                                when (scanProgress.stage) {
-                                    is ScanPhase.Idle -> "Initializing..."
-                                    is ScanPhase.Songs, is ScanPhase.Incremental -> "${scanProgress.current} of ${scanProgress.total} tracks"
-                                    is ScanPhase.SavingDb -> "Saving changes..."
-                                    is ScanPhase.Complete -> "Up to date"
-                                    is ScanPhase.Error -> "Failed to scan files"
-                                    is ScanPhase.PermissionDenied -> "Storage permission required"
+                            val scanStatusText = remember(isStreamingMode, scanProgress, streamingSyncProgress) {
+                                if (isStreamingMode) {
+                                    when (streamingSyncProgress.stage) {
+                                        StreamingSyncStage.Idle -> "Initializing..."
+                                        StreamingSyncStage.Syncing -> {
+                                            if (streamingSyncProgress.total > 0) {
+                                                if (streamingSyncProgress.songsCount > 0) {
+                                                    "${streamingSyncProgress.current} of ${streamingSyncProgress.total} albums (${streamingSyncProgress.songsCount} songs)"
+                                                } else {
+                                                    "${streamingSyncProgress.current} of ${streamingSyncProgress.total} albums"
+                                                }
+                                            } else if (streamingSyncProgress.songsCount > 0) {
+                                                "${streamingSyncProgress.songsCount} songs synced"
+                                            } else {
+                                                "Fetching library..."
+                                            }
+                                        }
+                                        StreamingSyncStage.Complete -> {
+                                            if (streamingSyncProgress.songsCount > 0) {
+                                                "${streamingSyncProgress.songsCount} songs up to date"
+                                            } else {
+                                                "Up to date"
+                                            }
+                                        }
+                                        StreamingSyncStage.Error -> "Failed to sync library"
+                                    }
+                                } else {
+                                    when (scanProgress.stage) {
+                                        is ScanPhase.Idle -> "Initializing..."
+                                        is ScanPhase.Songs, is ScanPhase.Incremental -> "${scanProgress.current} of ${scanProgress.total} tracks"
+                                        is ScanPhase.SavingDb -> "Saving changes..."
+                                        is ScanPhase.Complete -> "Up to date"
+                                        is ScanPhase.Error -> "Failed to scan files"
+                                        is ScanPhase.PermissionDenied -> "Storage permission required"
+                                    }
                                 }
                             }
 
@@ -554,7 +661,9 @@ class MainActivity : AppCompatActivity() {
                                                         swipeOffsetY.animateTo(-500f, tween(200))
                                                         isScanBubbleDismissedManually = true
                                                         showMediaScanLoader = false
-                                                        appSettings.setInitialMediaScanCompleted(true)
+                                                        if (!isStreamingMode) {
+                                                            appSettings.setInitialMediaScanCompleted(true)
+                                                        }
                                                     }
                                                 } else if (abs(x) > swipeThresholdPx) {
                                                     coroutineScope.launch {
@@ -567,7 +676,9 @@ class MainActivity : AppCompatActivity() {
                                                         swipeOffsetX.animateTo(targetX, tween(200))
                                                         isScanBubbleDismissedManually = true
                                                         showMediaScanLoader = false
-                                                        appSettings.setInitialMediaScanCompleted(true)
+                                                        if (!isStreamingMode) {
+                                                            appSettings.setInitialMediaScanCompleted(true)
+                                                        }
                                                     }
                                                 } else {
                                                     coroutineScope.launch {

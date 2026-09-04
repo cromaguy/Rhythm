@@ -111,7 +111,7 @@ fun NearbyServerDiscoverySheet(
             }
         }
 
-        val nsdManager = context.getSystemService(Context.NSD_SERVICE) as NsdManager
+        val nsdManager = context.applicationContext.getSystemService(Context.NSD_SERVICE) as NsdManager
         val mainHandler = android.os.Handler(android.os.Looper.getMainLooper())
         
         val targetServiceType = when (upperServiceId) {
@@ -344,6 +344,7 @@ fun NearbyServerDiscoverySheet(
         }
 
         onDispose {
+            mainHandler.removeCallbacksAndMessages(null)
             jellyfinUdpJob?.cancel()
             try {
                 if (multicastLock.isHeld) {
@@ -359,6 +360,8 @@ fun NearbyServerDiscoverySheet(
                     // Ignore
                 }
             }
+            listeners.clear()
+            pendingResolves.clear()
         }
     }
 

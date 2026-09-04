@@ -198,7 +198,10 @@ fun SongInfoBottomSheet(
     onEditSong: ((title: String, artist: String, album: String, genre: String, year: Int, trackNumber: Int, artworkUri: Uri?, removeArtwork: Boolean, albumArtist: String?, composer: String?, discNumber: Int, onComplete: (Boolean) -> Unit) -> Unit)? = null,
     onShowLyricsEditor: (() -> Unit)? = null,
     sheetState: SheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded)),
-    isStreamingMode: Boolean = false
+    isStreamingMode: Boolean = false,
+    isDownloaded: Boolean = false,
+    isDownloading: Boolean = false,
+    onToggleDownload: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
     val haptics = LocalHapticFeedback.current
@@ -628,6 +631,19 @@ fun SongInfoBottomSheet(
                                                         contentDescription = stringResource(R.string.bottomsheet_timer_edit)
                                                     )
                                                 }
+                                            } else if (onToggleDownload != null) {
+                                                AdaptiveSheetActionButton(
+                                                    onClick = {
+                                                        HapticUtils.performHapticFeedback(
+                                                            context,
+                                                            haptics,
+                                                            HapticType.HEAVY
+                                                        )
+                                                        onToggleDownload()
+                                                    },
+                                                    icon = if (isDownloaded) MaterialSymbolIcon("download_done", filled = true) else MaterialSymbolIcon("download"),
+                                                    contentDescription = if (isDownloaded) stringResource(R.string.streaming_remove_download) else stringResource(R.string.streaming_download)
+                                                )
                                             }
 
                                             AdaptiveSheetCloseButton(
@@ -833,7 +849,46 @@ fun SongInfoBottomSheet(
                         contentPadding = PaddingValues(start = 24.dp, end = 24.dp + endPadding, top = 8.dp, bottom = 24.dp),
                         verticalArrangement = Arrangement.spacedBy(28.dp)
                     ) {
-            if (!isStreamingMode) {
+            if (isStreamingMode) {
+                if (onToggleDownload != null) {
+                    item {
+                        Row(
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            RhythmDetailActionButton(
+                                onClick = {
+                                    HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
+                                    onToggleDownload()
+                                },
+                                height = 48.dp,
+                                isFirst = true,
+                                isLast = true,
+                                type = RhythmButtonType.Tonal,
+                                isLoading = isDownloading,
+                                icon = if (isDownloaded) {
+                                    MaterialSymbolIcon("download_done", filled = true)
+                                } else {
+                                    MaterialSymbolIcon("download")
+                                } as MaterialSymbolIcon?,
+                                iconSize = 18.dp,
+                                text = when {
+                                    isDownloading -> stringResource(R.string.streaming_downloading)
+                                    isDownloaded -> stringResource(R.string.streaming_remove_download)
+                                    else -> stringResource(R.string.streaming_download)
+                                },
+                                containerColor = if (isDownloaded)
+                                    MaterialTheme.colorScheme.primaryContainer
+                                else
+                                    MaterialTheme.colorScheme.secondaryContainer,
+                                contentColor = if (isDownloaded)
+                                    MaterialTheme.colorScheme.onPrimaryContainer
+                                else
+                                    MaterialTheme.colorScheme.onSecondaryContainer
+                            )
+                        }
+                    }
+                }
+            } else {
                 item {
                     // Actions section - only shown in local mode
                     Column(

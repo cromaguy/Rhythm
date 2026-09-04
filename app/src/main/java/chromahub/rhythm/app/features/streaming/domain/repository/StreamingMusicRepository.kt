@@ -214,6 +214,11 @@ interface StreamingMusicRepository : MusicRepository {
      * Download a song for offline playback.
      */
     suspend fun downloadSong(songId: String): Boolean
+
+    /**
+     * Download a song with metadata for offline playback.
+     */
+    suspend fun downloadSong(song: StreamingSong): Boolean = downloadSong(song.id)
     
     /**
      * Remove a downloaded song.
