@@ -42,6 +42,9 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 
 /**
  * Provider-backed implementation used by Rhythm GO mode.
@@ -118,12 +121,12 @@ class StreamingMusicRepositoryImpl(
     }
 
     private fun saveDownloadedSongsIndex() {
+        val list = downloadedSongsMap.values.toList()
+        downloadedSongsFlow.value = list
         try {
             val indexFile = java.io.File(downloadDirectory, "downloaded_songs.json")
-            val list = downloadedSongsMap.values.toList()
             val json = gson.toJson(list)
             indexFile.writeText(json)
-            downloadedSongsFlow.value = list
         } catch (e: Exception) {
             Log.e("StreamingMusicRepo", "Error saving downloaded songs index", e)
         }
@@ -323,14 +326,56 @@ class StreamingMusicRepositoryImpl(
     override fun getFollowedArtists(): Flow<List<StreamingArtist>> = followedArtistsFlow.asStateFlow()
 
     override suspend fun saveAlbum(albumId: String): Boolean {
-        return false
+        if (appSettings.offlineMode.value) return false
+        val decoded = decodeAlbumId(albumId)
+        if (decoded != null && isServiceConnected(decoded.serviceId)) {
+            val serviceId = decoded.serviceId
+            var providerId = decoded.providerAlbumId
+            if (providerId.isNullOrBlank()) {
+                val matchedAlbum = albumsFlow.value.firstOrNull { it.id == albumId } as? StreamingAlbum
+                providerId = matchedAlbum?.externalId
+            }
+            if (!providerId.isNullOrBlank()) {
+                val success = when (serviceId) {
+                    StreamingServiceId.SUBSONIC -> subsonicClient.markFavorite(providerId, true).isSuccess
+                    StreamingServiceId.JELLYFIN -> jellyfinClient.markFavorite(providerId, true).isSuccess
+                    else -> false
+                }
+                if (!success) return false
+            }
+        }
+
+        savedAlbumIds.add(albumId)
+        updateSavedAlbumsFlow()
+        return true
     }
 
     override suspend fun unsaveAlbum(albumId: String): Boolean {
-        return false
+        if (appSettings.offlineMode.value) return false
+        val decoded = decodeAlbumId(albumId)
+        if (decoded != null && isServiceConnected(decoded.serviceId)) {
+            val serviceId = decoded.serviceId
+            var providerId = decoded.providerAlbumId
+            if (providerId.isNullOrBlank()) {
+                val matchedAlbum = albumsFlow.value.firstOrNull { it.id == albumId } as? StreamingAlbum
+                providerId = matchedAlbum?.externalId
+            }
+            if (!providerId.isNullOrBlank()) {
+                val success = when (serviceId) {
+                    StreamingServiceId.SUBSONIC -> subsonicClient.markFavorite(providerId, false).isSuccess
+                    StreamingServiceId.JELLYFIN -> jellyfinClient.markFavorite(providerId, false).isSuccess
+                    else -> false
+                }
+                if (!success) return false
+            }
+        }
+
+        val removed = savedAlbumIds.remove(albumId)
+        updateSavedAlbumsFlow()
+        return removed
     }
 
-    override fun getSavedAlbums(): Flow<List<StreamingAlbum>> = flowOf(savedAlbumsFlow.value)
+    override fun getSavedAlbums(): Flow<List<StreamingAlbum>> = savedAlbumsFlow.asStateFlow()
 
     override suspend fun followPlaylist(playlistId: String): Boolean {
         if (appSettings.offlineMode.value) return false
@@ -1087,7 +1132,7 @@ class StreamingMusicRepositoryImpl(
 
         val providerSongs = when (serviceId) {
             StreamingServiceId.SUBSONIC -> subsonicClient.fetchLibrarySongs(limit, onProgress)
-            StreamingServiceId.JELLYFIN -> jellyfinClient.fetchLibrarySongs(limit)
+            StreamingServiceId.JELLYFIN -> jellyfinClient.fetchLibrarySongs(limit, onProgress)
             else -> Result.success(emptyList())
         }.getOrElse { emptyList() }
 
@@ -1130,17 +1175,23 @@ class StreamingMusicRepositoryImpl(
             else -> Result.success(emptyList())
         }
 
-        val playlists = result.getOrElse { emptyList() }
-            .map { providerPlaylist ->
-                val tracks = fetchPlaylistTracks(serviceId, providerPlaylist.providerId)
-                mapProviderPlaylist(serviceId, providerPlaylist, tracks)
-            }
+        val playlists = coroutineScope {
+            result.getOrElse { emptyList() }
+                .map { providerPlaylist ->
+                    async {
+                        val tracks = fetchPlaylistTracks(serviceId, providerPlaylist.providerId)
+                        mapProviderPlaylist(serviceId, providerPlaylist, tracks)
+                    }
+                }.awaitAll()
+        }
 
         playlistsFlow.value = playlists
         return playlists
     }
 
     override suspend fun getAlbumById(id: String): AlbumItem? {
+        albumsFlow.value.firstOrNull { it.id == id }?.let { return it }
+
         val decodedId = decodeAlbumId(id) ?: return null
         var providerAlbumId = decodedId.providerAlbumId
         
@@ -1226,7 +1277,7 @@ class StreamingMusicRepositoryImpl(
     }
 
     override suspend fun getSongsForAlbum(albumId: String): List<PlayableItem> {
-        return emptyList()
+        return getAlbumSongs(albumId)
     }
 
     private suspend fun replaceCatalog(songs: List<StreamingSong>) {
@@ -1246,7 +1297,6 @@ class StreamingMusicRepositoryImpl(
         if (artistsFlow.value.isEmpty() || rawArtists.size >= artistsFlow.value.size) {
             artistsFlow.value = rawArtists
         }
-        playlistsFlow.value = emptyList()
 
         updateLikedSongsFlow()
         updateSavedAlbumsFlow()
@@ -1317,7 +1367,9 @@ class StreamingMusicRepositoryImpl(
     }
 
     private fun updateSavedAlbumsFlow() {
-        savedAlbumsFlow.value = emptyList()
+        savedAlbumsFlow.value = savedAlbumIds.mapNotNull { id ->
+            albumsFlow.value.firstOrNull { it.id == id } as? StreamingAlbum
+        }
     }
 
     private fun updateFollowedArtistsFlow() {
@@ -1896,7 +1948,7 @@ class StreamingMusicRepositoryImpl(
         return try {
             val providerArtists = when (serviceId) {
                 StreamingServiceId.SUBSONIC -> subsonicClient.getArtists().getOrNull()
-                StreamingServiceId.JELLYFIN -> jellyfinClient.searchArtists("", limit = 1000).getOrNull()
+                StreamingServiceId.JELLYFIN -> jellyfinClient.getArtists().getOrNull()
                 else -> null
             }
             providerArtists?.forEach { artist ->

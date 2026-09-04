@@ -702,16 +702,13 @@ class StreamingMusicViewModel(application: Application) : AndroidViewModel(appli
 
                 val songs = repository.searchSongs(query).filterIsInstance<StreamingSong>()
                 val artistsFromRepository = repository.searchArtists(query).filterIsInstance<StreamingArtist>()
-                val albumsFromRepository = emptyList<StreamingAlbum>()
+                val albumsFromRepository = repository.searchAlbums(query).filterIsInstance<StreamingAlbum>()
                 val playlists = repository.searchPlaylists(query).filterIsInstance<StreamingPlaylist>()
-
-
-                val derivedAlbums = emptyList<StreamingAlbum>()
 
                 _searchResults.value = StreamingSearchResults(
                     songs = songs,
-                    albums = if (albumsFromRepository.isNotEmpty()) albumsFromRepository else derivedAlbums,
-                        artists = artistsFromRepository,
+                    albums = albumsFromRepository,
+                    artists = artistsFromRepository,
                     playlists = playlists
                 )
             } catch (e: Exception) {
