@@ -80,8 +80,20 @@ class MediaScanEngine(
 
         val mediaScanMode = appSettings.mediaScanMode.value
         val whitelistedFolders = appSettings.whitelistedFolders.value
+        val whitelistedSongs = appSettings.whitelistedSongs.value
         val blacklistedFolders = appSettings.blacklistedFolders.value
         val blacklistedSongs = appSettings.blacklistedSongs.value
+
+        if (mediaScanMode == MediaScanMode.WHITELIST && whitelistedFolders.isEmpty() && whitelistedSongs.isEmpty()) {
+            Log.d(TAG, "Whitelist mode active with no whitelisted folders or songs; skipping MediaStore scan")
+            database.withTransaction {
+                if (forceRefresh) {
+                    database.songDao().replaceAll(emptyList())
+                }
+            }
+            _scanProgress.value = ScanProgress(0, 0, ScanPhase.Complete, 0)
+            return@withContext emptyList()
+        }
 
         val collection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             MediaStore.Audio.Media.getContentUri(MediaStore.VOLUME_EXTERNAL)
@@ -162,9 +174,12 @@ class MediaScanEngine(
                             if (ext.isNotEmpty() && !allowedFormats.contains(ext)) continue
                         }
 
-                        if (mediaScanMode == MediaScanMode.WHITELIST && whitelistedFolders.isNotEmpty()) {
-                            val isWhitelisted = whitelistedFolders.any { normPath.startsWith(it.lowercase()) }
-                            if (!isWhitelisted) continue
+                        if (mediaScanMode == MediaScanMode.WHITELIST) {
+                            val isFolderWhitelisted = whitelistedFolders.isNotEmpty() &&
+                                whitelistedFolders.any { normPath.startsWith(it.lowercase()) }
+                            val isSongWhitelisted = whitelistedSongs.isNotEmpty() &&
+                                whitelistedSongs.contains(id)
+                            if (!isFolderWhitelisted && !isSongWhitelisted) continue
                         }
 
                         if (mediaScanMode == MediaScanMode.BLACKLIST && blacklistedFolders.isNotEmpty()) {

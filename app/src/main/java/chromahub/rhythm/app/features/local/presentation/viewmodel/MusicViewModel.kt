@@ -605,7 +605,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
             return@withContext songs
         }
         if (useWhitelistMode && !hasWhitelist) {
-            return@withContext songs
+            return@withContext emptyList()
         }
         
         // Check if filter settings changed (to clear cache)
@@ -1305,9 +1305,19 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
             }.collect {
                 // Wait for initialization to complete before refreshing
                 if (_isInitialized.value) {
-                    Log.d(TAG, "Blacklist/Whitelist or scan mode changed, refreshing library & playlists")
-                    refreshLibrary(showMediaScanLoader = false)
-                    removeBlacklistedSongsFromQueue()
+                    val mode = appSettings.mediaScanMode.value
+                    val hasWhitelist = appSettings.whitelistedFolders.value.isNotEmpty() ||
+                        appSettings.whitelistedSongs.value.isNotEmpty()
+                    if (mode == MediaScanMode.WHITELIST && !hasWhitelist) {
+                        Log.d(TAG, "Whitelist mode active with no folders or songs selected; clearing current songs without full media scan")
+                        _songs.value = emptyList()
+                        _albums.value = emptyList()
+                        _artists.value = emptyList()
+                    } else {
+                        Log.d(TAG, "Blacklist/Whitelist or scan mode changed, refreshing library & playlists")
+                        refreshLibrary(showMediaScanLoader = false)
+                        removeBlacklistedSongsFromQueue()
+                    }
                 }
             }
         }

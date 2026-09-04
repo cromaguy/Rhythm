@@ -362,6 +362,14 @@ fun MediaScanSettingsScreen(onBackClick: () -> Unit) {
                             HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
                             currentMode = MediaScanMode.WHITELIST
                             appSettings.setMediaScanMode(MediaScanMode.WHITELIST)
+                            if (whitelistedFolders.isEmpty() && whitelistedSongs.isEmpty()) {
+                                try {
+                                    val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)
+                                    folderPickerLauncher.launch(intent)
+                                } catch (e: ActivityNotFoundException) {
+                                    Toast.makeText(context, context.getString(R.string.error_no_document_app), Toast.LENGTH_LONG).show()
+                                }
+                            }
                         }
                     }
                 )
@@ -490,10 +498,18 @@ fun MediaScanSettingsScreen(onBackClick: () -> Unit) {
                                 onItemClick = { index ->
                                     HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
                                     currentMode = if (index == 0) {
-                            appSettings.setMediaScanMode(MediaScanMode.BLACKLIST)
+                                        appSettings.setMediaScanMode(MediaScanMode.BLACKLIST)
                                         MediaScanMode.BLACKLIST
                                     } else {
-                            appSettings.setMediaScanMode(MediaScanMode.WHITELIST)
+                                        appSettings.setMediaScanMode(MediaScanMode.WHITELIST)
+                                        if (whitelistedFolders.isEmpty() && whitelistedSongs.isEmpty()) {
+                                            try {
+                                                val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)
+                                                folderPickerLauncher.launch(intent)
+                                            } catch (e: ActivityNotFoundException) {
+                                                Toast.makeText(context, context.getString(R.string.error_no_document_app), Toast.LENGTH_LONG).show()
+                                            }
+                                        }
                                         MediaScanMode.WHITELIST
                                     }
                                 },
