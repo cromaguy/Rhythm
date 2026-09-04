@@ -66,6 +66,7 @@ fun QueueSettingsScreen(onBackClick: () -> Unit) {
     val hapticFeedback = LocalHapticFeedback.current
 
     val shuffleUsesExoplayer by appSettings.shuffleUsesExoplayer.collectAsState()
+    val keepShuffleOnSelection by appSettings.keepShuffleOnSelection.collectAsState()
     val autoAddToQueue by appSettings.autoAddToQueue.collectAsState()
     val respectAlbumOnPlay by appSettings.respectAlbumOnPlay.collectAsState()
     val clearQueueOnNewSong by appSettings.clearQueueOnNewSong.collectAsState()
@@ -146,6 +147,15 @@ fun QueueSettingsScreen(onBackClick: () -> Unit) {
                             context.getString(R.string.settings_use_exoplayer_shuffle_desc),
                             toggleState = shuffleUsesExoplayer,
                             onToggleChange = { appSettings.setShuffleUsesExoplayer(it) }
+                        )
+                    )
+                    add(
+                        SettingItem(
+                            RhythmIcons.Shuffle,
+                            context.getString(R.string.settings_keep_shuffle_on_selection),
+                            context.getString(R.string.settings_keep_shuffle_on_selection_desc),
+                            toggleState = keepShuffleOnSelection,
+                            onToggleChange = { appSettings.setKeepShuffleOnSelection(it) }
                         )
                     )
                 }

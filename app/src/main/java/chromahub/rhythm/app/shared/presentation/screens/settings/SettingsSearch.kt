@@ -1931,6 +1931,16 @@ fun buildSettingsSearchIndex(context: Context): List<SearchableSettingItem> {
             settingKey = "shuffleModePersistence"
         ))
         add(SearchableSettingItem(
+            id = "keep_shuffle_on_selection",
+            title = context.getString(R.string.settings_keep_shuffle_on_selection),
+            description = context.getString(R.string.settings_keep_shuffle_on_selection_desc),
+            keywords = listOf("shuffle", "persist", "library", "select", "song", "keep", "queue", "random"),
+            icon = RhythmIcons.Shuffle,
+            route = SettingsRoutes.PLAYBACK,
+            parentScreen = "Playback",
+            settingKey = "keepShuffleOnSelection"
+        ))
+        add(SearchableSettingItem(
             id = "queue_stop_on_close",
             title = context.getString(R.string.settings_queue_stop_on_close),
             description = context.getString(R.string.settings_queue_stop_on_close_desc),

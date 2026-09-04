@@ -1106,16 +1106,27 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
     fun handleQueueActionChoice(song: Song, clearQueue: Boolean) {
         _queueActionRequest.value = null
         if (clearQueue) {
+            val keepShuffle = appSettings.keepShuffleOnSelection.value && _isShuffleEnabled.value
             // Replace queue with contextual queue or single song
             val shouldAutoAddToQueue = autoAddToQueue.value
             if (shouldAutoAddToQueue) {
                 val contextualQueue = createContextualQueue(song)
                 if (contextualQueue.size > 1) {
-                    playQueue(contextualQueue, enableShuffle = false)
+                    playQueue(
+                        contextualQueue,
+                        enableShuffle = keepShuffle,
+                        startIndex = 0,
+                        pinStartIndex = keepShuffle
+                    )
                     return
                 }
             }
-            playQueue(listOf(song), enableShuffle = false)
+            playQueue(
+                listOf(song),
+                enableShuffle = keepShuffle,
+                startIndex = 0,
+                pinStartIndex = keepShuffle
+            )
         } else {
             // Add to existing queue and play it
             val currentQueueSongs = _currentQueue.value.songs.toMutableList()
@@ -4887,18 +4898,29 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
 
         mediaController?.let { controller ->
             if (shouldClearQueue) {
+                val keepShuffle = appSettings.keepShuffleOnSelection.value && _isShuffleEnabled.value
                 // Clear queue setting enabled - start fresh
                 if (shouldAutoAddToQueue) {
                     val contextualQueue = createContextualQueue(song)
                     if (contextualQueue.size > 1) {
                         Log.d(TAG, "Clearing queue and creating contextual queue with ${contextualQueue.size} songs (clearQueueOnNewSong=true, autoAddToQueue=true)")
-                        playQueue(contextualQueue)
+                        playQueue(
+                            contextualQueue,
+                            enableShuffle = keepShuffle,
+                            startIndex = 0,
+                            pinStartIndex = keepShuffle
+                        )
                         return
                     }
                 }
 
                 Log.d(TAG, "Clearing queue and playing single song (clearQueueOnNewSong=true, autoAddToQueue=$shouldAutoAddToQueue)")
-                playQueue(listOf(song))
+                playQueue(
+                    listOf(song),
+                    enableShuffle = keepShuffle,
+                    startIndex = 0,
+                    pinStartIndex = keepShuffle
+                )
                 return
             }
             
@@ -5157,16 +5179,27 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
     fun playSongFromSearch(song: Song, searchContextSongs: List<Song>) {
         val contextSongs = if (searchContextSongs.isNotEmpty()) searchContextSongs else _songs.value
         val startIndex = contextSongs.indexOfFirst { it.id == song.id }
+        val keepShuffle = appSettings.keepShuffleOnSelection.value && _isShuffleEnabled.value
 
         Log.d(
             TAG,
-            "Playing song from search with shuffle disabled: ${song.title}, contextSize=${contextSongs.size}, startIndex=$startIndex"
+            "Playing song from search with keepShuffle=$keepShuffle: ${song.title}, contextSize=${contextSongs.size}, startIndex=$startIndex"
         )
 
         if (startIndex >= 0) {
-            playQueue(contextSongs, enableShuffle = false, startIndex = startIndex)
+            playQueue(
+                songs = contextSongs,
+                enableShuffle = keepShuffle,
+                startIndex = startIndex,
+                pinStartIndex = keepShuffle
+            )
         } else {
-            playQueue(listOf(song), enableShuffle = false)
+            playQueue(
+                songs = listOf(song),
+                enableShuffle = keepShuffle,
+                startIndex = 0,
+                pinStartIndex = keepShuffle
+            )
         }
     }
 
@@ -5509,9 +5542,15 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
         val hasExistingQueue = _currentQueue.value.songs.isNotEmpty() &&
             (mediaController?.mediaItemCount ?: 0) > 0
         val queueRule = appSettings.listQueueActionBehavior.value
+        val keepShuffle = appSettings.keepShuffleOnSelection.value && _isShuffleEnabled.value
 
         if (!hasExistingQueue || queueRule == "replace") {
-            playQueue(songs, enableShuffle = false, startIndex = startIndex)
+            playQueue(
+                songs = songs,
+                enableShuffle = keepShuffle,
+                startIndex = startIndex,
+                pinStartIndex = keepShuffle
+            )
             return
         }
 
@@ -5528,13 +5567,24 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private fun applyListQueueAction(songs: List<Song>, startIndex: Int, action: String) {
+        val keepShuffle = appSettings.keepShuffleOnSelection.value && _isShuffleEnabled.value
         when (action) {
-            "replace" -> playQueue(songs, enableShuffle = false, startIndex = startIndex)
+            "replace" -> playQueue(
+                songs = songs,
+                enableShuffle = keepShuffle,
+                startIndex = startIndex,
+                pinStartIndex = keepShuffle
+            )
             "play_next" -> insertQueueListAndPlay(songs, startIndex, insertAfterCurrent = true)
             "add_to_end" -> insertQueueListAndPlay(songs, startIndex, insertAfterCurrent = false)
             else -> {
                 Log.w(TAG, "Unknown list queue action '$action', falling back to replace")
-                playQueue(songs, enableShuffle = false, startIndex = startIndex)
+                playQueue(
+                    songs = songs,
+                    enableShuffle = keepShuffle,
+                    startIndex = startIndex,
+                    pinStartIndex = keepShuffle
+                )
             }
         }
     }
@@ -5645,13 +5695,25 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                             )
                         }
                     } ?: run {
-                        playQueue(songs, enableShuffle = false, startIndex = validStartIndex)
+                        val keepShuffle = appSettings.keepShuffleOnSelection.value && _isShuffleEnabled.value
+                        playQueue(
+                            songs = songs,
+                            enableShuffle = keepShuffle,
+                            startIndex = validStartIndex,
+                            pinStartIndex = keepShuffle
+                        )
                     }
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Error inserting queue list with action", e)
                 withContext(Dispatchers.Main) {
-                    playQueue(songs, enableShuffle = false, startIndex = validStartIndex)
+                    val keepShuffle = appSettings.keepShuffleOnSelection.value && _isShuffleEnabled.value
+                    playQueue(
+                        songs = songs,
+                        enableShuffle = keepShuffle,
+                        startIndex = validStartIndex,
+                        pinStartIndex = keepShuffle
+                    )
                 }
             }
         }

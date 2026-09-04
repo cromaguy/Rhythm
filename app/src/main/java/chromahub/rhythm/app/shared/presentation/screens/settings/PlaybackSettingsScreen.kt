@@ -62,6 +62,7 @@ fun PlaybackSettingsScreen(
     val skipSilenceEnabled by appSettings.skipSilenceEnabled.collectAsState()
     val repeatModePersistence by appSettings.repeatModePersistence.collectAsState()
     val shuffleModePersistence by appSettings.shuffleModePersistence.collectAsState()
+    val keepShuffleOnSelection by appSettings.keepShuffleOnSelection.collectAsState()
     val useHoursInTimeFormat by appSettings.useHoursInTimeFormat.collectAsState()
     val showRemainingTime by appSettings.showRemainingTime.collectAsState()
     val gaplessEnabled by appSettings.gaplessPlayback.collectAsState()
@@ -125,6 +126,13 @@ fun PlaybackSettingsScreen(
                         context.getString(R.string.settings_remember_shuffle_mode_desc),
                         toggleState = shuffleModePersistence,
                         onToggleChange = { appSettings.setShuffleModePersistence(it) }
+                    ),
+                    SettingItem(
+                        RhythmIcons.Shuffle,
+                        context.getString(R.string.settings_keep_shuffle_on_selection),
+                        context.getString(R.string.settings_keep_shuffle_on_selection_desc),
+                        toggleState = keepShuffleOnSelection,
+                        onToggleChange = { appSettings.setKeepShuffleOnSelection(it) }
                     ),
                     SettingItem(
                         RhythmIcons.Stop,

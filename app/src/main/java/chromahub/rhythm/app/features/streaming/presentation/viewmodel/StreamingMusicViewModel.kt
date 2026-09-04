@@ -694,7 +694,8 @@ class StreamingMusicViewModel(application: Application) : AndroidViewModel(appli
             .takeIf { it >= 0 }
             ?: 0
 
-        playQueue(queueSource, startIndex = selectedIndex, shuffle = false)
+        val keepShuffle = appSettings.keepShuffleOnSelection.value && appSettings.savedShuffleState.value
+        playQueue(queueSource, startIndex = selectedIndex, shuffle = keepShuffle, pinStartIndex = keepShuffle)
     }
 
     /**

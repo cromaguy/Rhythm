@@ -460,6 +460,7 @@ class AppSettings private constructor(context: Context) {
         private const val KEY_LIST_QUEUE_ACTION_BEHAVIOR = "list_queue_action_behavior" // "replace", "ask", "play_next", "add_to_end"
         private const val KEY_REPEAT_MODE_PERSISTENCE = "repeat_mode_persistence"
         private const val KEY_SHUFFLE_MODE_PERSISTENCE = "shuffle_mode_persistence"
+        private const val KEY_KEEP_SHUFFLE_ON_SELECTION = "keep_shuffle_on_selection"
         private const val KEY_SAVED_SHUFFLE_STATE = "saved_shuffle_state"
         private const val KEY_SAVED_REPEAT_MODE = "saved_repeat_mode"
         private const val KEY_PLAYBACK_SPEED = "playback_speed"
@@ -1178,6 +1179,9 @@ class AppSettings private constructor(context: Context) {
     
     private val _shuffleModePersistence = MutableStateFlow(prefs.getBoolean(KEY_SHUFFLE_MODE_PERSISTENCE, true))
     val shuffleModePersistence: StateFlow<Boolean> = _shuffleModePersistence.asStateFlow()
+    
+    private val _keepShuffleOnSelection = MutableStateFlow(prefs.getBoolean(KEY_KEEP_SHUFFLE_ON_SELECTION, false))
+    val keepShuffleOnSelection: StateFlow<Boolean> = _keepShuffleOnSelection.asStateFlow()
     
     private val _savedShuffleState = MutableStateFlow(prefs.getBoolean(KEY_SAVED_SHUFFLE_STATE, false))
     val savedShuffleState: StateFlow<Boolean> = _savedShuffleState.asStateFlow()
@@ -2907,6 +2911,11 @@ private val _autoCheckForUpdates = MutableStateFlow(prefs.getBoolean(KEY_AUTO_CH
     fun setShuffleModePersistence(persist: Boolean) {
         prefs.edit { putBoolean(KEY_SHUFFLE_MODE_PERSISTENCE, persist) }
         _shuffleModePersistence.value = persist
+    }
+    
+    fun setKeepShuffleOnSelection(keep: Boolean) {
+        prefs.edit { putBoolean(KEY_KEEP_SHUFFLE_ON_SELECTION, keep) }
+        _keepShuffleOnSelection.value = keep
     }
     
     fun setSavedShuffleState(enabled: Boolean) {

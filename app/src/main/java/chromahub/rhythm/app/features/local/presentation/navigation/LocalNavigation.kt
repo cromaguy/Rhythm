@@ -972,7 +972,7 @@ private fun LocalNavigationContent(
         { mappedSongs, startIndex, shuffle ->
             val originals = mappedSongs.mapNotNull { streamingSongById[it.id] }
             if (originals.isNotEmpty()) {
-                streamingMusicViewModel.playQueue(originals, startIndex, shuffle)
+                streamingMusicViewModel.playQueue(originals, startIndex, shuffle, pinStartIndex = shuffle)
             }
         }
     val streamingMappedSongs = remember(streamingRecommendations, streamingLikedSongs) {
@@ -2397,10 +2397,12 @@ private fun LocalNavigationContent(
                             }
                             if (queue.isNotEmpty()) {
                                 val index = queue.indexOfFirst { it.id == localSong.id }.coerceAtLeast(0)
+                                val keepShuffle = appSettings.keepShuffleOnSelection.value && isShuffleEnabled
                                 streamingMusicViewModel.playQueue(
                                     queue = queue,
                                     startIndex = index,
-                                    shuffle = false
+                                    shuffle = keepShuffle,
+                                    pinStartIndex = keepShuffle
                                 )
                             }
                         },
@@ -2622,10 +2624,12 @@ private fun LocalNavigationContent(
                             }
                             if (queue.isNotEmpty()) {
                                 val index = queue.indexOfFirst { it.id == localSong.id }.coerceAtLeast(0)
+                                val keepShuffle = appSettings.keepShuffleOnSelection.value && isShuffleEnabled
                                 streamingMusicViewModel.playQueue(
                                     queue = queue,
                                     startIndex = index,
-                                    shuffle = false
+                                    shuffle = keepShuffle,
+                                    pinStartIndex = keepShuffle
                                 )
                             }
                         },
@@ -2812,13 +2816,15 @@ private fun LocalNavigationContent(
                             }
                         },
                         onSongClick = { localSong ->
+                            val keepShuffle = appSettings.keepShuffleOnSelection.value && isShuffleEnabled
                             if (respectAlbumOnPlay) {
                                 val index = playlistTracks.indexOfFirst { it.id == localSong.id }
                                 if (index >= 0) {
                                     streamingMusicViewModel.playQueue(
                                         queue = playlistTracks,
                                         startIndex = index,
-                                        shuffle = false
+                                        shuffle = keepShuffle,
+                                        pinStartIndex = keepShuffle
                                     )
                                 }
                             } else {
@@ -2826,7 +2832,8 @@ private fun LocalNavigationContent(
                                     streamingMusicViewModel.playQueue(
                                         queue = listOf(single),
                                         startIndex = 0,
-                                        shuffle = false
+                                        shuffle = keepShuffle,
+                                        pinStartIndex = keepShuffle
                                     )
                                 }
                             }
@@ -2837,10 +2844,12 @@ private fun LocalNavigationContent(
                                 .ifEmpty { playlistTracks }
                             if (queue.isNotEmpty()) {
                                 val index = queue.indexOfFirst { it.id == localSong.id }.coerceAtLeast(0)
+                                val keepShuffle = appSettings.keepShuffleOnSelection.value && isShuffleEnabled
                                 streamingMusicViewModel.playQueue(
                                     queue = queue,
                                     startIndex = index,
-                                    shuffle = false
+                                    shuffle = keepShuffle,
+                                    pinStartIndex = keepShuffle
                                 )
                             }
                         },
@@ -3102,11 +3111,12 @@ private fun LocalNavigationContent(
                         isPlaying = isPlaying,
                         onSongClick = { song ->
                             if (isStreamingMode) {
+                                val keepShuffle = appSettings.keepShuffleOnSelection.value && isShuffleEnabled
                                 if (respectAlbumOnPlay) {
                                     val index = streamingMappedSongs.indexOfFirst { it.id == song.id }.coerceAtLeast(0)
-                                    playStreamingMappedQueue(streamingMappedSongs, index, false)
+                                    playStreamingMappedQueue(streamingMappedSongs, index, keepShuffle)
                                 } else {
-                                    playStreamingMappedQueue(listOf(song), 0, false)
+                                    playStreamingMappedQueue(listOf(song), 0, keepShuffle)
                                 }
                             } else {
                                 onPlaySong(song)
@@ -3159,10 +3169,16 @@ private fun LocalNavigationContent(
                             }
                         },
                         onPlayQueueFromIndex = { queue, startIndex ->
+                            val keepShuffle = appSettings.keepShuffleOnSelection.value && isShuffleEnabled
                             if (isStreamingMode) {
-                                playStreamingMappedQueue(queue, startIndex, false)
+                                playStreamingMappedQueue(queue, startIndex, keepShuffle)
                             } else {
-                                viewModel.playQueue(songs = queue, enableShuffle = false, startIndex = startIndex)
+                                viewModel.playQueue(
+                                    songs = queue,
+                                    enableShuffle = keepShuffle,
+                                    startIndex = startIndex,
+                                    pinStartIndex = keepShuffle
+                                )
                             }
                         },
                         onShuffleQueue = { queue ->

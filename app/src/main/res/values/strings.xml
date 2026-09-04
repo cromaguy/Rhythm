@@ -71,6 +71,8 @@
     <string name="settings_remember_repeat_mode_desc">Restore repeat mode after restart.</string>
     <string name="settings_remember_shuffle_mode">Persist Shuffle Mode</string>
     <string name="settings_remember_shuffle_mode_desc">Restore shuffle mode after restart.</string>
+    <string name="settings_keep_shuffle_on_selection">Keep Shuffle on Song Selection</string>
+    <string name="settings_keep_shuffle_on_selection_desc">Keep shuffle active when selecting a new song from the library or playlists.</string>
     <string name="settings_audio_effects">Transitions and Output</string>
     <string name="settings_mono_audio">Mono Audio</string>
     <string name="settings_mono_audio_desc">Downmix stereo channels to center for 1-earpiece listening.</string>
