@@ -290,7 +290,7 @@ fun PlayerScreen(
         val artistSeparatorEnabled by appSettings.artistSeparatorEnabled.collectAsState()
         val artistSeparatorDelimiters by appSettings.artistSeparatorDelimiters.collectAsState()
 
-        val splitArtistNames: (String) -> List<String> = remember {
+        val splitArtistNames: (String) -> List<String> = remember(artistSeparatorDelimiters, artistSeparatorEnabled) {
             { artistName ->
                 chromahub.rhythm.app.util.ArtistSeparator.splitArtistNames(
                     artistName = artistName,

@@ -128,10 +128,10 @@ object ArtistSeparator {
             val sorted = tokens.sortedByDescending { it.length }
             val patternString = sorted.joinToString("|") { token ->
                 val escaped = Regex.escape(token)
-                val startsWithWordChar = token.firstOrNull()?.isLetterOrDigit() == true
-                val endsWithWordChar = token.lastOrNull()?.isLetterOrDigit() == true
-                val prefix = if (startsWithWordChar) "(?<!\\w)" else ""
-                val suffix = if (endsWithWordChar) "(?!\\w)" else ""
+                val startsWithWordChar = token.firstOrNull()?.let { it.isLetterOrDigit() || it == '_' } == true
+                val endsWithWordChar = token.lastOrNull()?.let { it.isLetterOrDigit() || it == '_' } == true
+                val prefix = if (startsWithWordChar) "(?<![\\p{L}\\p{N}_])" else ""
+                val suffix = if (endsWithWordChar) "(?![\\p{L}\\p{N}_])" else ""
                 "$prefix$escaped$suffix"
             }
             patternString.toRegex(RegexOption.IGNORE_CASE)

@@ -113,6 +113,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.lifecycle.viewmodel.compose.viewModel
 import chromahub.rhythm.app.R
+import chromahub.rhythm.app.shared.data.model.AppSettings
 import chromahub.rhythm.app.util.DevicePosture
 import chromahub.rhythm.app.util.rememberDevicePosture
 import androidx.navigation.NavHostController
@@ -2504,7 +2505,14 @@ private fun LocalNavigationContent(
                             albumSongsById[localSong.id]?.let { onStreamingAddSongToPlaylist(it) }
                         },
                         onGoToArtist = { song ->
-                            val artistName = song.artist.trim()
+                            val separatorEnabled = appSettings.artistSeparatorEnabled.value
+                            val delimiters = appSettings.artistSeparatorDelimiters.value.ifBlank { AppSettings.DEFAULT_ARTIST_SEPARATOR_DELIMITERS }
+                            val candidates = ArtistSeparator.splitArtistNames(
+                                song.artist,
+                                delimiters = delimiters,
+                                enabled = separatorEnabled
+                            )
+                            val artistName = candidates.firstOrNull()?.trim().orEmpty().ifBlank { song.artist.trim() }
                             if (artistName.isNotBlank()) {
                                 val streamingSong = albumSongsById[song.id]
                                 val artistId = streamingSong?.artist?.trim() ?: artistName
@@ -2649,12 +2657,18 @@ private fun LocalNavigationContent(
                         }
 
                         // Immediate resolution from downloads / memory
-                        val downloadedTracks = streamingMusicViewModel.downloadedSongs.value.filter {
-                            it.artist.equals(selectedArtist.name, ignoreCase = true) ||
-                            it.albumArtist?.equals(selectedArtist.name, ignoreCase = true) == true
+                        val separatorEnabled = appSettings.artistSeparatorEnabled.value
+                        val separatorDelimiters = appSettings.artistSeparatorDelimiters.value.ifBlank { AppSettings.DEFAULT_ARTIST_SEPARATOR_DELIMITERS }
+
+                        val downloadedTracks = streamingMusicViewModel.downloadedSongs.value.filter { song ->
+                            song.artist.equals(selectedArtist.name, ignoreCase = true) ||
+                            song.albumArtist?.equals(selectedArtist.name, ignoreCase = true) == true ||
+                            ArtistSeparator.splitArtistNames(song.artist, delimiters = separatorDelimiters, enabled = separatorEnabled).any { it.equals(selectedArtist.name, ignoreCase = true) } ||
+                            (song.albumArtist != null && ArtistSeparator.splitArtistNames(song.albumArtist, delimiters = separatorDelimiters, enabled = separatorEnabled).any { it.equals(selectedArtist.name, ignoreCase = true) })
                         }
-                        val downloadedAlbumsForArtist = streamingMusicViewModel.downloadedAlbums.value.filter {
-                            it.artist.equals(selectedArtist.name, ignoreCase = true)
+                        val downloadedAlbumsForArtist = streamingMusicViewModel.downloadedAlbums.value.filter { album ->
+                            album.artist.equals(selectedArtist.name, ignoreCase = true) ||
+                            ArtistSeparator.splitArtistNames(album.artist, delimiters = separatorDelimiters, enabled = separatorEnabled).any { it.equals(selectedArtist.name, ignoreCase = true) }
                         }
 
                         if (downloadedTracks.isNotEmpty() || downloadedAlbumsForArtist.isNotEmpty() || selectedArtist.getTopTracks().isNotEmpty()) {
@@ -3062,7 +3076,14 @@ private fun LocalNavigationContent(
                             }
                         },
                         onGoToArtist = { song ->
-                            val artistName = song.artist.trim()
+                            val separatorEnabled = appSettings.artistSeparatorEnabled.value
+                            val delimiters = appSettings.artistSeparatorDelimiters.value.ifBlank { AppSettings.DEFAULT_ARTIST_SEPARATOR_DELIMITERS }
+                            val candidates = ArtistSeparator.splitArtistNames(
+                                song.artist,
+                                delimiters = delimiters,
+                                enabled = separatorEnabled
+                            )
+                            val artistName = candidates.firstOrNull()?.trim().orEmpty().ifBlank { song.artist.trim() }
                             if (artistName.isNotBlank()) {
                                 val streamingSong = playlistTracksById[song.id]
                                 val artistId = streamingSong?.artist?.trim()?.let { name ->

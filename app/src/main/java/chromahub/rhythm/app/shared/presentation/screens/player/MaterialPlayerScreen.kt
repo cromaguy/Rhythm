@@ -365,7 +365,7 @@ fun MaterialPlayerScreen(
     val gestureArtworkDoubleTap by appSettingsInstance.gestureArtworkDoubleTap.collectAsState()
 
     // Helper function to split artist names
-    val splitArtistNames: (String) -> List<String> = remember {
+    val splitArtistNames: (String) -> List<String> = remember(artistSeparatorDelimiters, artistSeparatorEnabled) {
         { artistName ->
             chromahub.rhythm.app.util.ArtistSeparator.splitArtistNames(
                 artistName = artistName,

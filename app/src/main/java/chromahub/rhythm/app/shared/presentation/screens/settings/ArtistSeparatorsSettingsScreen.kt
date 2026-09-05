@@ -135,7 +135,7 @@ fun ArtistSeparatorsSettingsScreen(onBackClick: () -> Unit) {
             ) { group ->
                 Spacer(modifier = Modifier.height(24.dp))
 
-                val materialItems = if (group.title == "Multi-Artist Parsing") {
+                val materialItems = if (group.title == context.getString(R.string.artist_multi_parsing)) {
                     buildList {
                         if (group.items.isNotEmpty()) {
                             add(toMaterial3SettingsItem(context = context, item = group.items[0], hapticFeedback = haptic))

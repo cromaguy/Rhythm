@@ -337,4 +337,31 @@ class ArtistSeparatorTest {
             ArtistSeparator.splitArtistNames("Daft Punk ft. Pharrell Williams", tokens, true)
         )
     }
+
+    @Test
+    fun splitArtistNames_unicodeWordDelimiters_preservesUnicodeArtistNames() {
+        val tokens = listOf(";", "/", "ft.", "ft", "with", "x")
+
+        // Accented characters and international characters must be respected as word characters
+        assertEquals(
+            listOf("Beyoncé"),
+            ArtistSeparator.splitArtistNames("Beyoncé", tokens, true)
+        )
+        assertEquals(
+            listOf("Björk"),
+            ArtistSeparator.splitArtistNames("Björk", tokens, true)
+        )
+        assertEquals(
+            listOf("Mötley Crüe"),
+            ArtistSeparator.splitArtistNames("Mötley Crüe", tokens, true)
+        )
+        assertEquals(
+            listOf("Beyoncé", "Shakira"),
+            ArtistSeparator.splitArtistNames("Beyoncé ft. Shakira", tokens, true)
+        )
+        assertEquals(
+            listOf("Björk", "Rosalía"),
+            ArtistSeparator.splitArtistNames("Björk with Rosalía", tokens, true)
+        )
+    }
 }

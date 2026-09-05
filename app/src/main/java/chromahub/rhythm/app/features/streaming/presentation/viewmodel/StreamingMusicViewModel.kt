@@ -1108,14 +1108,16 @@ class StreamingMusicViewModel(application: Application) : AndroidViewModel(appli
         }
 
         val normalizedHint = artistNameHint?.trim().orEmpty()
+        val separatorEnabled = appSettings.artistSeparatorEnabled.value
+        val separatorDelimiters = appSettings.artistSeparatorDelimiters.value.ifBlank { AppSettings.DEFAULT_ARTIST_SEPARATOR_DELIMITERS }
 
         // Check downloaded songs matching this artist
         val downloadedMatches = _downloadedSongs.value.filter { song ->
             when {
                 normalizedHint.isNotBlank() -> song.artist.equals(normalizedHint, ignoreCase = true) ||
-                    ArtistSeparator.splitArtistNames(song.artist, enabled = true).any { it.equals(normalizedHint, ignoreCase = true) }
+                    ArtistSeparator.splitArtistNames(song.artist, delimiters = separatorDelimiters, enabled = separatorEnabled).any { it.equals(normalizedHint, ignoreCase = true) }
                 cachedArtist != null -> song.artist.equals(cachedArtist.name, ignoreCase = true) ||
-                    ArtistSeparator.splitArtistNames(song.artist, enabled = true).any { it.equals(cachedArtist.name, ignoreCase = true) }
+                    ArtistSeparator.splitArtistNames(song.artist, delimiters = separatorDelimiters, enabled = separatorEnabled).any { it.equals(cachedArtist.name, ignoreCase = true) }
                 else -> artistIdMatchesSongArtist(artistId = artistId, songArtist = song.artist)
             }
         }
@@ -1150,9 +1152,9 @@ class StreamingMusicViewModel(application: Application) : AndroidViewModel(appli
             .filter {
                 when {
                     normalizedHint.isNotBlank() -> it.artist.equals(normalizedHint, ignoreCase = true) ||
-                        ArtistSeparator.splitArtistNames(it.artist, enabled = true).any { name -> name.equals(normalizedHint, ignoreCase = true) }
+                        ArtistSeparator.splitArtistNames(it.artist, delimiters = separatorDelimiters, enabled = separatorEnabled).any { name -> name.equals(normalizedHint, ignoreCase = true) }
                     cachedArtist != null -> it.artist.equals(cachedArtist.name, ignoreCase = true) ||
-                        ArtistSeparator.splitArtistNames(it.artist, enabled = true).any { name -> name.equals(cachedArtist.name, ignoreCase = true) }
+                        ArtistSeparator.splitArtistNames(it.artist, delimiters = separatorDelimiters, enabled = separatorEnabled).any { name -> name.equals(cachedArtist.name, ignoreCase = true) }
                     else -> artistIdMatchesSongArtist(artistId = artistId, songArtist = it.artist)
                 }
             }
