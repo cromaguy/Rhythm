@@ -351,7 +351,7 @@ fun SingleCardExplorerContent(
             val map = mutableMapOf<String, Song>()
             songs.forEach { song ->
                 try {
-                    val path = getFilePathFromUri(song.uri, context)
+                    val path = song.getSongPath(context)
                     if (path != null && path.isNotEmpty()) {
                         val normalizedPath = path.replace("//", "/").trimEnd('/')
                         map[normalizedPath] = song
@@ -698,16 +698,7 @@ fun SingleCardExplorerContent(
                                 appSettings.removeFolderFromPinned(item.path)
                             },
                             onPlayFolder = { folderItem ->
-                                val folderSongs = songs.filter { song ->
-                                    try {
-                                        val songPath = getFilePathFromUri(song.uri, context) ?: ""
-                                        val normalizedSongPath = songPath.replace("//", "/")
-                                        val normalizedFolderPath = folderItem.path.replace("//", "/").trimEnd('/')
-                                        normalizedSongPath.startsWith("$normalizedFolderPath/")
-                                    } catch (e: Exception) {
-                                        false
-                                    }
-                                }
+                                val folderSongs = findSongsInFolder(folderItem.path, songPathMap, songs, context)
                                 if (folderSongs.isNotEmpty()) {
                                     folderSongsForPlaylist = folderSongs
                                     playlistNamePrefix = folderItem.name
@@ -715,18 +706,9 @@ fun SingleCardExplorerContent(
                                 }
                             },
                             onAddFolderToQueue = { folderItem ->
-                                val folderSongs = songs.filter { song ->
-                                    try {
-                                        val songPath = getFilePathFromUri(song.uri, context) ?: ""
-                                        val normalizedSongPath = songPath.replace("//", "/")
-                                        val normalizedFolderPath = folderItem.path.replace("//", "/").trimEnd('/')
-                                        normalizedSongPath.startsWith("$normalizedFolderPath/")
-                                    } catch (e: Exception) {
-                                        false
-                                    }
-                                }
+                                val folderSongs = findSongsInFolder(folderItem.path, songPathMap, songs, context)
                                 if (folderSongs.isNotEmpty()) {
-                                    folderSongs.forEach { song -> onAddToQueue(song) }
+                                    musicViewModel.addSongsToQueue(folderSongs)
                                 }
                             },
                             currentSong = currentSong,
@@ -791,16 +773,7 @@ fun SingleCardExplorerContent(
                         } else null,
                         onPlayFolder = if (item.type == ExplorerItemType.FOLDER) {
                             { folderItem ->
-                                val folderSongs = songs.filter { song ->
-                                    try {
-                                        val songPath = getFilePathFromUri(song.uri, context) ?: ""
-                                        val normalizedSongPath = songPath.replace("//", "/")
-                                        val normalizedFolderPath = folderItem.path.replace("//", "/").trimEnd('/')
-                                        normalizedSongPath.startsWith("$normalizedFolderPath/")
-                                    } catch (e: Exception) {
-                                        false
-                                    }
-                                }
+                                val folderSongs = findSongsInFolder(folderItem.path, songPathMap, songs, context)
                                 if (folderSongs.isNotEmpty()) {
                                     folderSongsForPlaylist = folderSongs
                                     playlistNamePrefix = folderItem.name
@@ -810,18 +783,9 @@ fun SingleCardExplorerContent(
                         } else null,
                         onAddFolderToQueue = if (item.type == ExplorerItemType.FOLDER) {
                             { folderItem ->
-                                val folderSongs = songs.filter { song ->
-                                    try {
-                                        val songPath = getFilePathFromUri(song.uri, context) ?: ""
-                                        val normalizedSongPath = songPath.replace("//", "/")
-                                        val normalizedFolderPath = folderItem.path.replace("//", "/").trimEnd('/')
-                                        normalizedSongPath.startsWith("$normalizedFolderPath/")
-                                    } catch (e: Exception) {
-                                        false
-                                    }
-                                }
+                                val folderSongs = findSongsInFolder(folderItem.path, songPathMap, songs, context)
                                 if (folderSongs.isNotEmpty()) {
-                                    folderSongs.forEach { song -> onAddToQueue(song) }
+                                    musicViewModel.addSongsToQueue(folderSongs)
                                 }
                             }
                         } else null,
@@ -1043,26 +1007,8 @@ fun SingleCardExplorerContent(
                                 isCreating = true
                                 scope.launch {
                                     try {
-                                        onCreatePlaylist(playlistName)
-                                        
-                                        var attempts = 0
-                                        var newPlaylist: chromahub.rhythm.app.shared.data.model.Playlist? = null
-                                        while (attempts < 20 && newPlaylist == null) {
-                                            kotlinx.coroutines.delay(100)
-                                            newPlaylist = playlists.firstOrNull { it.name == playlistName }
-                                            attempts++
-                                        }
-                                        
-                                        if (newPlaylist != null) {
-                                            folderSongsForPlaylist.forEach { song ->
-                                                musicViewModel.addSongToPlaylist(song, newPlaylist.id) { _ -> }
-                                                kotlinx.coroutines.delay(10)
-                                            }
-                                            Log.d("LibraryScreen", "Successfully added ${folderSongsForPlaylist.size} songs to playlist: $playlistName")
-                                        } else {
-                                            Log.e("LibraryScreen", "Failed to find newly created playlist: $playlistName")
-                                        }
-                                        
+                                        musicViewModel.createPlaylist(playlistName, folderSongsForPlaylist)
+                                        Log.d("LibraryScreen", "Successfully created playlist '$playlistName' with ${folderSongsForPlaylist.size} songs")
                                         showCreatePlaylistDialog = false
                                         folderSongsForPlaylist = emptyList()
                                         playlistNamePrefix = ""
@@ -1559,7 +1505,7 @@ fun getDirectoryContentsOptimized_OLD(directoryPath: String, audioExtensions: Se
         
         relevantSongs.forEach { song ->
             try {
-                val filePath = getFilePathFromUri(song.uri, context)
+                val filePath = song.getSongPath(context)
                 if (filePath != null) {
                     val normalizedPath = filePath.replace("//", "/")
                     songsByPath[normalizedPath] = song
@@ -1577,7 +1523,7 @@ fun getDirectoryContentsOptimized_OLD(directoryPath: String, audioExtensions: Se
             val subdirs = mutableSetOf<String>()
             songsInDir.forEach { song ->
                 try {
-                    val songPath = getFilePathFromUri(song.uri, context) ?: return@forEach
+                    val songPath = song.getSongPath(context) ?: return@forEach
                     val normalizedSongPath = songPath.replace("//", "/")
                     val normalizedDirPath = dirPath.trimEnd('/')
                     
@@ -1612,7 +1558,7 @@ fun getDirectoryContentsOptimized_OLD(directoryPath: String, audioExtensions: Se
                 val subdirPath = "$dirPath/$subdir"
                 val audioCount = songsInDir.count { song ->
                     try {
-                        val songPath = getFilePathFromUri(song.uri, context)
+                        val songPath = song.getSongPath(context)
                         songPath != null && songPath.replace("//", "/").startsWith("$subdirPath/")
                     } catch (e: Exception) {
                         false
@@ -1692,14 +1638,42 @@ fun getDirectoryContentsOptimized_OLD(directoryPath: String, audioExtensions: Se
     return items
 }
 
+fun Song.getSongPath(context: android.content.Context): String? {
+    if (!path.isNullOrBlank()) return path
+    return getFilePathFromUri(uri, context)
+}
+
+fun findSongsInFolder(
+    folderPath: String,
+    songPathMap: Map<String, Song>,
+    songs: List<Song>,
+    context: android.content.Context
+): List<Song> {
+    val normalizedFolderPath = folderPath.replace("//", "/").trimEnd('/')
+    val prefixWithSlash = "$normalizedFolderPath/"
+    if (songPathMap.isNotEmpty()) {
+        return songPathMap.filterKeys { it.startsWith(prefixWithSlash) }.values.toList()
+    }
+    return songs.filter { song ->
+        try {
+            val songPath = song.getSongPath(context) ?: ""
+            val normalizedSongPath = songPath.replace("//", "/")
+            normalizedSongPath.startsWith(prefixWithSlash)
+        } catch (e: Exception) {
+            false
+        }
+    }
+}
+
 fun buildSongPathMap(songs: List<Song>, context: android.content.Context): Map<String, Song> {
     val pathMap = mutableMapOf<String, Song>()
     
     songs.forEach { song ->
         try {
-            val path = getFilePathFromUri(song.uri, context)
+            val path = song.getSongPath(context)
             if (path != null && path.isNotEmpty()) {
-                pathMap[path] = song
+                val normalizedPath = path.replace("//", "/").trimEnd('/')
+                pathMap[normalizedPath] = song
             }
         } catch (e: Exception) {
             // Skip
@@ -1804,7 +1778,7 @@ fun hasAudioContentRecursive(path: String, songs: List<Song>, context: android.c
         val normalizedDirPath = path.replace("//", "/").trimEnd('/')
         songs.any { song ->
             try {
-                val songPath = getFilePathFromUri(song.uri, context) ?: return@any false
+                val songPath = song.getSongPath(context) ?: return@any false
                 val normalizedSongPath = songPath.replace("//", "/")
                 normalizedSongPath.startsWith("$normalizedDirPath/")
             } catch (e: Exception) {
