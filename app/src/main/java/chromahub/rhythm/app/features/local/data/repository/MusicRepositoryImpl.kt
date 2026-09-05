@@ -2330,8 +2330,7 @@ class MusicRepository(context: Context) {
      * Use this overload in hot loops to avoid reading AppSettings per call.
      */
     fun splitArtistNames(artistName: String, preloadedCharDelimiters: List<String>): List<String> {
-        val delimiters = preloadedCharDelimiters.joinToString("")
-        return chromahub.rhythm.app.util.ArtistSeparator.splitArtistNames(artistName, delimiters, preloadedCharDelimiters.isNotEmpty())
+        return chromahub.rhythm.app.util.ArtistSeparator.splitArtistNames(artistName, preloadedCharDelimiters, preloadedCharDelimiters.isNotEmpty())
     }
     
     /**
@@ -5851,8 +5850,11 @@ class MusicRepository(context: Context) {
         val appSettings = AppSettings.getInstance(context)
         val groupByAlbumArtist = appSettings.groupByAlbumArtist.value
         val artistSeparatorEnabled = appSettings.artistSeparatorEnabled.value
-        val delimiters = if (artistSeparatorEnabled) appSettings.artistSeparatorDelimiters.value else ""
-        val preloadedCharDelimiters = delimiters.map { it.toString() }
+        val preloadedCharDelimiters = if (artistSeparatorEnabled) {
+            chromahub.rhythm.app.util.ArtistSeparator.parseDelimiters(appSettings.artistSeparatorDelimiters.value)
+        } else {
+            emptyList()
+        }
 
         Log.d("MusicRepository", "Getting songs for artist ID: $artistId")
 
@@ -5894,8 +5896,11 @@ class MusicRepository(context: Context) {
         val appSettings = AppSettings.getInstance(context)
         val groupByAlbumArtist = appSettings.groupByAlbumArtist.value
         val artistSeparatorEnabled = appSettings.artistSeparatorEnabled.value
-        val delimiters = if (artistSeparatorEnabled) appSettings.artistSeparatorDelimiters.value else ""
-        val preloadedCharDelimiters = delimiters.map { it.toString() }
+        val preloadedCharDelimiters = if (artistSeparatorEnabled) {
+            chromahub.rhythm.app.util.ArtistSeparator.parseDelimiters(appSettings.artistSeparatorDelimiters.value)
+        } else {
+            emptyList()
+        }
 
         Log.d("MusicRepository", "Getting albums for artist ID: $artistId")
 

@@ -81,6 +81,7 @@ fun ArtistDelimitersBottomSheet(
     val haptic = LocalHapticFeedback.current
     val scope = rememberCoroutineScope()
     val artistSeparatorDelimiters by appSettings.artistSeparatorDelimiters.collectAsState()
+    val savedCustomDelimiters by appSettings.artistSeparatorCustomDelimiters.collectAsState()
 
     var currentPage by remember { mutableStateOf(DelimiterSheetPage.Main) }
 
@@ -108,10 +109,16 @@ fun ArtistDelimitersBottomSheet(
         )
     }
 
-    var customTokens by remember(artistSeparatorDelimiters) {
-        val initialCustom = ArtistSeparator.parseDelimiters(artistSeparatorDelimiters)
+    var customTokens by remember {
+        val initialActiveCustom = ArtistSeparator.parseDelimiters(artistSeparatorDelimiters)
             .filterNot { token -> token in listOf("/", ";", ",", "+", "&") }
-        mutableStateOf(initialCustom)
+        mutableStateOf((savedCustomDelimiters + initialActiveCustom).distinct())
+    }
+
+    val updateCustomTokens: (List<String>) -> Unit = { newCustom ->
+        val clean = newCustom.map { it.trim() }.filter { it.isNotEmpty() }.distinct()
+        customTokens = clean
+        appSettings.setArtistSeparatorCustomDelimiters(clean)
     }
 
     var customInputText by remember { mutableStateOf("") }
@@ -129,7 +136,8 @@ fun ArtistDelimitersBottomSheet(
         val trimmed = customInputText.trim()
         if (trimmed.isNotEmpty()) {
             HapticUtils.performHapticFeedback(context, haptic, HapticType.HEAVY)
-            customTokens = (customTokens + trimmed).distinct()
+            val newCustom = (customTokens + trimmed).distinct()
+            updateCustomTokens(newCustom)
             val newTokens = (activeTokens + trimmed).distinct()
             activeTokens = newTokens
             saveTokens(newTokens)
@@ -212,7 +220,9 @@ fun ArtistDelimitersBottomSheet(
                                             HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
                                             activeTokens = preset.delimiters
                                             val newCustom = preset.delimiters.filterNot { it in listOf("/", ";", ",", "+", "&") }
-                                            customTokens = (customTokens + newCustom).distinct()
+                                            if (newCustom.isNotEmpty()) {
+                                                updateCustomTokens((customTokens + newCustom).distinct())
+                                            }
                                             saveTokens(preset.delimiters)
                                         },
                                         label = { Text(stringResource(preset.nameRes)) },
@@ -583,7 +593,8 @@ fun ArtistDelimitersBottomSheet(
                                         SuggestionChip(
                                             onClick = {
                                                 HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
-                                                customTokens = (customTokens + suggestion).distinct()
+                                                val newCustom = (customTokens + suggestion).distinct()
+                                                updateCustomTokens(newCustom)
                                                 val newTokens = (activeTokens + suggestion).distinct()
                                                 activeTokens = newTokens
                                                 saveTokens(newTokens)
@@ -648,7 +659,8 @@ fun ArtistDelimitersBottomSheet(
                                                             .size(16.dp)
                                                             .clickable {
                                                                 HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
-                                                                customTokens = customTokens.filterNot { it == token }
+                                                                val newCustom = customTokens.filterNot { it == token }
+                                                                updateCustomTokens(newCustom)
                                                                 val newTokens = activeTokens.filterNot { it == token }
                                                                 activeTokens = newTokens
                                                                 saveTokens(newTokens)

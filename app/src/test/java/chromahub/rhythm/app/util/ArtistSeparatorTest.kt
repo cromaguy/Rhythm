@@ -215,4 +215,126 @@ class ArtistSeparatorTest {
         assertEquals("AC\\/DC", ArtistSeparator.escapeArtistName("AC/DC", standardDelimiters))
         assertEquals("A\\;B", ArtistSeparator.escapeArtistName("A;B", standardDelimiters))
     }
+
+    @Test
+    fun splitArtistNames_wordDelimiters_doNotSplitInsideWords() {
+        val ftDelimiters = ArtistSeparator.serializeDelimiters(listOf(";", "/", "ft.", "ft", "feat."))
+
+        // "ft" or "ft." must not match inside "Daft Punk", "Taylor Swift", or "Leftfield"
+        assertEquals(
+            listOf("Daft Punk"),
+            ArtistSeparator.splitArtistNames("Daft Punk", ftDelimiters, true)
+        )
+        assertEquals(
+            listOf("Taylor Swift"),
+            ArtistSeparator.splitArtistNames("Taylor Swift", ftDelimiters, true)
+        )
+        assertEquals(
+            listOf("Leftfield"),
+            ArtistSeparator.splitArtistNames("Leftfield", ftDelimiters, true)
+        )
+
+        // "with" must not match inside "Within Temptation"
+        val withDelimiters = ArtistSeparator.serializeDelimiters(listOf(";", "/", "with"))
+        assertEquals(
+            listOf("Within Temptation"),
+            ArtistSeparator.splitArtistNames("Within Temptation", withDelimiters, true)
+        )
+
+        // "and" must not match inside "Band of Horses" or "The Cranberries"
+        val andDelimiters = ArtistSeparator.serializeDelimiters(listOf(";", "/", "and"))
+        assertEquals(
+            listOf("Band of Horses"),
+            ArtistSeparator.splitArtistNames("Band of Horses", andDelimiters, true)
+        )
+        assertEquals(
+            listOf("The Cranberries"),
+            ArtistSeparator.splitArtistNames("The Cranberries", andDelimiters, true)
+        )
+
+        // "x" must not match inside "Phoenix" or "The xx"
+        val xDelimiters = ArtistSeparator.serializeDelimiters(listOf(";", "/", "x"))
+        assertEquals(
+            listOf("Phoenix"),
+            ArtistSeparator.splitArtistNames("Phoenix", xDelimiters, true)
+        )
+        assertEquals(
+            listOf("The xx"),
+            ArtistSeparator.splitArtistNames("The xx", xDelimiters, true)
+        )
+    }
+
+    @Test
+    fun splitArtistNames_parenthesesAndBracketsAroundCollaborations_cleanedProperly() {
+        val featuredDelimiters = ArtistSeparator.serializeDelimiters(listOf(";", "/", "ft.", "feat.", "featuring", "&"))
+
+        // Parentheses around feature
+        assertEquals(
+            listOf("Artist A", "Artist B"),
+            ArtistSeparator.splitArtistNames("Artist A (ft. Artist B)", featuredDelimiters, true)
+        )
+        assertEquals(
+            listOf("Artist A", "Artist B"),
+            ArtistSeparator.splitArtistNames("Artist A (feat. Artist B)", featuredDelimiters, true)
+        )
+
+        // Square brackets around feature
+        assertEquals(
+            listOf("Artist A", "Artist B"),
+            ArtistSeparator.splitArtistNames("Artist A [ft. Artist B]", featuredDelimiters, true)
+        )
+        assertEquals(
+            listOf("Artist A", "Artist B"),
+            ArtistSeparator.splitArtistNames("Artist A [feat. Artist B]", featuredDelimiters, true)
+        )
+
+        // Multiple artists inside parentheses
+        assertEquals(
+            listOf("Artist A", "Artist B", "Artist C"),
+            ArtistSeparator.splitArtistNames("Artist A (featuring Artist B & Artist C)", featuredDelimiters, true)
+        )
+
+        // Balanced brackets within legitimate artist names should be preserved
+        assertEquals(
+            listOf("Band (UK)"),
+            ArtistSeparator.splitArtistNames("Band (UK)", featuredDelimiters, true)
+        )
+        assertEquals(
+            listOf("(Hed) P.E."),
+            ArtistSeparator.splitArtistNames("(Hed) P.E.", featuredDelimiters, true)
+        )
+        assertEquals(
+            listOf("Band (UK)", "Artist B"),
+            ArtistSeparator.splitArtistNames("Band (UK) ft. Artist B", featuredDelimiters, true)
+        )
+    }
+
+    @Test
+    fun splitArtistNames_tokenListOverload_doesNotSplitOnSingleCharsOfWordDelimiters() {
+        val tokens = listOf(";", "/", "ft.")
+
+        // Should NOT split on 't', 'f', or '.' in "The Beatles", "Daft Punk", or "Taylor Swift"
+        assertEquals(
+            listOf("The Beatles"),
+            ArtistSeparator.splitArtistNames("The Beatles", tokens, true)
+        )
+        assertEquals(
+            listOf("Daft Punk"),
+            ArtistSeparator.splitArtistNames("Daft Punk", tokens, true)
+        )
+        assertEquals(
+            listOf("Taylor Swift"),
+            ArtistSeparator.splitArtistNames("Taylor Swift", tokens, true)
+        )
+        assertEquals(
+            listOf("Foster The People"),
+            ArtistSeparator.splitArtistNames("Foster The People", tokens, true)
+        )
+
+        // Legitimate collaboration should split cleanly
+        assertEquals(
+            listOf("Daft Punk", "Pharrell Williams"),
+            ArtistSeparator.splitArtistNames("Daft Punk ft. Pharrell Williams", tokens, true)
+        )
+    }
 }

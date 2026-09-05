@@ -20,6 +20,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import chromahub.rhythm.app.util.GsonUtils
+import chromahub.rhythm.app.util.ArtistSeparator
 import chromahub.rhythm.app.worker.BackupWorker
 import chromahub.rhythm.app.worker.RhythmPulseNotificationWorker
 import chromahub.rhythm.app.worker.UpdateNotificationWorker
@@ -556,6 +557,7 @@ class AppSettings private constructor(context: Context) {
         const val DEFAULT_ARTIST_SEPARATOR_DELIMITERS = ";/"
         private const val KEY_ARTIST_SEPARATOR_ENABLED = "artist_separator_enabled"
         private const val KEY_ARTIST_SEPARATOR_DELIMITERS = "artist_separator_delimiters" // Delimiter string or JSON array
+        private const val KEY_ARTIST_SEPARATOR_CUSTOM_DELIMITERS = "artist_separator_custom_delimiters"
         private const val KEY_ARTIST_SEPARATOR_CACHE_SIGNATURE = "artist_separator_cache_signature"
         
         // Player Screen Customization Settings
@@ -794,6 +796,13 @@ class AppSettings private constructor(context: Context) {
         prefs.getString(KEY_ARTIST_SEPARATOR_DELIMITERS, DEFAULT_ARTIST_SEPARATOR_DELIMITERS) ?: DEFAULT_ARTIST_SEPARATOR_DELIMITERS
     )
     val artistSeparatorDelimiters: StateFlow<String> = _artistSeparatorDelimiters.asStateFlow()
+
+    private val _artistSeparatorCustomDelimiters = MutableStateFlow<List<String>>(
+        prefs.getString(KEY_ARTIST_SEPARATOR_CUSTOM_DELIMITERS, null)?.let {
+            ArtistSeparator.parseDelimiters(it)
+        } ?: emptyList()
+    )
+    val artistSeparatorCustomDelimiters: StateFlow<List<String>> = _artistSeparatorCustomDelimiters.asStateFlow()
     
     private val _customColorScheme = MutableStateFlow(prefs.getString(KEY_CUSTOM_COLOR_SCHEME, "Default") ?: "Default")
     val customColorScheme: StateFlow<String> = _customColorScheme.asStateFlow()
@@ -2373,6 +2382,19 @@ private val _autoCheckForUpdates = MutableStateFlow(prefs.getBoolean(KEY_AUTO_CH
         val sanitized = delimiters.trim().ifEmpty { DEFAULT_ARTIST_SEPARATOR_DELIMITERS }
         prefs.edit { putString(KEY_ARTIST_SEPARATOR_DELIMITERS, sanitized) }
         _artistSeparatorDelimiters.value = sanitized
+    }
+
+    fun setArtistSeparatorCustomDelimiters(tokens: List<String>) {
+        val clean = tokens.map { it.trim() }.filter { it.isNotEmpty() }.distinct()
+        val json = if (clean.isEmpty()) "" else ArtistSeparator.serializeDelimiters(clean)
+        prefs.edit {
+            if (json.isEmpty()) {
+                remove(KEY_ARTIST_SEPARATOR_CUSTOM_DELIMITERS)
+            } else {
+                putString(KEY_ARTIST_SEPARATOR_CUSTOM_DELIMITERS, json)
+            }
+        }
+        _artistSeparatorCustomDelimiters.value = clean
     }
 
     fun getArtistSeparatorCacheSignature(): String? {

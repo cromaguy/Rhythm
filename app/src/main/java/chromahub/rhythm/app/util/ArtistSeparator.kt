@@ -77,41 +77,94 @@ object ArtistSeparator {
         }
     }
 
+    /**
+     * Cleans up unbalanced parentheses, square brackets, and curly braces that often
+     * wrap collaboration phrases (e.g. "(ft. Artist B)" or "[feat. Artist B]"),
+     * which otherwise leave a trailing "(" on the preceding artist and a trailing ")" on the featured artist.
+     * Preserves balanced brackets within an artist's name (e.g. "Band (UK)", "(Hed) P.E.").
+     */
+    fun cleanArtistSegment(segment: String): String {
+        var s = segment.trim()
+
+        // 1. Remove unbalanced trailing opening brackets (e.g., "Artist (", "Artist [", "Artist {")
+        while (s.isNotEmpty() && (s.endsWith('(') || s.endsWith('[') || s.endsWith('{'))) {
+            s = s.dropLast(1).trim()
+        }
+
+        // 2. Remove unbalanced leading closing brackets (e.g., ") Artist", "] Artist", "} Artist")
+        while (s.isNotEmpty() && (s.startsWith(')') || s.startsWith(']') || s.startsWith('}'))) {
+            s = s.drop(1).trim()
+        }
+
+        // 3. Remove unbalanced trailing closing brackets (e.g., "Artist)" or "Artist]")
+        // Only remove if there are more closing brackets than opening brackets in this segment
+        while (s.isNotEmpty() && s.endsWith(')') && s.count { it == ')' } > s.count { it == '(' }) {
+            s = s.dropLast(1).trim()
+        }
+        while (s.isNotEmpty() && s.endsWith(']') && s.count { it == ']' } > s.count { it == '[' }) {
+            s = s.dropLast(1).trim()
+        }
+        while (s.isNotEmpty() && s.endsWith('}') && s.count { it == '}' } > s.count { it == '{' }) {
+            s = s.dropLast(1).trim()
+        }
+
+        // 4. Remove unbalanced leading opening brackets (e.g., "(Artist" when the whole artist was enclosed)
+        while (s.isNotEmpty() && s.startsWith('(') && s.count { it == '(' } > s.count { it == ')' }) {
+            s = s.drop(1).trim()
+        }
+        while (s.isNotEmpty() && s.startsWith('[') && s.count { it == '[' } > s.count { it == ']' }) {
+            s = s.drop(1).trim()
+        }
+        while (s.isNotEmpty() && s.startsWith('{') && s.count { it == '{' } > s.count { it == '}' }) {
+            s = s.drop(1).trim()
+        }
+
+        return s
+    }
+
     private fun getOrCreateRegex(tokens: List<String>): Regex {
         val key = tokens.sorted().joinToString("|||")
         return regexCache.getOrPut(key) {
             val sorted = tokens.sortedByDescending { it.length }
-            val patternString = sorted.joinToString("|") { Regex.escape(it) }
+            val patternString = sorted.joinToString("|") { token ->
+                val escaped = Regex.escape(token)
+                val startsWithWordChar = token.firstOrNull()?.isLetterOrDigit() == true
+                val endsWithWordChar = token.lastOrNull()?.isLetterOrDigit() == true
+                val prefix = if (startsWithWordChar) "(?<!\\w)" else ""
+                val suffix = if (endsWithWordChar) "(?!\\w)" else ""
+                "$prefix$escaped$suffix"
+            }
             patternString.toRegex(RegexOption.IGNORE_CASE)
         }
     }
 
     /**
-     * Splits artist names using configurable delimiters with escape sequence support
-     * and high-performance precompiled Regex caching.
+     * Splits artist names using a pre-parsed list of delimiter tokens.
+     * Prevents re-parsing overhead and ensures multi-character tokens like "ft."
+     * are not mangled by string serialization.
      */
     fun splitArtistNames(
         artistName: String?,
-        delimiters: String = DEFAULT_DELIMITERS,
+        tokens: List<String>,
         enabled: Boolean = true
     ): List<String> {
         if (artistName.isNullOrBlank()) {
             return emptyList()
         }
-        
-        if (!enabled || delimiters.isEmpty()) {
+
+        if (!enabled || tokens.isEmpty()) {
             return listOf(artistName.trim()).filter { it.isNotBlank() }
         }
 
-        val tokens = parseDelimiters(delimiters)
-        if (tokens.isEmpty()) {
+        val cleanTokens = tokens.map { it.trim() }.filter { it.isNotEmpty() }
+        if (cleanTokens.isEmpty()) {
             return listOf(artistName.trim()).filter { it.isNotBlank() }
         }
 
         // Protect escaped "\<delim>" occurrences so they are never treated as split points
         val escapedTokens = mutableListOf<String>()
         val escaped = StringBuilder(artistName.length)
-        val sortedTokens = tokens.sortedByDescending { it.length }
+        val sortedTokens = cleanTokens.sortedByDescending { it.length }
         var i = 0
 
         while (i < artistName.length) {
@@ -133,7 +186,7 @@ object ArtistSeparator {
             i++
         }
 
-        val regex = getOrCreateRegex(tokens)
+        val regex = getOrCreateRegex(sortedTokens)
         return regex.split(escaped.toString())
             .map { segment ->
                 var restored = segment
@@ -141,10 +194,31 @@ object ArtistSeparator {
                     val tokenPlaceholder = PLACEHOLDER_PREFIX + index.toChar() + PLACEHOLDER_SUFFIX
                     restored = restored.replace(tokenPlaceholder, originalToken)
                 }
-                restored.trim()
+                cleanArtistSegment(restored)
             }
             .filter { it.isNotBlank() }
             .distinct()
+    }
+
+    /**
+     * Splits artist names using configurable delimiters with escape sequence support
+     * and high-performance precompiled Regex caching.
+     */
+    fun splitArtistNames(
+        artistName: String?,
+        delimiters: String = DEFAULT_DELIMITERS,
+        enabled: Boolean = true
+    ): List<String> {
+        if (artistName.isNullOrBlank()) {
+            return emptyList()
+        }
+
+        if (!enabled || delimiters.isEmpty()) {
+            return listOf(artistName.trim()).filter { it.isNotBlank() }
+        }
+
+        val tokens = parseDelimiters(delimiters)
+        return splitArtistNames(artistName, tokens, enabled)
     }
 
     /**
@@ -158,6 +232,17 @@ object ArtistSeparator {
     ): List<String> {
         return splitArtistNames(artistString, delimiters, enabled)
     }
+
+    /**
+     * Split an artist string into multiple artists using pre-parsed delimiter tokens.
+     */
+    fun splitArtists(
+        artistString: String?,
+        tokens: List<String>,
+        enabled: Boolean = true
+    ): List<String> {
+        return splitArtistNames(artistString, tokens, enabled)
+    }
     
     /**
      * Get the primary (first) artist from a split artist string.
@@ -169,6 +254,18 @@ object ArtistSeparator {
         enabled: Boolean = true
     ): String {
         val artists = splitArtistNames(artistString, delimiters, enabled)
+        return artists.firstOrNull() ?: artistString?.trim() ?: "Unknown Artist"
+    }
+
+    /**
+     * Get the primary (first) artist from a split artist string using pre-parsed tokens.
+     */
+    fun getPrimaryArtist(
+        artistString: String?,
+        tokens: List<String>,
+        enabled: Boolean = true
+    ): String {
+        val artists = splitArtistNames(artistString, tokens, enabled)
         return artists.firstOrNull() ?: artistString?.trim() ?: "Unknown Artist"
     }
     
