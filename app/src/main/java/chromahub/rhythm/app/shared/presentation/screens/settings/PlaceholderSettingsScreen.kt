@@ -174,9 +174,9 @@ fun PlaceholderSettingsScreen() {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        // Large settings icon
+        val cookieShape = rememberExpressiveShape("COOKIE_12")
         Surface(
-            shape = RoundedCornerShape(55.dp),
+            shape = cookieShape,
             color = MaterialTheme.colorScheme.primaryContainer,
             modifier = Modifier.size(120.dp)
         ) {

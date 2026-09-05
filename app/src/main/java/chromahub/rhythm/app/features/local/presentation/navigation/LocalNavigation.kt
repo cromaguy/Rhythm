@@ -259,7 +259,6 @@ sealed class Screen(val route: String) {
     object TunerApiManagement : Screen("tuner_api_management_settings")
     object TunerCacheManagement : Screen("tuner_cache_management_settings")
     object TunerBackupRestore : Screen("tuner_backup_restore_settings")
-    object TunerLibraryTabOrder : Screen("tuner_library_tab_order_settings")
     object TunerThemeCustomization : Screen("tuner_theme_customization_settings")
     object TunerEqualizer : Screen("tuner_equalizer_settings")
     object TunerSleepTimer : Screen("tuner_sleep_timer_settings")
@@ -2136,10 +2135,6 @@ private fun LocalNavigationContent(
 
                 composable(Screen.TunerBackupRestore.route) {
                     BackupRestoreSettingsScreen(onBackClick = navigateBackOrToSettings)
-                }
-
-                composable(Screen.TunerLibraryTabOrder.route) {
-                    LibraryTabOrderSettingsScreen(onBackClick = navigateBackOrToSettings)
                 }
 
                 composable(Screen.TunerThemeCustomization.route) {

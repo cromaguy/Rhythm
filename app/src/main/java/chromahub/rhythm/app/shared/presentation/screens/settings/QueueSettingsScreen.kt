@@ -31,7 +31,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -417,29 +416,15 @@ fun QueueSettingsScreen(onBackClick: () -> Unit) {
                                     .padding(20.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Surface(
-                                    shape = CircleShape,
-                                color = if (isSelected)
-                                    MaterialTheme.colorScheme.primary
-                                else
-                                    MaterialTheme.colorScheme.surfaceVariant,
-                                    modifier = Modifier.size(44.dp)
-                                ) {
-                                    Box(
-                                        contentAlignment = Alignment.Center,
-                                        modifier = Modifier.fillMaxSize()
-                                    ) {
-                                        Icon(
-                                            imageVector = option.third,
-                                            contentDescription = null,
-                                        tint = if (isSelected)
-                                            MaterialTheme.colorScheme.onPrimary
-                                        else
-                                            MaterialTheme.colorScheme.onSurfaceVariant,
-                                            modifier = Modifier.size(22.dp)
-                                        )
-                                    }
-                                }
+                                Icon(
+                                    imageVector = option.third,
+                                    contentDescription = null,
+                                    tint = if (isSelected)
+                                        MaterialTheme.colorScheme.primaryContainer
+                                    else
+                                        MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(if (isSelected) 30.dp else 26.dp)
+                                )
 
                                 Spacer(modifier = Modifier.width(16.dp))
 
@@ -539,29 +524,15 @@ fun QueueSettingsScreen(onBackClick: () -> Unit) {
                                 .padding(20.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Surface(
-                                shape = CircleShape,
-                                color = if (showQueueDialog)
-                                    MaterialTheme.colorScheme.primary
+                            Icon(
+                                imageVector = MaterialSymbolIcon("help", filled = true),
+                                contentDescription = null,
+                                tint = if (showQueueDialog)
+                                    MaterialTheme.colorScheme.primaryContainer
                                 else
-                                    MaterialTheme.colorScheme.surfaceVariant,
-                                modifier = Modifier.size(44.dp)
-                            ) {
-                                Box(
-                                    contentAlignment = Alignment.Center,
-                                    modifier = Modifier.fillMaxSize()
-                                ) {
-                                    Icon(
-                                        imageVector = MaterialSymbolIcon("help", filled = true),
-                                        contentDescription = null,
-                                        tint = if (showQueueDialog)
-                                            MaterialTheme.colorScheme.onPrimary
-                                        else
-                                            MaterialTheme.colorScheme.onSurfaceVariant,
-                                        modifier = Modifier.size(22.dp)
-                                    )
-                                }
-                            }
+                                    MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(if (showQueueDialog) 30.dp else 26.dp)
+                            )
 
                             Spacer(modifier = Modifier.width(16.dp))
 
@@ -620,29 +591,15 @@ fun QueueSettingsScreen(onBackClick: () -> Unit) {
                                 .padding(20.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Surface(
-                                shape = CircleShape,
-                                color = if (!showQueueDialog)
-                                    MaterialTheme.colorScheme.primary
+                            Icon(
+                                imageVector = RhythmIcons.Play,
+                                contentDescription = null,
+                                tint = if (!showQueueDialog)
+                                    MaterialTheme.colorScheme.primaryContainer
                                 else
-                                    MaterialTheme.colorScheme.surfaceVariant,
-                                modifier = Modifier.size(44.dp)
-                            ) {
-                                Box(
-                                    contentAlignment = Alignment.Center,
-                                    modifier = Modifier.fillMaxSize()
-                                ) {
-                                    Icon(
-                                        imageVector = RhythmIcons.Play,
-                                        contentDescription = null,
-                                        tint = if (!showQueueDialog)
-                                            MaterialTheme.colorScheme.onPrimary
-                                        else
-                                            MaterialTheme.colorScheme.onSurfaceVariant,
-                                        modifier = Modifier.size(22.dp)
-                                    )
-                                }
-                            }
+                                    MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(if (!showQueueDialog) 30.dp else 26.dp)
+                            )
 
                             Spacer(modifier = Modifier.width(16.dp))
 

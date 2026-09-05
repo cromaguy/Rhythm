@@ -170,7 +170,6 @@ object SettingsRoutes {
     const val API_MANAGEMENT = "api_management_settings"
     const val CACHE_MANAGEMENT = "cache_management_settings"
     const val BACKUP_RESTORE = "backup_restore_settings"
-    const val LIBRARY_TAB_ORDER = "library_tab_order_settings"
     const val THEME_CUSTOMIZATION = "theme_customization_settings"
     const val PLAYER_CUSTOMIZATION = "player_customization_settings"
     const val MINIPLAYER_CUSTOMIZATION = "miniplayer_customization_settings"
@@ -309,15 +308,6 @@ fun SettingsScreen(
                         palette = SettingsPalettes.SkyBlue,
                         onClick = { showLanguageSwitcher = true }
                     ))
-                    if (appMode == "STREAMING") {
-                        add(SettingItem(
-                            MaterialSymbolIcon("reorder"),
-                            context.getString(R.string.settings_library_tab_order),
-                            context.getString(R.string.settings_library_tab_order_desc),
-                            palette = SettingsPalettes.Indigo,
-                            onClick = { onNavigateTo(SettingsRoutes.LIBRARY_TAB_ORDER) }
-                        ))
-                    }
                     add(SettingItem(
                         MaterialSymbolIcon("touch_app"), 
                         context.getString(R.string.settings_haptic_feedback), 
@@ -1156,7 +1146,6 @@ fun SettingsScreenWrapper(
                         SettingsRoutes.API_MANAGEMENT -> ApiManagementSettingsScreen(onBackClick = { currentRoute = null })
                         SettingsRoutes.CACHE_MANAGEMENT -> CacheManagementSettingsScreen(onBackClick = { currentRoute = null })
                         SettingsRoutes.BACKUP_RESTORE -> BackupRestoreSettingsScreen(onBackClick = { currentRoute = null })
-                        SettingsRoutes.LIBRARY_TAB_ORDER -> LibraryTabOrderSettingsScreen(onBackClick = { currentRoute = null })
                         SettingsRoutes.THEME_CUSTOMIZATION -> ThemeCustomizationSettingsScreen(onBackClick = { currentRoute = null })
                         SettingsRoutes.PLAYER_CUSTOMIZATION -> PlayerCustomizationSettingsScreen(onBackClick = { currentRoute = null })
                         SettingsRoutes.MINIPLAYER_CUSTOMIZATION -> MiniPlayerCustomizationSettingsScreen(onBackClick = { currentRoute = null })
@@ -1291,7 +1280,6 @@ fun SettingsScreenWrapper(
                 SettingsRoutes.API_MANAGEMENT -> ApiManagementSettingsScreen(onBackClick = { currentRoute = null })
                 SettingsRoutes.CACHE_MANAGEMENT -> CacheManagementSettingsScreen(onBackClick = { currentRoute = null })
                 SettingsRoutes.BACKUP_RESTORE -> BackupRestoreSettingsScreen(onBackClick = { currentRoute = null })
-                SettingsRoutes.LIBRARY_TAB_ORDER -> LibraryTabOrderSettingsScreen(onBackClick = { currentRoute = null })
                 SettingsRoutes.THEME_CUSTOMIZATION -> ThemeCustomizationSettingsScreen(onBackClick = { currentRoute = null })
                 SettingsRoutes.PLAYER_CUSTOMIZATION -> PlayerCustomizationSettingsScreen(onBackClick = { currentRoute = null })
                 SettingsRoutes.MINIPLAYER_CUSTOMIZATION -> MiniPlayerCustomizationSettingsScreen(onBackClick = { currentRoute = null })

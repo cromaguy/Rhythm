@@ -1402,27 +1402,15 @@ private fun EQProfileCard(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.weight(1f)
             ) {
-                // Icon
-                Surface(
-                    shape = CircleShape,
-                    color = if (isSelected)
-                        MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                Icon(
+                    imageVector = MaterialSymbolIcon("headset_mic", filled = true),
+                    contentDescription = null,
+                    tint = if (isSelected)
+                        MaterialTheme.colorScheme.primaryContainer
                     else
-                        MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
-                    modifier = Modifier.size(40.dp)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            imageVector = MaterialSymbolIcon("headset_mic", filled = true),
-                            contentDescription = null,
-                            tint = if (isSelected)
-                                MaterialTheme.colorScheme.primary
-                            else
-                                MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                }
+                        MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(if (isSelected) 30.dp else 26.dp)
+                )
                 
                 // Info
                 Column(modifier = Modifier.weight(1f)) {
