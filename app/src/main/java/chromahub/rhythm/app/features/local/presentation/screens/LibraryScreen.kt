@@ -2615,17 +2615,30 @@ fun SingleCardSongsContent(
                                     }
                                     songArtistNames.firstNotNullOfOrNull { name ->
                                         artists.find { it.name.equals(name, ignoreCase = true) }
+                                    } ?: songArtistNames.firstOrNull()?.trim()?.takeIf { it.isNotBlank() }?.let { name ->
+                                        Artist(id = name, name = name)
                                     }
                                 } else {
                                     val songArtistNames = splitArtistNames(song.artist)
                                     songArtistNames.firstNotNullOfOrNull { name ->
                                         artists.find { it.name.equals(name, ignoreCase = true) }
+                                    } ?: songArtistNames.firstOrNull()?.trim()?.takeIf { it.isNotBlank() }?.let { name ->
+                                        Artist(id = name, name = name)
                                     }
                                 }
-                                artist?.let { onGoToArtist(it) }
+                                val resolvedArtist = artist ?: song.artist.trim().takeIf { it.isNotBlank() }?.let { Artist(id = it, name = it) }
+                                resolvedArtist?.let { onGoToArtist(it) }
                             },
                             onGoToAlbum = {
                                 val album = albums.findAlbumForSong(song)
+                                    ?: song.album.trim().takeIf { it.isNotBlank() }?.let { albumTitle ->
+                                        Album(
+                                            id = song.albumId.ifBlank { "unknown_$albumTitle" },
+                                            title = albumTitle,
+                                            artist = song.albumArtist?.takeIf { it.isNotBlank() } ?: song.artist,
+                                            artworkUri = song.artworkUri
+                                        )
+                                    }
                                 album?.let { onGoToAlbum(it) }
                             },
                             onShowSongInfo = { onShowSongInfo(song) },
@@ -6747,9 +6760,18 @@ fun YearGroupedSongsContent(
                             onPlayNext = { onPlayNext(song) },
                             onToggleFavorite = { onToggleFavorite(song) },
                             isFavorite = favoriteSongs.contains(song.id),
-                            onGoToArtist = { onGoToArtist(Artist(id = "", name = song.artist)) },
+                            onGoToArtist = { onGoToArtist(Artist(id = song.artist.trim(), name = song.artist.trim())) },
                             onGoToAlbum = {
-                                albums.findAlbumForSong(song)?.let { onGoToAlbum(it) }
+                                val album = albums.findAlbumForSong(song)
+                                    ?: song.album.trim().takeIf { it.isNotBlank() }?.let { albumTitle ->
+                                        Album(
+                                            id = song.albumId.ifBlank { "unknown_$albumTitle" },
+                                            title = albumTitle,
+                                            artist = song.albumArtist?.takeIf { it.isNotBlank() } ?: song.artist,
+                                            artworkUri = song.artworkUri
+                                        )
+                                    }
+                                album?.let { onGoToAlbum(it) }
                             },
                             onShowSongInfo = { onShowSongInfo(song) },
                             onAddToBlacklist = { onAddToBlacklist(song) },

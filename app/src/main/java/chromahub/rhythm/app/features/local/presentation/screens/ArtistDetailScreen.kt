@@ -153,7 +153,7 @@ fun ArtistDetailScreen(
     val allArtists by viewModel.artists.collectAsState()
     
     val artist = remember(allArtists, artistName, artistOverride) {
-        artistOverride ?: allArtists.find { it.name == artistName }
+        artistOverride ?: allArtists.find { it.name.equals(artistName, ignoreCase = true) }
     }
 
     var currentArtworkUri by remember(artist?.id, artist?.artworkUri) {
@@ -292,7 +292,7 @@ fun ArtistDetailScreen(
 
     val totalDuration = remember(rawArtistSongs) { rawArtistSongs.sumOf { it.duration } }
     val artistArtworkSource by appSettings.artistArtworkSource.collectAsState()
-    val displayArtworkUri = if (artistArtworkSource == ArtistArtworkSource.DISABLED) null else currentArtworkUri
+    val displayArtworkUri = if (artistArtworkSource == ArtistArtworkSource.DISABLED) null else (currentArtworkUri ?: rawArtistSongs.firstNotNullOfOrNull { it.artworkUri })
     val backgroundColor = MaterialTheme.colorScheme.background
 
     if (isLandscapeTablet) {

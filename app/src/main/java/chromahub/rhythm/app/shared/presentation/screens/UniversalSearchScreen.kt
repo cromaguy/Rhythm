@@ -1479,7 +1479,16 @@ fun UniversalSearchScreen(
                 onGoToAlbum = {
                     showSongOptionsSheet = false
                     if (isLocal) {
-                        val album = localViewModel.filteredAlbums.value.findAlbumForSong(songObj)
+                        val allLocalAlbums = localViewModel.albums.value.ifEmpty { localViewModel.filteredAlbums.value }
+                        val album = allLocalAlbums.findAlbumForSong(songObj)
+                            ?: songObj.album.trim().takeIf { it.isNotBlank() }?.let { albumTitle ->
+                                Album(
+                                    id = songObj.albumId.ifBlank { "unknown_$albumTitle" },
+                                    title = albumTitle,
+                                    artist = songObj.albumArtist?.takeIf { it.isNotBlank() } ?: songObj.artist,
+                                    artworkUri = songObj.artworkUri
+                                )
+                            }
                         if (album != null) {
                             handleAction("LOCAL") { onLocalAlbumClick(album) }
                         } else Toast.makeText(context, R.string.universalsearchscreen_album_not_found, Toast.LENGTH_SHORT).show()
@@ -1513,6 +1522,10 @@ fun UniversalSearchScreen(
                         )
                         val artist = songArtistNames.firstNotNullOfOrNull { name ->
                             localArtists.find { it.name.equals(name, ignoreCase = true) }
+                        } ?: songArtistNames.firstOrNull()?.trim()?.takeIf { it.isNotBlank() }?.let { name ->
+                            Artist(id = name, name = name)
+                        } ?: songObj.artist.trim().takeIf { it.isNotBlank() }?.let { name ->
+                            Artist(id = name, name = name)
                         }
                         if (artist != null) {
                             handleAction("LOCAL") { onLocalArtistClick(artist) }

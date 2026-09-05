@@ -2014,7 +2014,9 @@ class MusicRepository(context: Context) {
                 val albumName = albumSongs.first().album.trim().ifBlank { "Unknown Album" }
                 val smartArtist = findBestAlbumArtist(albumSongs)
 
-                val albumId = "hash_${albumName.lowercase(Locale.ROOT)}|${smartArtist.lowercase(Locale.ROOT)}|${(groupKey.hashCode().toLong() and 0x7FFFFFFF)}"
+                val cleanAlbumName = albumName.lowercase(Locale.ROOT).replace('/', '_')
+                val cleanSmartArtist = smartArtist.lowercase(Locale.ROOT).replace('/', '_')
+                val albumId = "hash_${cleanAlbumName}|${cleanSmartArtist}|${(groupKey.hashCode().toLong() and 0x7FFFFFFF)}"
 
                 val year = albumSongs.maxOfOrNull { it.year } ?: 0
                 val dateModified = albumSongs.maxOfOrNull { it.dateModified } ?: System.currentTimeMillis()
@@ -2427,6 +2429,12 @@ class MusicRepository(context: Context) {
         // Invalidate in-memory cache to force fresh query
         cachedSongs = null
         cacheTimestamp = 0L
+        try {
+            roomDb.artistDao().deleteAll()
+            roomDb.songArtistDao().deleteAll()
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to clear artist cache on refresh", e)
+        }
         
         val songs = loadSongs(
             forceRefresh = true,

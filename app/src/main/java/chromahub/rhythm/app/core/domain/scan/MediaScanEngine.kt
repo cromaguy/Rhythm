@@ -264,7 +264,7 @@ class MediaScanEngine(
                         var year = rawYear
 
                         // Fallback tag extraction for missing year or FLAC/audio files where MediaStore failed
-                        if ((year == 0 || trackNumber == 0 || path?.lowercase()?.endsWith(".flac") == true) && !path.isNullOrBlank()) {
+                        if ((year == 0 || trackNumber == 0 || albumArtist.isNullOrBlank() || path?.lowercase()?.endsWith(".flac") == true) && !path.isNullOrBlank()) {
                             try {
                                 val file = File(path)
                                 if (file.exists() && file.canRead()) {
@@ -308,6 +308,10 @@ class MediaScanEngine(
                                         val tagAlbum = propertyMap["ALBUM"]?.firstOrNull()?.trim()
                                         if (!tagAlbum.isNullOrBlank() && (album == "Unknown Album" || chromahub.rhythm.app.util.MetadataHeuristics.isLikelyCorruptedMetadata(album))) {
                                             album = chromahub.rhythm.app.util.MetadataHeuristics.normalizeMetadataText(tagAlbum) ?: tagAlbum
+                                        }
+                                        val tagAlbumArtist = (propertyMap["ALBUMARTIST"] ?: propertyMap["ALBUM ARTIST"] ?: propertyMap["ALBUM_ARTIST"])?.firstOrNull()?.trim()
+                                        if (!tagAlbumArtist.isNullOrBlank() && (albumArtist.isNullOrBlank() || chromahub.rhythm.app.util.MetadataHeuristics.isLikelyCorruptedMetadata(albumArtist))) {
+                                            albumArtist = chromahub.rhythm.app.util.MetadataHeuristics.normalizeMetadataText(tagAlbumArtist) ?: tagAlbumArtist
                                         }
                                         val tagGenre = propertyMap["GENRE"]?.firstOrNull()?.trim()
                                         if (!tagGenre.isNullOrBlank() && (genre.isNullOrBlank() || chromahub.rhythm.app.util.MetadataHeuristics.isLikelyCorruptedMetadata(genre))) {
@@ -377,12 +381,20 @@ class MediaScanEngine(
             database.withTransaction {
                 if (forceRefresh) {
                     database.songDao().replaceAll(scannedSongs)
+                    database.artistDao().deleteAll()
+                    database.songArtistDao().deleteAll()
                 } else {
                     val staleSongIds = existingDbSongs.keys - seenIds
+                    val newSongIds = seenIds - existingDbSongs.keys
                     if (staleSongIds.isNotEmpty()) {
                         database.songDao().deleteByIds(staleSongIds.toList())
+                        database.songArtistDao().deleteBySongIds(staleSongIds.toList())
                     }
                     database.songDao().upsertAll(scannedSongs)
+                    if (staleSongIds.isNotEmpty() || newSongIds.isNotEmpty()) {
+                        database.artistDao().deleteAll()
+                        database.songArtistDao().deleteAll()
+                    }
                 }
             }
 

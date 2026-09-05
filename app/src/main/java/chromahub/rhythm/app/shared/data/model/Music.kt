@@ -117,8 +117,12 @@ private fun Song.albumGroupMatchKey(): String =
         ?: artist.trim().takeIf { it.isNotBlank() }
         ?: "Unknown Artist").normalizedAlbumMatchKey()
 
-private fun Album.hasTitle(title: String): Boolean =
-    this.title.trim().equals(title.trim(), ignoreCase = true)
+private fun Album.hasTitle(title: String): Boolean {
+    val cleanThis = this.title.trim()
+    val cleanTarget = title.trim()
+    return cleanThis.equals(cleanTarget, ignoreCase = true) ||
+        cleanThis.replace('/', '_').equals(cleanTarget.replace('/', '_'), ignoreCase = true)
+}
 
 private fun Album.isCompilation(): Boolean =
     artist.trim().equals("Various Artists", ignoreCase = true) ||
@@ -159,10 +163,13 @@ fun List<Album>.findAlbumForRoute(albumId: String, albumName: String): Album? {
         .orEmpty()
     val fallbackAlbumName = routeAlbumName.ifBlank { legacyUnknownName }
 
-    return firstOrNull { it.id == routeAlbumId }
+    return firstOrNull { it.id == routeAlbumId || it.id.replace('/', '_') == routeAlbumId }
         ?: firstOrNull { album ->
             routeAlbumId.isNotBlank() &&
-                album.songs.any { it.albumId.trim() == routeAlbumId }
+                album.songs.any {
+                    val id = it.albumId.trim()
+                    id == routeAlbumId || id.replace('/', '_') == routeAlbumId
+                }
         }
         ?: fallbackAlbumName.takeIf { it.isNotBlank() }?.let { name ->
             firstOrNull { it.hasTitle(name) }

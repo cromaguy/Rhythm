@@ -1225,9 +1225,13 @@ fun MaterialPlayerScreen(
                     if (albumForSong != null) {
                         navigateToAlbum(albumForSong.id, albumForSong.title)
                     } else {
-                        val serviceId = currentSong.id.substringBefore("::", "JELLYFIN")
                         val fallbackAlbumId = currentSong.albumId.takeIf { it.isNotBlank() }
-                            ?: "$serviceId::album::${currentSong.artist}::${currentSong.album}"
+                            ?: if (isStreamingMode) {
+                                val serviceId = currentSong.id.substringBefore("::", "JELLYFIN")
+                                "$serviceId::album::${currentSong.artist}::${currentSong.album}"
+                            } else {
+                                "unknown_${currentSong.album}"
+                            }
                         navigateToAlbum(fallbackAlbumId, currentSong.album)
                     }
                 }
@@ -3386,9 +3390,13 @@ fun MaterialPlayerScreen(
                                                             if (albumForSong != null) {
                                                                 navigateToAlbum(albumForSong.id, albumForSong.title)
                                                             } else {
-                                                                val serviceId = currentSong.id.substringBefore("::", "JELLYFIN")
                                                                 val fallbackAlbumId = currentSong.albumId.takeIf { it.isNotBlank() }
-                                                                    ?: "$serviceId::album::${currentSong.artist}::${currentSong.album}"
+                                                                    ?: if (isStreamingMode) {
+                                                                        val serviceId = currentSong.id.substringBefore("::", "JELLYFIN")
+                                                                        "$serviceId::album::${currentSong.artist}::${currentSong.album}"
+                                                                    } else {
+                                                                        "unknown_${currentSong.album}"
+                                                                    }
                                                                 navigateToAlbum(fallbackAlbumId, currentSong.album)
                                                             }
                                                         }

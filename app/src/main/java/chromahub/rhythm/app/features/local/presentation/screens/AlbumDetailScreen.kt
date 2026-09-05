@@ -230,12 +230,19 @@ fun AlbumDetailScreen(
 
     val allAlbums by viewModel.albums.collectAsState()
     val allArtists by viewModel.artists.collectAsState()
+    val allLibrarySongs by viewModel.filteredSongs.collectAsState()
     val album = remember(allAlbums, albumId, albumName, albumOverride) {
         albumOverride ?: allAlbums.findAlbumForRoute(albumId, albumName)
     }
 
-    val allDisplaySongs = remember(album, songsOverride) {
-        songsOverride ?: album?.songs ?: emptyList()
+    val allDisplaySongs = remember(album, songsOverride, allLibrarySongs, albumId, albumName) {
+        songsOverride ?: album?.songs?.takeIf { it.isNotEmpty() } ?: run {
+            val matchingSongs = allLibrarySongs.filter { song ->
+                (albumId.isNotBlank() && song.albumId.trim() == albumId.trim()) ||
+                (albumName.isNotBlank() && song.album.trim().equals(albumName.trim(), ignoreCase = true))
+            }
+            matchingSongs.takeIf { it.isNotEmpty() } ?: album?.songs ?: emptyList()
+        }
     }
 
     val sortOrder = remember(savedSortOrder) { savedSortOrder.toAlbumSortOrder() }
@@ -314,11 +321,11 @@ fun AlbumDetailScreen(
     var canvasArtwork by remember(albumId) { mutableStateOf<CanvasArtwork?>(null) }
     var canvasLoading by remember(albumId) { mutableStateOf(false) }
 
-    LaunchedEffect(albumId, albumName, album?.artist, appleCanvasEnabled, appleCanvasNetworkMode) {
+    LaunchedEffect(albumId, albumName, album?.artist, allDisplaySongs, appleCanvasEnabled, appleCanvasNetworkMode) {
         canvasArtwork = null
         canvasLoading = false
 
-        val artistName = album?.artist
+        val artistName = album?.artist ?: allDisplaySongs.firstOrNull()?.artist
         if (albumName.isNotBlank() && artistName != null && appleCanvasEnabled) {
             val hasNetwork = if (appleCanvasNetworkMode == CanvasNetworkMode.WIFI_ONLY) {
                 NetworkUtils.isWifiConnected(context)
@@ -346,8 +353,8 @@ fun AlbumDetailScreen(
     LaunchedEffect(addToQueuePressed) { if (addToQueuePressed) { delay(150); addToQueuePressed = false } }
 
     val totalDuration = songDisplayState.totalDuration
-    val aggregatedArtists = remember(album?.songs, effectiveDelimiters, artistSeparatorEnabled) {
-        (album?.songs ?: emptyList()).flatMap { song ->
+    val aggregatedArtists = remember(allDisplaySongs, effectiveDelimiters, artistSeparatorEnabled) {
+        allDisplaySongs.flatMap { song ->
             ArtistSeparator.splitArtistNames(
                 song.artist,
                 delimiters = effectiveDelimiters,
@@ -355,11 +362,13 @@ fun AlbumDetailScreen(
             )
         }.distinct().sorted()
     }
-    val displayArtist = aggregatedArtists.joinToString(", ").ifEmpty { album?.artist ?: "Unknown Artist" }
-    val displayArtworkUri = album?.artworkUri
+    val displayArtist = aggregatedArtists.joinToString(", ").ifEmpty {
+        album?.artist ?: allDisplaySongs.firstOrNull()?.artist ?: "Unknown Artist"
+    }
+    val displayArtworkUri = album?.artworkUri ?: allDisplaySongs.firstNotNullOfOrNull { it.artworkUri }
     val hasCanvas = appleCanvasEnabled && canvasArtwork != null
     val backgroundColor = MaterialTheme.colorScheme.background
-    val isLoading = isContentLoadingOverride ?: (album == null)
+    val isLoading = isContentLoadingOverride ?: (album == null && allDisplaySongs.isEmpty())
 
     if (isLandscapeTablet) {
         // Animated infinite transition for backdrop orbs (like full-screen lyrics view)
@@ -755,7 +764,7 @@ fun AlbumDetailScreen(
                         )
                         Spacer(modifier = Modifier.height(6.dp))
                         // Merge artist + tracks together, year+quality BIG on right spanning both lines
-                        val albumYear = album?.year
+                        val albumYear = album?.year ?: allDisplaySongs.firstNotNullOfOrNull { it.year.takeIf { y -> y > 0 } }
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically

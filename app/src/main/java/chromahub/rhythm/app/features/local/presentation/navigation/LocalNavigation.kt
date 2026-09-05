@@ -242,7 +242,10 @@ sealed class Screen(val route: String) {
         fun createRoute(artistName: String) = "artist/${Uri.encode(artistName)}"
     }
     object AlbumDetail : Screen("album/{albumId}?albumName={albumName}") {
-        fun createRoute(albumId: String, albumName: String) = "album/${Uri.encode(albumId)}?albumName=${Uri.encode(albumName)}"
+        fun createRoute(albumId: String, albumName: String): String {
+            val safeId = if (albumId.contains('/')) albumId.replace('/', '_') else albumId
+            return "album/${Uri.encode(safeId)}?albumName=${Uri.encode(albumName)}"
+        }
     }
     
     // Tuner Settings Subroutes
@@ -1394,6 +1397,7 @@ private fun LocalNavigationContent(
                         appSettings = appSettings,
                         musicViewModel = viewModel,
                         navController = navController,
+                        isStreamingMode = isStreamingMode,
                         miniPlayerBottomOffset = miniPlayerBottomOffset
                     )
                 }
@@ -3637,8 +3641,10 @@ private fun LocalNavigationContent(
                             },
                             onGoToAlbum = { song ->
                                 val album = allAlbums.findAlbumForSong(song)
-                                if (album != null) {
-                                    navController.navigate(Screen.AlbumDetail.createRoute(album.id, album.title))
+                                val albumId = album?.id ?: song.albumId.ifBlank { "unknown_${song.album}" }
+                                val albumTitle = album?.title ?: song.album
+                                if (albumTitle.isNotBlank() || albumId.isNotBlank()) {
+                                    navController.navigate(Screen.AlbumDetail.createRoute(albumId, albumTitle))
                                 }
                             },
                             onGoToArtist = { song ->
