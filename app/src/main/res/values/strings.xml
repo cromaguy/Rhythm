@@ -528,6 +528,10 @@
     <string name="onboarding_continue_full_tour">Continue Full Tour</string>
     <string name="onboarding_finish_now">Finish Setup Now</string>
     <string name="onboarding_step_progress">%1$d of %2$d</string>
+    <string name="onboarding_streaming_setup_later">Set up server later in Settings</string>
+    <string name="onboardingscreen_choose_streaming_provider">Choose Streaming Service</string>
+    <string name="onboardingscreen_choose_streaming_provider_desc">Select your server provider to stream your remote music library</string>
+    <string name="onboardingscreen_configure_provider">Configure %1$s</string>
 
     <string name="about_replay_tour">Replay Setup Tour</string>
     <string name="about_replay_tour_desc">Take the guided tour again anytime to reconfigure preferences</string>
@@ -1902,6 +1906,9 @@
     <string name="onboardingscreen_interaction">Interaction</string>
     <string name="onboardingscreen_choose_your_playback_mode">Choose Your Playback Mode</string>
     <string name="onboardingscreen_local_offline_player">Local Offline Player</string>
+    <string name="onboardingscreen_rhythm_go">Rhythm GO</string>
+    <string name="onboardingscreen_mode_local_desc">Play audio files stored on your device</string>
+    <string name="onboardingscreen_mode_streaming_desc">Stream from Jellyfin or Subsonic servers</string>
     <string name="onboardingscreen_play_audio_files_stored">Play audio files stored directly on your device. Supports advanced local directory scanning, statistics, and theme matching.</string>
     <string name="onboardingscreen_rhythm_go_streaming">Rhythm GO! (Streaming)</string>
     <string name="onboardingscreen_connect_to_jellyfin_subsonic">Connect to Jellyfin, Subsonic, or Navidrome servers to stream your entire library on the go, with caching support for offline listening.</string>
@@ -1916,7 +1923,15 @@
     <string name="onboardingscreen_enable_caching_in_settings">Enable caching in Settings for offline playback later.</string>
     <string name="onboardingscreen_connection_test_ensures_server">Connection test ensures server credentials are correct.</string>
     <string name="onboardingscreen_subsonic_navidrome">Subsonic / Navidrome</string>
-    <string name="onboardingscreen_jellyfin_server">Jellyfin Server</string>
+    <string name="onboardingscreen_jellyfin_server">Jellyfin</string>
+    <string name="onboarding_scanning_for_provider">Scanning for %1$s…</string>
+    <string name="onboarding_scanning_for_provider_desc">Searching your local Wi-Fi network for nearby servers…</string>
+    <string name="onboardingscreen_service_choice_tips">Provider Tips</string>
+    <string name="onboardingscreen_service_subsonic_tip">Subsonic API powers Navidrome, Gonic, Airsonic, and Subsonic servers.</string>
+    <string name="onboardingscreen_service_jellyfin_tip">Connects directly to your Jellyfin media server and audio collections.</string>
+    <string name="onboardingscreen_service_caching_tip">Both providers support full offline caching and playlist synchronization.</string>
+    <string name="onboardingscreen_setup_auto_scan_tip">Auto-detection scans your local network for active server instances.</string>
+    <string name="onboardingscreen_setup_remote_tip">Use http:// for local IPs and https:// with valid SSL for remote servers.</string>
     <string name="onboardingscreen_httpsyourservercom">https://your-server.com</string>
     <string name="onboardingscreen_remember_to_include_http">Remember to include http:// or https://</string>
     <string name="onboardingscreen_username">Username</string>

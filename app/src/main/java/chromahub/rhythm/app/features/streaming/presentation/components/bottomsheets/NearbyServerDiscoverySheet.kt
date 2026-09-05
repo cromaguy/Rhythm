@@ -77,6 +77,9 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.delay
 
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.Job
+
 data class DiscoveredServer(
     val name: String,
     val host: String,
@@ -85,58 +88,61 @@ data class DiscoveredServer(
     val type: String
 )
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun NearbyServerDiscoverySheet(
-    serviceId: String,
-    onDismiss: () -> Unit,
-    onServerSelected: (String) -> Unit
+class NearbyServerScanner(
+    private val context: Context,
+    private val serviceId: String,
+    private val scope: CoroutineScope
 ) {
-    val upperServiceId = remember(serviceId) { serviceId.uppercase() }
-    val context = LocalContext.current
-    val sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded))
-    
-    val discoveredServers = remember { mutableStateListOf<DiscoveredServer>() }
-    var isScanning by remember { mutableStateOf(false) }
-    var scanTrigger by remember { mutableIntStateOf(0) }
+    val upperServiceId = serviceId.uppercase()
+    val discoveredServers = mutableStateListOf<DiscoveredServer>()
+    var isScanning by mutableStateOf(false)
+        private set
 
-    DisposableEffect(upperServiceId, scanTrigger) {
-        val wifiManager = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
-        val multicastLock = wifiManager.createMulticastLock("RhythmGoDiscovery").apply {
-            setReferenceCounted(true)
-            try {
-                acquire()
-            } catch (e: Exception) {
-                // Ignore lock acquisition failure
+    private val wifiManager = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
+    private val nsdManager = context.applicationContext.getSystemService(Context.NSD_SERVICE) as NsdManager
+    private val mainHandler = android.os.Handler(android.os.Looper.getMainLooper())
+    private var multicastLock: WifiManager.MulticastLock? = null
+    private var jellyfinUdpJob: Job? = null
+    private val listeners = mutableListOf<NsdManager.DiscoveryListener>()
+    private val pendingResolves = mutableListOf<NsdServiceInfo>()
+    private var isResolving = false
+
+    fun startScan() {
+        if (isScanning) return
+        isScanning = true
+
+        try {
+            multicastLock = wifiManager.createMulticastLock("RhythmGoDiscovery").apply {
+                setReferenceCounted(true)
+                try {
+                    acquire()
+                } catch (e: Exception) {
+                    // Ignore lock acquisition failure
+                }
             }
+        } catch (e: Exception) {
+            // Ignore
         }
 
-        val nsdManager = context.applicationContext.getSystemService(Context.NSD_SERVICE) as NsdManager
-        val mainHandler = android.os.Handler(android.os.Looper.getMainLooper())
-        
         val targetServiceType = when (upperServiceId) {
             StreamingServiceId.JELLYFIN -> "_jellyfin._tcp"
             StreamingServiceId.SUBSONIC -> "_subsonic._tcp"
             else -> "_http._tcp"
         }
 
-        // We will scan for both the specific service type and generic HTTP services
         val serviceTypesToScan = listOf(targetServiceType, "_http._tcp")
-        val listeners = mutableListOf<NsdManager.DiscoveryListener>()
-        
-        val jellyfinUdpJob = if (upperServiceId == StreamingServiceId.JELLYFIN) {
-            val scope = CoroutineScope(Dispatchers.IO)
-            scope.launch {
+
+        if (upperServiceId == StreamingServiceId.JELLYFIN) {
+            jellyfinUdpJob = scope.launch(Dispatchers.IO) {
                 var socket: DatagramSocket? = null
                 try {
                     socket = DatagramSocket().apply {
                         broadcast = true
                         soTimeout = 2000
                     }
-                    
                     val sendData = "Who is JellyfinServer?".toByteArray(Charsets.UTF_8)
                     val broadcastAddresses = getBroadcastAddresses()
-                    
+
                     fun sendBroadcasts() {
                         broadcastAddresses.forEach { addr ->
                             try {
@@ -146,7 +152,6 @@ fun NearbyServerDiscoverySheet(
                                 // Ignore send failures on specific interfaces
                             }
                         }
-                        // Fallback/universal broadcast address
                         try {
                             val universalPacket = DatagramPacket(
                                 sendData,
@@ -160,13 +165,12 @@ fun NearbyServerDiscoverySheet(
                         }
                     }
 
-                    // Initial broadcasts
                     repeat(3) {
                         if (!isActive) return@repeat
                         sendBroadcasts()
                         delay(250)
                     }
-                    
+
                     val receiveBuffer = ByteArray(2048)
                     while (isActive) {
                         try {
@@ -178,7 +182,7 @@ fun NearbyServerDiscoverySheet(
                                 receivePacket.length,
                                 Charsets.UTF_8
                             ).trim()
-                            
+
                             try {
                                 val json = org.json.JSONObject(responseJson)
                                 val rawAddress = json.optString("Address", "").trim()
@@ -191,7 +195,7 @@ fun NearbyServerDiscoverySheet(
                                         if (discoveredServers.none { it.url == finalUrl }) {
                                             discoveredServers.add(
                                                 DiscoveredServer(
-                                                    name = if (name.isBlank()) "Jellyfin Server" else name,
+                                                    name = if (name.isBlank()) "Jellyfin" else name,
                                                     host = pktHost,
                                                     port = 8096,
                                                     url = finalUrl,
@@ -205,10 +209,9 @@ fun NearbyServerDiscoverySheet(
                                 // Ignore JSON errors
                             }
                         } catch (e: java.io.InterruptedIOException) {
-                            // Socket timeout - resend broadcast packets to discover new hosts
                             sendBroadcasts()
                         } catch (e: Exception) {
-                            // Ignore other socket errors
+                            // Ignore
                         }
                     }
                 } catch (e: Exception) {
@@ -217,12 +220,7 @@ fun NearbyServerDiscoverySheet(
                     socket?.close()
                 }
             }
-        } else {
-            null
         }
-        
-        val pendingResolves = mutableListOf<NsdServiceInfo>()
-        var isResolving = false
 
         @Suppress("DEPRECATION")
         fun resolveNext() {
@@ -258,12 +256,11 @@ fun NearbyServerDiscoverySheet(
                                     } else if (serviceInfo.serviceType.contains("subsonic", ignoreCase = true) || nameLower.contains("subsonic")) {
                                         "Subsonic"
                                     } else if (upperServiceId == StreamingServiceId.JELLYFIN) {
-                                        "Jellyfin (HTTP)"
+                                        "Jellyfin"
                                     } else {
-                                        "Subsonic (HTTP)"
+                                        "Subsonic"
                                     }
 
-                                    // Avoid duplicates
                                     if (discoveredServers.none { it.url == url }) {
                                         discoveredServers.add(
                                             DiscoveredServer(
@@ -308,7 +305,6 @@ fun NearbyServerDiscoverySheet(
 
                 override fun onServiceFound(serviceInfo: NsdServiceInfo?) {
                     if (serviceInfo != null) {
-                        // Skip non-matching services for HTTP fallback to reduce noise
                         if (type.startsWith("_http._tcp")) {
                             val name = serviceInfo.serviceName?.lowercase() ?: ""
                             val port = serviceInfo.port
@@ -342,33 +338,77 @@ fun NearbyServerDiscoverySheet(
                 // Ignore failure for individual type scans
             }
         }
+    }
 
-        onDispose {
-            mainHandler.removeCallbacksAndMessages(null)
-            jellyfinUdpJob?.cancel()
+    fun stopScan() {
+        if (!isScanning) return
+        isScanning = false
+        mainHandler.removeCallbacksAndMessages(null)
+        jellyfinUdpJob?.cancel()
+        jellyfinUdpJob = null
+        try {
+            if (multicastLock?.isHeld == true) {
+                multicastLock?.release()
+            }
+        } catch (e: Exception) {
+            // Ignore release failure
+        }
+        multicastLock = null
+        listeners.forEach { listener ->
             try {
-                if (multicastLock.isHeld) {
-                    multicastLock.release()
-                }
+                nsdManager.stopServiceDiscovery(listener)
             } catch (e: Exception) {
-                // Ignore release failure
+                // Ignore
             }
-            listeners.forEach { listener ->
-                try {
-                    nsdManager.stopServiceDiscovery(listener)
-                } catch (e: Exception) {
-                    // Ignore
-                }
+        }
+        listeners.clear()
+        pendingResolves.clear()
+    }
+
+    fun rescan() {
+        stopScan()
+        discoveredServers.clear()
+        startScan()
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun NearbyServerDiscoverySheet(
+    serviceId: String,
+    onDismiss: () -> Unit,
+    onServerSelected: (String) -> Unit,
+    scanner: NearbyServerScanner? = null
+) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val upperServiceId = remember(serviceId) { serviceId.uppercase() }
+    val sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded))
+    
+    val effectiveScanner = scanner ?: remember(upperServiceId) {
+        NearbyServerScanner(context, upperServiceId, scope)
+    }
+
+    DisposableEffect(effectiveScanner) {
+        if (scanner == null) {
+            effectiveScanner.startScan()
+        }
+        onDispose {
+            if (scanner == null) {
+                effectiveScanner.stopScan()
             }
-            listeners.clear()
-            pendingResolves.clear()
         }
     }
 
-    // Automatically stop scanning spinner after 10 seconds to conserve battery
-    LaunchedEffect(scanTrigger) {
-        delay(10000)
-        isScanning = false
+    val discoveredServers = effectiveScanner.discoveredServers
+    val isScanning = effectiveScanner.isScanning
+
+    // Automatically stop scanning after 10 seconds to conserve battery
+    LaunchedEffect(effectiveScanner.isScanning) {
+        if (effectiveScanner.isScanning) {
+            delay(10000)
+            effectiveScanner.stopScan()
+        }
     }
 
     RhythmAdaptiveModalSheet(
@@ -440,8 +480,7 @@ fun NearbyServerDiscoverySheet(
                     ) {
                         RhythmButtonWeighted(
                             onClick = {
-                                discoveredServers.clear()
-                                scanTrigger++
+                                effectiveScanner.rescan()
                             },
                             weight = 1f,
                             isFirst = true,
@@ -565,8 +604,7 @@ fun NearbyServerDiscoverySheet(
                     ) {
                         RhythmButtonWeighted(
                             onClick = {
-                                discoveredServers.clear()
-                                scanTrigger++
+                                effectiveScanner.rescan()
                             },
                             weight = 1f,
                             isFirst = true,

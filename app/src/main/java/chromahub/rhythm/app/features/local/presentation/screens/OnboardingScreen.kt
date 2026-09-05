@@ -81,6 +81,9 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.RadioButtonDefaults
+import androidx.compose.material3.TextButton
  
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -92,7 +95,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.text.input.PasswordVisualTransformation
  
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import kotlinx.coroutines.delay
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -155,6 +160,8 @@ import chromahub.rhythm.app.shared.presentation.viewmodel.AppVersion
 import chromahub.rhythm.app.features.local.presentation.viewmodel.MusicViewModel
 import chromahub.rhythm.app.features.streaming.presentation.viewmodel.StreamingMusicViewModel
 import chromahub.rhythm.app.features.streaming.presentation.components.bottomsheets.NearbyServerDiscoverySheet
+import chromahub.rhythm.app.features.streaming.presentation.components.bottomsheets.NearbyServerScanner
+import chromahub.rhythm.app.shared.presentation.components.common.RhythmWavyProgressLoader
 import chromahub.rhythm.app.shared.presentation.screens.settings.TunerAnimatedSwitch
 import chromahub.rhythm.app.ui.theme.ColorSchemeOption
 import chromahub.rhythm.app.ui.theme.getPresetColorSchemeOptions
@@ -263,6 +270,7 @@ fun OnboardingScreen(
         val list = mutableListOf<OnboardingStep>()
         list.add(OnboardingStep.APP_MODE_CHOICE)
         if (appMode == "STREAMING") {
+            list.add(OnboardingStep.STREAMING_SERVICE_CHOICE)
             list.add(OnboardingStep.STREAMING_SETUP)
         } else {
             list.add(OnboardingStep.PERMISSIONS)
@@ -492,10 +500,89 @@ fun OnboardingScreen(
                                     }
                                 )
                             }
+                            OnboardingStep.STREAMING_SERVICE_CHOICE -> {
+                                EnhancedStreamingServiceChoiceContent(
+                                    appSettings = appSettings,
+                                    isTablet = isTablet,
+                                    backButton = if (stepIndex > 0) {
+                                        {
+                                            val buttonScale = remember { Animatable(1f) }
+                                            OutlinedButton(
+                                                onClick = {
+                                                    scope.launch {
+                                                        buttonScale.animateTo(0.92f, animationSpec = tween(100))
+                                                        buttonScale.animateTo(1f, animationSpec = spring(
+                                                            dampingRatio = Spring.DampingRatioMediumBouncy,
+                                                            stiffness = Spring.StiffnessHigh
+                                                        ))
+                                                    }
+                                                    onPrevStep()
+                                                },
+                                                modifier = Modifier
+                                                    .height(56.dp)
+                                                    .graphicsLayer {
+                                                        scaleX = buttonScale.value
+                                                        scaleY = buttonScale.value
+                                                    },
+                                                shape = RoundedCornerShape(32.dp)
+                                            ) {
+                                                Icon(
+                                                    imageVector = RhythmIcons.Back,
+                                                    contentDescription = null,
+                                                    modifier = Modifier.size(20.dp)
+                                                )
+                                                Spacer(modifier = Modifier.width(8.dp))
+                                                Text(context.getString(R.string.onboarding_back), style = MaterialTheme.typography.labelLarge)
+                                            }
+                                        }
+                                    } else null,
+                                    nextButton = {
+                                        val nextButtonScale = remember { Animatable(1f) }
+                                        Button(
+                                            onClick = {
+                                                scope.launch {
+                                                    nextButtonScale.animateTo(0.92f, animationSpec = tween(100))
+                                                    nextButtonScale.animateTo(1f, animationSpec = spring(
+                                                        dampingRatio = Spring.DampingRatioMediumBouncy,
+                                                        stiffness = Spring.StiffnessHigh
+                                                    ))
+                                                }
+                                                HapticUtils.performHapticFeedback(context, haptic, HapticType.HEAVY)
+                                                onNextStep()
+                                            },
+                                            modifier = Modifier
+                                                .height(56.dp)
+                                                .graphicsLayer {
+                                                    scaleX = nextButtonScale.value
+                                                    scaleY = nextButtonScale.value
+                                                },
+                                            colors = ButtonDefaults.buttonColors(
+                                                containerColor = MaterialTheme.colorScheme.primary,
+                                                contentColor = MaterialTheme.colorScheme.onPrimary
+                                            ),
+                                            shape = RoundedCornerShape(32.dp)
+                                        ) {
+                                            Text(
+                                                context.getString(R.string.onboarding_next),
+                                                style = MaterialTheme.typography.labelLarge.copy(
+                                                    fontWeight = FontWeight.Bold
+                                                )
+                                            )
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Icon(
+                                                imageVector = RhythmIcons.Forward,
+                                                contentDescription = null,
+                                                modifier = Modifier.size(20.dp)
+                                            )
+                                        }
+                                    }
+                                )
+                            }
                             OnboardingStep.STREAMING_SETUP -> {
                                 EnhancedStreamingSetupContent(
                                     appSettings = appSettings,
                                     streamingViewModel = streamingViewModel,
+                                    onSkip = onNextStep,
                                     isTablet = isTablet,
                                     backButton = if (stepIndex > 0) {
                                         {
@@ -2188,6 +2275,25 @@ private fun OnboardingStepHeaderIcon(
     ) {
         Icon(
             imageVector = imageVector,
+            contentDescription = null,
+            tint = tint,
+            modifier = Modifier.size(iconSize)
+        )
+    }
+}
+
+@Composable
+private fun OnboardingStepHeaderIcon(
+    painter: androidx.compose.ui.graphics.painter.Painter,
+    tint: Color,
+    iconSize: androidx.compose.ui.unit.Dp
+) {
+    Box(
+        modifier = Modifier.fillMaxWidth(),
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(
+            painter = painter,
             contentDescription = null,
             tint = tint,
             modifier = Modifier.size(iconSize)
@@ -10466,23 +10572,29 @@ fun EnhancedAppModeChoiceContent(
     backButton: @Composable (() -> Unit)? = null,
     nextButton: @Composable () -> Unit
 ) {
-    val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val appMode by appSettings.appMode.collectAsState()
     val scrollState = rememberScrollState()
 
     var selectedMode by remember { mutableStateOf(appMode) }
 
+    val onSelectMode: (String) -> Unit = { mode ->
+        selectedMode = mode
+        scope.launch {
+            appSettings.setAppMode(mode)
+        }
+    }
+
     if (isTablet) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .verticalScroll(scrollState)
-                .padding(vertical = 24.dp),
+                .padding(vertical = 32.dp),
             horizontalArrangement = Arrangement.spacedBy(32.dp),
             verticalAlignment = Alignment.Top
         ) {
-            // Left Column: Brand branding (logo + name), subtitle, description, and navigation buttons
+            // Left Column: Icon, Title, Description, Tips Card, Navigation Buttons
             Column(
                 horizontalAlignment = Alignment.Start,
                 modifier = Modifier.weight(1f),
@@ -10500,7 +10612,7 @@ fun EnhancedAppModeChoiceContent(
                     )
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            text = context.getString(R.string.common_rhythm),
+                            text = stringResource(R.string.common_rhythm),
                             style = MaterialTheme.typography.displayMedium.copy(
                                 fontSize = 36.sp,
                                 fontWeight = FontWeight.Bold,
@@ -10531,16 +10643,20 @@ fun EnhancedAppModeChoiceContent(
 
                 Text(
                     text = stringResource(R.string.onboardingscreen_choose_your_playback_mode),
-                    style = MaterialTheme.typography.headlineSmall,
+                    style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.padding(bottom = 12.dp)
                 )
 
                 Text(
                     text = stringResource(R.string.onboarding_configure_desc),
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(bottom = 24.dp)
                 )
+
+                AppModeChoiceTipsCard()
 
                 Spacer(modifier = Modifier.weight(1f))
 
@@ -10554,120 +10670,43 @@ fun EnhancedAppModeChoiceContent(
                 }
             }
 
-            // Right Column: Selection controls and description card
+            // Right Column: Mode Selection List
             Column(
                 horizontalAlignment = Alignment.Start,
                 modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(20.dp)
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                AppModeChoiceSelection(
+                AppModeSelectionList(
                     selectedMode = selectedMode,
-                    onModeSelected = { mode ->
-                        selectedMode = mode
-                        scope.launch { appSettings.setAppMode(mode) }
-                    }
+                    onModeSelected = onSelectMode
                 )
-
-                androidx.compose.animation.AnimatedContent(
-                    targetState = selectedMode,
-                    transitionSpec = {
-                        fadeIn(animationSpec = tween(220)).togetherWith(fadeOut(animationSpec = tween(220)))
-                    },
-                    label = "mode_description"
-                ) { mode ->
-                    val descriptionTitle = if (mode == "LOCAL") {
-                        stringResource(R.string.onboardingscreen_local_offline_player)
-                    } else {
-                        stringResource(R.string.onboardingscreen_rhythm_go_streaming)
-                    }
-
-                    val descriptionText = if (mode == "LOCAL") {
-                        stringResource(R.string.onboardingscreen_play_audio_files_stored)
-                    } else {
-                        stringResource(R.string.onboardingscreen_connect_to_jellyfin_subsonic)
-                    }
-
-                    val icon = if (mode == "LOCAL") {
-                        MaterialSymbolIcon("music_note", filled = true)
-                    } else {
-                        MaterialSymbolIcon("cloud_queue", filled = true)
-                    }
-
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(20.dp),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surface
-                        )
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(20.dp),
-                            horizontalArrangement = Arrangement.spacedBy(16.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Surface(
-                                shape = CircleShape,
-                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                                modifier = Modifier.size(52.dp)
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Icon(
-                                        imageVector = icon,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(26.dp)
-                                    )
-                                }
-                            }
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = descriptionTitle,
-                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text(
-                                    text = descriptionText,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
-                    }
-                }
             }
         }
     } else {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
+        // Mobile Layout: Single column
+        Column(
+            horizontalAlignment = Alignment.Start,
+            modifier = Modifier
+                .fillMaxWidth()
+                .verticalScroll(scrollState)
         ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .then(if (isTablet) Modifier.width(500.dp) else Modifier)
-                    .verticalScroll(scrollState)
-                    .padding(horizontal = 16.dp, vertical = 16.dp)
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(2.dp),
                     modifier = Modifier.padding(bottom = 12.dp)
                 ) {
-                    // Logo
                     Image(
                         painter = painterResource(id = R.drawable.rhythm_splash_logo),
                         contentDescription = stringResource(R.string.updates_rhythm_logo_cd),
                         modifier = Modifier.size(100.dp)
                     )
-
-                    // App name
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            text = context.getString(R.string.common_rhythm),
+                            text = stringResource(R.string.common_rhythm),
                             style = MaterialTheme.typography.displayMedium.copy(
                                 fontSize = 42.sp,
                                 fontWeight = FontWeight.Bold,
@@ -10676,7 +10715,6 @@ fun EnhancedAppModeChoiceContent(
                             color = MaterialTheme.colorScheme.onBackground,
                             textAlign = TextAlign.Center
                         )
-
                         androidx.compose.animation.AnimatedVisibility(
                             visible = selectedMode == "STREAMING",
                             enter = scaleIn() + fadeIn(),
@@ -10698,122 +10736,121 @@ fun EnhancedAppModeChoiceContent(
                         }
                     }
                 }
-
-                Text(
-                    text = stringResource(R.string.onboardingscreen_choose_your_playback_mode),
-                    style = MaterialTheme.typography.bodyLarge.copy(
-                        fontWeight = FontWeight.Medium
-                    ),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(bottom = 24.dp)
-                )
-
-                // Button group selection
-                AppModeChoiceSelection(
-                    selectedMode = selectedMode,
-                    onModeSelected = { mode ->
-                        selectedMode = mode
-                        scope.launch { appSettings.setAppMode(mode) }
-                    }
-                )
-
-                Spacer(modifier = Modifier.height(28.dp))
-
-                // Dynamic proper description card
-                androidx.compose.animation.AnimatedContent(
-                    targetState = selectedMode,
-                    transitionSpec = {
-                        fadeIn(animationSpec = tween(220)).togetherWith(fadeOut(animationSpec = tween(220)))
-                    },
-                    label = "mode_description"
-                ) { mode ->
-                    val descriptionTitle = if (mode == "LOCAL") {
-                        stringResource(R.string.onboardingscreen_local_offline_player)
-                    } else {
-                        stringResource(R.string.onboardingscreen_rhythm_go_streaming)
-                    }
-
-                    val descriptionText = if (mode == "LOCAL") {
-                        stringResource(R.string.onboardingscreen_play_audio_files_stored)
-                    } else {
-                        stringResource(R.string.onboardingscreen_connect_to_jellyfin_subsonic)
-                    }
-
-                    val icon = if (mode == "LOCAL") {
-                        MaterialSymbolIcon("music_note", filled = true)
-                    } else {
-                        MaterialSymbolIcon("cloud_queue", filled = true)
-                    }
-
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(20.dp),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surface
-                        )
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(20.dp),
-                            horizontalArrangement = Arrangement.spacedBy(16.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Surface(
-                                shape = CircleShape,
-                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                                modifier = Modifier.size(52.dp)
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Icon(
-                                        imageVector = icon,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(26.dp)
-                                    )
-                                }
-                            }
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = descriptionTitle,
-                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text(
-                                    text = descriptionText,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(20.dp))
             }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Text(
+                text = stringResource(R.string.onboardingscreen_choose_your_playback_mode),
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.padding(bottom = 12.dp)
+            )
+
+            Text(
+                text = stringResource(R.string.onboarding_configure_desc),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(bottom = 24.dp)
+            )
+
+            AppModeSelectionList(
+                selectedMode = selectedMode,
+                onModeSelected = onSelectMode
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            AppModeChoiceTipsCard()
         }
     }
 }
 
 @Composable
-private fun AppModeChoiceSelection(
+private fun AppModeSelectionList(
     selectedMode: String,
     onModeSelected: (String) -> Unit
 ) {
     val context = LocalContext.current
     val haptic = LocalHapticFeedback.current
 
-    val items = listOf("Local Offline", "Streaming (Go)")
-    val selectedIndex = if (selectedMode == "LOCAL") 0 else 1
-
-    ExpressiveButtonGroup(
-        items = items,
-        selectedIndex = selectedIndex,
-        onItemClick = { index ->
-            HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
-            onModeSelected(if (index == 0) "LOCAL" else "STREAMING")
-        },
-        modifier = Modifier.fillMaxWidth().height(56.dp)
+    Material3SettingsGroup(
+        items = listOf(
+            Material3SettingsItem(
+                leadingContent = {
+                    Icon(
+                        imageVector = MaterialSymbolIcon("music_note", filled = true),
+                        contentDescription = null,
+                        tint = if (selectedMode == "LOCAL") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(28.dp)
+                    )
+                },
+                title = {
+                    Text(
+                        text = stringResource(R.string.common_rhythm),
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
+                    )
+                },
+                description = {
+                    Text(
+                        text = stringResource(R.string.onboardingscreen_mode_local_desc),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                },
+                trailingContent = {
+                    RadioButton(
+                        selected = selectedMode == "LOCAL",
+                        onClick = null,
+                        colors = RadioButtonDefaults.colors(
+                            selectedColor = MaterialTheme.colorScheme.primary,
+                            unselectedColor = MaterialTheme.colorScheme.outline
+                        )
+                    )
+                },
+                onClick = {
+                    HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
+                    onModeSelected("LOCAL")
+                }
+            ),
+            Material3SettingsItem(
+                leadingContent = {
+                    Icon(
+                        imageVector = MaterialSymbolIcon("cloud_queue", filled = true),
+                        contentDescription = null,
+                        tint = if (selectedMode == "STREAMING") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(28.dp)
+                    )
+                },
+                title = {
+                    Text(
+                        text = stringResource(R.string.onboardingscreen_rhythm_go),
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
+                    )
+                },
+                description = {
+                    Text(
+                        text = stringResource(R.string.onboardingscreen_mode_streaming_desc),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                },
+                trailingContent = {
+                    RadioButton(
+                        selected = selectedMode == "STREAMING",
+                        onClick = null,
+                        colors = RadioButtonDefaults.colors(
+                            selectedColor = MaterialTheme.colorScheme.primary,
+                            unselectedColor = MaterialTheme.colorScheme.outline
+                        )
+                    )
+                },
+                onClick = {
+                    HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
+                    onModeSelected("STREAMING")
+                }
+            )
+        ),
+        containerColor = MaterialTheme.colorScheme.surface
     )
 }
 
@@ -10861,9 +10898,278 @@ private fun AppModeChoiceTipsCard() {
 }
 
 @Composable
+fun EnhancedStreamingServiceChoiceContent(
+    appSettings: AppSettings,
+    isTablet: Boolean = false,
+    backButton: @Composable (() -> Unit)? = null,
+    nextButton: @Composable () -> Unit
+) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val streamingService by appSettings.streamingService.collectAsState()
+    val scrollState = rememberScrollState()
+
+    var selectedProvider by rememberSaveable {
+        mutableStateOf(streamingService.ifBlank { "SUBSONIC" })
+    }
+
+    LaunchedEffect(streamingService) {
+        if (streamingService.isNotBlank()) {
+            selectedProvider = streamingService
+        }
+    }
+
+    val onSelectProvider: (String) -> Unit = { id ->
+        selectedProvider = id
+        scope.launch {
+            appSettings.setStreamingService(id)
+        }
+    }
+
+    if (isTablet) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .verticalScroll(scrollState)
+                .padding(vertical = 32.dp),
+            horizontalArrangement = Arrangement.spacedBy(32.dp),
+            verticalAlignment = Alignment.Top
+        ) {
+            // Left Column: Icon, Title, Description, Tips Card, Navigation Buttons
+            Column(
+                horizontalAlignment = Alignment.Start,
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                AnimatedVisibility(visible = true, enter = scaleIn() + fadeIn()) {
+                    OnboardingStepHeaderIcon(
+                        imageVector = MaterialSymbolIcon("dns", filled = true),
+                        tint = MaterialTheme.colorScheme.primary,
+                        iconSize = 72.dp
+                    )
+                }
+
+                Text(
+                    text = stringResource(R.string.onboardingscreen_choose_streaming_provider),
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.padding(bottom = 12.dp)
+                )
+
+                Text(
+                    text = stringResource(R.string.onboardingscreen_choose_streaming_provider_desc),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(bottom = 24.dp)
+                )
+
+                StreamingServiceChoiceTipsCard()
+
+                Spacer(modifier = Modifier.weight(1f))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    backButton?.invoke()
+                    nextButton()
+                }
+            }
+
+            // Right Column: Service Selection List
+            Column(
+                horizontalAlignment = Alignment.Start,
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                StreamingProviderSelectionList(
+                    selectedProvider = selectedProvider,
+                    onProviderSelected = onSelectProvider
+                )
+            }
+        }
+    } else {
+        // Mobile Layout
+        Column(
+            horizontalAlignment = Alignment.Start,
+            modifier = Modifier
+                .fillMaxWidth()
+                .verticalScroll(scrollState)
+        ) {
+            AnimatedVisibility(visible = true, enter = scaleIn() + fadeIn()) {
+                OnboardingStepHeaderIcon(
+                    imageVector = MaterialSymbolIcon("dns", filled = true),
+                    tint = MaterialTheme.colorScheme.primary,
+                    iconSize = 56.dp
+                )
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Text(
+                text = stringResource(R.string.onboardingscreen_choose_streaming_provider),
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.padding(bottom = 12.dp)
+            )
+
+            Text(
+                text = stringResource(R.string.onboardingscreen_choose_streaming_provider_desc),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(bottom = 24.dp)
+            )
+
+            StreamingProviderSelectionList(
+                selectedProvider = selectedProvider,
+                onProviderSelected = onSelectProvider
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            StreamingServiceChoiceTipsCard()
+        }
+    }
+}
+
+@Composable
+private fun StreamingProviderSelectionList(
+    selectedProvider: String,
+    onProviderSelected: (String) -> Unit
+) {
+    val context = LocalContext.current
+    val haptic = LocalHapticFeedback.current
+
+    Material3SettingsGroup(
+        items = listOf(
+            Material3SettingsItem(
+                leadingContent = {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_subsonic),
+                        contentDescription = null,
+                        tint = if (selectedProvider == "SUBSONIC") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(28.dp)
+                    )
+                },
+                title = {
+                    Text(
+                        text = stringResource(R.string.onboardingscreen_subsonic_navidrome),
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
+                    )
+                },
+                description = {
+                    Text(
+                        text = stringResource(R.string.streaming_service_subsonic_desc),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                },
+                trailingContent = {
+                    RadioButton(
+                        selected = selectedProvider == "SUBSONIC",
+                        onClick = null,
+                        colors = RadioButtonDefaults.colors(
+                            selectedColor = MaterialTheme.colorScheme.primary,
+                            unselectedColor = MaterialTheme.colorScheme.outline
+                        )
+                    )
+                },
+                onClick = {
+                    HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
+                    onProviderSelected("SUBSONIC")
+                }
+            ),
+            Material3SettingsItem(
+                leadingContent = {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_jellyfin),
+                        contentDescription = null,
+                        tint = if (selectedProvider == "JELLYFIN") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(28.dp)
+                    )
+                },
+                title = {
+                    Text(
+                        text = stringResource(R.string.streaming_service_jellyfin),
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
+                    )
+                },
+                description = {
+                    Text(
+                        text = stringResource(R.string.streaming_service_jellyfin_desc),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                },
+                trailingContent = {
+                    RadioButton(
+                        selected = selectedProvider == "JELLYFIN",
+                        onClick = null,
+                        colors = RadioButtonDefaults.colors(
+                            selectedColor = MaterialTheme.colorScheme.primary,
+                            unselectedColor = MaterialTheme.colorScheme.outline
+                        )
+                    )
+                },
+                onClick = {
+                    HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
+                    onProviderSelected("JELLYFIN")
+                }
+            )
+        ),
+        containerColor = MaterialTheme.colorScheme.surface
+    )
+}
+
+@Composable
+private fun StreamingServiceChoiceTipsCard() {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer
+        )
+    ) {
+        Column(modifier = Modifier.padding(20.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = RhythmIcons.Info,
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                    contentDescription = null,
+                    modifier = Modifier.size(24.dp)
+                )
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(
+                    text = stringResource(R.string.onboardingscreen_service_choice_tips),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+
+            OnboardingTipItem(
+                icon = MaterialSymbolIcon("dns"),
+                text = stringResource(R.string.onboardingscreen_service_subsonic_tip)
+            )
+            OnboardingTipItem(
+                icon = MaterialSymbolIcon("video_settings"),
+                text = stringResource(R.string.onboardingscreen_service_jellyfin_tip)
+            )
+            OnboardingTipItem(
+                icon = MaterialSymbolIcon("offline_pin"),
+                text = stringResource(R.string.onboardingscreen_service_caching_tip)
+            )
+        }
+    }
+}
+
+@Composable
 fun EnhancedStreamingSetupContent(
     appSettings: AppSettings,
     streamingViewModel: StreamingMusicViewModel,
+    onSkip: (() -> Unit)? = null,
     isTablet: Boolean = false,
     backButton: @Composable (() -> Unit)? = null,
     nextButton: @Composable () -> Unit
@@ -10875,8 +11181,8 @@ fun EnhancedStreamingSetupContent(
     val isLoading by streamingViewModel.isLoading.collectAsState()
     val error by streamingViewModel.error.collectAsState()
     val rememberStreamingPasswords by appSettings.rememberStreamingPasswords.collectAsState()
-
-    var selectedProvider by rememberSaveable { mutableStateOf("SUBSONIC") } // Default to subsonic (Navidrome/Subsonic)
+    val currentStreamingService by appSettings.streamingService.collectAsState()
+    val selectedProvider = currentStreamingService.ifBlank { "SUBSONIC" }
     
     val currentSession = sessions[selectedProvider] ?: streamingViewModel.getServiceSession(selectedProvider)
     val requiresServerUrl = remember(selectedProvider) { selectedProvider == "SUBSONIC" || selectedProvider == "JELLYFIN" }
@@ -10886,9 +11192,46 @@ fun EnhancedStreamingSetupContent(
     var password by rememberSaveable(selectedProvider) { mutableStateOf("") }
     var showDiscoverySheet by remember { mutableStateOf(false) }
 
+    val scanner = remember(selectedProvider) { NearbyServerScanner(context, selectedProvider, scope) }
+    var isAutoScanning by rememberSaveable(selectedProvider) { mutableStateOf(serverUrl.isBlank()) }
+
+    DisposableEffect(scanner) {
+        onDispose {
+            scanner.stopScan()
+        }
+    }
+
+    LaunchedEffect(selectedProvider) {
+        if (serverUrl.isBlank()) {
+            isAutoScanning = true
+            scanner.startScan()
+            delay(3500)
+            isAutoScanning = false
+            if (scanner.discoveredServers.isNotEmpty() && serverUrl.isBlank()) {
+                showDiscoverySheet = true
+            }
+        }
+    }
+
     val isConnected = currentSession.isConnected
     val canSubmit = username.isNotBlank() && password.isNotBlank() && (!requiresServerUrl || serverUrl.isNotBlank())
     val scrollState = rememberScrollState()
+
+    val providerDisplayName = if (selectedProvider == "JELLYFIN") {
+        stringResource(R.string.streaming_service_jellyfin)
+    } else {
+        stringResource(R.string.onboardingscreen_subsonic_navidrome)
+    }
+    val providerDescription = if (selectedProvider == "JELLYFIN") {
+        stringResource(R.string.streaming_service_jellyfin_desc)
+    } else {
+        stringResource(R.string.streaming_service_subsonic_desc)
+    }
+    val providerIconRes = if (selectedProvider == "JELLYFIN") {
+        R.drawable.ic_jellyfin
+    } else {
+        R.drawable.ic_subsonic
+    }
 
     if (isTablet) {
         Row(
@@ -10905,16 +11248,46 @@ fun EnhancedStreamingSetupContent(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                AnimatedVisibility(visible = true, enter = scaleIn() + fadeIn()) {
-                    OnboardingStepHeaderIcon(
-                        imageVector = MaterialSymbolIcon("cloud_queue", filled = true),
-                        tint = MaterialTheme.colorScheme.primary,
-                        iconSize = 72.dp
-                    )
+                Box(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    AnimatedContent(
+                        targetState = isAutoScanning,
+                        label = "setup_header_icon_tablet"
+                    ) { scanning ->
+                        if (scanning) {
+                            RhythmWavyProgressLoader(
+                                progress = null,
+                                modifier = Modifier.size(72.dp),
+                                indicatorColor = MaterialTheme.colorScheme.primary,
+                                trackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
+                                centerContent = {
+                                    Icon(
+                                        painter = painterResource(id = providerIconRes),
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(36.dp)
+                                    )
+                                }
+                            )
+                        } else {
+                            Icon(
+                                painter = painterResource(id = providerIconRes),
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(72.dp)
+                            )
+                        }
+                    }
                 }
 
                 Text(
-                    text = stringResource(R.string.onboardingscreen_connect_your_streaming_service),
+                    text = if (isAutoScanning) {
+                        stringResource(R.string.onboarding_scanning_for_provider, providerDisplayName)
+                    } else {
+                        stringResource(R.string.onboardingscreen_configure_provider, providerDisplayName)
+                    },
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface,
@@ -10922,7 +11295,11 @@ fun EnhancedStreamingSetupContent(
                 )
 
                 Text(
-                    text = stringResource(R.string.onboardingscreen_connect_your_subsonicnavidrome_or),
+                    text = if (isAutoScanning) {
+                        stringResource(R.string.onboarding_scanning_for_provider_desc)
+                    } else {
+                        providerDescription
+                    },
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(bottom = 32.dp)
@@ -10948,7 +11325,6 @@ fun EnhancedStreamingSetupContent(
             ) {
                 StreamingSetupSelectionAndForm(
                     selectedProvider = selectedProvider,
-                    onProviderSelected = { selectedProvider = it },
                     requiresServerUrl = requiresServerUrl,
                     serverUrl = serverUrl,
                     onServerUrlChange = { serverUrl = it },
@@ -10960,12 +11336,15 @@ fun EnhancedStreamingSetupContent(
                     isLoading = isLoading,
                     error = error,
                     canSubmit = canSubmit,
-                    selectedProviderName = selectedProvider,
+                    selectedProviderName = providerDisplayName,
                     rememberStreamingPasswords = rememberStreamingPasswords,
                     onRememberPasswordChange = { enabled ->
                         scope.launch { appSettings.setRememberStreamingPasswords(enabled) }
                     },
-                    onDiscoverClick = { showDiscoverySheet = true },
+                    onDiscoverClick = {
+                        scanner.rescan()
+                        showDiscoverySheet = true
+                    },
                     onConnect = {
                         appSettings.setStreamingService(selectedProvider)
                         streamingViewModel.connectService(
@@ -10977,7 +11356,8 @@ fun EnhancedStreamingSetupContent(
                     },
                     onDisconnect = {
                         streamingViewModel.disconnectService(selectedProvider)
-                    }
+                    },
+                    onSkip = onSkip
                 )
             }
         }
@@ -10989,18 +11369,48 @@ fun EnhancedStreamingSetupContent(
                 .fillMaxWidth()
                 .verticalScroll(scrollState)
         ) {
-            AnimatedVisibility(visible = true, enter = scaleIn() + fadeIn()) {
-                OnboardingStepHeaderIcon(
-                    imageVector = MaterialSymbolIcon("cloud_queue", filled = true),
-                    tint = MaterialTheme.colorScheme.primary,
-                    iconSize = 56.dp
-                )
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center
+            ) {
+                AnimatedContent(
+                    targetState = isAutoScanning,
+                    label = "setup_header_icon_mobile"
+                ) { scanning ->
+                    if (scanning) {
+                        RhythmWavyProgressLoader(
+                            progress = null,
+                            modifier = Modifier.size(56.dp),
+                            indicatorColor = MaterialTheme.colorScheme.primary,
+                            trackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
+                            centerContent = {
+                                Icon(
+                                    painter = painterResource(id = providerIconRes),
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(28.dp)
+                                )
+                            }
+                        )
+                    } else {
+                        Icon(
+                            painter = painterResource(id = providerIconRes),
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(56.dp)
+                        )
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
 
             Text(
-                text = stringResource(R.string.onboardingscreen_connect_your_streaming_service),
+                text = if (isAutoScanning) {
+                    stringResource(R.string.onboarding_scanning_for_provider, providerDisplayName)
+                } else {
+                    stringResource(R.string.onboardingscreen_configure_provider, providerDisplayName)
+                },
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface,
@@ -11008,7 +11418,11 @@ fun EnhancedStreamingSetupContent(
             )
 
             Text(
-                text = stringResource(R.string.onboardingscreen_connect_your_subsonicnavidrome_or),
+                text = if (isAutoScanning) {
+                    stringResource(R.string.onboarding_scanning_for_provider_desc)
+                } else {
+                    providerDescription
+                },
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(bottom = 24.dp)
@@ -11016,7 +11430,6 @@ fun EnhancedStreamingSetupContent(
 
             StreamingSetupSelectionAndForm(
                 selectedProvider = selectedProvider,
-                onProviderSelected = { selectedProvider = it },
                 requiresServerUrl = requiresServerUrl,
                 serverUrl = serverUrl,
                 onServerUrlChange = { serverUrl = it },
@@ -11028,12 +11441,15 @@ fun EnhancedStreamingSetupContent(
                 isLoading = isLoading,
                 error = error,
                 canSubmit = canSubmit,
-                selectedProviderName = selectedProvider,
+                selectedProviderName = providerDisplayName,
                 rememberStreamingPasswords = rememberStreamingPasswords,
                 onRememberPasswordChange = { enabled ->
                     scope.launch { appSettings.setRememberStreamingPasswords(enabled) }
                 },
-                onDiscoverClick = { showDiscoverySheet = true },
+                onDiscoverClick = {
+                    scanner.rescan()
+                    showDiscoverySheet = true
+                },
                 onConnect = {
                     appSettings.setStreamingService(selectedProvider)
                     streamingViewModel.connectService(
@@ -11045,7 +11461,8 @@ fun EnhancedStreamingSetupContent(
                 },
                 onDisconnect = {
                     streamingViewModel.disconnectService(selectedProvider)
-                }
+                },
+                onSkip = onSkip
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -11057,6 +11474,7 @@ fun EnhancedStreamingSetupContent(
     if (showDiscoverySheet) {
         NearbyServerDiscoverySheet(
             serviceId = selectedProvider,
+            scanner = scanner,
             onDismiss = { showDiscoverySheet = false },
             onServerSelected = { detectedUrl ->
                 serverUrl = detectedUrl
@@ -11094,12 +11512,12 @@ private fun StreamingSetupTipsCard() {
             Spacer(modifier = Modifier.height(12.dp))
 
             OnboardingTipItem(
-                icon = MaterialSymbolIcon("dns"),
-                text = stringResource(R.string.onboardingscreen_supports_navidrome_gonic_and)
+                icon = MaterialSymbolIcon("wifi_find"),
+                text = stringResource(R.string.onboardingscreen_setup_auto_scan_tip)
             )
             OnboardingTipItem(
-                icon = MaterialSymbolIcon("offline_pin"),
-                text = stringResource(R.string.onboardingscreen_enable_caching_in_settings)
+                icon = MaterialSymbolIcon("lock"),
+                text = stringResource(R.string.onboardingscreen_setup_remote_tip)
             )
             OnboardingTipItem(
                 icon = MaterialSymbolIcon("verified_user"),
@@ -11112,7 +11530,6 @@ private fun StreamingSetupTipsCard() {
 @Composable
 private fun StreamingSetupSelectionAndForm(
     selectedProvider: String,
-    onProviderSelected: (String) -> Unit,
     requiresServerUrl: Boolean,
     serverUrl: String,
     onServerUrlChange: (String) -> Unit,
@@ -11129,107 +11546,10 @@ private fun StreamingSetupSelectionAndForm(
     onRememberPasswordChange: (Boolean) -> Unit,
     onDiscoverClick: () -> Unit,
     onConnect: () -> Unit,
-    onDisconnect: () -> Unit
+    onDisconnect: () -> Unit,
+    onSkip: (() -> Unit)? = null
 ) {
     val scope = rememberCoroutineScope()
-
-    // Service Selection Tabs
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        val subsonicCardScale = remember { Animatable(1f) }
-        val isSubsonic = selectedProvider == "SUBSONIC"
-        Card(
-            modifier = Modifier
-                .weight(1f)
-                .graphicsLayer {
-                    scaleX = subsonicCardScale.value
-                    scaleY = subsonicCardScale.value
-                }
-                .clickable {
-                    scope.launch {
-                        subsonicCardScale.animateTo(0.95f, animationSpec = tween(80))
-                        subsonicCardScale.animateTo(1f, animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy))
-                    }
-                    onProviderSelected("SUBSONIC")
-                },
-            shape = RoundedCornerShape(16.dp),
-            border = BorderStroke(
-                width = if (isSubsonic) 2.dp else 1.dp,
-                color = if (isSubsonic) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
-            ),
-            colors = CardDefaults.cardColors(
-                containerColor = if (isSubsonic) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f) else MaterialTheme.colorScheme.surface
-            )
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_subsonic),
-                    contentDescription = null,
-                    tint = if (isSubsonic) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.size(24.dp)
-                )
-                Text(
-                    text = stringResource(R.string.onboardingscreen_subsonic_navidrome),
-                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                    color = if (isSubsonic) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center
-                )
-            }
-        }
-
-        val jellyfinCardScale = remember { Animatable(1f) }
-        val isJellyfin = selectedProvider == "JELLYFIN"
-        Card(
-            modifier = Modifier
-                .weight(1f)
-                .graphicsLayer {
-                    scaleX = jellyfinCardScale.value
-                    scaleY = jellyfinCardScale.value
-                }
-                .clickable {
-                    scope.launch {
-                        jellyfinCardScale.animateTo(0.95f, animationSpec = tween(80))
-                        jellyfinCardScale.animateTo(1f, animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy))
-                    }
-                    onProviderSelected("JELLYFIN")
-                },
-            shape = RoundedCornerShape(16.dp),
-            border = BorderStroke(
-                width = if (isJellyfin) 2.dp else 1.dp,
-                color = if (isJellyfin) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
-            ),
-            colors = CardDefaults.cardColors(
-                containerColor = if (isJellyfin) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f) else MaterialTheme.colorScheme.surface
-            )
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_jellyfin),
-                    contentDescription = null,
-                    tint = if (isJellyfin) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.size(24.dp)
-                )
-                Text(
-                    text = stringResource(R.string.onboardingscreen_jellyfin_server),
-                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                    color = if (isJellyfin) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center
-                )
-            }
-        }
-    }
-
-    Spacer(modifier = Modifier.height(12.dp))
 
     // Connection Form
     Card(
@@ -11354,7 +11674,7 @@ private fun StreamingSetupSelectionAndForm(
                         )
                         .padding(16.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.Top
                 ) {
                     Icon(
                         imageVector = MaterialSymbolIcon("warning", filled = true),
@@ -11362,12 +11682,29 @@ private fun StreamingSetupSelectionAndForm(
                         tint = MaterialTheme.colorScheme.error,
                         modifier = Modifier.size(24.dp)
                     )
-                    Text(
-                        text = error,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onErrorContainer,
-                        modifier = Modifier.weight(1f)
-                    )
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = error,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onErrorContainer
+                        )
+                        val isDomainUrl = remember(serverUrl) {
+                            val clean = serverUrl.trim().lowercase()
+                                .removePrefix("http://")
+                                .removePrefix("https://")
+                                .substringBefore(":")
+                                .substringBefore("/")
+                            clean.isNotEmpty() && !clean.matches(Regex("^(\\d{1,3}\\.){3}\\d{1,3}$")) && clean != "localhost"
+                        }
+                        if (isDomainUrl) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = stringResource(id = R.string.streaming_service_setup_lan_hairpin_tip),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.85f)
+                            )
+                        }
+                    }
                 }
             }
 
@@ -11406,6 +11743,20 @@ private fun StreamingSetupSelectionAndForm(
                             Text(stringResource(R.string.onboardingscreen_connect_verify))
                         }
                     }
+                }
+            }
+
+            if (!isConnected && onSkip != null) {
+                TextButton(
+                    onClick = onSkip,
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !isLoading
+                ) {
+                    Text(
+                        text = stringResource(R.string.onboarding_streaming_setup_later),
+                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                        color = MaterialTheme.colorScheme.primary
+                    )
                 }
             }
         }

@@ -355,11 +355,12 @@ fun PermissionHandler(
                         OnboardingStep.WELCOME -> currentOnboardingStep = OnboardingStep.APP_MODE_CHOICE
                         OnboardingStep.APP_MODE_CHOICE -> {
                             currentOnboardingStep = if (appSettings.appMode.value == "STREAMING") {
-                                OnboardingStep.STREAMING_SETUP
+                                OnboardingStep.STREAMING_SERVICE_CHOICE
                             } else {
                                 OnboardingStep.PERMISSIONS
                             }
                         }
+                        OnboardingStep.STREAMING_SERVICE_CHOICE -> currentOnboardingStep = OnboardingStep.STREAMING_SETUP
                         OnboardingStep.STREAMING_SETUP -> currentOnboardingStep = OnboardingStep.FULL_TOUR_PROMPT
                         OnboardingStep.PERMISSIONS -> {
                             // Handle based on current permission state
@@ -431,7 +432,8 @@ fun PermissionHandler(
                     when (currentOnboardingStep) {
                         OnboardingStep.APP_MODE_CHOICE -> currentOnboardingStep = OnboardingStep.WELCOME
                         OnboardingStep.PERMISSIONS -> currentOnboardingStep = OnboardingStep.APP_MODE_CHOICE
-                        OnboardingStep.STREAMING_SETUP -> currentOnboardingStep = OnboardingStep.APP_MODE_CHOICE
+                        OnboardingStep.STREAMING_SERVICE_CHOICE -> currentOnboardingStep = OnboardingStep.APP_MODE_CHOICE
+                        OnboardingStep.STREAMING_SETUP -> currentOnboardingStep = OnboardingStep.STREAMING_SERVICE_CHOICE
                         OnboardingStep.MEDIA_SCAN -> {
                             currentOnboardingStep = OnboardingStep.PERMISSIONS
                             scope.launch {

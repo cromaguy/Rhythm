@@ -1133,6 +1133,7 @@ class MainActivity : AppCompatActivity() {
         return when (step) {
             OnboardingStep.WELCOME -> "Welcome"
             OnboardingStep.APP_MODE_CHOICE -> "App Mode Choice"
+            OnboardingStep.STREAMING_SERVICE_CHOICE -> "Streaming Service Choice"
             OnboardingStep.STREAMING_SETUP -> "Streaming Setup"
             OnboardingStep.PERMISSIONS -> "Permissions"
             OnboardingStep.RHYTHM_GUARD -> "Rhythm Guard"
