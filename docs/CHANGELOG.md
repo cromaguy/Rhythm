@@ -10,6 +10,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - 
 
+## [5.5.479.1258 Beta] - 2026-09-05
+
+### Added
+- Streaming service selection step in the onboarding tour
+- Option to keep shuffle active when manually selecting a track
+- Context-aware playback queue preserving album and artist context on track taps (#546)
+- Updated translations from Weblate
+
+### Changed
+- Refined playback queue UX, artist navigation sheets, and detail screen haptics (#571, #543)
+
+### Fixed
+- Restored Favorite and Lyrics action buttons in Merge Mode bottom player controls
+- Improved streaming provider reliability across Subsonic and Jellyfin with real-time download tracking, faster sync, and offline fallback
+- Resolved local library indexing, artist delimiter splitting, and media scanner folder whitelist filtering
+- Fixed audio service stability and background playback termination
+
 ## [5.5.473.1246 Beta] - 2026-09-01
 
 ### Added
