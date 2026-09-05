@@ -287,6 +287,7 @@ fun PlayerScreen(
         val equalizerEnabled by musicViewModel.equalizerEnabled.collectAsState()
         val hiddenChips by appSettings.hiddenPlayerChips.collectAsState()
         val syncSpeedAndPitch by appSettings.syncSpeedAndPitch.collectAsState()
+        val playerMergeControlsToBottom by appSettings.playerMergeControlsToBottom.collectAsState()
         val artistSeparatorEnabled by appSettings.artistSeparatorEnabled.collectAsState()
         val artistSeparatorDelimiters by appSettings.artistSeparatorDelimiters.collectAsState()
 
@@ -741,7 +742,8 @@ fun PlayerScreen(
             ExpressiveBottomButtonsOrderBottomSheet(
                 onDismiss = { showExpressiveBottomButtonsSheet = false },
                 appSettings = appSettings,
-                haptics = haptic
+                haptics = haptic,
+                initialModeIndex = if (playerMergeControlsToBottom) 1 else 0
             )
         }
 

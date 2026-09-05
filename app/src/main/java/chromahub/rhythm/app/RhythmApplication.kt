@@ -136,6 +136,7 @@ class RhythmApplication : Application(), ImageLoaderFactory {
         return ImageLoader.Builder(this)
             .components {
                 add(chromahub.rhythm.app.util.coil.AudioArtworkKeyer())
+                add(chromahub.rhythm.app.util.coil.StreamingArtworkKeyer())
                 add(chromahub.rhythm.app.util.coil.AudioArtworkFetcher.Factory(applicationContext))
             }
             .memoryCache {

@@ -90,3 +90,34 @@ class AudioArtworkKeyer : Keyer<Uri> {
         return null
     }
 }
+
+/**
+ * Canonical keyer for streaming service artwork URIs (Subsonic & Jellyfin).
+ * Strips dynamic/session auth tokens and query parameters so that Coil's memory
+ * and disk caches hit reliably across app launches and network state changes.
+ */
+class StreamingArtworkKeyer : Keyer<Uri> {
+    override fun key(data: Uri, options: Options): String? {
+        val scheme = data.scheme ?: return null
+        if (!scheme.equals("http", ignoreCase = true) && !scheme.equals("https", ignoreCase = true)) {
+            return null
+        }
+        val host = data.host ?: return null
+        val path = data.path ?: return null
+
+        // Subsonic cover art: /rest/getCoverArt or /rest/getCoverArt.view
+        if (path.contains("getCoverArt", ignoreCase = true)) {
+            val id = data.getQueryParameter("id") ?: return null
+            val size = data.getQueryParameter("size") ?: "500"
+            return "streaming_subsonic_${host}_${id}_${size}"
+        }
+
+        // Jellyfin Item Primary image: /Items/{id}/Images/...
+        if (path.contains("/Images/", ignoreCase = true)) {
+            val maxWidth = data.getQueryParameter("maxWidth") ?: "500"
+            return "streaming_jellyfin_${host}_${path}_${maxWidth}"
+        }
+
+        return null
+    }
+}

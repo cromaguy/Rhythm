@@ -565,7 +565,7 @@ class SubsonicApiClient(context: Context) {
             val obfuscated = "enc:" + cred.password.toByteArray(Charsets.UTF_8).joinToString("") { "%02x".format(it) }
             urlBuilder.addQueryParameter("p", obfuscated)
         } else {
-            val (token, salt) = generateAuthParams(cred.password)
+            val (token, salt) = getStableCoverArtAuthParams(cred.password)
             urlBuilder.addQueryParameter("t", token)
             urlBuilder.addQueryParameter("s", salt)
         }
@@ -863,6 +863,12 @@ class SubsonicApiClient(context: Context) {
 
     private fun generateAuthParams(password: String): Pair<String, String> {
         val salt = UUID.randomUUID().toString().take(6)
+        val token = md5(password + salt)
+        return token to salt
+    }
+
+    private fun getStableCoverArtAuthParams(password: String): Pair<String, String> {
+        val salt = md5(password).take(8)
         val token = md5(password + salt)
         return token to salt
     }

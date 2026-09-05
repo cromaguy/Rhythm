@@ -821,7 +821,8 @@ private fun StreamingHomeBody(
     val streamingPlaylistById = remember(rawPlaylists) { rawPlaylists.associateBy { it.id } }
 
     val offlineMode by appSettings.offlineMode.collectAsState()
-    val isEffectivelyOffline = !serviceConnected || offlineMode
+    val isVmOnline = vm?.isOnline?.collectAsState()?.value ?: true
+    val isEffectivelyOffline = !serviceConnected || offlineMode || !isVmOnline
 
     val effectiveSongs = remember(isSyncing, isEffectivelyOffline, rawDownloadedSongs, songs) {
         if (isSyncing || isEffectivelyOffline) {
@@ -922,7 +923,7 @@ private fun StreamingHomeBody(
                 contentAlignment = Alignment.Center
             ) {
                 when {
-                    !serviceConnected || errorMessage != null -> {
+                    isEffectivelyOffline || !serviceConnected || errorMessage != null -> {
                         EmptyState(
                             message = context.getString(R.string.streaming_home_selected_service_unavailable),
                             icon = RhythmIcons.Connectivity.WifiOff,

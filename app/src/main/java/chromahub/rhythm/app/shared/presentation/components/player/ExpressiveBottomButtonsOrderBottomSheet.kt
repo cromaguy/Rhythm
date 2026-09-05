@@ -90,14 +90,14 @@ private data class ButtonDescriptor(
     val icon: MaterialSymbolIcon
 )
 
-private val fixedBottomButtons = listOf("LYRICS", "FAVORITE")
+private val fixedBottomButtonsNormal = listOf("LYRICS", "FAVORITE")
 
-private fun restoreFixedButtons(original: List<String>, editable: List<String>): List<String> {
+private fun restoreFixedButtonsNormal(original: List<String>, editable: List<String>): List<String> {
     val result = editable.toMutableList()
     var inserted = 0
     original.forEach { item ->
-        if (item in fixedBottomButtons) {
-            val editableBefore = original.take(original.indexOf(item)).count { it !in fixedBottomButtons }
+        if (item in fixedBottomButtonsNormal) {
+            val editableBefore = original.take(original.indexOf(item)).count { it !in fixedBottomButtonsNormal }
             val insertAt = (editableBefore + inserted).coerceAtMost(result.size)
             if (item !in result) {
                 result.add(insertAt, item)
@@ -123,20 +123,24 @@ fun ExpressiveBottomButtonsOrderBottomSheet(
 
     var selectedModeIndex by remember { mutableIntStateOf(initialModeIndex.coerceIn(0, 1)) }
 
-    val editableBottomButtons = appSettings.allExpressiveBottomButtons.filterNot { it in fixedBottomButtons }
+    val editableNormalBottomButtons = appSettings.allExpressiveBottomButtons.filterNot { it in fixedBottomButtonsNormal }
+    val editableMergeBottomButtons = appSettings.allExpressiveBottomButtons
 
-    // Build full list for normal mode (existing order + any unlisted buttons)
     val fullNormalList = remember(normalOrder) {
-        val list = normalOrder.filterNot { it in fixedBottomButtons }.toMutableList()
-        editableBottomButtons.forEach { btn ->
+        val list = normalOrder.filterNot { it in fixedBottomButtonsNormal }.toMutableList()
+        editableNormalBottomButtons.forEach { btn ->
             if (!list.contains(btn)) list.add(btn)
         }
         list
     }
-    // Build full list for merge mode (existing order + any unlisted buttons)
     val fullMergeList = remember(mergeOrder) {
-        val list = mergeOrder.filterNot { it in fixedBottomButtons }.toMutableList()
-        editableBottomButtons.forEach { btn ->
+        val list = mergeOrder.toMutableList()
+        appSettings.defaultExpressiveBottomButtonsMerge.forEachIndexed { defaultIndex, button ->
+            if (!list.contains(button)) {
+                list.add(defaultIndex.coerceAtMost(list.size), button)
+            }
+        }
+        editableMergeBottomButtons.forEach { btn ->
             if (!list.contains(btn)) list.add(btn)
         }
         list
@@ -145,7 +149,7 @@ fun ExpressiveBottomButtonsOrderBottomSheet(
     var reorderableNormalList by remember { mutableStateOf(fullNormalList) }
     var hiddenNormalSet by remember {
         val initiallyHidden = hiddenNormal.toMutableSet()
-        editableBottomButtons.forEach { btn ->
+        editableNormalBottomButtons.forEach { btn ->
             if (!normalOrder.contains(btn)) {
                 initiallyHidden.add(btn)
             }
@@ -156,8 +160,9 @@ fun ExpressiveBottomButtonsOrderBottomSheet(
     var reorderableMergeList by remember { mutableStateOf(fullMergeList) }
     var hiddenMergeSet by remember {
         val initiallyHidden = hiddenMerge.toMutableSet()
-        editableBottomButtons.forEach { btn ->
-            if (!mergeOrder.contains(btn)) {
+        val activeMergeButtons = mergeOrder.toSet() + appSettings.defaultExpressiveBottomButtonsMerge.toSet()
+        editableMergeBottomButtons.forEach { btn ->
+            if (!activeMergeButtons.contains(btn)) {
                 initiallyHidden.add(btn)
             }
         }
@@ -172,6 +177,14 @@ fun ExpressiveBottomButtonsOrderBottomSheet(
 
     fun getButtonDescriptor(buttonId: String): ButtonDescriptor {
         return when (buttonId) {
+            "LYRICS" -> ButtonDescriptor(
+                title = context.getString(R.string.player_chip_lyrics),
+                icon = RhythmIcons.Player.Lyrics
+            )
+            "FAVORITE" -> ButtonDescriptor(
+                title = context.getString(R.string.expressiveplayerscreen_favorite),
+                icon = MaterialSymbolIcon("thumb_up", filled = true)
+            )
             "DEVICE" -> ButtonDescriptor(
                 title = context.getString(R.string.expressiveplayerscreen_device),
                 icon = RhythmIcons.SpeakerFilled
@@ -452,18 +465,18 @@ fun ExpressiveBottomButtonsOrderBottomSheet(
                             HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
                             if (isNormalMode) {
                                 appSettings.resetExpressiveBottomButtonsNormal()
-                                val defaultNormal = appSettings.defaultExpressiveBottomButtonsNormal.filterNot { it in fixedBottomButtons }
+                                val defaultNormal = appSettings.defaultExpressiveBottomButtonsNormal.filterNot { it in fixedBottomButtonsNormal }
                                 val full = defaultNormal.toMutableList()
-                                editableBottomButtons.forEach { if (!full.contains(it)) full.add(it) }
+                                editableNormalBottomButtons.forEach { if (!full.contains(it)) full.add(it) }
                                 reorderableNormalList = full
-                                hiddenNormalSet = editableBottomButtons.filter { !defaultNormal.contains(it) }.toSet()
+                                hiddenNormalSet = editableNormalBottomButtons.filter { !defaultNormal.contains(it) }.toSet()
                             } else {
                                 appSettings.resetExpressiveBottomButtonsMerge()
-                                val defaultMerge = appSettings.defaultExpressiveBottomButtonsMerge.filterNot { it in fixedBottomButtons }
+                                val defaultMerge = appSettings.defaultExpressiveBottomButtonsMerge
                                 val full = defaultMerge.toMutableList()
-                                editableBottomButtons.forEach { if (!full.contains(it)) full.add(it) }
+                                editableMergeBottomButtons.forEach { if (!full.contains(it)) full.add(it) }
                                 reorderableMergeList = full
-                                hiddenMergeSet = editableBottomButtons.filter { !defaultMerge.contains(it) }.toSet()
+                                hiddenMergeSet = editableMergeBottomButtons.filter { !defaultMerge.contains(it) }.toSet()
                             }
                             Toast.makeText(context, R.string.expressive_bottom_buttons_reset, Toast.LENGTH_SHORT).show()
                         },
@@ -476,10 +489,10 @@ fun ExpressiveBottomButtonsOrderBottomSheet(
                     RhythmButtonWeighted(
                         onClick = {
                             HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
-                            appSettings.setExpressiveBottomButtonsNormal(restoreFixedButtons(fullNormalList, reorderableNormalList))
-                            appSettings.setExpressiveHiddenBottomButtonsNormal(hiddenNormalSet - fixedBottomButtons.toSet())
-                            appSettings.setExpressiveBottomButtonsMerge(restoreFixedButtons(fullMergeList, reorderableMergeList))
-                            appSettings.setExpressiveHiddenBottomButtonsMerge(hiddenMergeSet - fixedBottomButtons.toSet())
+                            appSettings.setExpressiveBottomButtonsNormal(restoreFixedButtonsNormal(fullNormalList, reorderableNormalList))
+                            appSettings.setExpressiveHiddenBottomButtonsNormal(hiddenNormalSet - fixedBottomButtonsNormal.toSet())
+                            appSettings.setExpressiveBottomButtonsMerge(reorderableMergeList)
+                            appSettings.setExpressiveHiddenBottomButtonsMerge(hiddenMergeSet)
                             Toast.makeText(context, R.string.expressive_bottom_buttons_saved, Toast.LENGTH_SHORT).show()
                             scope.launch {
                                 sheetState.hide()

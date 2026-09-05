@@ -459,14 +459,6 @@ fun AboutScreen(
                             role = "UI Concept Designer",
                             githubUsername = "soykane",
                             avatarUrl = "https://github.com/soykane.png"
-                        ),
-                        createCommunityMemberItem(
-                            context = context,
-                            haptics = haptics,
-                            name = "firefly-sylestia",
-                            role = "Beta Tester & QA",
-                            githubUsername = "firefly-sylestia",
-                            avatarUrl = "https://github.com/firefly-sylestia.png"
                         )
                     )
                 }

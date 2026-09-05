@@ -973,8 +973,11 @@ private fun LocalNavigationContent(
             ?: streamingServiceId
     }
     val streamingIsAuthenticated by streamingMusicViewModel.isAuthenticated.collectAsState()
-    val streamingServiceConnected = remember(streamingSessions, streamingServiceId, streamingIsAuthenticated) {
-        streamingSessions[streamingServiceId]?.isConnected == true && streamingIsAuthenticated
+    val streamingIsOnline by streamingMusicViewModel.isOnline.collectAsState()
+    val offlineMode by appSettings.offlineMode.collectAsState()
+    val isEffectivelyOffline = !streamingIsOnline || !streamingIsAuthenticated || offlineMode
+    val streamingServiceConnected = remember(streamingSessions, streamingServiceId, isEffectivelyOffline) {
+        streamingSessions[streamingServiceId]?.isConnected == true && !isEffectivelyOffline
     }
     val streamingSongById = remember(streamingAllSongs, streamingRecommendations, streamingLikedSongs, streamingDownloadedSongs) {
         (streamingAllSongs + streamingRecommendations + streamingLikedSongs + streamingDownloadedSongs)

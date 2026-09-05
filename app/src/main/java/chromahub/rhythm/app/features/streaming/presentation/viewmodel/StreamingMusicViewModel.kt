@@ -77,6 +77,7 @@ class StreamingMusicViewModel(application: Application) : AndroidViewModel(appli
     private var lastSuccessfulAuthTimestamp = 0L
 
     private fun showStatusToast(resId: Int) {
+        if (appSettings.appMode.value != "STREAMING") return
         viewModelScope.launch(Dispatchers.Main) {
             Toast.makeText(getApplication(), resId, Toast.LENGTH_SHORT).show()
         }
@@ -98,6 +99,8 @@ class StreamingMusicViewModel(application: Application) : AndroidViewModel(appli
     }
 
     fun switchToDownloadedMode() {
+        _isAuthenticated.value = false
+        notificationManager.cancelSyncNotification()
         val downloaded = _downloadedSongs.value
         val downloadedAlb = if (_downloadedAlbums.value.isNotEmpty()) _downloadedAlbums.value else deriveAlbumsFromSongs(downloaded, limit = 500)
         val downloadedArt = if (_downloadedArtists.value.isNotEmpty()) _downloadedArtists.value else deriveArtistsFromSongs(downloaded, limit = 500)
@@ -123,8 +126,12 @@ class StreamingMusicViewModel(application: Application) : AndroidViewModel(appli
                 override fun onAvailable(network: Network) {
                     networkLostJob?.cancel()
                     networkAvailableJob?.cancel()
+                    _isOnline.value = true
+                    updateOnlineStatus(true)
+                    if (appSettings.appMode.value != "STREAMING" || appSettings.offlineMode.value) return
+
                     networkAvailableJob = viewModelScope.launch {
-                        delay(1500)
+                        delay(1000)
                         if (!NetworkUtils.isNetworkAvailable(getApplication())) return@launch
                         val serviceId = appSettings.streamingService.value
                         if (serviceSessionRepository.isConnected(serviceId)) {
@@ -138,31 +145,29 @@ class StreamingMusicViewModel(application: Application) : AndroidViewModel(appli
                 }
 
                 override fun onCapabilitiesChanged(network: Network, networkCapabilities: NetworkCapabilities) {
-                    val hasInternet = networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) ||
-                        networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) ||
-                        networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) ||
-                        networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_VPN)
+                    val hasInternet = networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
                     if (hasInternet) {
                         networkLostJob?.cancel()
+                        if (!_isOnline.value) {
+                            _isOnline.value = true
+                            updateOnlineStatus(true)
+                        }
+                    } else {
+                        networkAvailableJob?.cancel()
+                        _isOnline.value = false
+                        updateOnlineStatus(false)
+                        switchToDownloadedMode()
                     }
                 }
 
                 override fun onLost(network: Network) {
-                    // If device still has another active network interface, avoid false offline drops
+                    networkAvailableJob?.cancel()
                     if (NetworkUtils.isNetworkAvailable(getApplication())) {
                         return
                     }
-                    networkLostJob?.cancel()
-                    networkLostJob = viewModelScope.launch {
-                        delay(2500)
-                        val isStillAvail = NetworkUtils.isNetworkAvailable(getApplication())
-                        if (!isStillAvail) {
-                            networkAvailableJob?.cancel()
-                            _isAuthenticated.value = false
-                            updateOnlineStatus(false)
-                            switchToDownloadedMode()
-                        }
-                    }
+                    _isOnline.value = false
+                    updateOnlineStatus(false)
+                    switchToDownloadedMode()
                 }
             }
             networkCallback = callback
@@ -185,7 +190,10 @@ class StreamingMusicViewModel(application: Application) : AndroidViewModel(appli
     }
 
     
-    // Authentication state
+    // Network & Authentication state
+    private val _isOnline = MutableStateFlow(NetworkUtils.isNetworkAvailable(application))
+    val isOnline: StateFlow<Boolean> = _isOnline.asStateFlow()
+
     private val _isAuthenticated = MutableStateFlow(false)
     val isAuthenticated: StateFlow<Boolean> = _isAuthenticated.asStateFlow()
 
@@ -338,6 +346,31 @@ class StreamingMusicViewModel(application: Application) : AndroidViewModel(appli
                 }
             }
         }
+
+        viewModelScope.launch {
+            appSettings.appMode.drop(1).collect { mode ->
+                if (mode == "STREAMING") {
+                    if (NetworkUtils.isNetworkAvailable(getApplication()) && !appSettings.offlineMode.value) {
+                        val serviceId = appSettings.streamingService.value
+                        if (serviceSessionRepository.isConnected(serviceId)) {
+                            val connected = checkAndSyncAuthentication(serviceId, forceCheck = true)
+                            if (connected) {
+                                loadHomeContent()
+                                loadLibrary()
+                            } else {
+                                switchToDownloadedMode()
+                            }
+                        } else {
+                            switchToDownloadedMode()
+                        }
+                    } else {
+                        switchToDownloadedMode()
+                    }
+                } else {
+                    notificationManager.cancelSyncNotification()
+                }
+            }
+        }
     }
 
     private fun observeSelectedService() {
@@ -351,9 +384,17 @@ class StreamingMusicViewModel(application: Application) : AndroidViewModel(appli
 
                 _currentService.value = sourceTypeFromServiceId(normalizedServiceId)
 
-                val connected = checkAndSyncAuthentication(normalizedServiceId)
-                loadHomeContent()
-                loadLibrary()
+                if (appSettings.appMode.value == "STREAMING" && !appSettings.offlineMode.value && NetworkUtils.isNetworkAvailable(getApplication())) {
+                    val connected = checkAndSyncAuthentication(normalizedServiceId)
+                    if (connected) {
+                        loadHomeContent()
+                        loadLibrary()
+                    } else {
+                        switchToDownloadedMode()
+                    }
+                } else {
+                    switchToDownloadedMode()
+                }
             }
         }
     }
@@ -667,8 +708,6 @@ class StreamingMusicViewModel(application: Application) : AndroidViewModel(appli
             _isLoading.value = true
             _hasLoadedLibrary.value = false
             val serviceName = getSourceTypeName(_currentService.value)
-            _syncProgress.value = StreamingSyncProgress(isSyncing = true, stage = StreamingSyncStage.Syncing)
-            notificationManager.notifySyncStarted(serviceName)
             var syncSuccess = false
             
             try {
@@ -676,6 +715,9 @@ class StreamingMusicViewModel(application: Application) : AndroidViewModel(appli
                     switchToDownloadedMode()
                     return@launch
                 }
+
+                _syncProgress.value = StreamingSyncProgress(isSyncing = true, stage = StreamingSyncStage.Syncing)
+                notificationManager.notifySyncStarted(serviceName)
 
                 // 1. First fetch artists directly from provider so they are available immediately
                 try {
@@ -857,6 +899,8 @@ class StreamingMusicViewModel(application: Application) : AndroidViewModel(appli
                 )
                 if (syncSuccess) {
                     notificationManager.notifySyncComplete(finalSongsCount, serviceName)
+                } else {
+                    notificationManager.cancelSyncNotification()
                 }
                 _hasLoadedLibrary.value = true
                 _isLoading.value = false
@@ -957,6 +1001,12 @@ class StreamingMusicViewModel(application: Application) : AndroidViewModel(appli
             val safeStartIndex = startIndex.coerceIn(0, playableQueue.lastIndex)
             val selectedTargetSong = playableQueue[safeStartIndex]
             val isTargetDownloaded = isSongDownloaded(selectedTargetSong.id)
+
+            val isOffline = !_isOnline.value || !NetworkUtils.isNetworkAvailable(getApplication()) || appSettings.offlineMode.value
+            if (isOffline && !isTargetDownloaded) {
+                _error.value = if (appSettings.offlineMode.value) "Offline mode: Song is not downloaded" else "Device is offline: Song is not downloaded"
+                return@launch
+            }
 
             val normalizedServiceId = normalizeServiceId(appSettings.streamingService.value)
             val sessionMarkedConnected = serviceSessionRepository.isConnected(normalizedServiceId)
@@ -1346,6 +1396,10 @@ class StreamingMusicViewModel(application: Application) : AndroidViewModel(appli
      * Download a song for offline playback.
      */
     fun downloadSong(song: StreamingSong) {
+        if (!_isOnline.value || !NetworkUtils.isNetworkAvailable(getApplication()) || appSettings.offlineMode.value) {
+            _error.value = "Cannot download while offline"
+            return
+        }
         viewModelScope.launch {
             if (_downloadingSongIds.value.contains(song.id)) return@launch
             _downloadingSongIds.value = _downloadingSongIds.value + song.id
@@ -1374,6 +1428,10 @@ class StreamingMusicViewModel(application: Application) : AndroidViewModel(appli
      * Download a song by ID for offline playback.
      */
     fun downloadSongById(songId: String) {
+        if (!_isOnline.value || !NetworkUtils.isNetworkAvailable(getApplication()) || appSettings.offlineMode.value) {
+            _error.value = "Cannot download while offline"
+            return
+        }
         val song = _allSongs.value.firstOrNull { it.id == songId }
             ?: _likedSongs.value.firstOrNull { it.id == songId }
             ?: _recommendations.value.firstOrNull { it.id == songId }
@@ -1430,6 +1488,10 @@ class StreamingMusicViewModel(application: Application) : AndroidViewModel(appli
      * Download multiple songs for offline playback (batch).
      */
     fun downloadSongs(songs: List<StreamingSong>) {
+        if (!_isOnline.value || !NetworkUtils.isNetworkAvailable(getApplication()) || appSettings.offlineMode.value) {
+            _error.value = "Cannot download while offline"
+            return
+        }
         viewModelScope.launch {
             songs.forEach { song ->
                 if (!_downloadingSongIds.value.contains(song.id) && !isSongDownloaded(song.id)) {

@@ -980,6 +980,15 @@ class AppSettings private constructor(context: Context) {
             ?.distinct()
             ?.filter { it in allExpressiveBottomButtons }
             ?.takeIf { it.isNotEmpty() }
+            ?.let { savedList ->
+                val result = savedList.toMutableList()
+                defaultExpressiveBottomButtonsMerge.forEachIndexed { defaultIndex, button ->
+                    if (!result.contains(button)) {
+                        result.add(defaultIndex.coerceAtMost(result.size), button)
+                    }
+                }
+                result
+            }
             ?: defaultExpressiveBottomButtonsMerge
     )
     val expressiveBottomButtonsMerge: StateFlow<List<String>> = _expressiveBottomButtonsMerge.asStateFlow()
