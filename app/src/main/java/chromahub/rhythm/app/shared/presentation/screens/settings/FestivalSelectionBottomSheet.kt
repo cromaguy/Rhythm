@@ -10,6 +10,7 @@ package chromahub.rhythm.app.shared.presentation.screens.settings
 import chromahub.rhythm.app.shared.presentation.components.bottomsheets.AdaptiveSheetScrollContainer
 import chromahub.rhythm.app.shared.presentation.components.bottomsheets.RhythmAdaptiveModalSheet
 import chromahub.rhythm.app.shared.presentation.components.bottomsheets.SheetAdaptiveType
+import chromahub.rhythm.app.shared.presentation.components.bottomsheets.groupedBottomSheetItemShape
 
 
 
@@ -215,10 +216,10 @@ fun FestivalSelectionBottomSheet(
                     )
 
                     Column(
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        festivals.forEach { (value, name, icon) ->
+                        festivals.forEachIndexed { index, (value, name, icon) ->
                             val isSelected = currentFestival == value
                             val isAvailable = true
 
@@ -230,7 +231,7 @@ fun FestivalSelectionBottomSheet(
                                     else
                                         MaterialTheme.colorScheme.surfaceContainerHigh
                                 ),
-                                shape = RoundedCornerShape(24.dp),
+                                shape = groupedBottomSheetItemShape(index, festivals.size),
                                 onClick = {
                                     if (isAvailable) {
                                         HapticUtils.performHapticFeedback(context, haptic, HapticType.HEAVY)

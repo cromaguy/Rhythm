@@ -10,6 +10,7 @@ package chromahub.rhythm.app.shared.presentation.screens.settings
 import chromahub.rhythm.app.shared.presentation.components.bottomsheets.AdaptiveSheetScrollContainer
 import chromahub.rhythm.app.shared.presentation.components.bottomsheets.RhythmAdaptiveModalSheet
 import chromahub.rhythm.app.shared.presentation.components.bottomsheets.SheetAdaptiveType
+import chromahub.rhythm.app.shared.presentation.components.bottomsheets.groupedBottomSheetItemShape
 
 
 
@@ -207,7 +208,7 @@ fun LyricsSourceDialog(
                     .fillMaxWidth()
                     .verticalScroll(scrollState)
                     .padding(start = 24.dp, end = 24.dp + endPadding, bottom = 24.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 // Options
                 val sourceOptions = listOf(
@@ -223,7 +224,7 @@ fun LyricsSourceDialog(
                     )
                 )
 
-                sourceOptions.forEach { (preference, details) ->
+                sourceOptions.forEachIndexed { index, (preference, details) ->
                     val (title, description, icon) = details
                     val isSelected = lyricsSourcePreference == preference
 
@@ -239,7 +240,7 @@ fun LyricsSourceDialog(
                             else
                                 MaterialTheme.colorScheme.surfaceContainerHigh
                         ),
-                        shape = RoundedCornerShape(24.dp),
+                        shape = groupedBottomSheetItemShape(index, sourceOptions.size),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Row(

@@ -10,6 +10,7 @@ package chromahub.rhythm.app.shared.presentation.screens.settings
 import chromahub.rhythm.app.shared.presentation.components.bottomsheets.AdaptiveSheetScrollContainer
 import chromahub.rhythm.app.shared.presentation.components.bottomsheets.RhythmAdaptiveModalSheet
 import chromahub.rhythm.app.shared.presentation.components.bottomsheets.SheetAdaptiveType
+import chromahub.rhythm.app.shared.presentation.components.bottomsheets.groupedBottomSheetItemShape
 
 
 
@@ -34,6 +35,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.animation.core.Spring
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -127,8 +129,8 @@ import chromahub.rhythm.app.shared.presentation.components.common.ExpressiveShap
 import chromahub.rhythm.app.shared.presentation.components.common.ExpressiveShapes
 import chromahub.rhythm.app.shared.presentation.components.common.buildSplashBackdropShapes
 import chromahub.rhythm.app.shared.presentation.components.common.SplashBackgroundOrbs
-import chromahub.rhythm.app.shared.presentation.viewmodel.AppVersion
 import chromahub.rhythm.app.ui.theme.getFontPreviewStyle
+import chromahub.rhythm.app.ui.theme.getFontFamilyByName
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.MainScope
@@ -841,7 +843,7 @@ fun ThemeCustomizationSettingsScreen(onBackClick: () -> Unit) {
         }
     )
 
-    FontSelectionDialog(
+    FontSelectionBottomSheet(
         showDialog = showFontSelectionDialog,
         onDismiss = { showFontSelectionDialog = false },
         fontOptions = fontOptions,
@@ -912,7 +914,7 @@ fun ThemeCustomizationSettingsScreen(onBackClick: () -> Unit) {
                             )
 
                             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                festivals.forEach { (id, name) ->
+                                festivals.forEachIndexed { index, (id, name) ->
                                     val isSelected = id == festiveThemeType
                                     Card(
                                         onClick = {
@@ -920,7 +922,7 @@ fun ThemeCustomizationSettingsScreen(onBackClick: () -> Unit) {
                                             appSettings.setFestiveThemeType(id)
                                         },
                                         modifier = Modifier.fillMaxWidth(),
-                                        shape = RoundedCornerShape(20.dp),
+                                        shape = groupedBottomSheetItemShape(index, festivals.size),
                                         colors = CardDefaults.cardColors(
                                             containerColor = if (isSelected)
                                                 MaterialTheme.colorScheme.onPrimaryContainer
@@ -1278,6 +1280,7 @@ fun ColorSchemeCircle(
 fun FontCard(
     option: FontOption,
     isSelected: Boolean,
+    shape: androidx.compose.ui.graphics.Shape = RoundedCornerShape(24.dp),
     onSelect: () -> Unit
 ) {
     Card(
@@ -1288,7 +1291,7 @@ fun FontCard(
             else
                 MaterialTheme.colorScheme.surfaceContainerHigh
         ),
-        shape = RoundedCornerShape(24.dp),
+        shape = shape,
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(
@@ -1338,12 +1341,17 @@ fun FontCard(
                 color = if (isSelected)
                     MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.15f)
                 else
-                    MaterialTheme.colorScheme.surfaceContainerHigh,
+                    MaterialTheme.colorScheme.surfaceContainerLowest,
                 shape = RoundedCornerShape(12.dp),
+                border = if (!isSelected)
+                    BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
+                else
+                    null,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
                     text = stringResource(R.string.settings_quick_brown_fox),
+                    fontFamily = getFontFamilyByName(option.name),
                     style = getFontPreviewStyle(option.name),
                     color = if (isSelected)
                         MaterialTheme.colorScheme.primaryContainer

@@ -17,11 +17,22 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.platform.LocalHapticFeedback
+import chromahub.rhythm.app.shared.presentation.components.bottomsheets.AdaptiveSheetScrollContainer
+import chromahub.rhythm.app.shared.presentation.components.bottomsheets.RhythmAdaptiveModalSheet
+import chromahub.rhythm.app.shared.presentation.components.bottomsheets.SheetAdaptiveType
+import chromahub.rhythm.app.shared.presentation.components.bottomsheets.StandardBottomSheetHeader
+import chromahub.rhythm.app.shared.presentation.components.bottomsheets.groupedBottomSheetItemShape
+import chromahub.rhythm.app.util.HapticType
+import chromahub.rhythm.app.util.HapticUtils
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -107,119 +118,113 @@ object LanguageHelper {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LanguageSwitcherDialog(
+fun LanguageSwitcherBottomSheet(
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
+    val haptic = LocalHapticFeedback.current
     var currentLanguage by remember { mutableStateOf(LanguageHelper.getCurrentLanguage(context)) }
-    
-    AlertDialog(
+    val listState = rememberLazyListState()
+    val sheetState = rememberBottomSheetState(
+        initialValue = SheetValue.Hidden,
+        enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded)
+    )
+
+    RhythmAdaptiveModalSheet(
+        adaptiveType = SheetAdaptiveType.COMPACT_DIALOG,
+        modifier = Modifier.widthIn(max = 640.dp).fillMaxWidth(),
         onDismissRequest = onDismiss,
-        icon = {
-            Icon(
-                imageVector = RhythmIcons.Language,
-                contentDescription = stringResource(R.string.cd_language),
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(28.dp)
+        sheetState = sheetState,
+        dragHandle = {
+            BottomSheetDefaults.DragHandle(
+                color = MaterialTheme.colorScheme.primary
             )
         },
-        title = {
-            Text(
-                text = stringResource(R.string.languageswitcher_select_language),
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold
-            )
-        },
-        text = {
+        containerColor = MaterialTheme.colorScheme.surfaceContainer
+    ) {
+        StandardBottomSheetHeader(
+            title = stringResource(R.string.languageswitcher_select_language),
+            visible = true
+        )
+
+        AdaptiveSheetScrollContainer(
+            lazyListState = listState,
+            blendColor = MaterialTheme.colorScheme.surfaceContainer,
+            modifier = Modifier.fillMaxWidth()
+        ) { endPadding ->
             LazyColumn(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(max = 400.dp)
+                state = listState,
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+                contentPadding = PaddingValues(start = 24.dp, end = 24.dp + endPadding, bottom = 24.dp),
+                modifier = Modifier.fillMaxWidth()
             ) {
-                items(LanguageHelper.supportedLanguages, key = { "lang_${it.code}" }) { language ->
-                    LanguageItem(
-                        language = language,
-                        isSelected = currentLanguage == language.code,
+                itemsIndexed(LanguageHelper.supportedLanguages, key = { _, it -> "lang_${it.code}" }) { index, language ->
+                    val isSelected = currentLanguage == language.code
+                    Card(
                         onClick = {
+                            HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
                             currentLanguage = language.code
                             LanguageHelper.setLanguage(context, language.code)
                             onDismiss()
-                        }
-                    )
-                }
-            }
-        },
-        confirmButton = {},
-        dismissButton = {
-            OutlinedButton(onClick = onDismiss) {
-                Icon(
-                    imageVector = RhythmIcons.Close,
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(stringResource(R.string.ui_cancel))
-            }
-        },
-        shape = RoundedCornerShape(28.dp)
-    )
-}
+                        },
+                        colors = CardDefaults.cardColors(
+                            containerColor = if (isSelected)
+                                MaterialTheme.colorScheme.onPrimaryContainer
+                            else
+                                MaterialTheme.colorScheme.surfaceContainerHigh
+                        ),
+                        shape = groupedBottomSheetItemShape(index, LanguageHelper.supportedLanguages.size),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 20.dp, vertical = 16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = language.nativeName,
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
+                                    color = if (isSelected) {
+                                        MaterialTheme.colorScheme.primaryContainer
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurface
+                                    }
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = language.displayName,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = if (isSelected) {
+                                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.8f)
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurfaceVariant
+                                    }
+                                )
+                            }
 
-@Composable
-private fun LanguageItem(
-    language: LanguageOption,
-    isSelected: Boolean,
-    onClick: () -> Unit
-) {
-    Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
-        color = if (isSelected) {
-            MaterialTheme.colorScheme.primaryContainer
-        } else {
-            MaterialTheme.colorScheme.surface
-        },
-        shape = RoundedCornerShape(12.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = language.nativeName,
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                    color = if (isSelected) {
-                        MaterialTheme.colorScheme.onPrimaryContainer
-                    } else {
-                        MaterialTheme.colorScheme.onSurface
+                            if (isSelected) {
+                                Icon(
+                                    imageVector = RhythmIcons.CheckCircle,
+                                    contentDescription = stringResource(R.string.streaming_selected),
+                                    tint = MaterialTheme.colorScheme.primaryContainer,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+                        }
                     }
-                )
-                Text(
-                    text = language.displayName,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = if (isSelected) {
-                        MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    }
-                )
-            }
-            
-            if (isSelected) {
-                Icon(
-                    imageVector = RhythmIcons.Check,
-                    contentDescription = stringResource(R.string.streaming_selected),
-                    
-                    modifier = Modifier.size(24.dp)
-                )
+                }
             }
         }
     }
-    Spacer(modifier = Modifier.height(4.dp))
+}
+
+@Composable
+fun LanguageSwitcherDialog(
+    onDismiss: () -> Unit
+) {
+    LanguageSwitcherBottomSheet(onDismiss = onDismiss)
 }

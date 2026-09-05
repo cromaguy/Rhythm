@@ -10,6 +10,7 @@ package chromahub.rhythm.app.shared.presentation.screens.settings
 import chromahub.rhythm.app.shared.presentation.components.bottomsheets.AdaptiveSheetScrollContainer
 import chromahub.rhythm.app.shared.presentation.components.bottomsheets.RhythmAdaptiveModalSheet
 import chromahub.rhythm.app.shared.presentation.components.bottomsheets.SheetAdaptiveType
+import chromahub.rhythm.app.shared.presentation.components.bottomsheets.groupedBottomSheetItemShape
 
 
 
@@ -206,9 +207,10 @@ fun ContextQueuePreferenceBottomSheet(
                 modifier = Modifier
                     .fillMaxWidth()
                     .verticalScroll(scrollState)
-                    .padding(start = 24.dp, end = 24.dp + endPadding, bottom = 24.dp)
+                    .padding(start = 24.dp, end = 24.dp + endPadding, bottom = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                options.forEach { (key, label) ->
+                options.forEachIndexed { index, (key, label) ->
                     val isSelected = currentPreference == key
 
                     Card(
@@ -223,7 +225,7 @@ fun ContextQueuePreferenceBottomSheet(
                                 MaterialTheme.colorScheme.surfaceContainerLow
                             }
                         ),
-                        shape = RoundedCornerShape(24.dp),
+                        shape = groupedBottomSheetItemShape(index, options.size),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Row(
@@ -253,8 +255,6 @@ fun ContextQueuePreferenceBottomSheet(
                             }
                         }
                     }
-
-                    Spacer(modifier = Modifier.height(10.dp))
                 }
             }
         }

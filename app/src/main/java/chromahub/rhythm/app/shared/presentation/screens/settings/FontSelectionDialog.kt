@@ -10,6 +10,7 @@ package chromahub.rhythm.app.shared.presentation.screens.settings
 import chromahub.rhythm.app.shared.presentation.components.bottomsheets.AdaptiveSheetScrollContainer
 import chromahub.rhythm.app.shared.presentation.components.bottomsheets.RhythmAdaptiveModalSheet
 import chromahub.rhythm.app.shared.presentation.components.bottomsheets.SheetAdaptiveType
+import chromahub.rhythm.app.shared.presentation.components.bottomsheets.groupedBottomSheetItemShape
 
 
 
@@ -167,10 +168,9 @@ import chromahub.rhythm.app.shared.presentation.screens.settings.SettingItem
 import chromahub.rhythm.app.shared.presentation.screens.settings.SettingGroup
 
 
-// Font Selection Dialog for Theme Customization
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FontSelectionDialog(
+fun FontSelectionBottomSheet(
     showDialog: Boolean,
     onDismiss: () -> Unit,
     fontOptions: List<FontOption>,
@@ -239,13 +239,14 @@ fun FontSelectionDialog(
                     LazyColumn(
                         state = fontListState,
                         contentPadding = PaddingValues(start = 24.dp, end = 24.dp + endPadding, bottom = 24.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        items(fontOptions, key = { "font_${it.name}" }) { option ->
+                        itemsIndexed(fontOptions, key = { _, it -> "font_${it.name}" }) { index, option ->
                             FontCard(
                                 option = option,
                                 isSelected = currentFont == option.name,
+                                shape = groupedBottomSheetItemShape(index, fontOptions.size),
                                 onSelect = {
                                     HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
                                     onFontSelected(option.name)
@@ -261,4 +262,29 @@ fun FontSelectionDialog(
             }
         }
     }
+}
+
+@Composable
+fun FontSelectionDialog(
+    showDialog: Boolean,
+    onDismiss: () -> Unit,
+    fontOptions: List<FontOption>,
+    currentFont: String,
+    selectedFontSource: FontSource,
+    onFontSelected: (String) -> Unit,
+    appSettings: AppSettings,
+    context: Context,
+    haptic: HapticFeedback
+) {
+    FontSelectionBottomSheet(
+        showDialog = showDialog,
+        onDismiss = onDismiss,
+        fontOptions = fontOptions,
+        currentFont = currentFont,
+        selectedFontSource = selectedFontSource,
+        onFontSelected = onFontSelected,
+        appSettings = appSettings,
+        context = context,
+        haptic = haptic
+    )
 }

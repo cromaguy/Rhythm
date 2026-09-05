@@ -9,6 +9,7 @@ import chromahub.rhythm.app.shared.presentation.components.bottomsheets.Adaptive
 import chromahub.rhythm.app.shared.presentation.components.bottomsheets.RhythmAdaptiveModalSheet
 import chromahub.rhythm.app.shared.presentation.components.bottomsheets.SheetAdaptiveType
 import chromahub.rhythm.app.shared.presentation.components.bottomsheets.StandardBottomSheetHeader
+import chromahub.rhythm.app.shared.presentation.components.bottomsheets.groupedBottomSheetItemShape
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 
@@ -133,7 +134,7 @@ import chromahub.rhythm.app.shared.presentation.components.common.CollapsibleHea
 import chromahub.rhythm.app.ui.utils.LazyListStateSaver
 import chromahub.rhythm.app.ui.LocalMiniPlayerPadding
 import chromahub.rhythm.app.shared.data.model.AppSettings
-import chromahub.rhythm.app.features.local.presentation.components.settings.LanguageSwitcherDialog
+import chromahub.rhythm.app.features.local.presentation.components.settings.LanguageSwitcherBottomSheet
 import chromahub.rhythm.app.shared.presentation.components.dialogs.FdroidUpdateWarningDialog
 import android.content.Context
 import androidx.compose.animation.animateColorAsState
@@ -637,7 +638,8 @@ fun SettingsScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .verticalScroll(scrollState)
-                            .padding(start = 24.dp, end = 24.dp + endPadding, bottom = 24.dp)
+                            .padding(start = 24.dp, end = 24.dp + endPadding, bottom = 24.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         // Home option
                         Card(
@@ -652,10 +654,8 @@ fun SettingsScreen(
                                 else 
                                     MaterialTheme.colorScheme.surfaceContainerHigh
                             ),
-                            shape = RoundedCornerShape(24.dp),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 6.dp)
+                            shape = groupedBottomSheetItemShape(0, 2),
+                            modifier = Modifier.fillMaxWidth()
                         ) {
                             Row(
                                 modifier = Modifier
@@ -669,8 +669,8 @@ fun SettingsScreen(
                                     tint = if (defaultScreen == "home") 
                                         MaterialTheme.colorScheme.primaryContainer
                                     else 
-                                        MaterialTheme.colorScheme.onSurface,
-                                    modifier = Modifier.size(32.dp)
+                                        MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(if (defaultScreen == "home") 30.dp else 26.dp)
                                 )
                                 
                                 Spacer(modifier = Modifier.width(16.dp))
@@ -719,10 +719,8 @@ fun SettingsScreen(
                                 else 
                                     MaterialTheme.colorScheme.surfaceContainerHigh
                             ),
-                            shape = RoundedCornerShape(24.dp),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 6.dp)
+                            shape = groupedBottomSheetItemShape(1, 2),
+                            modifier = Modifier.fillMaxWidth()
                         ) {
                             Row(
                                 modifier = Modifier
@@ -736,8 +734,8 @@ fun SettingsScreen(
                                     tint = if (defaultScreen == "library") 
                                         MaterialTheme.colorScheme.primaryContainer
                                     else 
-                                        MaterialTheme.colorScheme.onSurface,
-                                    modifier = Modifier.size(32.dp)
+                                        MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(if (defaultScreen == "library") 30.dp else 26.dp)
                                 )
                                 
                                 Spacer(modifier = Modifier.width(16.dp))
@@ -777,9 +775,8 @@ fun SettingsScreen(
             }
         }
         
-        // Language switcher dialog
         if (showLanguageSwitcher) {
-            LanguageSwitcherDialog(
+            LanguageSwitcherBottomSheet(
                 onDismiss = { showLanguageSwitcher = false }
             )
         }

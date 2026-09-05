@@ -103,9 +103,10 @@ fun ShapePresetsBottomSheet(
                 modifier = Modifier
                     .fillMaxWidth()
                     .verticalScroll(scrollState)
-                    .padding(start = 24.dp, end = 24.dp + endPadding, bottom = 24.dp)
+                    .padding(start = 24.dp, end = 24.dp + endPadding, bottom = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                presets.forEach { preset ->
+                presets.forEachIndexed { index, preset ->
                     val isSelected = preset.id == currentPreset
 
                     var isPressed by remember { mutableStateOf(false) }
@@ -139,12 +140,11 @@ fun ShapePresetsBottomSheet(
                         },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 4.dp)
                             .graphicsLayer {
                                 scaleX = scale
                                 scaleY = scale
                             },
-                        shape = RoundedCornerShape(16.dp),
+                        shape = groupedBottomSheetItemShape(index, presets.size),
                         colors = CardDefaults.cardColors(
                             containerColor = containerColor
                         ),

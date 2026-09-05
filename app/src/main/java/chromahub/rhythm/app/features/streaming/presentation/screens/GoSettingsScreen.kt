@@ -9,6 +9,7 @@ import chromahub.rhythm.app.shared.presentation.components.bottomsheets.Adaptive
 import chromahub.rhythm.app.shared.presentation.components.bottomsheets.RhythmAdaptiveModalSheet
 import chromahub.rhythm.app.shared.presentation.components.bottomsheets.SheetAdaptiveType
 import chromahub.rhythm.app.shared.presentation.components.bottomsheets.StandardBottomSheetHeader
+import chromahub.rhythm.app.shared.presentation.components.bottomsheets.groupedBottomSheetItemShape
 
 import chromahub.rhythm.app.shared.presentation.components.icons.RhythmIcons
 import chromahub.rhythm.app.shared.presentation.components.icons.MaterialSymbolIcon
@@ -506,17 +507,16 @@ private fun ServiceSelectionBottomSheet(
                 modifier = Modifier
                     .fillMaxWidth()
                     .verticalScroll(scrollState)
-                    .padding(start = 24.dp, end = 24.dp + endPadding, bottom = 24.dp)
+                    .padding(start = 24.dp, end = 24.dp + endPadding, bottom = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                StreamingServiceOptions.defaults.forEach { option ->
+                StreamingServiceOptions.defaults.forEachIndexed { index, option ->
                     val isSelected = selectedService == option.id
                     val isConnected = sessions[option.id]?.isConnected == true
 
                     Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 4.dp),
-                        shape = RoundedCornerShape(24.dp),
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = groupedBottomSheetItemShape(index, StreamingServiceOptions.defaults.size),
                         colors = CardDefaults.cardColors(
                             containerColor = if (isSelected) {
                                 MaterialTheme.colorScheme.onPrimaryContainer
@@ -533,31 +533,16 @@ private fun ServiceSelectionBottomSheet(
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Surface(
-                                shape = CircleShape,
-                                color = if (isSelected) {
-                                    MaterialTheme.colorScheme.primary
+                            Icon(
+                                imageVector = MaterialSymbolIcon("cloud_queue"),
+                                contentDescription = null,
+                                tint = if (isSelected) {
+                                    MaterialTheme.colorScheme.primaryContainer
                                 } else {
-                                    MaterialTheme.colorScheme.surfaceVariant
+                                    MaterialTheme.colorScheme.onSurfaceVariant
                                 },
-                                modifier = Modifier.size(44.dp)
-                            ) {
-                                Box(
-                                    contentAlignment = Alignment.Center,
-                                    modifier = Modifier.fillMaxSize()
-                                ) {
-                                    Icon(
-                                        imageVector = MaterialSymbolIcon("cloud_queue"),
-                                        contentDescription = null,
-                                        tint = if (isSelected) {
-                                            MaterialTheme.colorScheme.onPrimary
-                                        } else {
-                                            MaterialTheme.colorScheme.onSurfaceVariant
-                                        },
-                                        modifier = Modifier.size(22.dp)
-                                    )
-                                }
-                            }
+                                modifier = Modifier.size(if (isSelected) 30.dp else 26.dp)
+                            )
 
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
@@ -651,7 +636,8 @@ private fun QualitySelectionBottomSheet(
                 modifier = Modifier
                     .fillMaxWidth()
                     .verticalScroll(scrollState)
-                    .padding(start = 24.dp, end = 24.dp + endPadding, bottom = 24.dp)
+                    .padding(start = 24.dp, end = 24.dp + endPadding, bottom = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 val streamingQualityOptions = listOf(
                     Pair("LOW", R.string.streaming_quality_low),
@@ -660,14 +646,12 @@ private fun QualitySelectionBottomSheet(
                     Pair("LOSSLESS", R.string.streaming_quality_lossless)
                 )
 
-                streamingQualityOptions.forEach { option ->
+                streamingQualityOptions.forEachIndexed { index, option ->
                     val isSelected = selectedQuality == option.first
 
                     Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 4.dp),
-                        shape = RoundedCornerShape(24.dp),
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = groupedBottomSheetItemShape(index, streamingQualityOptions.size),
                         colors = CardDefaults.cardColors(
                             containerColor = if (isSelected) {
                                 MaterialTheme.colorScheme.onPrimaryContainer
@@ -684,31 +668,16 @@ private fun QualitySelectionBottomSheet(
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Surface(
-                                shape = CircleShape,
-                                color = if (isSelected) {
-                                    MaterialTheme.colorScheme.primary
+                            Icon(
+                                imageVector = MaterialSymbolIcon("high_quality"),
+                                contentDescription = null,
+                                tint = if (isSelected) {
+                                    MaterialTheme.colorScheme.primaryContainer
                                 } else {
-                                    MaterialTheme.colorScheme.surfaceVariant
+                                    MaterialTheme.colorScheme.onSurfaceVariant
                                 },
-                                modifier = Modifier.size(44.dp)
-                            ) {
-                                Box(
-                                    contentAlignment = Alignment.Center,
-                                    modifier = Modifier.fillMaxSize()
-                                ) {
-                                    Icon(
-                                        imageVector = MaterialSymbolIcon("high_quality"),
-                                        contentDescription = null,
-                                        tint = if (isSelected) {
-                                            MaterialTheme.colorScheme.onPrimary
-                                        } else {
-                                            MaterialTheme.colorScheme.onSurfaceVariant
-                                        },
-                                        modifier = Modifier.size(22.dp)
-                                    )
-                                }
-                            }
+                                modifier = Modifier.size(if (isSelected) 30.dp else 26.dp)
+                            )
 
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(

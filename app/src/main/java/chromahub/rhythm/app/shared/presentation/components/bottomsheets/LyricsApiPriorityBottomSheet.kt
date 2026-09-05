@@ -74,7 +74,8 @@ fun LyricsApiPriorityBottomSheet(
                 modifier = Modifier
                     .fillMaxWidth()
                     .verticalScroll(scrollState)
-                    .padding(start = 24.dp, end = 24.dp + endPadding, bottom = 24.dp)
+                    .padding(start = 24.dp, end = 24.dp + endPadding, bottom = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
 
             // Options
@@ -96,7 +97,7 @@ fun LyricsApiPriorityBottomSheet(
                 )
             )
 
-            priorityOptions.forEach { (priority, info) ->
+            priorityOptions.forEachIndexed { index, (priority, info) ->
                 val (title, description, icon) = info
                 val isSelected = apiPriority == priority
 
@@ -112,10 +113,8 @@ fun LyricsApiPriorityBottomSheet(
                         else
                             MaterialTheme.colorScheme.surfaceContainerHigh
                     ),
-                    shape = RoundedCornerShape(24.dp),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 6.dp)
+                    shape = groupedBottomSheetItemShape(index, priorityOptions.size),
+                    modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
                         modifier = Modifier

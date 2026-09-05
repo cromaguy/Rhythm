@@ -11,6 +11,7 @@ import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
+import android.graphics.Typeface
 import chromahub.rhythm.app.R
 
 // Material Design 3 Typography Scale
@@ -149,23 +150,26 @@ fun getTypographyWithCustomFont(customFontFamily: FontFamily?): Typography {
     return createTypographyWithFontFamily(customFontFamily ?: FontFamily.Default)
 }
 
-/**
- * Get FontFamily by name string
- */
-private fun getFontFamilyByName(fontName: String): FontFamily {
+fun getFontFamilyByName(fontName: String): FontFamily {
     return when (fontName) {
-        "Slate" -> FontFamily.Serif        // Serif font - more formal/traditional appearance
-        "Classic" -> FontFamily.Serif      // Traditional serif typeface
-        "Inter" -> FontFamily.SansSerif    // Clean sans-serif font - modern, readable
-        "Casual" -> FontFamily.SansSerif   // Relaxed sans-serif font
-        "Modern" -> FontFamily.SansSerif   // Contemporary typeface
-        "JetBrains" -> FontFamily.Monospace // Monospace font - technical/developer appearance
-        "Typewriter" -> FontFamily.Monospace // Classic typewriter-inspired monospace font
-        "Quicksand" -> FontFamily.Cursive  // Rounded font - softer, friendlier appearance
-        "Playful" -> FontFamily.Cursive    // Fun and creative typeface
-        "Geom" -> FontFamily(Font(R.font.geom)) // Geom - modern, clean sans-serif
-        "System" -> FontFamily.Default     // Default system font
-        else -> FontFamily(Font(R.font.geom)) // Default to Geom
+        "Slate", "Classic" -> FontFamily(Typeface.SERIF)
+        "JetBrains", "Typewriter" -> FontFamily(Typeface.MONOSPACE)
+        "Inter", "Modern" -> FontFamily(Typeface.SANS_SERIF)
+        "Quicksand", "Playful", "Casual" -> {
+            val roundedTypeface = try {
+                Typeface.create("sans-serif-rounded", Typeface.NORMAL)
+            } catch (e: Exception) {
+                null
+            } ?: try {
+                Typeface.create("casual", Typeface.NORMAL)
+            } catch (e: Exception) {
+                Typeface.SANS_SERIF
+            }
+            FontFamily(roundedTypeface)
+        }
+        "System" -> FontFamily(Typeface.DEFAULT)
+        "Geom" -> FontFamily(Font(R.font.geom))
+        else -> FontFamily(Font(R.font.geom))
     }
 }
 

@@ -239,3 +239,13 @@ fun AdaptiveSheetScrollContainer(
         }
     }
 }
+
+fun groupedBottomSheetItemShape(index: Int, totalCount: Int): RoundedCornerShape {
+    if (totalCount <= 1) return RoundedCornerShape(24.dp)
+    return when (index) {
+        0 -> RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp, bottomStart = 6.dp, bottomEnd = 6.dp)
+        totalCount - 1 -> RoundedCornerShape(topStart = 6.dp, topEnd = 6.dp, bottomStart = 24.dp, bottomEnd = 24.dp)
+        else -> RoundedCornerShape(6.dp)
+    }
+}
+

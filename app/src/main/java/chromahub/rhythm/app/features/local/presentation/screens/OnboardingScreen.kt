@@ -27,6 +27,9 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.FastOutLinearInEasing
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
@@ -46,6 +49,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.pager.PagerState
@@ -122,6 +127,10 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.layout.Layout
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import android.content.ClipData
@@ -146,10 +155,11 @@ import chromahub.rhythm.app.shared.presentation.components.common.M3LinearLoader
 import chromahub.rhythm.app.shared.presentation.components.Material3SettingsItem
 import chromahub.rhythm.app.shared.presentation.components.SettingsBadgePalette
 import chromahub.rhythm.app.shared.presentation.components.SettingsPalettes
-import chromahub.rhythm.app.features.local.presentation.components.settings.LanguageSwitcherDialog
+import chromahub.rhythm.app.features.local.presentation.components.settings.LanguageSwitcherBottomSheet
 import chromahub.rhythm.app.features.local.presentation.components.settings.LibraryTabOrderBottomSheet
 import chromahub.rhythm.app.shared.presentation.components.bottomsheets.AutoEQPresetPickerBottomSheet
 import chromahub.rhythm.app.shared.presentation.components.bottomsheets.ArtistArtworkSourceBottomSheet
+import chromahub.rhythm.app.shared.presentation.components.bottomsheets.groupedBottomSheetItemShape
 import chromahub.rhythm.app.shared.data.model.AutoEQProfile
 import chromahub.rhythm.app.shared.data.model.ArtistArtworkSource
 import chromahub.rhythm.app.features.local.presentation.screens.onboarding.OnboardingStep
@@ -170,7 +180,7 @@ import chromahub.rhythm.app.shared.presentation.screens.settings.ActionPickerShe
 import chromahub.rhythm.app.shared.presentation.screens.settings.ColorSource
 import chromahub.rhythm.app.shared.presentation.screens.settings.ColorSourceDialog
 import chromahub.rhythm.app.shared.presentation.screens.settings.FontOption
-import chromahub.rhythm.app.shared.presentation.screens.settings.FontSelectionDialog
+import chromahub.rhythm.app.shared.presentation.screens.settings.FontSelectionBottomSheet
 import chromahub.rhythm.app.shared.presentation.screens.settings.FontSource
 import chromahub.rhythm.app.shared.presentation.screens.settings.MiniPlayerArtworkSizeSheet
 import chromahub.rhythm.app.shared.presentation.screens.settings.WidgetCornerRadiusSheet
@@ -415,792 +425,171 @@ fun OnboardingScreen(
                             },
                         contentAlignment = Alignment.TopCenter
                     )    {
-                        // Use key to preserve composable state across recompositions
+                        val hasBackButton = stepIndex > 0
+                        val isAlone = currentStep == OnboardingStep.FULL_TOUR_PROMPT
+                        val tabletBackButton: (@Composable () -> Unit)? = if (hasBackButton) {
+                            {
+                                OnboardingBackButton(
+                                    onClick = onPrevStep,
+                                    height = 48.dp,
+                                    modifier = Modifier.height(48.dp),
+                                    isFirst = true,
+                                    isLast = isAlone
+                                )
+                            }
+                        } else null
+
+                        val tabletNextButton: @Composable () -> Unit = {
+                            OnboardingNextButton(
+                                onClick = {
+                                    when (currentStep) {
+                                        OnboardingStep.PERMISSIONS -> {
+                                            when (permissionScreenState) {
+                                                PermissionScreenState.RedirectToSettings -> {
+                                                    val intent = android.content.Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                                                    intent.data = android.net.Uri.fromParts("package", context.packageName, null)
+                                                    context.startActivity(intent)
+                                                    onRequestAgain()
+                                                }
+                                                PermissionScreenState.PermissionsGranted -> onNextStep()
+                                                PermissionScreenState.Loading -> {}
+                                                else -> onNextStep()
+                                            }
+                                        }
+                                        OnboardingStep.SETUP_FINISHED -> {
+                                            onFinish()
+                                            onNextStep()
+                                        }
+                                        else -> onNextStep()
+                                    }
+                                },
+                                enabled = when (currentStep) {
+                                    OnboardingStep.PERMISSIONS -> !isParentLoading && permissionScreenState != PermissionScreenState.Loading
+                                    OnboardingStep.STREAMING_SETUP -> isStreamingServiceConnected
+                                    else -> true
+                                },
+                                isLoading = currentStep == OnboardingStep.PERMISSIONS && isParentLoading,
+                                text = when {
+                                    currentStep == OnboardingStep.SETUP_FINISHED -> context.getString(R.string.onboarding_lets_go)
+                                    currentStep == OnboardingStep.PERMISSIONS -> when (permissionScreenState) {
+                                        PermissionScreenState.PermissionsGranted -> context.getString(R.string.onboarding_continue)
+                                        PermissionScreenState.RedirectToSettings -> context.getString(R.string.onboarding_open_settings)
+                                        else -> context.getString(R.string.onboarding_grant_access)
+                                    }
+                                    else -> context.getString(R.string.onboarding_next)
+                                },
+                                icon = when {
+                                    currentStep == OnboardingStep.SETUP_FINISHED -> RhythmIcons.Check
+                                    currentStep == OnboardingStep.PERMISSIONS -> when (permissionScreenState) {
+                                        PermissionScreenState.PermissionsGranted -> RhythmIcons.Forward
+                                        PermissionScreenState.RedirectToSettings -> RhythmIcons.Security
+                                        else -> RhythmIcons.Security
+                                    }
+                                    else -> RhythmIcons.Forward
+                                },
+                                isError = currentStep == OnboardingStep.PERMISSIONS && permissionScreenState == PermissionScreenState.RedirectToSettings,
+                                isFirst = !hasBackButton,
+                                isLast = true,
+                                height = 48.dp,
+                                modifier = Modifier.height(48.dp)
+                            )
+                        }
+
                         androidx.compose.runtime.key(step) {
                             when (step) {
                                 OnboardingStep.WELCOME -> {
-                                    // Standalone welcome step is rendered outside the pager
                                     Box(modifier = Modifier.fillMaxSize())
                                 }
                                 OnboardingStep.APP_MODE_CHOICE -> {
-                                EnhancedAppModeChoiceContent(
-                                    appSettings = appSettings,
-                                    isTablet = isTablet,
-                                    backButton = if (stepIndex > 0) {
-                                        {
-                                            val buttonScale = remember { Animatable(1f) }
-                                            OutlinedButton(
-                                                onClick = {
-                                                    scope.launch {
-                                                        buttonScale.animateTo(0.92f, animationSpec = tween(100))
-                                                        buttonScale.animateTo(1f, animationSpec = spring(
-                                                            dampingRatio = Spring.DampingRatioMediumBouncy,
-                                                            stiffness = Spring.StiffnessHigh
-                                                        ))
-                                                    }
-                                                    onPrevStep()
-                                                },
-                                                modifier = Modifier
-                                                    .height(56.dp)
-                                                    .graphicsLayer {
-                                                        scaleX = buttonScale.value
-                                                        scaleY = buttonScale.value
-                                                    },
-                                                shape = RoundedCornerShape(32.dp)
-                                            ) {
-                                                Icon(
-                                                    imageVector = RhythmIcons.Back,
-                                                    contentDescription = null,
-                                                    modifier = Modifier.size(20.dp)
-                                                )
-                                                Spacer(modifier = Modifier.width(8.dp))
-                                                Text(context.getString(R.string.onboarding_back), style = MaterialTheme.typography.labelLarge)
-                                            }
-                                        }
-                                    } else null,
-                                    nextButton = {
-                                        val nextButtonScale = remember { Animatable(1f) }
-                                        Button(
-                                            onClick = {
-                                                scope.launch {
-                                                    nextButtonScale.animateTo(0.92f, animationSpec = tween(100))
-                                                    nextButtonScale.animateTo(1f, animationSpec = spring(
-                                                        dampingRatio = Spring.DampingRatioMediumBouncy,
-                                                        stiffness = Spring.StiffnessHigh
-                                                    ))
-                                                }
-                                                HapticUtils.performHapticFeedback(context, haptic, HapticType.HEAVY)
-                                                onNextStep()
-                                            },
-                                            modifier = Modifier
-                                                .height(56.dp)
-                                                .graphicsLayer {
-                                                    scaleX = nextButtonScale.value
-                                                    scaleY = nextButtonScale.value
-                                                },
-                                            colors = ButtonDefaults.buttonColors(
-                                                containerColor = MaterialTheme.colorScheme.primary,
-                                                contentColor = MaterialTheme.colorScheme.onPrimary
-                                            ),
-                                            shape = RoundedCornerShape(32.dp)
-                                        ) {
-                                            Text(
-                                                context.getString(R.string.onboarding_next),
-                                                style = MaterialTheme.typography.labelLarge.copy(
-                                                    fontWeight = FontWeight.Bold
-                                                )
-                                            )
-                                            Spacer(modifier = Modifier.width(8.dp))
-                                            Icon(
-                                                imageVector = RhythmIcons.Forward,
-                                                contentDescription = null,
-                                                modifier = Modifier.size(20.dp)
-                                            )
-                                        }
-                                    }
-                                )
-                            }
-                            OnboardingStep.STREAMING_SERVICE_CHOICE -> {
-                                EnhancedStreamingServiceChoiceContent(
-                                    appSettings = appSettings,
-                                    isTablet = isTablet,
-                                    backButton = if (stepIndex > 0) {
-                                        {
-                                            val buttonScale = remember { Animatable(1f) }
-                                            OutlinedButton(
-                                                onClick = {
-                                                    scope.launch {
-                                                        buttonScale.animateTo(0.92f, animationSpec = tween(100))
-                                                        buttonScale.animateTo(1f, animationSpec = spring(
-                                                            dampingRatio = Spring.DampingRatioMediumBouncy,
-                                                            stiffness = Spring.StiffnessHigh
-                                                        ))
-                                                    }
-                                                    onPrevStep()
-                                                },
-                                                modifier = Modifier
-                                                    .height(56.dp)
-                                                    .graphicsLayer {
-                                                        scaleX = buttonScale.value
-                                                        scaleY = buttonScale.value
-                                                    },
-                                                shape = RoundedCornerShape(32.dp)
-                                            ) {
-                                                Icon(
-                                                    imageVector = RhythmIcons.Back,
-                                                    contentDescription = null,
-                                                    modifier = Modifier.size(20.dp)
-                                                )
-                                                Spacer(modifier = Modifier.width(8.dp))
-                                                Text(context.getString(R.string.onboarding_back), style = MaterialTheme.typography.labelLarge)
-                                            }
-                                        }
-                                    } else null,
-                                    nextButton = {
-                                        val nextButtonScale = remember { Animatable(1f) }
-                                        Button(
-                                            onClick = {
-                                                scope.launch {
-                                                    nextButtonScale.animateTo(0.92f, animationSpec = tween(100))
-                                                    nextButtonScale.animateTo(1f, animationSpec = spring(
-                                                        dampingRatio = Spring.DampingRatioMediumBouncy,
-                                                        stiffness = Spring.StiffnessHigh
-                                                    ))
-                                                }
-                                                HapticUtils.performHapticFeedback(context, haptic, HapticType.HEAVY)
-                                                onNextStep()
-                                            },
-                                            modifier = Modifier
-                                                .height(56.dp)
-                                                .graphicsLayer {
-                                                    scaleX = nextButtonScale.value
-                                                    scaleY = nextButtonScale.value
-                                                },
-                                            colors = ButtonDefaults.buttonColors(
-                                                containerColor = MaterialTheme.colorScheme.primary,
-                                                contentColor = MaterialTheme.colorScheme.onPrimary
-                                            ),
-                                            shape = RoundedCornerShape(32.dp)
-                                        ) {
-                                            Text(
-                                                context.getString(R.string.onboarding_next),
-                                                style = MaterialTheme.typography.labelLarge.copy(
-                                                    fontWeight = FontWeight.Bold
-                                                )
-                                            )
-                                            Spacer(modifier = Modifier.width(8.dp))
-                                            Icon(
-                                                imageVector = RhythmIcons.Forward,
-                                                contentDescription = null,
-                                                modifier = Modifier.size(20.dp)
-                                            )
-                                        }
-                                    }
-                                )
-                            }
-                            OnboardingStep.STREAMING_SETUP -> {
-                                EnhancedStreamingSetupContent(
-                                    appSettings = appSettings,
-                                    streamingViewModel = streamingViewModel,
-                                    onSkip = onNextStep,
-                                    isTablet = isTablet,
-                                    backButton = if (stepIndex > 0) {
-                                        {
-                                            val buttonScale = remember { Animatable(1f) }
-                                            OutlinedButton(
-                                                onClick = {
-                                                    scope.launch {
-                                                        buttonScale.animateTo(0.92f, animationSpec = tween(100))
-                                                        buttonScale.animateTo(1f, animationSpec = spring(
-                                                            dampingRatio = Spring.DampingRatioMediumBouncy,
-                                                            stiffness = Spring.StiffnessHigh
-                                                        ))
-                                                    }
-                                                    onPrevStep()
-                                                },
-                                                modifier = Modifier
-                                                    .height(56.dp)
-                                                    .graphicsLayer {
-                                                        scaleX = buttonScale.value
-                                                        scaleY = buttonScale.value
-                                                    },
-                                                shape = RoundedCornerShape(32.dp)
-                                            ) {
-                                                Icon(
-                                                    imageVector = RhythmIcons.Back,
-                                                    contentDescription = null,
-                                                    modifier = Modifier.size(20.dp)
-                                                )
-                                                Spacer(modifier = Modifier.width(8.dp))
-                                                Text(context.getString(R.string.onboarding_back), style = MaterialTheme.typography.labelLarge)
-                                            }
-                                        }
-                                    } else null,
-                                    nextButton = {
-                                        val nextButtonScale = remember { Animatable(1f) }
-                                        Button(
-                                            onClick = {
-                                                scope.launch {
-                                                    nextButtonScale.animateTo(0.92f, animationSpec = tween(100))
-                                                    nextButtonScale.animateTo(1f, animationSpec = spring(
-                                                        dampingRatio = Spring.DampingRatioMediumBouncy,
-                                                        stiffness = Spring.StiffnessHigh
-                                                    ))
-                                                }
-                                                HapticUtils.performHapticFeedback(context, haptic, HapticType.HEAVY)
-                                                onNextStep()
-                                            },
-                                            enabled = isStreamingServiceConnected,
-                                            modifier = Modifier
-                                                .height(56.dp)
-                                                .graphicsLayer {
-                                                    scaleX = nextButtonScale.value
-                                                    scaleY = nextButtonScale.value
-                                                },
-                                            colors = ButtonDefaults.buttonColors(
-                                                containerColor = MaterialTheme.colorScheme.primary,
-                                                contentColor = MaterialTheme.colorScheme.onPrimary
-                                            ),
-                                            shape = RoundedCornerShape(32.dp)
-                                        ) {
-                                            Text(
-                                                context.getString(R.string.onboarding_next),
-                                                style = MaterialTheme.typography.labelLarge.copy(
-                                                    fontWeight = FontWeight.Bold
-                                                )
-                                            )
-                                            Spacer(modifier = Modifier.width(8.dp))
-                                            Icon(
-                                                imageVector = RhythmIcons.Forward,
-                                                contentDescription = null,
-                                                modifier = Modifier.size(20.dp)
-                                            )
-                                        }
-                                    }
-                                )
-                            }
-                            OnboardingStep.PERMISSIONS -> {
-                                EnhancedPermissionContent(
-                                    permissionScreenState = permissionScreenState,
-                                    onGrantAccess = {
-                                        onNextStep() // Trigger permission request
-                                    },
-                                    onOpenSettings = {
-                                        val intent = android.content.Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-                                        intent.data = android.net.Uri.fromParts("package", context.packageName, null)
-                                        context.startActivity(intent)
-                                        onRequestAgain() // Set loading state
-                                    },
-                                    isButtonLoading = isParentLoading,
-                                    isTablet = isTablet,
-                                    backButton = if (stepIndex > 0) {
-                                        {
-                                            val buttonScale = remember { Animatable(1f) }
-                                            OutlinedButton(
-                                                onClick = {
-                                                    scope.launch {
-                                                        buttonScale.animateTo(0.92f, animationSpec = tween(100))
-                                                        buttonScale.animateTo(1f, animationSpec = spring(
-                                                            dampingRatio = Spring.DampingRatioMediumBouncy,
-                                                            stiffness = Spring.StiffnessHigh
-                                                        ))
-                                                    }
-                                                    onPrevStep()
-                                                },
-                                                modifier = Modifier
-                                                    .height(56.dp)
-                                                    .graphicsLayer {
-                                                        scaleX = buttonScale.value
-                                                        scaleY = buttonScale.value
-                                                    },
-                                                shape = RoundedCornerShape(32.dp)
-                                            ) {
-                                                Icon(
-                                                    imageVector = RhythmIcons.Back,
-                                                    contentDescription = null,
-                                                    modifier = Modifier.size(20.dp)
-                                                )
-                                                Spacer(modifier = Modifier.width(8.dp))
-                                                Text(context.getString(R.string.onboarding_back), style = MaterialTheme.typography.labelLarge)
-                                            }
-                                        }
-                                    } else null,
-                                    nextButton = {
-                                        val nextButtonScale = remember { Animatable(1f) }
-                                        Button(
-                                            onClick = {
-                                                scope.launch {
-                                                    nextButtonScale.animateTo(0.92f, animationSpec = tween(100))
-                                                    nextButtonScale.animateTo(1f, animationSpec = spring(
-                                                        dampingRatio = Spring.DampingRatioMediumBouncy,
-                                                        stiffness = Spring.StiffnessHigh
-                                                    ))
-                                                }
-                                                HapticUtils.performHapticFeedback(context, haptic, HapticType.HEAVY)
-                                                // For permission step, handle based on state
-                                                when (permissionScreenState) {
-                                                    PermissionScreenState.RedirectToSettings -> {
-                                                        val intent = android.content.Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-                                                        intent.data = android.net.Uri.fromParts("package", context.packageName, null)
-                                                        context.startActivity(intent)
-                                                        onRequestAgain()
-                                                    }
-                                                    PermissionScreenState.PermissionsGranted -> onNextStep()
-                                                    PermissionScreenState.Loading -> { /* Do nothing while loading */ }
-                                                    else -> onNextStep() // Trigger permission request
-                                                }
-                                            },
-                                            enabled = !isParentLoading && permissionScreenState != PermissionScreenState.Loading,
-                                            modifier = Modifier
-                                                .height(56.dp)
-                                                .graphicsLayer {
-                                                    scaleX = nextButtonScale.value
-                                                    scaleY = nextButtonScale.value
-                                                },
-                                            colors = ButtonDefaults.buttonColors(
-                                                containerColor = when (permissionScreenState) {
-                                                    PermissionScreenState.PermissionsGranted -> MaterialTheme.colorScheme.primary
-                                                    PermissionScreenState.RedirectToSettings -> MaterialTheme.colorScheme.error
-                                                    else -> MaterialTheme.colorScheme.primary
-                                                },
-                                                contentColor = when (permissionScreenState) {
-                                                    PermissionScreenState.PermissionsGranted -> MaterialTheme.colorScheme.onPrimary
-                                                    PermissionScreenState.RedirectToSettings -> MaterialTheme.colorScheme.onError
-                                                    else -> MaterialTheme.colorScheme.onPrimary
-                                                }
-                                            ),
-                                            shape = RoundedCornerShape(32.dp)
-                                        ) {
-                                            Crossfade(
-                                                targetState = isParentLoading,
-                                                animationSpec = tween(300),
-                                                label = "buttonContent"
-                                            ) { loading ->
-                                                if (loading) {
-                                                    Row(
-                                                        horizontalArrangement = Arrangement.Center,
-                                                        verticalAlignment = Alignment.CenterVertically
-                                                    ) {
-                                                        DataProcessingLoader(
-                                                            modifier = Modifier.size(20.dp)
-                                                        )
-                                                        Spacer(modifier = Modifier.width(8.dp))
-                                                        Text(
-                                                            context.getString(R.string.onboarding_checking),
-                                                            style = MaterialTheme.typography.labelLarge
-                                                        )
-                                                    }
-                                                } else {
-                                                    Row(
-                                                        horizontalArrangement = Arrangement.Center,
-                                                        verticalAlignment = Alignment.CenterVertically
-                                                    ) {
-                                                        val buttonText = when (permissionScreenState) {
-                                                            PermissionScreenState.PermissionsGranted -> context.getString(R.string.onboarding_continue)
-                                                            PermissionScreenState.RedirectToSettings -> context.getString(R.string.onboarding_open_settings)
-                                                            else -> context.getString(R.string.onboarding_grant_access)
-                                                        }
-                                                        val buttonIcon = when (permissionScreenState) {
-                                                            PermissionScreenState.PermissionsGranted -> RhythmIcons.Forward
-                                                            PermissionScreenState.RedirectToSettings -> RhythmIcons.Security
-                                                            else -> RhythmIcons.Security
-                                                        }
-
-                                                        Text(
-                                                            buttonText,
-                                                            style = MaterialTheme.typography.labelLarge.copy(
-                                                                fontWeight = FontWeight.Bold
-                                                            )
-                                                        )
-                                                        Spacer(modifier = Modifier.width(8.dp))
-                                                        Icon(
-                                                            imageVector = buttonIcon,
-                                                            contentDescription = null,
-                                                            modifier = Modifier.size(20.dp)
-                                                        )
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                )
-                            }
-                            OnboardingStep.RHYTHM_GUARD -> {
-                                EnhancedRhythmGuardContent(
-                                    appSettings = appSettings,
-                                    isTablet = isTablet,
-                                    backButton = if (stepIndex > 0) {
-                                        {
-                                            val buttonScale = remember { Animatable(1f) }
-                                            OutlinedButton(
-                                                onClick = {
-                                                    scope.launch {
-                                                        buttonScale.animateTo(0.92f, animationSpec = tween(100))
-                                                        buttonScale.animateTo(1f, animationSpec = spring(
-                                                            dampingRatio = Spring.DampingRatioMediumBouncy,
-                                                            stiffness = Spring.StiffnessHigh
-                                                        ))
-                                                    }
-                                                    onPrevStep()
-                                                },
-                                                modifier = Modifier
-                                                    .height(56.dp)
-                                                    .graphicsLayer {
-                                                        scaleX = buttonScale.value
-                                                        scaleY = buttonScale.value
-                                                    },
-                                                shape = RoundedCornerShape(32.dp)
-                                            ) {
-                                                Icon(
-                                                    imageVector = RhythmIcons.Back,
-                                                    contentDescription = null,
-                                                    modifier = Modifier.size(20.dp)
-                                                )
-                                                Spacer(modifier = Modifier.width(8.dp))
-                                                Text(context.getString(R.string.onboarding_back), style = MaterialTheme.typography.labelLarge)
-                                            }
-                                        }
-                                    } else null,
-                                    nextButton = {
-                                        val nextButtonScale = remember { Animatable(1f) }
-                                        Button(
-                                            onClick = {
-                                                scope.launch {
-                                                    nextButtonScale.animateTo(0.92f, animationSpec = tween(100))
-                                                    nextButtonScale.animateTo(1f, animationSpec = spring(
-                                                        dampingRatio = Spring.DampingRatioMediumBouncy,
-                                                        stiffness = Spring.StiffnessHigh
-                                                    ))
-                                                }
-                                                HapticUtils.performHapticFeedback(context, haptic, HapticType.HEAVY)
-                                                onNextStep()
-                                            },
-                                            modifier = Modifier
-                                                .height(56.dp)
-                                                .graphicsLayer {
-                                                    scaleX = nextButtonScale.value
-                                                    scaleY = nextButtonScale.value
-                                                },
-                                            colors = ButtonDefaults.buttonColors(
-                                                containerColor = MaterialTheme.colorScheme.primary,
-                                                contentColor = MaterialTheme.colorScheme.onPrimary
-                                            ),
-                                            shape = RoundedCornerShape(32.dp)
-                                        ) {
-                                            Text(
-                                                context.getString(R.string.onboarding_next),
-                                                style = MaterialTheme.typography.labelLarge.copy(
-                                                    fontWeight = FontWeight.Bold
-                                                )
-                                            )
-                                            Spacer(modifier = Modifier.width(8.dp))
-                                            Icon(
-                                                imageVector = RhythmIcons.Forward,
-                                                contentDescription = null,
-                                                modifier = Modifier.size(20.dp)
-                                            )
-                                        }
-                                    }
-                                )
-                            }
-                            OnboardingStep.BACKUP_RESTORE -> {
-                                EnhancedBackupRestoreContent(
-                                    onNextStep = onNextStep,
-                                    onSkip = onNextStep,
-                                    appSettings = appSettings,
-                                    isTablet = isTablet,
-                                    backButton = if (stepIndex > 0) {
-                                        {
-                                            val buttonScale = remember { Animatable(1f) }
-                                            OutlinedButton(
-                                                onClick = {
-                                                    scope.launch {
-                                                        buttonScale.animateTo(0.92f, animationSpec = tween(100))
-                                                        buttonScale.animateTo(1f, animationSpec = spring(
-                                                            dampingRatio = Spring.DampingRatioMediumBouncy,
-                                                            stiffness = Spring.StiffnessHigh
-                                                        ))
-                                                    }
-                                                    onPrevStep()
-                                                },
-                                                modifier = Modifier
-                                                    .height(56.dp)
-                                                    .graphicsLayer {
-                                                        scaleX = buttonScale.value
-                                                        scaleY = buttonScale.value
-                                                    },
-                                                shape = RoundedCornerShape(32.dp)
-                                            ) {
-                                                Icon(
-                                                    imageVector = RhythmIcons.Back,
-                                                    contentDescription = null,
-                                                    modifier = Modifier.size(20.dp)
-                                                )
-                                                Spacer(modifier = Modifier.width(8.dp))
-                                                Text(context.getString(R.string.onboarding_back), style = MaterialTheme.typography.labelLarge)
-                                            }
-                                        }
-                                    } else null,
-                                    nextButton = {
-                                        val nextButtonScale = remember { Animatable(1f) }
-                                        Button(
-                                            onClick = {
-                                                scope.launch {
-                                                    nextButtonScale.animateTo(0.92f, animationSpec = tween(100))
-                                                    nextButtonScale.animateTo(1f, animationSpec = spring(
-                                                        dampingRatio = Spring.DampingRatioMediumBouncy,
-                                                        stiffness = Spring.StiffnessHigh
-                                                    ))
-                                                }
-                                                HapticUtils.performHapticFeedback(context, haptic, HapticType.HEAVY)
-                                                onNextStep()
-                                            },
-                                            modifier = Modifier
-                                                .height(56.dp)
-                                                .graphicsLayer {
-                                                    scaleX = nextButtonScale.value
-                                                    scaleY = nextButtonScale.value
-                                                },
-                                            colors = ButtonDefaults.buttonColors(
-                                                containerColor = MaterialTheme.colorScheme.primary,
-                                                contentColor = MaterialTheme.colorScheme.onPrimary
-                                            ),
-                                            shape = RoundedCornerShape(32.dp)
-                                        ) {
-                                            Text(
-                                                context.getString(R.string.onboarding_next),
-                                                style = MaterialTheme.typography.labelLarge.copy(
-                                                    fontWeight = FontWeight.Bold
-                                                )
-                                            )
-                                            Spacer(modifier = Modifier.width(8.dp))
-                                            Icon(
-                                                imageVector = RhythmIcons.Forward,
-                                                contentDescription = null,
-                                                modifier = Modifier.size(20.dp)
-                                            )
-                                        }
-                                    }
-                                )
-                            }
-                            OnboardingStep.AUDIO_PLAYBACK -> {
-                                EnhancedAudioPlaybackContent(
-                                    onNextStep = onNextStep,
-                                    appSettings = appSettings,
-                                    onOpenAutoEQSelector = { showAutoEQSelector = true },
-                                    isTablet = isTablet,
-                                    backButton = if (stepIndex > 0) {
-                                        {
-                                            val buttonScale = remember { Animatable(1f) }
-                                            OutlinedButton(
-                                                onClick = {
-                                                    scope.launch {
-                                                        buttonScale.animateTo(0.92f, animationSpec = tween(100))
-                                                        buttonScale.animateTo(1f, animationSpec = spring(
-                                                            dampingRatio = Spring.DampingRatioMediumBouncy,
-                                                            stiffness = Spring.StiffnessHigh
-                                                        ))
-                                                    }
-                                                    onPrevStep()
-                                                },
-                                                modifier = Modifier
-                                                    .height(56.dp)
-                                                    .graphicsLayer {
-                                                        scaleX = buttonScale.value
-                                                        scaleY = buttonScale.value
-                                                    },
-                                                shape = RoundedCornerShape(32.dp)
-                                            ) {
-                                                Icon(
-                                                    imageVector = RhythmIcons.Back,
-                                                    contentDescription = null,
-                                                    modifier = Modifier.size(20.dp)
-                                                )
-                                                Spacer(modifier = Modifier.width(8.dp))
-                                                Text(context.getString(R.string.onboarding_back), style = MaterialTheme.typography.labelLarge)
-                                            }
-                                        }
-                                    } else null,
-                                    nextButton = {
-                                        val nextButtonScale = remember { Animatable(1f) }
-                                        Button(
-                                            onClick = {
-                                                scope.launch {
-                                                    nextButtonScale.animateTo(0.92f, animationSpec = tween(100))
-                                                    nextButtonScale.animateTo(1f, animationSpec = spring(
-                                                        dampingRatio = Spring.DampingRatioMediumBouncy,
-                                                        stiffness = Spring.StiffnessHigh
-                                                    ))
-                                                }
-                                                HapticUtils.performHapticFeedback(context, haptic, HapticType.HEAVY)
-                                                onNextStep()
-                                            },
-                                            modifier = Modifier
-                                                .height(56.dp)
-                                                .graphicsLayer {
-                                                    scaleX = nextButtonScale.value
-                                                    scaleY = nextButtonScale.value
-                                                },
-                                            colors = ButtonDefaults.buttonColors(
-                                                containerColor = MaterialTheme.colorScheme.primary,
-                                                contentColor = MaterialTheme.colorScheme.onPrimary
-                                            ),
-                                            shape = RoundedCornerShape(32.dp)
-                                        ) {
-                                            Text(
-                                                context.getString(R.string.onboarding_next),
-                                                style = MaterialTheme.typography.labelLarge.copy(
-                                                    fontWeight = FontWeight.Bold
-                                                )
-                                            )
-                                            Spacer(modifier = Modifier.width(8.dp))
-                                            Icon(
-                                                imageVector = RhythmIcons.Forward,
-                                                contentDescription = null,
-                                                modifier = Modifier.size(20.dp)
-                                            )
-                                        }
-                                    }
-                                )
-                            }
-                            OnboardingStep.THEMING -> {
-                                EnhancedThemingContent(
-                                    onNextStep = onNextStep,
-                                    onSkip = onNextStep,
-                                    themeViewModel = themeViewModel,
-                                    appSettings = appSettings,
-                                    isTablet = isTablet,
-                                    backButton = if (stepIndex > 0) {
-                                        {
-                                            val buttonScale = remember { Animatable(1f) }
-                                            OutlinedButton(
-                                                onClick = {
-                                                    scope.launch {
-                                                        buttonScale.animateTo(0.92f, animationSpec = tween(100))
-                                                        buttonScale.animateTo(1f, animationSpec = spring(
-                                                            dampingRatio = Spring.DampingRatioMediumBouncy,
-                                                            stiffness = Spring.StiffnessHigh
-                                                        ))
-                                                    }
-                                                    onPrevStep()
-                                                },
-                                                modifier = Modifier
-                                                    .height(56.dp)
-                                                    .graphicsLayer {
-                                                        scaleX = buttonScale.value
-                                                        scaleY = buttonScale.value
-                                                    },
-                                                shape = RoundedCornerShape(32.dp)
-                                            ) {
-                                                Icon(
-                                                    imageVector = RhythmIcons.Back,
-                                                    contentDescription = null,
-                                                    modifier = Modifier.size(20.dp)
-                                                )
-                                                Spacer(modifier = Modifier.width(8.dp))
-                                                Text(context.getString(R.string.onboarding_back), style = MaterialTheme.typography.labelLarge)
-                                            }
-                                        }
-                                    } else null,
-                                    nextButton = {
-                                        val nextButtonScale = remember { Animatable(1f) }
-                                        Button(
-                                            onClick = {
-                                                scope.launch {
-                                                    nextButtonScale.animateTo(0.92f, animationSpec = tween(100))
-                                                    nextButtonScale.animateTo(1f, animationSpec = spring(
-                                                        dampingRatio = Spring.DampingRatioMediumBouncy,
-                                                        stiffness = Spring.StiffnessHigh
-                                                    ))
-                                                }
-                                                HapticUtils.performHapticFeedback(context, haptic, HapticType.HEAVY)
-                                                onNextStep()
-                                            },
-                                            modifier = Modifier
-                                                .height(56.dp)
-                                                .graphicsLayer {
-                                                    scaleX = nextButtonScale.value
-                                                    scaleY = nextButtonScale.value
-                                                },
-                                            colors = ButtonDefaults.buttonColors(
-                                                containerColor = MaterialTheme.colorScheme.primary,
-                                                contentColor = MaterialTheme.colorScheme.onPrimary
-                                            ),
-                                            shape = RoundedCornerShape(32.dp)
-                                        ) {
-                                            Text(
-                                                context.getString(R.string.onboarding_next),
-                                                style = MaterialTheme.typography.labelLarge.copy(
-                                                    fontWeight = FontWeight.Bold
-                                                )
-                                            )
-                                            Spacer(modifier = Modifier.width(8.dp))
-                                            Icon(
-                                                imageVector = RhythmIcons.Forward,
-                                                contentDescription = null,
-                                                modifier = Modifier.size(20.dp)
-                                            )
-                                        }
-                                    }
-                                )
-                            }
+                                    EnhancedAppModeChoiceContent(
+                                        appSettings = appSettings,
+                                        isTablet = isTablet,
+                                        backButton = tabletBackButton,
+                                        nextButton = tabletNextButton
+                                    )
+                                }
+                                OnboardingStep.STREAMING_SERVICE_CHOICE -> {
+                                    EnhancedStreamingServiceChoiceContent(
+                                        appSettings = appSettings,
+                                        isTablet = isTablet,
+                                        backButton = tabletBackButton,
+                                        nextButton = tabletNextButton
+                                    )
+                                }
+                                OnboardingStep.STREAMING_SETUP -> {
+                                    EnhancedStreamingSetupContent(
+                                        appSettings = appSettings,
+                                        streamingViewModel = streamingViewModel,
+                                        onSkip = onNextStep,
+                                        isTablet = isTablet,
+                                        backButton = tabletBackButton,
+                                        nextButton = tabletNextButton
+                                    )
+                                }
+                                OnboardingStep.PERMISSIONS -> {
+                                    EnhancedPermissionContent(
+                                        permissionScreenState = permissionScreenState,
+                                        onGrantAccess = {
+                                            onNextStep()
+                                        },
+                                        onOpenSettings = {
+                                            val intent = android.content.Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                                            intent.data = android.net.Uri.fromParts("package", context.packageName, null)
+                                            context.startActivity(intent)
+                                            onRequestAgain()
+                                        },
+                                        isButtonLoading = isParentLoading,
+                                        isTablet = isTablet,
+                                        backButton = tabletBackButton,
+                                        nextButton = tabletNextButton
+                                    )
+                                }
+                                OnboardingStep.RHYTHM_GUARD -> {
+                                    EnhancedRhythmGuardContent(
+                                        appSettings = appSettings,
+                                        isTablet = isTablet,
+                                        backButton = tabletBackButton,
+                                        nextButton = tabletNextButton
+                                    )
+                                }
+                                OnboardingStep.BACKUP_RESTORE -> {
+                                    EnhancedBackupRestoreContent(
+                                        onNextStep = onNextStep,
+                                        onSkip = onNextStep,
+                                        appSettings = appSettings,
+                                        isTablet = isTablet,
+                                        backButton = tabletBackButton,
+                                        nextButton = tabletNextButton
+                                    )
+                                }
+                                OnboardingStep.AUDIO_PLAYBACK -> {
+                                    EnhancedAudioPlaybackContent(
+                                        onNextStep = onNextStep,
+                                        appSettings = appSettings,
+                                        onOpenAutoEQSelector = { showAutoEQSelector = true },
+                                        isTablet = isTablet,
+                                        backButton = tabletBackButton,
+                                        nextButton = tabletNextButton
+                                    )
+                                }
+                                OnboardingStep.THEMING -> {
+                                    EnhancedThemingContent(
+                                        onNextStep = onNextStep,
+                                        onSkip = onNextStep,
+                                        themeViewModel = themeViewModel,
+                                        appSettings = appSettings,
+                                        isTablet = isTablet,
+                                        backButton = tabletBackButton,
+                                        nextButton = tabletNextButton
+                                    )
+                                }
                             OnboardingStep.PLAYER_THEME_CHOICE -> {
                                 EnhancedPlayerThemeChoiceContent(
                                     onNextStep = onNextStep,
                                     appSettings = appSettings,
                                     isTablet = isTablet,
-                                    backButton = if (stepIndex > 0) {
-                                        {
-                                            val buttonScale = remember { Animatable(1f) }
-                                            OutlinedButton(
-                                                onClick = {
-                                                    scope.launch {
-                                                        buttonScale.animateTo(0.92f, animationSpec = tween(100))
-                                                        buttonScale.animateTo(1f, animationSpec = spring(
-                                                            dampingRatio = Spring.DampingRatioMediumBouncy,
-                                                            stiffness = Spring.StiffnessHigh
-                                                        ))
-                                                    }
-                                                    onPrevStep()
-                                                },
-                                                modifier = Modifier
-                                                    .height(56.dp)
-                                                    .graphicsLayer {
-                                                        scaleX = buttonScale.value
-                                                        scaleY = buttonScale.value
-                                                    },
-                                                shape = RoundedCornerShape(32.dp)
-                                            ) {
-                                                Icon(
-                                                    imageVector = RhythmIcons.Back,
-                                                    contentDescription = null,
-                                                    modifier = Modifier.size(20.dp)
-                                                )
-                                                Spacer(modifier = Modifier.width(8.dp))
-                                                Text(context.getString(R.string.onboarding_back), style = MaterialTheme.typography.labelLarge)
-                                            }
-                                        }
-                                    } else null,
-                                    nextButton = {
-                                        val nextButtonScale = remember { Animatable(1f) }
-                                        Button(
-                                            onClick = {
-                                                scope.launch {
-                                                    nextButtonScale.animateTo(0.92f, animationSpec = tween(100))
-                                                    nextButtonScale.animateTo(1f, animationSpec = spring(
-                                                        dampingRatio = Spring.DampingRatioMediumBouncy,
-                                                        stiffness = Spring.StiffnessHigh
-                                                    ))
-                                                }
-                                                HapticUtils.performHapticFeedback(context, haptic, HapticType.HEAVY)
-                                                onNextStep()
-                                            },
-                                            modifier = Modifier
-                                                .height(56.dp)
-                                                .graphicsLayer {
-                                                    scaleX = nextButtonScale.value
-                                                    scaleY = nextButtonScale.value
-                                                },
-                                            colors = ButtonDefaults.buttonColors(
-                                                containerColor = MaterialTheme.colorScheme.primary,
-                                                contentColor = MaterialTheme.colorScheme.onPrimary
-                                            ),
-                                            shape = RoundedCornerShape(32.dp)
-                                        ) {
-                                            Text(
-                                                context.getString(R.string.onboarding_next),
-                                                style = MaterialTheme.typography.labelLarge.copy(
-                                                    fontWeight = FontWeight.Bold
-                                                )
-                                            )
-                                            Spacer(modifier = Modifier.width(8.dp))
-                                            Icon(
-                                                imageVector = RhythmIcons.Forward,
-                                                contentDescription = null,
-                                                modifier = Modifier.size(20.dp)
-                                            )
-                                        }
-                                    }
+                                    backButton = tabletBackButton,
+                                    nextButton = tabletNextButton
                                 )
                             }
                             OnboardingStep.GESTURES -> {
@@ -1208,78 +597,8 @@ fun OnboardingScreen(
                                     onNextStep = onNextStep,
                                     appSettings = appSettings,
                                     isTablet = isTablet,
-                                    backButton = if (stepIndex > 0) {
-                                        {
-                                            val buttonScale = remember { Animatable(1f) }
-                                            OutlinedButton(
-                                                onClick = {
-                                                    scope.launch {
-                                                        buttonScale.animateTo(0.92f, animationSpec = tween(100))
-                                                        buttonScale.animateTo(1f, animationSpec = spring(
-                                                            dampingRatio = Spring.DampingRatioMediumBouncy,
-                                                            stiffness = Spring.StiffnessHigh
-                                                        ))
-                                                    }
-                                                    onPrevStep()
-                                                },
-                                                modifier = Modifier
-                                                    .height(56.dp)
-                                                    .graphicsLayer {
-                                                        scaleX = buttonScale.value
-                                                        scaleY = buttonScale.value
-                                                    },
-                                                shape = RoundedCornerShape(32.dp)
-                                            ) {
-                                                Icon(
-                                                    imageVector = RhythmIcons.Back,
-                                                    contentDescription = null,
-                                                    modifier = Modifier.size(20.dp)
-                                                )
-                                                Spacer(modifier = Modifier.width(8.dp))
-                                                Text(context.getString(R.string.onboarding_back), style = MaterialTheme.typography.labelLarge)
-                                            }
-                                        }
-                                    } else null,
-                                    nextButton = {
-                                        val nextButtonScale = remember { Animatable(1f) }
-                                        Button(
-                                            onClick = {
-                                                scope.launch {
-                                                    nextButtonScale.animateTo(0.92f, animationSpec = tween(100))
-                                                    nextButtonScale.animateTo(1f, animationSpec = spring(
-                                                        dampingRatio = Spring.DampingRatioMediumBouncy,
-                                                        stiffness = Spring.StiffnessHigh
-                                                    ))
-                                                }
-                                                HapticUtils.performHapticFeedback(context, haptic, HapticType.HEAVY)
-                                                onNextStep()
-                                            },
-                                            modifier = Modifier
-                                                .height(56.dp)
-                                                .graphicsLayer {
-                                                    scaleX = nextButtonScale.value
-                                                    scaleY = nextButtonScale.value
-                                                },
-                                            colors = ButtonDefaults.buttonColors(
-                                                containerColor = MaterialTheme.colorScheme.primary,
-                                                contentColor = MaterialTheme.colorScheme.onPrimary
-                                            ),
-                                            shape = RoundedCornerShape(32.dp)
-                                        ) {
-                                            Text(
-                                                context.getString(R.string.onboarding_next),
-                                                style = MaterialTheme.typography.labelLarge.copy(
-                                                    fontWeight = FontWeight.Bold
-                                                )
-                                            )
-                                            Spacer(modifier = Modifier.width(8.dp))
-                                            Icon(
-                                                imageVector = RhythmIcons.Forward,
-                                                contentDescription = null,
-                                                modifier = Modifier.size(20.dp)
-                                            )
-                                        }
-                                    }
+                                    backButton = tabletBackButton,
+                                    nextButton = tabletNextButton
                                 )
                             }
                             OnboardingStep.LIBRARY_SETUP -> {
@@ -1290,78 +609,8 @@ fun OnboardingScreen(
                                     onOpenArtistArtworkSource = { showArtistArtworkSourceBottomSheet = true },
                                     onOpenDelimiterBottomSheet = { showDelimiterBottomSheet = true },
                                     isTablet = isTablet,
-                                    backButton = if (stepIndex > 0) {
-                                        {
-                                            val buttonScale = remember { Animatable(1f) }
-                                            OutlinedButton(
-                                                onClick = {
-                                                    scope.launch {
-                                                        buttonScale.animateTo(0.92f, animationSpec = tween(100))
-                                                        buttonScale.animateTo(1f, animationSpec = spring(
-                                                            dampingRatio = Spring.DampingRatioMediumBouncy,
-                                                            stiffness = Spring.StiffnessHigh
-                                                        ))
-                                                    }
-                                                    onPrevStep()
-                                                },
-                                                modifier = Modifier
-                                                    .height(56.dp)
-                                                    .graphicsLayer {
-                                                        scaleX = buttonScale.value
-                                                        scaleY = buttonScale.value
-                                                    },
-                                                shape = RoundedCornerShape(32.dp)
-                                            ) {
-                                                Icon(
-                                                    imageVector = RhythmIcons.Back,
-                                                    contentDescription = null,
-                                                    modifier = Modifier.size(20.dp)
-                                                )
-                                                Spacer(modifier = Modifier.width(8.dp))
-                                                Text(context.getString(R.string.onboarding_back), style = MaterialTheme.typography.labelLarge)
-                                            }
-                                        }
-                                    } else null,
-                                    nextButton = {
-                                        val nextButtonScale = remember { Animatable(1f) }
-                                        Button(
-                                            onClick = {
-                                                scope.launch {
-                                                    nextButtonScale.animateTo(0.92f, animationSpec = tween(100))
-                                                    nextButtonScale.animateTo(1f, animationSpec = spring(
-                                                        dampingRatio = Spring.DampingRatioMediumBouncy,
-                                                        stiffness = Spring.StiffnessHigh
-                                                    ))
-                                                }
-                                                HapticUtils.performHapticFeedback(context, haptic, HapticType.HEAVY)
-                                                onNextStep()
-                                            },
-                                            modifier = Modifier
-                                                .height(56.dp)
-                                                .graphicsLayer {
-                                                    scaleX = nextButtonScale.value
-                                                    scaleY = nextButtonScale.value
-                                                },
-                                            colors = ButtonDefaults.buttonColors(
-                                                containerColor = MaterialTheme.colorScheme.primary,
-                                                contentColor = MaterialTheme.colorScheme.onPrimary
-                                            ),
-                                            shape = RoundedCornerShape(32.dp)
-                                        ) {
-                                            Text(
-                                                context.getString(R.string.onboarding_next),
-                                                style = MaterialTheme.typography.labelLarge.copy(
-                                                    fontWeight = FontWeight.Bold
-                                                )
-                                            )
-                                            Spacer(modifier = Modifier.width(8.dp))
-                                            Icon(
-                                                imageVector = RhythmIcons.Forward,
-                                                contentDescription = null,
-                                                modifier = Modifier.size(20.dp)
-                                            )
-                                        }
-                                    }
+                                    backButton = tabletBackButton,
+                                    nextButton = tabletNextButton
                                 )
                             }
                             OnboardingStep.MEDIA_SCAN -> {
@@ -1370,78 +619,8 @@ fun OnboardingScreen(
                                     onSkip = onNextStep,
                                     appSettings = appSettings,
                                     isTablet = isTablet,
-                                    backButton = if (stepIndex > 0) {
-                                        {
-                                            val buttonScale = remember { Animatable(1f) }
-                                            OutlinedButton(
-                                                onClick = {
-                                                    scope.launch {
-                                                        buttonScale.animateTo(0.92f, animationSpec = tween(100))
-                                                        buttonScale.animateTo(1f, animationSpec = spring(
-                                                            dampingRatio = Spring.DampingRatioMediumBouncy,
-                                                            stiffness = Spring.StiffnessHigh
-                                                        ))
-                                                    }
-                                                    onPrevStep()
-                                                },
-                                                modifier = Modifier
-                                                    .height(56.dp)
-                                                    .graphicsLayer {
-                                                        scaleX = buttonScale.value
-                                                        scaleY = buttonScale.value
-                                                    },
-                                                shape = RoundedCornerShape(32.dp)
-                                            ) {
-                                                Icon(
-                                                    imageVector = RhythmIcons.Back,
-                                                    contentDescription = null,
-                                                    modifier = Modifier.size(20.dp)
-                                                )
-                                                Spacer(modifier = Modifier.width(8.dp))
-                                                Text(context.getString(R.string.onboarding_back), style = MaterialTheme.typography.labelLarge)
-                                            }
-                                        }
-                                    } else null,
-                                    nextButton = {
-                                        val nextButtonScale = remember { Animatable(1f) }
-                                        Button(
-                                            onClick = {
-                                                scope.launch {
-                                                    nextButtonScale.animateTo(0.92f, animationSpec = tween(100))
-                                                    nextButtonScale.animateTo(1f, animationSpec = spring(
-                                                        dampingRatio = Spring.DampingRatioMediumBouncy,
-                                                        stiffness = Spring.StiffnessHigh
-                                                    ))
-                                                }
-                                                HapticUtils.performHapticFeedback(context, haptic, HapticType.HEAVY)
-                                                onNextStep()
-                                            },
-                                            modifier = Modifier
-                                                .height(56.dp)
-                                                .graphicsLayer {
-                                                    scaleX = nextButtonScale.value
-                                                    scaleY = nextButtonScale.value
-                                                },
-                                            colors = ButtonDefaults.buttonColors(
-                                                containerColor = MaterialTheme.colorScheme.primary,
-                                                contentColor = MaterialTheme.colorScheme.onPrimary
-                                            ),
-                                            shape = RoundedCornerShape(32.dp)
-                                        ) {
-                                            Text(
-                                                context.getString(R.string.onboarding_next),
-                                                style = MaterialTheme.typography.labelLarge.copy(
-                                                    fontWeight = FontWeight.Bold
-                                                )
-                                            )
-                                            Spacer(modifier = Modifier.width(8.dp))
-                                            Icon(
-                                                imageVector = RhythmIcons.Forward,
-                                                contentDescription = null,
-                                                modifier = Modifier.size(20.dp)
-                                            )
-                                        }
-                                    }
+                                    backButton = tabletBackButton,
+                                    nextButton = tabletNextButton
                                 )
                             }
                             OnboardingStep.WIDGETS -> {
@@ -1449,78 +628,8 @@ fun OnboardingScreen(
                                     onNextStep = onNextStep,
                                     appSettings = appSettings,
                                     isTablet = isTablet,
-                                    backButton = if (stepIndex > 0) {
-                                        {
-                                            val buttonScale = remember { Animatable(1f) }
-                                            OutlinedButton(
-                                                onClick = {
-                                                    scope.launch {
-                                                        buttonScale.animateTo(0.92f, animationSpec = tween(100))
-                                                        buttonScale.animateTo(1f, animationSpec = spring(
-                                                            dampingRatio = Spring.DampingRatioMediumBouncy,
-                                                            stiffness = Spring.StiffnessHigh
-                                                        ))
-                                                    }
-                                                    onPrevStep()
-                                                },
-                                                modifier = Modifier
-                                                    .height(56.dp)
-                                                    .graphicsLayer {
-                                                        scaleX = buttonScale.value
-                                                        scaleY = buttonScale.value
-                                                    },
-                                                shape = RoundedCornerShape(32.dp)
-                                            ) {
-                                                Icon(
-                                                    imageVector = RhythmIcons.Back,
-                                                    contentDescription = null,
-                                                    modifier = Modifier.size(20.dp)
-                                                )
-                                                Spacer(modifier = Modifier.width(8.dp))
-                                                Text(context.getString(R.string.onboarding_back), style = MaterialTheme.typography.labelLarge)
-                                            }
-                                        }
-                                    } else null,
-                                    nextButton = {
-                                        val nextButtonScale = remember { Animatable(1f) }
-                                        Button(
-                                            onClick = {
-                                                scope.launch {
-                                                    nextButtonScale.animateTo(0.92f, animationSpec = tween(100))
-                                                    nextButtonScale.animateTo(1f, animationSpec = spring(
-                                                        dampingRatio = Spring.DampingRatioMediumBouncy,
-                                                        stiffness = Spring.StiffnessHigh
-                                                    ))
-                                                }
-                                                HapticUtils.performHapticFeedback(context, haptic, HapticType.HEAVY)
-                                                onNextStep()
-                                            },
-                                            modifier = Modifier
-                                                .height(56.dp)
-                                                .graphicsLayer {
-                                                    scaleX = nextButtonScale.value
-                                                    scaleY = nextButtonScale.value
-                                                },
-                                            colors = ButtonDefaults.buttonColors(
-                                                containerColor = MaterialTheme.colorScheme.primary,
-                                                contentColor = MaterialTheme.colorScheme.onPrimary
-                                            ),
-                                            shape = RoundedCornerShape(32.dp)
-                                        ) {
-                                            Text(
-                                                context.getString(R.string.onboarding_next),
-                                                style = MaterialTheme.typography.labelLarge.copy(
-                                                    fontWeight = FontWeight.Bold
-                                                )
-                                            )
-                                            Spacer(modifier = Modifier.width(8.dp))
-                                            Icon(
-                                                imageVector = RhythmIcons.Forward,
-                                                contentDescription = null,
-                                                modifier = Modifier.size(20.dp)
-                                            )
-                                        }
-                                    }
+                                    backButton = tabletBackButton,
+                                    nextButton = tabletNextButton
                                 )
                             }
                             OnboardingStep.INTEGRATIONS -> {
@@ -1530,78 +639,8 @@ fun OnboardingScreen(
                                     isTablet = isTablet,
                                     onLyricallyConfigure = { showLyricallySourcesBottomSheet = true },
                                     onAppleCanvasConfigure = { showCanvasNetworkModeDialog = true },
-                                    backButton = if (stepIndex > 0) {
-                                        {
-                                            val buttonScale = remember { Animatable(1f) }
-                                            OutlinedButton(
-                                                onClick = {
-                                                    scope.launch {
-                                                        buttonScale.animateTo(0.92f, animationSpec = tween(100))
-                                                        buttonScale.animateTo(1f, animationSpec = spring(
-                                                            dampingRatio = Spring.DampingRatioMediumBouncy,
-                                                            stiffness = Spring.StiffnessHigh
-                                                        ))
-                                                    }
-                                                    onPrevStep()
-                                                },
-                                                modifier = Modifier
-                                                    .height(56.dp)
-                                                    .graphicsLayer {
-                                                        scaleX = buttonScale.value
-                                                        scaleY = buttonScale.value
-                                                    },
-                                                shape = RoundedCornerShape(32.dp)
-                                            ) {
-                                                Icon(
-                                                    imageVector = RhythmIcons.Back,
-                                                    contentDescription = null,
-                                                    modifier = Modifier.size(20.dp)
-                                                )
-                                                Spacer(modifier = Modifier.width(8.dp))
-                                                Text(context.getString(R.string.onboarding_back), style = MaterialTheme.typography.labelLarge)
-                                            }
-                                        }
-                                    } else null,
-                                    nextButton = {
-                                        val nextButtonScale = remember { Animatable(1f) }
-                                        Button(
-                                            onClick = {
-                                                scope.launch {
-                                                    nextButtonScale.animateTo(0.92f, animationSpec = tween(100))
-                                                    nextButtonScale.animateTo(1f, animationSpec = spring(
-                                                        dampingRatio = Spring.DampingRatioMediumBouncy,
-                                                        stiffness = Spring.StiffnessHigh
-                                                    ))
-                                                }
-                                                HapticUtils.performHapticFeedback(context, haptic, HapticType.HEAVY)
-                                                onNextStep()
-                                            },
-                                            modifier = Modifier
-                                                .height(56.dp)
-                                                .graphicsLayer {
-                                                    scaleX = nextButtonScale.value
-                                                    scaleY = nextButtonScale.value
-                                                },
-                                            colors = ButtonDefaults.buttonColors(
-                                                containerColor = MaterialTheme.colorScheme.primary,
-                                                contentColor = MaterialTheme.colorScheme.onPrimary
-                                            ),
-                                            shape = RoundedCornerShape(32.dp)
-                                        ) {
-                                            Text(
-                                                context.getString(R.string.onboarding_next),
-                                                style = MaterialTheme.typography.labelLarge.copy(
-                                                    fontWeight = FontWeight.Bold
-                                                )
-                                            )
-                                            Spacer(modifier = Modifier.width(8.dp))
-                                            Icon(
-                                                imageVector = RhythmIcons.Forward,
-                                                contentDescription = null,
-                                                modifier = Modifier.size(20.dp)
-                                            )
-                                        }
-                                    }
+                                    backButton = tabletBackButton,
+                                    nextButton = tabletNextButton
                                 )
                             }
                             OnboardingStep.RHYTHM_STATS -> {
@@ -1609,78 +648,8 @@ fun OnboardingScreen(
                                     onNextStep = onNextStep,
                                     appSettings = appSettings,
                                     isTablet = isTablet,
-                                    backButton = if (stepIndex > 0) {
-                                        {
-                                            val buttonScale = remember { Animatable(1f) }
-                                            OutlinedButton(
-                                                onClick = {
-                                                    scope.launch {
-                                                        buttonScale.animateTo(0.92f, animationSpec = tween(100))
-                                                        buttonScale.animateTo(1f, animationSpec = spring(
-                                                            dampingRatio = Spring.DampingRatioMediumBouncy,
-                                                            stiffness = Spring.StiffnessHigh
-                                                        ))
-                                                    }
-                                                    onPrevStep()
-                                                },
-                                                modifier = Modifier
-                                                    .height(56.dp)
-                                                    .graphicsLayer {
-                                                        scaleX = buttonScale.value
-                                                        scaleY = buttonScale.value
-                                                    },
-                                                shape = RoundedCornerShape(32.dp)
-                                            ) {
-                                                Icon(
-                                                    imageVector = RhythmIcons.Back,
-                                                    contentDescription = null,
-                                                    modifier = Modifier.size(20.dp)
-                                                )
-                                                Spacer(modifier = Modifier.width(8.dp))
-                                                Text(context.getString(R.string.onboarding_back), style = MaterialTheme.typography.labelLarge)
-                                            }
-                                        }
-                                    } else null,
-                                    nextButton = {
-                                        val nextButtonScale = remember { Animatable(1f) }
-                                        Button(
-                                            onClick = {
-                                                scope.launch {
-                                                    nextButtonScale.animateTo(0.92f, animationSpec = tween(100))
-                                                    nextButtonScale.animateTo(1f, animationSpec = spring(
-                                                        dampingRatio = Spring.DampingRatioMediumBouncy,
-                                                        stiffness = Spring.StiffnessHigh
-                                                    ))
-                                                }
-                                                HapticUtils.performHapticFeedback(context, haptic, HapticType.HEAVY)
-                                                onNextStep()
-                                            },
-                                            modifier = Modifier
-                                                .height(56.dp)
-                                                .graphicsLayer {
-                                                    scaleX = nextButtonScale.value
-                                                    scaleY = nextButtonScale.value
-                                                },
-                                            colors = ButtonDefaults.buttonColors(
-                                                containerColor = MaterialTheme.colorScheme.primary,
-                                                contentColor = MaterialTheme.colorScheme.onPrimary
-                                            ),
-                                            shape = RoundedCornerShape(32.dp)
-                                        ) {
-                                            Text(
-                                                context.getString(R.string.onboarding_next),
-                                                style = MaterialTheme.typography.labelLarge.copy(
-                                                    fontWeight = FontWeight.Bold
-                                                )
-                                            )
-                                            Spacer(modifier = Modifier.width(8.dp))
-                                            Icon(
-                                                imageVector = RhythmIcons.Forward,
-                                                contentDescription = null,
-                                                modifier = Modifier.size(20.dp)
-                                            )
-                                        }
-                                    }
+                                    backButton = tabletBackButton,
+                                    nextButton = tabletNextButton
                                 )
                             }
                             OnboardingStep.UPDATER -> {
@@ -1689,78 +658,8 @@ fun OnboardingScreen(
                                     appSettings = appSettings,
                                     updaterViewModel = updaterViewModel,
                                     isTablet = isTablet,
-                                    backButton = if (stepIndex > 0) {
-                                        {
-                                            val buttonScale = remember { Animatable(1f) }
-                                            OutlinedButton(
-                                                onClick = {
-                                                    scope.launch {
-                                                        buttonScale.animateTo(0.92f, animationSpec = tween(100))
-                                                        buttonScale.animateTo(1f, animationSpec = spring(
-                                                            dampingRatio = Spring.DampingRatioMediumBouncy,
-                                                            stiffness = Spring.StiffnessHigh
-                                                        ))
-                                                    }
-                                                    onPrevStep()
-                                                },
-                                                modifier = Modifier
-                                                    .height(56.dp)
-                                                    .graphicsLayer {
-                                                        scaleX = buttonScale.value
-                                                        scaleY = buttonScale.value
-                                                    },
-                                                shape = RoundedCornerShape(32.dp)
-                                            ) {
-                                                Icon(
-                                                    imageVector = RhythmIcons.Back,
-                                                    contentDescription = null,
-                                                    modifier = Modifier.size(20.dp)
-                                                )
-                                                Spacer(modifier = Modifier.width(8.dp))
-                                                Text(context.getString(R.string.onboarding_back), style = MaterialTheme.typography.labelLarge)
-                                            }
-                                        }
-                                    } else null,
-                                    nextButton = {
-                                        val nextButtonScale = remember { Animatable(1f) }
-                                        Button(
-                                            onClick = {
-                                                scope.launch {
-                                                    nextButtonScale.animateTo(0.92f, animationSpec = tween(100))
-                                                    nextButtonScale.animateTo(1f, animationSpec = spring(
-                                                        dampingRatio = Spring.DampingRatioMediumBouncy,
-                                                        stiffness = Spring.StiffnessHigh
-                                                    ))
-                                                }
-                                                HapticUtils.performHapticFeedback(context, haptic, HapticType.HEAVY)
-                                                onNextStep()
-                                            },
-                                            modifier = Modifier
-                                                .height(56.dp)
-                                                .graphicsLayer {
-                                                    scaleX = nextButtonScale.value
-                                                    scaleY = nextButtonScale.value
-                                                },
-                                            colors = ButtonDefaults.buttonColors(
-                                                containerColor = MaterialTheme.colorScheme.primary,
-                                                contentColor = MaterialTheme.colorScheme.onPrimary
-                                            ),
-                                            shape = RoundedCornerShape(32.dp)
-                                        ) {
-                                            Text(
-                                                context.getString(R.string.onboarding_next),
-                                                style = MaterialTheme.typography.labelLarge.copy(
-                                                    fontWeight = FontWeight.Bold
-                                                )
-                                            )
-                                            Spacer(modifier = Modifier.width(8.dp))
-                                            Icon(
-                                                imageVector = RhythmIcons.Forward,
-                                                contentDescription = null,
-                                                modifier = Modifier.size(20.dp)
-                                            )
-                                        }
-                                    }
+                                    backButton = tabletBackButton,
+                                    nextButton = tabletNextButton
                                 )
                             }
                             OnboardingStep.FULL_TOUR_PROMPT -> {
@@ -1768,116 +667,15 @@ fun OnboardingScreen(
                                     onContinueFullTour = onContinueFullTour,
                                     onSkipFullTour = onSkipFullTour,
                                     isTablet = isTablet,
-                                    backButton = if (stepIndex > 0) {
-                                        {
-                                            val buttonScale = remember { Animatable(1f) }
-                                            OutlinedButton(
-                                                onClick = {
-                                                    scope.launch {
-                                                        buttonScale.animateTo(0.92f, animationSpec = tween(100))
-                                                        buttonScale.animateTo(1f, animationSpec = spring(
-                                                            dampingRatio = Spring.DampingRatioMediumBouncy,
-                                                            stiffness = Spring.StiffnessHigh
-                                                        ))
-                                                    }
-                                                    onPrevStep()
-                                                },
-                                                modifier = Modifier
-                                                    .height(56.dp)
-                                                    .graphicsLayer {
-                                                        scaleX = buttonScale.value
-                                                        scaleY = buttonScale.value
-                                                    },
-                                                shape = RoundedCornerShape(32.dp)
-                                            ) {
-                                                Icon(
-                                                    imageVector = RhythmIcons.Back,
-                                                    contentDescription = null,
-                                                    modifier = Modifier.size(20.dp)
-                                                )
-                                                Spacer(modifier = Modifier.width(8.dp))
-                                                Text(context.getString(R.string.onboarding_back), style = MaterialTheme.typography.labelLarge)
-                                            }
-                                        }
-                                    } else null
+                                    backButton = tabletBackButton
                                 )
                             }
                             OnboardingStep.SETUP_FINISHED -> {
                                 EnhancedSetupFinishedContent(
                                     onFinish = onFinish,
                                     isTablet = isTablet,
-                                    backButton = if (stepIndex > 0) {
-                                        {
-                                            val buttonScale = remember { Animatable(1f) }
-                                            OutlinedButton(
-                                                onClick = {
-                                                    scope.launch {
-                                                        buttonScale.animateTo(0.92f, animationSpec = tween(100))
-                                                        buttonScale.animateTo(1f, animationSpec = spring(
-                                                            dampingRatio = Spring.DampingRatioMediumBouncy,
-                                                            stiffness = Spring.StiffnessHigh
-                                                        ))
-                                                    }
-                                                    onPrevStep()
-                                                },
-                                                modifier = Modifier
-                                                    .height(56.dp)
-                                                    .graphicsLayer {
-                                                        scaleX = buttonScale.value
-                                                        scaleY = buttonScale.value
-                                                    },
-                                                shape = RoundedCornerShape(32.dp)
-                                            ) {
-                                                Icon(
-                                                    imageVector = RhythmIcons.Back,
-                                                    contentDescription = null,
-                                                    modifier = Modifier.size(20.dp)
-                                                )
-                                                Spacer(modifier = Modifier.width(8.dp))
-                                                Text(context.getString(R.string.onboarding_back), style = MaterialTheme.typography.labelLarge)
-                                            }
-                                        }
-                                    } else null,
-                                    nextButton = {
-                                        val nextButtonScale = remember { Animatable(1f) }
-                                        Button(
-                                            onClick = {
-                                                scope.launch {
-                                                    nextButtonScale.animateTo(0.92f, animationSpec = tween(100))
-                                                    nextButtonScale.animateTo(1f, animationSpec = spring(
-                                                        dampingRatio = Spring.DampingRatioMediumBouncy,
-                                                        stiffness = Spring.StiffnessHigh
-                                                    ))
-                                                }
-                                                HapticUtils.performHapticFeedback(context, haptic, HapticType.HEAVY)
-                                                onFinish()
-                                            },
-                                            modifier = Modifier
-                                                .height(56.dp)
-                                                .graphicsLayer {
-                                                    scaleX = nextButtonScale.value
-                                                    scaleY = nextButtonScale.value
-                                                },
-                                            colors = ButtonDefaults.buttonColors(
-                                                containerColor = MaterialTheme.colorScheme.primary,
-                                                contentColor = MaterialTheme.colorScheme.onPrimary
-                                            ),
-                                            shape = RoundedCornerShape(32.dp)
-                                        ) {
-                                            Text(
-                                                context.getString(R.string.onboarding_finish_setup),
-                                                style = MaterialTheme.typography.labelLarge.copy(
-                                                    fontWeight = FontWeight.Bold
-                                                )
-                                            )
-                                            Spacer(modifier = Modifier.width(8.dp))
-                                            Icon(
-                                                imageVector = RhythmIcons.Check,
-                                                contentDescription = null,
-                                                modifier = Modifier.size(20.dp)
-                                            )
-                                        }
-                                    }
+                                    backButton = tabletBackButton,
+                                    nextButton = tabletNextButton
                                 )
                             }
                             OnboardingStep.COMPLETE -> {
@@ -1938,35 +736,10 @@ fun OnboardingScreen(
                             )
                         )
                     ) {
-                        val buttonScale = remember { Animatable(1f) }
-
-                        OutlinedButton(
-                            onClick = {
-                                scope.launch {
-                                    buttonScale.animateTo(0.92f, animationSpec = tween(100))
-                                    buttonScale.animateTo(1f, animationSpec = spring(
-                                        dampingRatio = Spring.DampingRatioMediumBouncy,
-                                        stiffness = Spring.StiffnessHigh
-                                    ))
-                                }
-                                onPrevStep()
-                            },
-                            modifier = Modifier
-                                .height(if (isTablet) 56.dp else 48.dp)
-                                .graphicsLayer {
-                                    scaleX = buttonScale.value
-                                    scaleY = buttonScale.value
-                                },
-                            shape = RoundedCornerShape(32.dp)
-                        ) {
-                            Icon(
-                                imageVector = RhythmIcons.Back,
-                                contentDescription = null,
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(context.getString(R.string.onboarding_back), style = MaterialTheme.typography.labelLarge)
-                        }
+                        OnboardingBackButton(
+                            onClick = onPrevStep,
+                            modifier = Modifier.height(48.dp)
+                        )
                     }
 
                     // App logo and step count - centered between back and next buttons
@@ -2000,22 +773,10 @@ fun OnboardingScreen(
                         }
                     }
 
-                    // Next/Finish button with spring animation
-                    val nextButtonScale = remember { Animatable(1f) }
-
-                    Button(
+                    OnboardingNextButton(
                         onClick = {
-                            scope.launch {
-                                nextButtonScale.animateTo(0.92f, animationSpec = tween(100))
-                                nextButtonScale.animateTo(1f, animationSpec = spring(
-                                    dampingRatio = Spring.DampingRatioMediumBouncy,
-                                    stiffness = Spring.StiffnessHigh
-                                ))
-                            }
-                            HapticUtils.performHapticFeedback(context, haptic, HapticType.HEAVY)
                             when (currentStep) {
                                 OnboardingStep.PERMISSIONS -> {
-                                    // For permission step, handle based on state
                                     when (permissionScreenState) {
                                         PermissionScreenState.RedirectToSettings -> {
                                             val intent = android.content.Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
@@ -2024,11 +785,11 @@ fun OnboardingScreen(
                                             onRequestAgain()
                                         }
                                         PermissionScreenState.PermissionsGranted -> onNextStep()
-                                        PermissionScreenState.Loading -> { /* Do nothing while loading */ }
-                                        else -> onNextStep() // Trigger permission request
+                                        PermissionScreenState.Loading -> {}
+                                        else -> onNextStep()
                                     }
                                 }
-                                else -> onNextStep() // All other steps just go next
+                                else -> onNextStep()
                             }
                         },
                         enabled = when (currentStep) {
@@ -2036,91 +797,28 @@ fun OnboardingScreen(
                             OnboardingStep.STREAMING_SETUP -> isStreamingServiceConnected
                             else -> true
                         },
-                        modifier = Modifier
-                            .height(if (isTablet) 56.dp else 48.dp)
-                            .graphicsLayer {
-                                scaleX = nextButtonScale.value
-                                scaleY = nextButtonScale.value
-                            },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = when (currentStep) {
-                                OnboardingStep.PERMISSIONS -> when (permissionScreenState) {
-                                    PermissionScreenState.PermissionsGranted -> MaterialTheme.colorScheme.primary
-                                    PermissionScreenState.RedirectToSettings -> MaterialTheme.colorScheme.error
-                                    else -> MaterialTheme.colorScheme.primary
-                                }
-                                else -> MaterialTheme.colorScheme.primary
-                            },
-                            contentColor = when (currentStep) {
-                                OnboardingStep.PERMISSIONS -> when (permissionScreenState) {
-                                    PermissionScreenState.PermissionsGranted -> MaterialTheme.colorScheme.onPrimary
-                                    PermissionScreenState.RedirectToSettings -> MaterialTheme.colorScheme.onError
-                                    else -> MaterialTheme.colorScheme.onPrimary
-                                }
-                                else -> MaterialTheme.colorScheme.onPrimary
+                        isLoading = currentStep == OnboardingStep.PERMISSIONS && isParentLoading,
+                        text = when {
+                            currentStep == OnboardingStep.SETUP_FINISHED -> context.getString(R.string.onboarding_lets_go)
+                            currentStep == OnboardingStep.PERMISSIONS -> when (permissionScreenState) {
+                                PermissionScreenState.PermissionsGranted -> context.getString(R.string.onboarding_continue)
+                                PermissionScreenState.RedirectToSettings -> context.getString(R.string.onboarding_open_settings)
+                                else -> context.getString(R.string.onboarding_grant_access)
                             }
-                        ),
-                        shape = RoundedCornerShape(32.dp)
-                    ) {
-                        Crossfade(
-                            targetState = currentStep == OnboardingStep.PERMISSIONS && isParentLoading,
-                            animationSpec = tween(300),
-                            label = "buttonContent"
-                        ) { loading ->
-                            if (loading) {
-                                Row(
-                                    horizontalArrangement = Arrangement.Center,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    DataProcessingLoader(
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text(
-                                        context.getString(R.string.onboarding_checking),
-                                        style = MaterialTheme.typography.labelLarge
-                                    )
-                                }
-                            } else {
-                                Row(
-                                    horizontalArrangement = Arrangement.Center,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    val buttonText = when {
-                                        currentStep == OnboardingStep.SETUP_FINISHED -> context.getString(R.string.onboarding_lets_go)
-                                        currentStep == OnboardingStep.PERMISSIONS -> when (permissionScreenState) {
-                                            PermissionScreenState.PermissionsGranted -> context.getString(R.string.onboarding_continue)
-                                            PermissionScreenState.RedirectToSettings -> context.getString(R.string.onboarding_open_settings)
-                                            else -> context.getString(R.string.onboarding_grant_access)
-                                        }
-                                        else -> context.getString(R.string.onboarding_next)
-                                    }
-                                    val buttonIcon = when {
-                                        currentStep == OnboardingStep.SETUP_FINISHED -> RhythmIcons.Check
-                                        currentStep == OnboardingStep.PERMISSIONS -> when (permissionScreenState) {
-                                            PermissionScreenState.PermissionsGranted -> RhythmIcons.Forward
-                                            PermissionScreenState.RedirectToSettings -> RhythmIcons.Security
-                                            else -> RhythmIcons.Security
-                                        }
-                                        else -> RhythmIcons.Forward
-                                    }
-
-                                    Text(
-                                        buttonText,
-                                        style = MaterialTheme.typography.labelLarge.copy(
-                                            fontWeight = FontWeight.Bold
-                                        )
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Icon(
-                                        imageVector = buttonIcon,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                }
+                            else -> context.getString(R.string.onboarding_next)
+                        },
+                        icon = when {
+                            currentStep == OnboardingStep.SETUP_FINISHED -> RhythmIcons.Check
+                            currentStep == OnboardingStep.PERMISSIONS -> when (permissionScreenState) {
+                                PermissionScreenState.PermissionsGranted -> RhythmIcons.Forward
+                                PermissionScreenState.RedirectToSettings -> RhythmIcons.Security
+                                else -> RhythmIcons.Security
                             }
-                        }
-                    }
+                            else -> RhythmIcons.Forward
+                        },
+                        isError = currentStep == OnboardingStep.PERMISSIONS && permissionScreenState == PermissionScreenState.RedirectToSettings,
+                        modifier = Modifier.height(48.dp)
+                    )
                 }
             }
         }
@@ -2221,6 +919,167 @@ private fun OnboardingTopBackButton(onBackClick: () -> Unit) {
                 contentDescription = stringResource(R.string.cd_back),
                 tint = MaterialTheme.colorScheme.onSurface
             )
+        }
+    }
+}
+
+@Composable
+fun OnboardingBackButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    height: Dp = 48.dp,
+    enabled: Boolean = true,
+    text: String = stringResource(R.string.onboarding_back),
+    isFirst: Boolean = true,
+    isLast: Boolean = true
+) {
+    val context = LocalContext.current
+    val haptic = LocalHapticFeedback.current
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+
+    val halfR = height / 2
+    val pressedR = height * 0.3f
+    val animCorner by animateDpAsState(
+        targetValue = if (isPressed) pressedR else halfR,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessMedium
+        ),
+        label = "onboardingBackCorner"
+    )
+
+    val innerCorner = 12.dp
+    val shape = RoundedCornerShape(
+        topStart = if (isFirst) animCorner else innerCorner,
+        bottomStart = if (isFirst) animCorner else innerCorner,
+        topEnd = if (isLast) animCorner else innerCorner,
+        bottomEnd = if (isLast) animCorner else innerCorner
+    )
+
+    FilledTonalButton(
+        onClick = {
+            HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
+            onClick()
+        },
+        enabled = enabled,
+        modifier = modifier.height(height),
+        shape = shape,
+        colors = ButtonDefaults.filledTonalButtonColors(
+            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+            contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+        ),
+        interactionSource = interactionSource,
+        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 0.dp)
+    ) {
+        Icon(
+            imageVector = RhythmIcons.Back,
+            contentDescription = null,
+            modifier = Modifier.size(20.dp)
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+            text = text,
+            style = MaterialTheme.typography.labelLarge.copy(
+                fontWeight = FontWeight.Medium
+            )
+        )
+    }
+}
+
+@Composable
+fun OnboardingNextButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    height: Dp = 48.dp,
+    enabled: Boolean = true,
+    isLoading: Boolean = false,
+    text: String = stringResource(R.string.onboarding_next),
+    icon: MaterialSymbolIcon = RhythmIcons.Forward,
+    isError: Boolean = false,
+    isFirst: Boolean = true,
+    isLast: Boolean = true
+) {
+    val context = LocalContext.current
+    val haptic = LocalHapticFeedback.current
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+
+    val halfR = height / 2
+    val pressedR = height * 0.3f
+    val animCorner by animateDpAsState(
+        targetValue = if (isPressed) pressedR else halfR,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessMedium
+        ),
+        label = "onboardingNextCorner"
+    )
+
+    val innerCorner = 12.dp
+    val shape = RoundedCornerShape(
+        topStart = if (isFirst) animCorner else innerCorner,
+        bottomStart = if (isFirst) animCorner else innerCorner,
+        topEnd = if (isLast) animCorner else innerCorner,
+        bottomEnd = if (isLast) animCorner else innerCorner
+    )
+
+    val containerColor = if (isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+    val contentColor = if (isError) MaterialTheme.colorScheme.onError else MaterialTheme.colorScheme.onPrimary
+
+    Button(
+        onClick = {
+            HapticUtils.performHapticFeedback(context, haptic, HapticType.HEAVY)
+            onClick()
+        },
+        enabled = enabled,
+        modifier = modifier.height(height),
+        shape = shape,
+        colors = ButtonDefaults.buttonColors(
+            containerColor = containerColor,
+            contentColor = contentColor
+        ),
+        interactionSource = interactionSource,
+        contentPadding = PaddingValues(horizontal = 24.dp, vertical = 0.dp)
+    ) {
+        Crossfade(
+            targetState = isLoading,
+            animationSpec = tween(300),
+            label = "nextButtonContent"
+        ) { loading ->
+            if (loading) {
+                Row(
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    DataProcessingLoader(
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = stringResource(R.string.onboarding_checking),
+                        style = MaterialTheme.typography.labelLarge
+                    )
+                }
+            } else {
+                Row(
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = text,
+                        style = MaterialTheme.typography.labelLarge.copy(
+                            fontWeight = FontWeight.Bold
+                        )
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
         }
     }
 }
@@ -2438,9 +1297,8 @@ fun EnhancedWelcomeContent(
                 }
             }
 
-            // Language switcher dialog
             if (showLanguageSwitcher) {
-                LanguageSwitcherDialog(
+                LanguageSwitcherBottomSheet(
                     onDismiss = { showLanguageSwitcher = false }
                 )
             }
@@ -2636,7 +1494,7 @@ fun EnhancedPermissionContent(
                 // Action buttons
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     backButton?.invoke()
@@ -2651,9 +1509,10 @@ fun EnhancedPermissionContent(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 // Enhanced permission explanation cards
+                val totalPermissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) 3 else 2
                 Column(
                     modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     EnhancedPermissionCard(
                         icon = RhythmIcons.MusicNote,
@@ -2661,7 +1520,8 @@ fun EnhancedPermissionContent(
                         description = context.getString(R.string.onboarding_permission_music_desc),
                         isGranted = storagePermissions.all { permission ->
                             permissionsState.permissions.find { it.permission == permission }?.status?.isGranted == true
-                        }
+                        },
+                        shape = groupedBottomSheetItemShape(0, totalPermissions)
                     )
 
                     EnhancedPermissionCard(
@@ -2670,7 +1530,8 @@ fun EnhancedPermissionContent(
                         description = context.getString(R.string.onboarding_permission_bluetooth_desc),
                         isGranted = bluetoothPermissions.all { permission ->
                             permissionsState.permissions.find { it.permission == permission }?.status?.isGranted == true
-                        }
+                        },
+                        shape = groupedBottomSheetItemShape(1, totalPermissions)
                     )
 
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -2680,7 +1541,8 @@ fun EnhancedPermissionContent(
                             description = context.getString(R.string.onboarding_permission_notifications_desc),
                             isGranted = notificationPermissions.all { permission ->
                                 permissionsState.permissions.find { it.permission == permission }?.status?.isGranted == true
-                            }
+                            },
+                            shape = groupedBottomSheetItemShape(2, totalPermissions)
                         )
                     }
                 }
@@ -2824,9 +1686,10 @@ fun EnhancedPermissionContent(
             }
 
             // Enhanced permission explanation cards
+            val totalPermissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) 3 else 2
             Column(
                 modifier = Modifier.padding(bottom = 32.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 EnhancedPermissionCard(
                     icon = RhythmIcons.MusicNote,
@@ -2834,7 +1697,8 @@ fun EnhancedPermissionContent(
                     description = context.getString(R.string.onboarding_permission_music_desc),
                     isGranted = storagePermissions.all { permission ->
                         permissionsState.permissions.find { it.permission == permission }?.status?.isGranted == true
-                    }
+                    },
+                    shape = groupedBottomSheetItemShape(0, totalPermissions)
                 )
 
                 EnhancedPermissionCard(
@@ -2843,7 +1707,8 @@ fun EnhancedPermissionContent(
                     description = context.getString(R.string.onboarding_permission_bluetooth_desc),
                     isGranted = bluetoothPermissions.all { permission ->
                         permissionsState.permissions.find { it.permission == permission }?.status?.isGranted == true
-                    }
+                    },
+                    shape = groupedBottomSheetItemShape(1, totalPermissions)
                 )
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -2853,7 +1718,8 @@ fun EnhancedPermissionContent(
                         description = context.getString(R.string.onboarding_permission_notifications_desc),
                         isGranted = notificationPermissions.all { permission ->
                             permissionsState.permissions.find { it.permission == permission }?.status?.isGranted == true
-                        }
+                        },
+                        shape = groupedBottomSheetItemShape(2, totalPermissions)
                     )
                 }
             }
@@ -2868,15 +1734,16 @@ fun EnhancedPermissionCard(
     icon: MaterialSymbolIcon,
     title: String,
     description: String,
-    isGranted: Boolean = false
+    isGranted: Boolean = false,
+    shape: Shape = RoundedCornerShape(20.dp)
 ) {
     val context = LocalContext.current
-    // Animated state changes
+
     val containerColor by animateColorAsState(
         targetValue = if (isGranted)
-            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+            MaterialTheme.colorScheme.onPrimaryContainer
         else
-            MaterialTheme.colorScheme.surface,
+            MaterialTheme.colorScheme.surfaceContainerHigh,
         animationSpec = spring(
             dampingRatio = Spring.DampingRatioMediumBouncy,
             stiffness = Spring.StiffnessMedium
@@ -2884,21 +1751,39 @@ fun EnhancedPermissionCard(
         label = "containerColor"
     )
 
-    val iconBackgroundColor by animateColorAsState(
+    val contentColor by animateColorAsState(
         targetValue = if (isGranted)
-            MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
+            MaterialTheme.colorScheme.primaryContainer
         else
-            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
-        animationSpec = tween(300),
-        label = "iconBackgroundColor"
+            MaterialTheme.colorScheme.onSurface,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessMedium
+        ),
+        label = "contentColor"
+    )
+
+    val secondaryContentColor by animateColorAsState(
+        targetValue = if (isGranted)
+            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.8f)
+        else
+            MaterialTheme.colorScheme.onSurfaceVariant,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessMedium
+        ),
+        label = "secondaryContentColor"
     )
 
     val iconTint by animateColorAsState(
         targetValue = if (isGranted)
-            MaterialTheme.colorScheme.primary
+            MaterialTheme.colorScheme.primaryContainer
         else
             MaterialTheme.colorScheme.onSurfaceVariant,
-        animationSpec = tween(300),
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessMedium
+        ),
         label = "iconTint"
     )
 
@@ -2911,87 +1796,63 @@ fun EnhancedPermissionCard(
                     stiffness = Spring.StiffnessMedium
                 )
             ),
+        shape = shape,
         colors = CardDefaults.cardColors(
             containerColor = containerColor
-        ),
-        border = if (isGranted)
-            BorderStroke(2.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f))
-        else null
+        )
     ) {
         Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(CircleShape)
-                    .background(iconBackgroundColor),
-                contentAlignment = Alignment.Center
-            ) {
-                // Crossfade between icon and checkmark
-                Crossfade(
-                    targetState = isGranted,
-                    animationSpec = tween(400),
-                    label = "iconCrossfade"
-                ) { granted ->
-                    Icon(
-                        imageVector = if (granted) RhythmIcons.Check else icon,
-                        contentDescription = null,
-                        tint = iconTint,
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
-            }
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = iconTint,
+                modifier = Modifier.size(if (isGranted) 30.dp else 26.dp)
+            )
 
             Spacer(modifier = Modifier.width(16.dp))
 
             Column(modifier = Modifier.weight(1f)) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = title,
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.weight(1f)
-                    )
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = if (isGranted) FontWeight.SemiBold else FontWeight.Medium,
+                    color = contentColor
+                )
 
-                    // Success badge with animation
-                    AnimatedVisibility(
-                        visible = isGranted,
-                        enter = scaleIn(
-                            animationSpec = spring(
-                                dampingRatio = Spring.DampingRatioMediumBouncy,
-                                stiffness = Spring.StiffnessMedium
-                            )
-                        ) + fadeIn(),
-                        exit = scaleOut() + fadeOut()
-                    ) {
-                        Surface(
-                            color = MaterialTheme.colorScheme.primary,
-                            shape = RoundedCornerShape(8.dp)
-                        ) {
-                            Text(
-                                text = context.getString(R.string.onboarding_granted),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onPrimary,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                            )
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(2.dp))
 
                 Text(
                     text = description,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = secondaryContentColor,
                     lineHeight = 18.sp
                 )
+            }
+
+            AnimatedVisibility(
+                visible = isGranted,
+                enter = scaleIn(
+                    animationSpec = spring(
+                        dampingRatio = Spring.DampingRatioMediumBouncy,
+                        stiffness = Spring.StiffnessMedium
+                    )
+                ) + fadeIn(),
+                exit = scaleOut() + fadeOut()
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Icon(
+                        imageVector = RhythmIcons.CheckCircle,
+                        contentDescription = context.getString(R.string.onboarding_granted),
+                        tint = MaterialTheme.colorScheme.primaryContainer,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
             }
         }
     }
@@ -3322,7 +2183,7 @@ fun EnhancedBackupRestoreContent(
                 // Action buttons
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     backButton?.invoke()
@@ -3873,7 +2734,7 @@ fun EnhancedAudioPlaybackContent(
                 // Action buttons
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     backButton?.invoke()
@@ -4242,7 +3103,7 @@ fun EnhancedLibrarySetupContent(
                 // Action buttons
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     backButton?.invoke()
@@ -5076,7 +3937,7 @@ fun EnhancedThemingContent(
                 // Action buttons
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     backButton?.invoke()
@@ -5683,7 +4544,7 @@ fun EnhancedRhythmGuardContent(
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     backButton?.invoke()
@@ -6252,7 +5113,7 @@ fun EnhancedUpdaterContent(
                 // Action buttons
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     backButton?.invoke()
@@ -7215,7 +6076,7 @@ fun EnhancedMediaScanContent(
                 // Action buttons
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     backButton?.invoke()
@@ -7692,7 +6553,7 @@ fun EnhancedSetupFinishedContent(
                 // Action buttons
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     backButton?.invoke()
@@ -8310,7 +7171,7 @@ fun EnhancedPlayerThemeChoiceContent(
                 // Action buttons
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     backButton?.invoke()
@@ -8454,7 +7315,7 @@ fun EnhancedGesturesContent(
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     backButton?.invoke()
@@ -8759,7 +7620,7 @@ fun EnhancedWidgetsContent(
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     backButton?.invoke()
@@ -9852,7 +8713,7 @@ private fun ThemingCustomizationSection(
         haptic = haptic
     )
 
-    FontSelectionDialog(
+    FontSelectionBottomSheet(
         showDialog = showFontSelectionDialog,
         onDismiss = { showFontSelectionDialog = false },
         fontOptions = fontOptions,
@@ -9946,7 +8807,7 @@ fun EnhancedIntegrationsContent(
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     backButton?.invoke()
@@ -10373,7 +9234,7 @@ fun EnhancedRhythmStatsContent(
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     backButton?.invoke()
@@ -10566,6 +9427,73 @@ fun OnboardingTipItem(
 }
 
 @Composable
+private fun AppModeChoiceHeader(
+    isStreaming: Boolean,
+    isTablet: Boolean,
+    modifier: Modifier = Modifier
+) {
+    val logoSize = if (isTablet) 80.dp else 100.dp
+    val fontSize = if (isTablet) 36.sp else 42.sp
+    val spacing = 6.dp
+
+    val animProgress by animateFloatAsState(
+        targetValue = if (isStreaming) 1f else 0f,
+        animationSpec = tween(durationMillis = 280, easing = FastOutSlowInEasing),
+        label = "streamingHeaderProgress"
+    )
+
+    Layout(
+        content = {
+            Image(
+                painter = painterResource(id = R.drawable.rhythm_splash_logo),
+                contentDescription = stringResource(R.string.updates_rhythm_logo_cd),
+                modifier = Modifier.size(logoSize)
+            )
+            Text(
+                text = stringResource(R.string.splashscreen_go),
+                style = MaterialTheme.typography.displayMedium.copy(
+                    fontSize = fontSize,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.sp
+                ),
+                color = MaterialTheme.colorScheme.primary
+            )
+        },
+        modifier = modifier
+    ) { measurables, constraints ->
+        val logoPlaceable = measurables[0].measure(constraints.copy(minWidth = 0, minHeight = 0))
+        val goPlaceable = measurables[1].measure(constraints.copy(minWidth = 0, minHeight = 0))
+
+        val spacingPx = spacing.roundToPx()
+        val totalHeight = maxOf(logoPlaceable.height, goPlaceable.height)
+        val containerWidth = constraints.maxWidth
+
+        layout(containerWidth, totalHeight) {
+            val shiftAmountPx = if (isTablet) 0f else (goPlaceable.width + spacingPx) / 2f
+            val baseLogoX = if (isTablet) 0 else (containerWidth - logoPlaceable.width) / 2
+            val baseGoX = baseLogoX + logoPlaceable.width + spacingPx
+
+            val logoY = (totalHeight - logoPlaceable.height) / 2
+            val goY = (totalHeight - goPlaceable.height) / 2
+
+            logoPlaceable.placeWithLayer(baseLogoX, logoY) {
+                translationX = -shiftAmountPx * animProgress
+            }
+
+            if (animProgress > 0.001f) {
+                goPlaceable.placeWithLayer(baseGoX, goY) {
+                    translationX = -shiftAmountPx * animProgress
+                    alpha = animProgress
+                    scaleX = 0.8f + 0.2f * animProgress
+                    scaleY = 0.8f + 0.2f * animProgress
+                    transformOrigin = TransformOrigin(0f, 0.5f)
+                }
+            }
+        }
+    }
+}
+
+@Composable
 fun EnhancedAppModeChoiceContent(
     appSettings: AppSettings,
     isTablet: Boolean = false,
@@ -10600,46 +9528,11 @@ fun EnhancedAppModeChoiceContent(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(2.dp),
+                AppModeChoiceHeader(
+                    isStreaming = selectedMode == "STREAMING",
+                    isTablet = true,
                     modifier = Modifier.padding(bottom = 12.dp)
-                ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.rhythm_splash_logo),
-                        contentDescription = stringResource(R.string.updates_rhythm_logo_cd),
-                        modifier = Modifier.size(80.dp)
-                    )
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            text = stringResource(R.string.common_rhythm),
-                            style = MaterialTheme.typography.displayMedium.copy(
-                                fontSize = 36.sp,
-                                fontWeight = FontWeight.Bold,
-                                letterSpacing = 1.sp
-                            ),
-                            color = MaterialTheme.colorScheme.onBackground
-                        )
-                        androidx.compose.animation.AnimatedVisibility(
-                            visible = selectedMode == "STREAMING",
-                            enter = scaleIn() + fadeIn(),
-                            exit = scaleOut() + fadeOut()
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text(
-                                    text = stringResource(R.string.splashscreen_go),
-                                    style = MaterialTheme.typography.displayMedium.copy(
-                                        fontSize = 36.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        letterSpacing = 1.sp
-                                    ),
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                            }
-                        }
-                    }
-                }
+                )
 
                 Text(
                     text = stringResource(R.string.onboardingscreen_choose_your_playback_mode),
@@ -10662,7 +9555,7 @@ fun EnhancedAppModeChoiceContent(
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     backButton?.invoke()
@@ -10690,53 +9583,13 @@ fun EnhancedAppModeChoiceContent(
                 .fillMaxWidth()
                 .verticalScroll(scrollState)
         ) {
-            Box(
-                modifier = Modifier.fillMaxWidth(),
-                contentAlignment = Alignment.Center
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(2.dp),
-                    modifier = Modifier.padding(bottom = 12.dp)
-                ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.rhythm_splash_logo),
-                        contentDescription = stringResource(R.string.updates_rhythm_logo_cd),
-                        modifier = Modifier.size(100.dp)
-                    )
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            text = stringResource(R.string.common_rhythm),
-                            style = MaterialTheme.typography.displayMedium.copy(
-                                fontSize = 42.sp,
-                                fontWeight = FontWeight.Bold,
-                                letterSpacing = 1.sp
-                            ),
-                            color = MaterialTheme.colorScheme.onBackground,
-                            textAlign = TextAlign.Center
-                        )
-                        androidx.compose.animation.AnimatedVisibility(
-                            visible = selectedMode == "STREAMING",
-                            enter = scaleIn() + fadeIn(),
-                            exit = scaleOut() + fadeOut()
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text(
-                                    text = stringResource(R.string.splashscreen_go),
-                                    style = MaterialTheme.typography.displayMedium.copy(
-                                        fontSize = 42.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        letterSpacing = 1.sp
-                                    ),
-                                    color = MaterialTheme.colorScheme.primary,
-                                    textAlign = TextAlign.Center
-                                )
-                            }
-                        }
-                    }
-                }
-            }
+            AppModeChoiceHeader(
+                isStreaming = selectedMode == "STREAMING",
+                isTablet = false,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 12.dp)
+            )
 
             Spacer(modifier = Modifier.height(24.dp))
 
@@ -10970,7 +9823,7 @@ fun EnhancedStreamingServiceChoiceContent(
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     backButton?.invoke()
@@ -11309,7 +10162,7 @@ fun EnhancedStreamingSetupContent(
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     backButton?.invoke()

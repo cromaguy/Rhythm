@@ -9,6 +9,7 @@ import chromahub.rhythm.app.shared.presentation.components.bottomsheets.Adaptive
 import chromahub.rhythm.app.shared.presentation.components.bottomsheets.RhythmAdaptiveModalSheet
 import chromahub.rhythm.app.shared.presentation.components.bottomsheets.SheetAdaptiveType
 import chromahub.rhythm.app.shared.presentation.components.bottomsheets.StandardBottomSheetHeader
+import chromahub.rhythm.app.shared.presentation.components.bottomsheets.groupedBottomSheetItemShape
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 
@@ -579,9 +580,9 @@ fun ActionPickerSheet(
                     .fillMaxWidth()
                     .verticalScroll(scrollState)
                     .padding(start = 24.dp, end = 24.dp + endPadding, bottom = 24.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                options.forEach { option ->
+                options.forEachIndexed { index, option ->
                     val isSelected = selectedValue == option.value
                     Card(
                         onClick = {
@@ -594,7 +595,7 @@ fun ActionPickerSheet(
                             else
                                 MaterialTheme.colorScheme.surfaceContainerHigh
                         ),
-                        shape = RoundedCornerShape(24.dp),
+                        shape = groupedBottomSheetItemShape(index, options.size),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Row(
@@ -603,29 +604,15 @@ fun ActionPickerSheet(
                                 .padding(20.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Surface(
-                                shape = CircleShape,
-                                color = if (isSelected)
-                                    MaterialTheme.colorScheme.primary
+                            Icon(
+                                imageVector = option.icon,
+                                contentDescription = null,
+                                tint = if (isSelected)
+                                    MaterialTheme.colorScheme.primaryContainer
                                 else
-                                    MaterialTheme.colorScheme.surfaceVariant,
-                                modifier = Modifier.size(44.dp)
-                            ) {
-                                Box(
-                                    contentAlignment = Alignment.Center,
-                                    modifier = Modifier.fillMaxSize()
-                                ) {
-                                    Icon(
-                                        imageVector = option.icon,
-                                        contentDescription = null,
-                                        tint = if (isSelected)
-                                            MaterialTheme.colorScheme.onPrimary
-                                        else
-                                            MaterialTheme.colorScheme.onSurfaceVariant,
-                                        modifier = Modifier.size(22.dp)
-                                    )
-                                }
-                            }
+                                    MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(if (isSelected) 30.dp else 26.dp)
+                            )
 
                             Spacer(modifier = Modifier.width(16.dp))
 
@@ -835,9 +822,9 @@ fun WidgetThemeSheet(
                     .fillMaxWidth()
                     .verticalScroll(scrollState)
                     .padding(start = 24.dp, end = 24.dp + endPadding, bottom = 24.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                themes.forEach { (value, name, desc) ->
+                themes.forEachIndexed { index, (value, name, desc) ->
                     val isSelected = currentTheme == value
                     val icon = when (value) {
                         1 -> MaterialSymbolIcon("dark_mode", filled = true)
@@ -859,7 +846,7 @@ fun WidgetThemeSheet(
                             else
                                 MaterialTheme.colorScheme.surfaceContainerHigh
                         ),
-                        shape = RoundedCornerShape(24.dp),
+                        shape = groupedBottomSheetItemShape(index, themes.size),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Row(
@@ -868,29 +855,15 @@ fun WidgetThemeSheet(
                                 .padding(20.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Surface(
-                                shape = CircleShape,
-                                color = if (isSelected)
-                                    MaterialTheme.colorScheme.primary
+                            Icon(
+                                imageVector = icon,
+                                contentDescription = null,
+                                tint = if (isSelected)
+                                    MaterialTheme.colorScheme.primaryContainer
                                 else
-                                    MaterialTheme.colorScheme.surfaceVariant,
-                                modifier = Modifier.size(44.dp)
-                            ) {
-                                Box(
-                                    contentAlignment = Alignment.Center,
-                                    modifier = Modifier.fillMaxSize()
-                                ) {
-                                    Icon(
-                                        imageVector = icon,
-                                        contentDescription = null,
-                                        tint = if (isSelected)
-                                            MaterialTheme.colorScheme.onPrimary
-                                        else
-                                            MaterialTheme.colorScheme.onSurfaceVariant,
-                                        modifier = Modifier.size(22.dp)
-                                    )
-                                }
-                            }
+                                    MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(if (isSelected) 30.dp else 26.dp)
+                            )
 
                             Spacer(modifier = Modifier.width(16.dp))
 

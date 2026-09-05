@@ -7,7 +7,10 @@
 
 package chromahub.rhythm.app.shared.presentation.screens.settings
 
-
+import chromahub.rhythm.app.shared.presentation.components.bottomsheets.AdaptiveSheetScrollContainer
+import chromahub.rhythm.app.shared.presentation.components.bottomsheets.RhythmAdaptiveModalSheet
+import chromahub.rhythm.app.shared.presentation.components.bottomsheets.SheetAdaptiveType
+import chromahub.rhythm.app.shared.presentation.components.bottomsheets.groupedBottomSheetItemShape
 
 import chromahub.rhythm.app.ui.LocalMiniPlayerPadding
 import androidx.compose.foundation.layout.PaddingValues
@@ -1133,34 +1136,56 @@ fun UpdatesSettingsScreen(onBackClick: () -> Unit) {
         }
     }
 
-    // Update Channel Dialog
     if (showChannelDialog) {
-        AlertDialog(
-            onDismissRequest = { showChannelDialog = false },
-            icon = {
-                Icon(
-                    imageVector = RhythmIcons.Category,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(24.dp)
-                )
-            },
-            title = { Text(context.getString(R.string.updates_channel_title)) },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(
-                        text = context.getString(R.string.updates_channel_desc),
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
+        val sheetState = rememberBottomSheetState(
+            initialValue = SheetValue.Hidden,
+            enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded)
+        )
 
+        RhythmAdaptiveModalSheet(
+            adaptiveType = SheetAdaptiveType.COMPACT_DIALOG,
+            modifier = Modifier.widthIn(max = 640.dp).fillMaxWidth(),
+            onDismissRequest = { showChannelDialog = false },
+            sheetState = sheetState,
+            dragHandle = {
+                BottomSheetDefaults.DragHandle(color = MaterialTheme.colorScheme.primary)
+            },
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            containerColor = MaterialTheme.colorScheme.surfaceContainer
+        ) {
+            StandardBottomSheetHeader(
+                title = context.getString(R.string.updates_channel_title),
+                subtitle = context.getString(R.string.updates_channel_desc),
+                visible = true
+            )
+
+            val scrollState = rememberScrollState()
+
+            AdaptiveSheetScrollContainer(
+                scrollState = scrollState,
+                modifier = Modifier.fillMaxWidth()
+            ) { endPadding ->
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .verticalScroll(scrollState)
+                        .padding(start = 24.dp, end = 24.dp + endPadding, bottom = 24.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
                     val channels = listOf(
                         "stable" to context.getString(R.string.updates_channel_stable_desc),
                         "beta" to context.getString(R.string.updates_channel_beta_desc),
                         "nightly" to context.getString(R.string.updates_channel_nightly_desc)
                     )
 
-                    channels.forEach { (channel, description) ->
+                    channels.forEachIndexed { index, (channel, description) ->
+                        val isSelected = updateChannel == channel
+                        val channelIcon = when (channel) {
+                            "nightly" -> MaterialSymbolIcon("nights_stay", filled = true)
+                            "beta" -> MaterialSymbolIcon("science", filled = true)
+                            else -> MaterialSymbolIcon("verified", filled = true)
+                        }
+
                         Card(
                             onClick = {
                                 HapticUtils.performHapticFeedback(context, haptics, HapticType.LIGHT)
@@ -1168,82 +1193,107 @@ fun UpdatesSettingsScreen(onBackClick: () -> Unit) {
                                 showChannelDialog = false
                             },
                             colors = CardDefaults.cardColors(
-                                containerColor = if (updateChannel == channel)
-                                    MaterialTheme.colorScheme.primaryContainer
+                                containerColor = if (isSelected)
+                                    MaterialTheme.colorScheme.onPrimaryContainer
                                 else
-                                    MaterialTheme.colorScheme.surfaceVariant
+                                    MaterialTheme.colorScheme.surfaceContainerHigh
                             ),
-                            shape = RoundedCornerShape(12.dp),
+                            shape = groupedBottomSheetItemShape(index, channels.size),
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(16.dp),
+                                    .padding(20.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
+                                Icon(
+                                    imageVector = channelIcon,
+                                    contentDescription = null,
+                                    tint = if (isSelected)
+                                        MaterialTheme.colorScheme.primaryContainer
+                                    else
+                                        MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(if (isSelected) 30.dp else 26.dp)
+                                )
+
+                                Spacer(modifier = Modifier.width(16.dp))
+
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
                                         text = channel.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() },
                                         style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.SemiBold
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = if (isSelected)
+                                            MaterialTheme.colorScheme.primaryContainer
+                                        else
+                                            MaterialTheme.colorScheme.onSurface
                                     )
                                     Text(
                                         text = description,
                                         style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        color = if (isSelected)
+                                            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.8f)
+                                        else
+                                            MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
-                                if (updateChannel == channel) {
+
+                                if (isSelected) {
                                     Icon(
                                         imageVector = RhythmIcons.CheckCircle,
                                         contentDescription = stringResource(R.string.streaming_selected),
-                                        tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(28.dp)
+                                        tint = MaterialTheme.colorScheme.primaryContainer,
+                                        modifier = Modifier.size(24.dp)
                                     )
                                 }
                             }
                         }
                     }
                 }
-            },
-            confirmButton = {
-                OutlinedButton(onClick = { showChannelDialog = false }) {
-                    Icon(
-                        imageVector = RhythmIcons.Close,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(context.getString(R.string.ui_close))
-                }
-            },
-            shape = RoundedCornerShape(24.dp)
-        )
+            }
+        }
     }
 
-    // Update Check Interval Dialog
     if (showIntervalDialog) {
-        AlertDialog(
-            onDismissRequest = { showIntervalDialog = false },
-            icon = {
-                Icon(
-                    imageVector = RhythmIcons.AccessTime,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(24.dp)
-                )
-            },
-            title = { Text(context.getString(R.string.updates_check_interval_title)) },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(
-                        text = context.getString(R.string.updates_check_frequency),
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
+        val sheetState = rememberBottomSheetState(
+            initialValue = SheetValue.Hidden,
+            enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded)
+        )
 
-                    intervalOptions.forEach { (hours, label) ->
+        RhythmAdaptiveModalSheet(
+            adaptiveType = SheetAdaptiveType.COMPACT_DIALOG,
+            modifier = Modifier.widthIn(max = 640.dp).fillMaxWidth(),
+            onDismissRequest = { showIntervalDialog = false },
+            sheetState = sheetState,
+            dragHandle = {
+                BottomSheetDefaults.DragHandle(color = MaterialTheme.colorScheme.primary)
+            },
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            containerColor = MaterialTheme.colorScheme.surfaceContainer
+        ) {
+            StandardBottomSheetHeader(
+                title = context.getString(R.string.updates_check_interval_title),
+                subtitle = context.getString(R.string.updates_check_frequency),
+                visible = true
+            )
+
+            val scrollState = rememberScrollState()
+
+            AdaptiveSheetScrollContainer(
+                scrollState = scrollState,
+                modifier = Modifier.fillMaxWidth()
+            ) { endPadding ->
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .verticalScroll(scrollState)
+                        .padding(start = 24.dp, end = 24.dp + endPadding, bottom = 24.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    intervalOptions.forEachIndexed { index, (hours, label) ->
+                        val isSelected = updateCheckIntervalHours == hours
+
                         Card(
                             onClick = {
                                 HapticUtils.performHapticFeedback(context, haptics, HapticType.LIGHT)
@@ -1251,81 +1301,109 @@ fun UpdatesSettingsScreen(onBackClick: () -> Unit) {
                                 showIntervalDialog = false
                             },
                             colors = CardDefaults.cardColors(
-                                containerColor = if (updateCheckIntervalHours == hours)
-                                    MaterialTheme.colorScheme.primaryContainer
+                                containerColor = if (isSelected)
+                                    MaterialTheme.colorScheme.onPrimaryContainer
                                 else
-                                    MaterialTheme.colorScheme.surfaceVariant
+                                    MaterialTheme.colorScheme.surfaceContainerHigh
                             ),
-                            shape = RoundedCornerShape(12.dp),
+                            shape = groupedBottomSheetItemShape(index, intervalOptions.size),
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(16.dp),
+                                    .padding(20.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
+                                Icon(
+                                    imageVector = if (hours == 0) RhythmIcons.Block else RhythmIcons.AccessTime,
+                                    contentDescription = null,
+                                    tint = if (isSelected)
+                                        MaterialTheme.colorScheme.primaryContainer
+                                    else
+                                        MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(if (isSelected) 30.dp else 26.dp)
+                                )
+
+                                Spacer(modifier = Modifier.width(16.dp))
+
                                 Text(
                                     text = label,
                                     style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = if (updateCheckIntervalHours == hours) FontWeight.SemiBold else FontWeight.Normal,
+                                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                                    color = if (isSelected)
+                                        MaterialTheme.colorScheme.primaryContainer
+                                    else
+                                        MaterialTheme.colorScheme.onSurface,
                                     modifier = Modifier.weight(1f)
                                 )
-                                if (updateCheckIntervalHours == hours) {
+
+                                if (isSelected) {
                                     Icon(
                                         imageVector = RhythmIcons.CheckCircle,
                                         contentDescription = stringResource(R.string.streaming_selected),
-                                        tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(28.dp)
+                                        tint = MaterialTheme.colorScheme.primaryContainer,
+                                        modifier = Modifier.size(24.dp)
                                     )
                                 }
                             }
                         }
                     }
                 }
-            },
-            confirmButton = {
-                OutlinedButton(onClick = { showIntervalDialog = false }) {
-                    Icon(
-                        imageVector = RhythmIcons.Close,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(context.getString(R.string.ui_close))
-                }
-            },
-            shape = RoundedCornerShape(24.dp)
-        )
+            }
+        }
     }
 
     if (showSourceDialog) {
-        AlertDialog(
-            onDismissRequest = { showSourceDialog = false },
-            icon = {
-                Icon(
-                    imageVector = RhythmIcons.Category,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(24.dp)
-                )
-            },
-            title = { Text(context.getString(R.string.updates_source_title)) },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(
-                        text = context.getString(R.string.updates_source_desc),
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
+        val sheetState = rememberBottomSheetState(
+            initialValue = SheetValue.Hidden,
+            enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded)
+        )
 
+        RhythmAdaptiveModalSheet(
+            adaptiveType = SheetAdaptiveType.COMPACT_DIALOG,
+            modifier = Modifier.widthIn(max = 640.dp).fillMaxWidth(),
+            onDismissRequest = { showSourceDialog = false },
+            sheetState = sheetState,
+            dragHandle = {
+                BottomSheetDefaults.DragHandle(color = MaterialTheme.colorScheme.primary)
+            },
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            containerColor = MaterialTheme.colorScheme.surfaceContainer
+        ) {
+            StandardBottomSheetHeader(
+                title = context.getString(R.string.updates_source_title),
+                subtitle = context.getString(R.string.updates_source_desc),
+                visible = true
+            )
+
+            val scrollState = rememberScrollState()
+
+            AdaptiveSheetScrollContainer(
+                scrollState = scrollState,
+                modifier = Modifier.fillMaxWidth()
+            ) { endPadding ->
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .verticalScroll(scrollState)
+                        .padding(start = 24.dp, end = 24.dp + endPadding, bottom = 24.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
                     val sources = listOf(
                         "installed" to getUpdateSourceLabel(context, "installed"),
                         "github" to context.getString(R.string.updates_source_github_desc),
                         "fdroid" to context.getString(R.string.updates_source_fdroid_desc)
                     )
 
-                    sources.forEach { (source, description) ->
+                    sources.forEachIndexed { index, (source, description) ->
+                        val isSelected = updateSource == source
+                        val sourceIcon = when (source) {
+                            "github" -> MaterialSymbolIcon("code", filled = true)
+                            "fdroid" -> MaterialSymbolIcon("android", filled = true)
+                            else -> MaterialSymbolIcon("install_mobile", filled = true)
+                        }
+
                         Card(
                             onClick = {
                                 HapticUtils.performHapticFeedback(context, haptics, HapticType.LIGHT)
@@ -1333,20 +1411,32 @@ fun UpdatesSettingsScreen(onBackClick: () -> Unit) {
                                 showSourceDialog = false
                             },
                             colors = CardDefaults.cardColors(
-                                containerColor = if (updateSource == source)
-                                    MaterialTheme.colorScheme.primaryContainer
+                                containerColor = if (isSelected)
+                                    MaterialTheme.colorScheme.onPrimaryContainer
                                 else
-                                    MaterialTheme.colorScheme.surfaceVariant
+                                    MaterialTheme.colorScheme.surfaceContainerHigh
                             ),
-                            shape = RoundedCornerShape(12.dp),
+                            shape = groupedBottomSheetItemShape(index, sources.size),
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(16.dp),
+                                    .padding(20.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
+                                Icon(
+                                    imageVector = sourceIcon,
+                                    contentDescription = null,
+                                    tint = if (isSelected)
+                                        MaterialTheme.colorScheme.primaryContainer
+                                    else
+                                        MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(if (isSelected) 30.dp else 26.dp)
+                                )
+
+                                Spacer(modifier = Modifier.width(16.dp))
+
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
                                         text = when (source) {
@@ -1354,40 +1444,36 @@ fun UpdatesSettingsScreen(onBackClick: () -> Unit) {
                                             else -> source.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
                                         },
                                         style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.SemiBold
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = if (isSelected)
+                                            MaterialTheme.colorScheme.primaryContainer
+                                        else
+                                            MaterialTheme.colorScheme.onSurface
                                     )
                                     Text(
                                         text = description,
                                         style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        color = if (isSelected)
+                                            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.8f)
+                                        else
+                                            MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
-                                if (updateSource == source) {
+
+                                if (isSelected) {
                                     Icon(
                                         imageVector = RhythmIcons.CheckCircle,
                                         contentDescription = stringResource(R.string.streaming_selected),
-                                        tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(28.dp)
+                                        tint = MaterialTheme.colorScheme.primaryContainer,
+                                        modifier = Modifier.size(24.dp)
                                     )
                                 }
                             }
                         }
                     }
                 }
-            },
-            confirmButton = {
-                OutlinedButton(onClick = { showSourceDialog = false }) {
-                    Icon(
-                        imageVector = RhythmIcons.Close,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(context.getString(R.string.ui_close))
-                }
-            },
-            shape = RoundedCornerShape(24.dp)
-        )
+            }
+        }
     }
 
     if (showFdroidWarningDialog) {

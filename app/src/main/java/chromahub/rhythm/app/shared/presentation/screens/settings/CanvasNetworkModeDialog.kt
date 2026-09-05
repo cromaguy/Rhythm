@@ -11,6 +11,7 @@ import chromahub.rhythm.app.shared.presentation.components.bottomsheets.Adaptive
 import chromahub.rhythm.app.shared.presentation.components.bottomsheets.RhythmAdaptiveModalSheet
 import chromahub.rhythm.app.shared.presentation.components.bottomsheets.SheetAdaptiveType
 import chromahub.rhythm.app.shared.presentation.components.bottomsheets.StandardBottomSheetHeader
+import chromahub.rhythm.app.shared.presentation.components.bottomsheets.groupedBottomSheetItemShape
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 
@@ -75,7 +76,8 @@ fun CanvasNetworkModeDialog(
                 modifier = Modifier
                     .fillMaxWidth()
                     .verticalScroll(scrollState)
-                    .padding(start = 24.dp, end = 24.dp + endPadding, bottom = 24.dp)
+                    .padding(start = 24.dp, end = 24.dp + endPadding, bottom = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 // Options
                 val sourceOptions = listOf(
@@ -91,7 +93,7 @@ fun CanvasNetworkModeDialog(
                     )
                 )
 
-                sourceOptions.forEach { (preference, info) ->
+                sourceOptions.forEachIndexed { index, (preference, info) ->
                     val (title, description, icon) = info
                     val isSelected = canvasNetworkMode == preference
 
@@ -106,10 +108,8 @@ fun CanvasNetworkModeDialog(
                             else
                                 MaterialTheme.colorScheme.surfaceContainerHigh
                         ),
-                        shape = RoundedCornerShape(24.dp),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 6.dp)
+                        shape = groupedBottomSheetItemShape(index, sourceOptions.size),
+                        modifier = Modifier.fillMaxWidth()
                     ) {
                         Row(
                             modifier = Modifier
