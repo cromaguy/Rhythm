@@ -9,7 +9,7 @@
     <string name="media3_notification_channel_name">Reproduciendo ahora en Rhythm</string>
     <string name="media3_notification_channel_description">Controles de reproducción, botones de búsqueda y carátula del álbum</string>
     <!-- Widget strings -->
-    <string name="widget_description_glance">Rhythm Música: controla la reproducción con 9 diseños responsivos, Material 3 diseños y actualizaciones de estado en tiempo real</string>
+    <string name="widget_description_glance">Consulta lo que se está reproduciendo y controla tu música desde la pantalla de inicio: reproduce, pausa, salta a la siguiente canción y mucho más.</string>
     <string name="widget_name_glance">Rhythm Música</string>
     <string name="unknown_artist">Artista desconocido</string>
     <string name="play_pause">Reproducir/Pausar</string>
@@ -97,8 +97,8 @@
     <string name="settings_cleanup_empty_playlists">Limpiar listas de reproducción vacías</string>
     <plurals name="settings_cleanup_empty_playlists_desc">
         <item quantity="one">Eliminar %1$d lista de reproducción vacía</item>
-        <item quantity="many">Eliminar %1$d lista de reproducción vacía</item>
-        <item quantity="other">Eliminar %1$d lista de reproducción vacía</item>
+        <item quantity="many">Eliminar %1$d listas de reproducción vacías</item>
+        <item quantity="other">Eliminar %1$d listas de reproducción vacías</item>
     </plurals>
     <string name="settings_default_playlists">Listas de reproducción predeterminadas</string>
     <string name="settings_no_default_playlists">Sin listas de reproducción predeterminadas</string>
@@ -128,24 +128,24 @@
     <string name="notification_playlist_import_title">Rhythm Importación de biblioteca</string>
     <string name="notification_library_setup_title">Rhythm Configuración de biblioteca</string>
     <plurals name="notification_library_setup_complete_summary">
-        <item quantity="one">La biblioteca está optimizada y lista: %1$d pistas, %2$d álbumes, %3$d artistas</item>
-        <item quantity="many">La biblioteca está optimizada y lista: %1$d pistas, %2$d álbumes, %3$d artistas</item>
-        <item quantity="other">La biblioteca está optimizada y lista: %1$d pistas, %2$d álbumes, %3$d artistas</item>
+        <item quantity="one">La biblioteca está lista: %1$d pista, %2$d álbumes, %3$d artistas</item>
+        <item quantity="many">La biblioteca está lista: %1$d pistas, %2$d álbumes, %3$d artistas</item>
+        <item quantity="other">La biblioteca está lista: %1$d pistas, %2$d álbumes, %3$d artistas</item>
     </plurals>
     <string name="notification_playlist_not_found">Exportación cancelada: no se encontró la lista de reproducción de destino.</string>
     <string name="notification_no_playlists_to_export">Exportación cancelada: no se encontraron listas de reproducción para respaldar.</string>
     <string name="notification_operation_timed_out">La operación expiró. Por favor inténtalo de nuevo.</string>
     <string name="notification_playlist_export_complete">Lista de reproducción exportada exitosamente al almacenamiento.</string>
     <plurals name="notification_playlist_export_all_complete">
-        <item quantity="one">Se exportaron con éxito %1$d listas de reproducción al almacenamiento.</item>
-        <item quantity="many">Se exportaron con éxito %1$d listas de reproducción al almacenamiento.</item>
-        <item quantity="other">Se exportaron con éxito %1$d listas de reproducción al almacenamiento.</item>
+        <item quantity="one">Copia de seguridad de %1$d lista de reproducción creada correctamente.</item>
+        <item quantity="many">Copia de seguridad de %1$d listas de reproducción creada correctamente.</item>
+        <item quantity="other">Copia de seguridad de %1$d listas de reproducción creada correctamente.</item>
     </plurals>
     <string name="notification_playlist_export_failed">Error al exportar la lista de reproducción. Intentar otra vez.</string>
     <plurals name="notification_playlist_import_complete">
-        <item quantity="one">Importó exitosamente \"%1$s\" con %2$d canciones.</item>
-        <item quantity="many">Importó exitosamente \"%1$s\" con %2$d canciones.</item>
-        <item quantity="other">Importó exitosamente \"%1$s\" con %2$d canciones.</item>
+        <item quantity="one">«%1$s» se ha importado correctamente (%2$d pista).</item>
+        <item quantity="many">«%1$s» se ha importado correctamente (%2$d pistas).</item>
+        <item quantity="other">«%1$s» se ha importado correctamente (%2$d pistas).</item>
     </plurals>
     <string name="notification_playlist_import_failed">Error al importar la lista de reproducción. Por favor verifique el formato del archivo.</string>
     <string name="notification_updater_channel_name">Rhythm Actualizador</string>
@@ -165,21 +165,21 @@
     <string name="notification_streaming_channel_desc">Estado del servicio de streaming y actualizaciones de sincronización</string>
     <!-- Streaming Authentication -->
     <string name="notification_streaming_auth_title">Transmisión conectada</string>
-    <string name="notification_streaming_auth_connected">🎵 ¡%1$s está listo para jugar! Tu biblioteca se está sincronizando en segundo plano.</string>
+    <string name="notification_streaming_auth_connected">%1$s conectado. Sincronizando la biblioteca en segundo plano.</string>
     <string name="notification_streaming_auth_failed">La conexión falló para %1$s. Toque para volver a intentar la configuración.</string>
     <string name="notification_streaming_auth_expired">La sesión expiró para %1$s. Toque para volver a conectarse.</string>
     <!-- Streaming Library Sync -->
     <string name="notification_streaming_sync_title">Sincronizando su biblioteca</string>
     <string name="notification_streaming_sync_started">Sincronizando con %1$s…</string>
     <plurals name="notification_streaming_sync_progress">
-        <item quantity="one">Sincronización: %1$d canciones • %2$d álbumes • %3$d artistas</item>
-        <item quantity="many">Sincronización: %1$d canciones • %2$d álbumes • %3$d artistas</item>
-        <item quantity="other">Sincronización: %1$d canciones • %2$d álbumes • %3$d artistas</item>
+        <item quantity="one">Sincronizando: %1$d pista, %2$d álbumes, %3$d artistas</item>
+        <item quantity="many">Sincronizando: %1$d pistas, %2$d álbumes, %3$d artistas</item>
+        <item quantity="other">Sincronizando: %1$d pistas, %2$d álbumes, %3$d artistas</item>
     </plurals>
     <plurals name="notification_streaming_sync_complete">
-        <item quantity="one">✓ ¡Sincronizamos %1$d canciones de %2$s!</item>
-        <item quantity="many">✓ ¡Sincronizamos %1$d canciones de %2$s!</item>
-        <item quantity="other">✓ ¡Sincronizamos %1$d canciones de %2$s!</item>
+        <item quantity="one">Sincronizada %1$d pista de %2$s.</item>
+        <item quantity="many">Sincronizadas %1$d pistas de %2$s.</item>
+        <item quantity="other">Sincronizadas %1$d pistas de %2$s.</item>
     </plurals>
     <string name="notification_streaming_sync_failed">Error de sincronización. Comprueba tu conexión y vuelve a intentarlo.</string>
     <!-- Streaming Liked Songs -->
@@ -195,14 +195,14 @@
     <string name="notification_streaming_quality_title">Calidad de transmisión</string>
     <string name="notification_streaming_quality_switched">La calidad cambió a %1$s debido a cambios en la red</string>
     <string name="notification_streaming_buffering">Almacenamiento en búfer… Reproducción desde %1$s</string>
-    <string name="notification_streaming_buffering_complete">¡Listo para escuchar!</string>
+    <string name="notification_streaming_buffering_complete">¡Listo para reproducir!</string>
     <!-- Streaming Offline -->
     <string name="notification_streaming_offline_title">Modo sin conexión</string>
     <string name="notification_streaming_offline_sync">Sincronizando caché sin conexión con %1$s…</string>
     <plurals name="notification_streaming_offline_sync_complete">
-        <item quantity="one">✓ Caché sin conexión listo con %1$d canciones</item>
-        <item quantity="many">✓ Caché sin conexión listo con %1$d canciones</item>
-        <item quantity="other">✓ Caché sin conexión listo con %1$d canciones</item>
+        <item quantity="one">✓ Caché sin conexión lista con %1$d canción</item>
+        <item quantity="many">✓ Caché sin conexión lista con %1$d canciones</item>
+        <item quantity="other">✓ Caché sin conexión lista con %1$d canciones</item>
     </plurals>
     <string name="notification_streaming_offline_cache_cleared">Caché borrado. Ahorrado %1$s de espacio.</string>
     <!-- Streaming Errors -->
@@ -213,9 +213,9 @@
     <!-- Dialogs -->
     <string name="dialog_cleanup_empty_playlists_title">¿Limpiar listas de reproducción vacías?</string>
     <plurals name="dialog_cleanup_empty_playlists_message">
-        <item quantity="one">Esto eliminará permanentemente %1$d lista de reproducción vacía. Esta acción no se puede deshacer.</item>
-        <item quantity="many">Esto eliminará permanentemente %1$d lista de reproducción vacía. Esta acción no se puede deshacer.</item>
-        <item quantity="other">Esto eliminará permanentemente %1$d lista de reproducción vacía. Esta acción no se puede deshacer.</item>
+        <item quantity="one">Se eliminará permanentemente %1$d lista de reproducción vacía. Esta acción no se puede deshacer.</item>
+        <item quantity="many">Se eliminarán permanentemente %1$d listas de reproducción vacías. Esta acción no se puede deshacer.</item>
+        <item quantity="other">Se eliminarán permanentemente %1$d listas de reproducción vacías. Esta acción no se puede deshacer.</item>
     </plurals>
     <string name="dialog_delete_playlist_title">¿Eliminar lista de reproducción?</string>
     <string name="dialog_delete_playlist_message">¿Está seguro de que desea eliminar \"%1$s\"? Esta acción no se puede deshacer.</string>
@@ -237,7 +237,7 @@
     <string name="playlist_remove_song">Eliminar canción</string>
     <string name="playlist_remove_song_confirm">¿Eliminar \'%1$s\' de esta lista de reproducción?</string>
     <plurals name="playlist_remove_songs_count">
-        <item quantity="one">Eliminar %1$d canciones</item>
+        <item quantity="one">Eliminar %1$d canción</item>
         <item quantity="many">Eliminar %1$d canciones</item>
         <item quantity="other">Eliminar %1$d canciones</item>
     </plurals>
@@ -373,7 +373,7 @@
     <!-- UI Actions -->
     <string name="ui_view_all">Ver todo</string>
     <plurals name="ui_songs_count">
-        <item quantity="one">%1$d canciones</item>
+        <item quantity="one">%1$d canción</item>
         <item quantity="many">%1$d canciones</item>
         <item quantity="other">%1$d canciones</item>
     </plurals>
@@ -411,20 +411,20 @@
     <string name="library_play_all">Reproducir todo</string>
     <string name="library_check_permissions">Verifique los permisos de almacenamiento si los archivos no aparecen</string>
     <plurals name="library_creating_playlist">
-        <item quantity="one">Creando una lista de reproducción y agregando %1$d canciones…</item>
-        <item quantity="many">Creando una lista de reproducción y agregando %1$d canciones…</item>
-        <item quantity="other">Creando una lista de reproducción y agregando %1$d canciones…</item>
+        <item quantity="one">Creando lista de reproducción y añadiendo %1$d canción…</item>
+        <item quantity="many">Creando lista de reproducción y añadiendo %1$d canciones…</item>
+        <item quantity="other">Creando lista de reproducción y añadiendo %1$d canciones…</item>
     </plurals>
     <string name="library_playlist_name_empty">El nombre de la lista de reproducción no puede estar vacío</string>
     <string name="library_no_playlists">Aún no hay listas de reproducción</string>
     <string name="library_no_albums">Aún no hay álbumes</string>
     <plurals name="library_playlists_count">
-        <item quantity="one">%1$d listas de reproducción</item>
+        <item quantity="one">%1$d lista de reproducción</item>
         <item quantity="many">%1$d listas de reproducción</item>
         <item quantity="other">%1$d listas de reproducción</item>
     </plurals>
     <plurals name="library_albums_count">
-        <item quantity="one">%1$d álbumes</item>
+        <item quantity="one">%1$d álbum</item>
         <item quantity="many">%1$d álbumes</item>
         <item quantity="other">%1$d álbumes</item>
     </plurals>
@@ -549,7 +549,7 @@
     <string name="onboarding_media_scan_whitelist">Modo de lista blanca: muestra solo canciones de carpetas seleccionadas</string>
     <string name="onboarding_media_scan_configure_in_tuner">Configure el escaneo en Configuración &gt; Escaneo de medios</string>
     <string name="onboarding_complete_title">¡Ya está todo listo!</string>
-    <string name="onboarding_complete_desc">¡Rhythm está listo para reproducir música! Tu biblioteca de música se está escaneando en segundo plano. Esto es lo que está configurado:</string>
+    <string name="onboarding_complete_desc">¡Rhythm está listo para reproducir! Tu biblioteca de música se está escaneando en segundo plano. Esto es lo que está configurado:</string>
     <string name="onboarding_whats_next">¿Qué sigue?</string>
     <string name="onboarding_next_browse">Explora tus canciones, álbumes y artistas</string>
     <string name="onboarding_next_create">Crea tu primera lista de reproducción</string>
@@ -804,7 +804,7 @@
     <string name="queue_action_always_add_title">Agregar siempre a la cola</string>
     <string name="queue_action_always_add_desc">Agregar siempre la pista seleccionada a la cola</string>
     <!-- Additional UI Elements -->
-    <string name="now_playing">AHORA JUGANDO</string>
+    <string name="now_playing">REPRODUCIENDO AHORA</string>
     <string name="install_update_now">Instalar la actualización ahora</string>
     <string name="audio_settings">Configuración de audio</string>
     <string name="edit_metadata">Editar pista</string>
@@ -884,7 +884,7 @@
     <string name="action_export_all">Exportar todo</string>
     <string name="action_browse_files">Explorar archivos</string>
     <string name="action_choose">Elige</string>
-    <string name="action_play">Escuchar</string>
+    <string name="action_play">Reproducir</string>
     <string name="action_shuffle">Mezclar</string>
     <string name="action_share">Compartir</string>
     <!-- Settings Screen -->
@@ -989,7 +989,7 @@
     <string name="cd_reorder_tabs">Reordenar pestañas</string>
     <string name="cd_toggle_view_type">Alternar tipo de vista</string>
     <string name="cd_open_playlist">Abrir lista de reproducción</string>
-    <string name="cd_play_artist">Escuchar %1$s</string>
+    <string name="cd_play_artist">Reproducir %1$s</string>
     <string name="cd_storage">Almacenamiento</string>
     <string name="cd_pinned">Fijado</string>
     <string name="cd_folder">Carpeta</string>
@@ -1142,9 +1142,9 @@
     <string name="settings_rhythm_guard_mode_manual">Manual</string>
     <string name="settings_rhythm_guard_age_label">Perfil de edad: %1$d</string>
     <plurals name="settings_rhythm_guard_age_desc">
-        <item quantity="one">Volumen seguro recomendado hasta %1$d%% y alrededor de %2$d minutos por día.</item>
-        <item quantity="many">Volumen seguro recomendado hasta %1$d%% y alrededor de %2$d minutos por día.</item>
-        <item quantity="other">Volumen seguro recomendado hasta %1$d%% y alrededor de %2$d minutos por día.</item>
+        <item quantity="one">Volumen seguro recomendado de hasta el %2$d%% y alrededor de %1$d minuto al día.</item>
+        <item quantity="many">Volumen seguro recomendado de hasta el %2$d%% y alrededor de %1$d minutos al día.</item>
+        <item quantity="other">Volumen seguro recomendado de hasta el %2$d%% y alrededor de %1$d minutos al día.</item>
     </plurals>
     <string name="settings_rhythm_guard_auto_policy_table_title">Guía de escucha segura (Edad -&gt; Volumen / Día)</string>
     <string name="settings_rhythm_guard_auto_policy_band">Edad %1$d-%2$d</string>
@@ -1285,7 +1285,7 @@
     <string name="content_desc_sort_songs">Ordenar canciones</string>
     <string name="content_desc_more_options">Más opciones</string>
     <string name="content_desc_add_to_playlist">Agregar a la lista de reproducción</string>
-    <string name="content_desc_now_playing">Ahora jugando</string>
+    <string name="content_desc_now_playing">Reproduciendo ahora</string>
     <string name="content_desc_drag_reorder">Arrastra para reordenar</string>
     <string name="content_desc_remove_from_queue">Eliminar de la cola</string>
     <string name="content_desc_add_songs">Agregar canciones</string>
@@ -1478,7 +1478,7 @@
     <string name="list_queue_behavior_add_end_desc">Añade la lista al final de la cola y comienza desde la pista seleccionada.</string>
     <string name="list_queue_action_dialog_title">Cola ya activa</string>
     <plurals name="list_queue_action_dialog_body">
-        <item quantity="one">La cola actual tiene %1$d pistas. La lista entrante tiene %2$d pistas.</item>
+        <item quantity="one">La cola actual tiene %1$d pista. La lista entrante tiene %2$d pistas.</item>
         <item quantity="many">La cola actual tiene %1$d pistas. La lista entrante tiene %2$d pistas.</item>
         <item quantity="other">La cola actual tiene %1$d pistas. La lista entrante tiene %2$d pistas.</item>
     </plurals>
@@ -1496,7 +1496,7 @@
     <string name="settings_storage_rebuild_room_desc">Resincronizar la base de datos de Room a partir de los datos actuales de la biblioteca</string>
     <string name="settings_storage_room_stats">Estadísticas de la base de datos de habitaciones</string>
     <plurals name="settings_storage_song_count">
-        <item quantity="one">%1$d canciones almacenadas</item>
+        <item quantity="one">%1$d canción almacenada</item>
         <item quantity="many">%1$d canciones almacenadas</item>
         <item quantity="other">%1$d canciones almacenadas</item>
     </plurals>
@@ -1531,7 +1531,7 @@
     <string name="updates_enable_updates">Habilitar actualizaciones</string>
     <string name="settings_update_notifications">Notificaciones de actualización</string>
     <plurals name="settings_check_interval_value">
-        <item quantity="one">Cada %1$d horas</item>
+        <item quantity="one">Cada %1$d hora</item>
         <item quantity="many">Cada %1$d horas</item>
         <item quantity="other">Cada %1$d horas</item>
     </plurals>
@@ -1603,7 +1603,7 @@
     <string name="streaming_home_no_content_title">Aún no hay contenido de inicio</string>
     <string name="streaming_home_no_content_hint">Intente actualizar después de que su servicio termine de sincronizarse.</string>
     <plurals name="streaming_home_widget_playlist_track_count">
-        <item quantity="one">%1$d pistas</item>
+        <item quantity="one">%1$d pista</item>
         <item quantity="many">%1$d pistas</item>
         <item quantity="other">%1$d pistas</item>
     </plurals>
@@ -2065,7 +2065,7 @@
     <string name="rhythmwidgetpreview_str_43_extra_large_plus">Widget 4×3 Extra Grande Plus</string>
     <string name="rhythmwidgetpreview_str_54_huge_widget">Widget enorme 5×4</string>
     <string name="rhythmwidgetpreview_widget_states">Estados de los widgets</string>
-    <string name="rhythmwidgetpreview_playing">Jugando</string>
+    <string name="rhythmwidgetpreview_playing">Reproduciendo</string>
     <string name="rhythmwidgetpreview_paused">En pausa</string>
     <string name="rhythmwidgetpreview_design_features">Características de diseño</string>
     <string name="licensesbottomsheet_license_notes">Notas de licencia</string>
@@ -2105,7 +2105,7 @@
     <string name="betaprogrampopup_direct_feedback">Comentarios directos</string>
     <string name="betaprogrampopup_youre_part_of_an">Eres parte de un grupo exclusivo que ayuda a dar forma al futuro del reproductor de música Rhythm</string>
     <string name="betaprogrampopup_start_exploring">Comience a explorar</string>
-    <string name="switchmodedialog_switch_play">Cambiar y Reproducir</string>
+    <string name="switchmodedialog_switch_play">Cambiar y reproducir</string>
     <string name="fullscreenlyricsview_cover_artwork">Portada</string>
     <string name="fullscreenlyricsview_loading_synced_lyrics">Cargando letras sincronizadas…</string>
     <string name="fullscreenlyricsview_lyrics_arent_available_for">Letras no disponibles para esta canción</string>
@@ -2231,14 +2231,14 @@
     <string name="explorer_item_icon_description">Icono %1$s</string>
     <string name="song_added_to_blacklist_format">%1$s agregado a la lista negra</string>
     <plurals name="playlist_import_success">
-        <item quantity="one">Se importaron correctamente %1$d listas de reproducción.\n%2$s\n\nReinicie la aplicación para aplicar los cambios.</item>
-        <item quantity="many">Se importaron correctamente %1$d listas de reproducción.\n%2$s\n\nReinicie la aplicación para aplicar los cambios.</item>
-        <item quantity="other">Se importaron correctamente %1$d listas de reproducción.\n%2$s\n\nReinicie la aplicación para aplicar los cambios.</item>
+        <item quantity="one">Se ha importado correctamente %1$d lista de reproducción.\n%2$s\n\nReinicia la aplicación para aplicar los cambios.</item>
+        <item quantity="many">Se han importado correctamente %1$d listas de reproducción.\n%2$s\n\nReinicia la aplicación para aplicar los cambios.</item>
+        <item quantity="other">Se han importado correctamente %1$d listas de reproducción.\n%2$s\n\nReinicia la aplicación para aplicar los cambios.</item>
     </plurals>
     <string name="play_artist">Reproducir %1$s</string>
     <string name="will_play_next">%1$s se reproducirá a continuación</string>
-    <string name="added_to_queue">%1$s agregado a la cola</string>
-    <string name="added_to_queue_simple">Agregado a la cola: %1$s</string>
+    <string name="added_to_queue">%1$s se ha añadido a la cola</string>
+    <string name="added_to_queue_simple">Añadido a la cola: %1$s</string>
     <string name="playing_next_simple">Reproduciendo a continuación: %1$s</string>
     <string name="failed_to_request_permission">No se pudo solicitar permiso: %1$s</string>
     <string name="unexpected_error">Error inesperado: %1$s</string>
@@ -2255,9 +2255,9 @@
     <string name="track_artwork_description">Imagen de la pista %1$s</string>
     <string name="playlist_artwork_description">Imagen para lista de reproducción %1$s</string>
     <plurals name="playlist_remove_songs_confirm">
-        <item quantity="one">¿Estás seguro de que deseas eliminar %1$d canciones de esta lista de reproducción?</item>
-        <item quantity="many">¿Estás seguro de que deseas eliminar %1$d canciones de esta lista de reproducción?</item>
-        <item quantity="other">¿Estás seguro de que deseas eliminar %1$d canciones de esta lista de reproducción?</item>
+        <item quantity="one">¿Seguro que quieres eliminar %1$d canción de esta lista de reproducción?</item>
+        <item quantity="many">¿Seguro que quieres eliminar %1$d canciones de esta lista de reproducción?</item>
+        <item quantity="other">¿Seguro que quieres eliminar %1$d canciones de esta lista de reproducción?</item>
     </plurals>
     <!-- Settings Toggles / Options Descriptions -->
     <string name="widget_show_favorite_button_desc">Mostrar alternancia de favoritos en widgets grandes</string>
@@ -2410,7 +2410,7 @@
     <string name="autoeqpresetpickerbottomsheet_disable_desc">Borrar perfil de auriculares, usar ajustes preestablecidos de ecualizador estándar</string>
     <!-- Device Configuration additions -->
     <plurals name="device_configuration_devices_configured">
-        <item quantity="one">%1$d dispositivos configurados</item>
+        <item quantity="one">%1$d dispositivo configurado</item>
         <item quantity="many">%1$d dispositivos configurados</item>
         <item quantity="other">%1$d dispositivos configurados</item>
     </plurals>
@@ -2434,7 +2434,7 @@
     <string name="device_configuration_add">Agregar</string>
     <string name="device_configuration_for_device">Para %1$s</string>
     <plurals name="device_configuration_profiles_available">
-        <item quantity="one">%1$d perfiles disponibles</item>
+        <item quantity="one">%1$d perfil disponible</item>
         <item quantity="many">%1$d perfiles disponibles</item>
         <item quantity="other">%1$d perfiles disponibles</item>
     </plurals>
@@ -2467,11 +2467,11 @@
     <!-- Library & Playlist Dialog additions -->
     <string name="dialog_add_song_to_playlist">Añade \"%1$s\" a esta lista de reproducción</string>
     <plurals name="dialog_songs_in_queue">
-        <item quantity="one">Tienes %1$d canciones en la cola actual.</item>
+        <item quantity="one">Tienes %1$d canción en la cola actual.</item>
         <item quantity="many">Tienes %1$d canciones en la cola actual.</item>
         <item quantity="other">Tienes %1$d canciones en la cola actual.</item>
     </plurals>
-    <string name="dialog_play_song_how">¿Cómo te gustaría jugar \"%1$s\"?</string>
+    <string name="dialog_play_song_how">¿Cómo quieres reproducir «%1$s»?</string>
     <string name="dialog_clear_and_play">Limpiar y reproducir</string>
     <string name="dialog_clear_and_play_desc">Reemplace la cola y reproduzca esta canción</string>
     <string name="dialog_add_to_queue">Agregar a la cola</string>
@@ -2479,7 +2479,7 @@
     <string name="dialog_restart_warning_message">Para garantizar que todas las listas de reproducción importadas funcionen correctamente, recomendamos reiniciar la aplicación. Puede continuar usando la aplicación normalmente, pero es posible que algunas funciones no funcionen como se esperaba hasta que la reinicie.</string>
     <string name="dialog_export_playlist_to">Exportar \"%1$s\" a:</string>
     <plurals name="dialog_export_playlists_to">
-        <item quantity="one">Exportar %1$d listas de reproducción a:</item>
+        <item quantity="one">Exportar %1$d lista de reproducción a:</item>
         <item quantity="many">Exportar %1$d listas de reproducción a:</item>
         <item quantity="other">Exportar %1$d listas de reproducción a:</item>
     </plurals>
@@ -2535,12 +2535,12 @@
     <string name="library_no_artists_yet">Aún no hay artistas</string>
     <string name="library_action_add_to_playlist">Agregar a la lista de reproducción</string>
     <plurals name="library_selected_count_format">
-        <item quantity="one">%1$d Seleccionado</item>
-        <item quantity="many">%1$d Seleccionado</item>
-        <item quantity="other">%1$d Seleccionado</item>
+        <item quantity="one">%1$d seleccionado</item>
+        <item quantity="many">%1$d seleccionados</item>
+        <item quantity="other">%1$d seleccionados</item>
     </plurals>
     <plurals name="library_from_tracks_format">
-        <item quantity="one">de %1$d pistas</item>
+        <item quantity="one">de %1$d pista</item>
         <item quantity="many">de %1$d pistas</item>
         <item quantity="other">de %1$d pistas</item>
     </plurals>
@@ -2636,7 +2636,7 @@
     <string name="metadata_composer">Compositor</string>
     <string name="metadata_album_artist">Artista del álbum</string>
     <string name="metadata_play_count">Conteo de reproducciones</string>
-    <string name="metadata_total_played">Total jugado</string>
+    <string name="metadata_total_played">Total reproducido</string>
     <string name="metadata_quality">Calidad</string>
     <string name="metadata_audio_tech">Tecnología de audio</string>
     <string name="metadata_bit_depth">Profundidad de bits</string>
@@ -2717,9 +2717,9 @@
     <string name="backup_restore_status_included">Incluido</string>
     <string name="backup_restore_status_excluded">Excluido</string>
     <plurals name="backup_restore_sections_enabled">
-        <item quantity="one">%1$d de %2$d habilitado</item>
-        <item quantity="many">%1$d de %2$d habilitado</item>
-        <item quantity="other">%1$d de %2$d habilitado</item>
+        <item quantity="one">%1$d de %2$d activadas</item>
+        <item quantity="many">%1$d de %2$d activadas</item>
+        <item quantity="other">%1$d de %2$d activadas</item>
     </plurals>
     <!-- Settings status cards -->
     <string name="status_active">Activo</string>
@@ -2749,7 +2749,7 @@
     <string name="edit_album_title_label">Título del álbum</string>
     <string name="edit_album_artist_label">Artista del álbum</string>
     <plurals name="autoeq_profiles_available">
-        <item quantity="one">%1$d perfiles disponibles</item>
+        <item quantity="one">%1$d perfil disponible</item>
         <item quantity="many">%1$d perfiles disponibles</item>
         <item quantity="other">%1$d perfiles disponibles</item>
     </plurals>
@@ -2757,7 +2757,7 @@
     <string name="autoeq_change_profile">Cambiar perfil</string>
     <string name="autoeq_configure_device">Configurar dispositivo</string>
     <plurals name="playlist_count_format">
-        <item quantity="one">%1$d listas de reproducción</item>
+        <item quantity="one">%1$d lista de reproducción</item>
         <item quantity="many">%1$d listas de reproducción</item>
         <item quantity="other">%1$d listas de reproducción</item>
     </plurals>
