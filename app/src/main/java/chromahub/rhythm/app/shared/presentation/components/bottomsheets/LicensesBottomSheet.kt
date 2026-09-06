@@ -372,35 +372,39 @@ fun LicensesBottomSheet(
         containerColor = MaterialTheme.colorScheme.surfaceContainer,
         modifier = Modifier.widthIn(max = 640.dp).fillMaxWidth()
     ) {
-        StandardBottomSheetHeader(
-            title = context.getString(R.string.licenses_title),
-            subtitle = context.getString(R.string.licenses_desc),
-            visible = true
-        )
+        Column(modifier = Modifier.fillMaxWidth()) {
+            StandardBottomSheetHeader(
+                title = context.getString(R.string.licenses_title),
+                subtitle = context.getString(R.string.licenses_desc),
+                visible = true
+            )
 
-        AdaptiveSheetScrollContainer(
-            scrollState = scrollState,
-            modifier = Modifier.fillMaxWidth()
-        ) { endPadding ->
-            Column(
+            AdaptiveSheetScrollContainer(
+                scrollState = scrollState,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .verticalScroll(scrollState)
-                    .padding(start = 24.dp, end = 24.dp + endPadding, bottom = 24.dp)
-            ) {
-                Material3SettingsGroup(
-                    title = stringResource(R.string.settings_about_open_source_libs),
-                    items = licenseItems,
-                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
-                )
+                    .weight(1f, fill = false)
+            ) { endPadding ->
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .verticalScroll(scrollState)
+                        .padding(start = 24.dp, end = 24.dp + endPadding, bottom = 24.dp)
+                ) {
+                    Material3SettingsGroup(
+                        title = stringResource(R.string.settings_about_open_source_libs),
+                        items = licenseItems,
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                    )
 
-                Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
 
-                Material3SettingsGroup(
-                    title = stringResource(R.string.licensesbottomsheet_license_notes),
-                    items = licenseInfoItems,
-                    containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.3f)
-                )
+                    Material3SettingsGroup(
+                        title = stringResource(R.string.licensesbottomsheet_license_notes),
+                        items = licenseInfoItems,
+                        containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.3f)
+                    )
+                }
             }
         }
     }

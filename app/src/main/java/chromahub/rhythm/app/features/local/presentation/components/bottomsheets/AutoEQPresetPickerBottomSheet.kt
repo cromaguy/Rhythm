@@ -48,7 +48,10 @@ fun AutoEQPresetPickerBottomSheet(
     currentProfileName: String? = null,
     onDismissRequest: () -> Unit,
     onProfileSelected: (AutoEQProfile) -> Unit,
-    sheetState: SheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden)
+    sheetState: SheetState = rememberBottomSheetState(
+        initialValue = SheetValue.Hidden,
+        enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded)
+    )
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -101,8 +104,6 @@ fun AutoEQPresetPickerBottomSheet(
         result.sortedWith(compareByDescending { it.name == currentProfileName })
     }
 
-    var showContent by remember { mutableStateOf(true) }
-
     RhythmAdaptiveModalSheet(
         adaptiveType = SheetAdaptiveType.WIDE_DIALOG,
         lazyListState = listState,
@@ -115,63 +116,51 @@ fun AutoEQPresetPickerBottomSheet(
         contentColor = MaterialTheme.colorScheme.onBackground,
         tonalElevation = 0.dp
     ) {
-        Column(modifier = Modifier.fillMaxWidth()) {
-            AnimatedVisibility(
-                visible = showContent,
-                enter = fadeIn() + slideInVertically { it },
-                exit = fadeOut() + slideOutVertically { it }
+        StandardBottomSheetHeader(
+            title = stringResource(R.string.autoeqpresetpickerbottomsheet_choose_autoeq_preset),
+            subtitle = if (loading) "" else "${filtered.size} presets",
+            visible = true
+        )
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .fillMaxHeight()
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Column(modifier = Modifier.fillMaxWidth()) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 8.dp, bottom = 6.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = stringResource(R.string.autoeqpresetpickerbottomsheet_choose_autoeq_preset),
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
+                SettingsSearchBar(
+                    query = searchQuery,
+                    onQueryChange = { searchQuery = it },
+                    modifier = Modifier
+                        .weight(1f)
+                        .heightIn(min = 48.dp),
+                    hint = context.getString(R.string.autoeqpresetpickerbottomsheet_search_presets)
+                )
 
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 6.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        SettingsSearchBar(
-                            query = searchQuery,
-                            onQueryChange = { searchQuery = it },
-                            modifier = Modifier
-                                .weight(1f)
-                                .heightIn(min = 48.dp),
-                            hint = context.getString(R.string.autoeqpresetpickerbottomsheet_search_presets)
-                        )
-
-                        FilledTonalIconButton(
-                            onClick = { showFilters = !showFilters },
-                            colors = IconButtonDefaults.filledTonalIconButtonColors(
-                                containerColor = if (selectedBrand != null || selectedType != null)
-                                    MaterialTheme.colorScheme.primaryContainer
-                                else
-                                    MaterialTheme.colorScheme.secondaryContainer,
-                                contentColor = if (selectedBrand != null || selectedType != null)
-                                    MaterialTheme.colorScheme.onPrimaryContainer
-                                else
-                                    MaterialTheme.colorScheme.onSecondaryContainer
-                            )
-                        ) {
-                            Icon(
-                                imageVector = RhythmIcons.FilterList, // Changed icon here
-                                contentDescription = stringResource(R.string.autoeqpresetpickerbottomsheet_toggle_filters),
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-                    }
+                FilledTonalIconButton(
+                    onClick = { showFilters = !showFilters },
+                    colors = IconButtonDefaults.filledTonalIconButtonColors(
+                        containerColor = if (selectedBrand != null || selectedType != null)
+                            MaterialTheme.colorScheme.primaryContainer
+                        else
+                            MaterialTheme.colorScheme.secondaryContainer,
+                        contentColor = if (selectedBrand != null || selectedType != null)
+                            MaterialTheme.colorScheme.onPrimaryContainer
+                        else
+                            MaterialTheme.colorScheme.onSecondaryContainer
+                    )
+                ) {
+                    Icon(
+                        imageVector = RhythmIcons.FilterList,
+                        contentDescription = stringResource(R.string.autoeqpresetpickerbottomsheet_toggle_filters),
+                        modifier = Modifier.size(20.dp)
+                    )
                 }
             }
 
@@ -185,7 +174,6 @@ fun AutoEQPresetPickerBottomSheet(
                 ) + fadeIn(),
                 exit = shrinkVertically() + fadeOut()
             ) {
-                // Swapped ElevatedCard for flat Card to remove shadow elevation
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -199,7 +187,6 @@ fun AutoEQPresetPickerBottomSheet(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(vertical = 16.dp)
-                            .animateContentSize()
                     ) {
                         Row(
                             modifier = Modifier
@@ -220,7 +207,6 @@ fun AutoEQPresetPickerBottomSheet(
                                 enter = fadeIn(),
                                 exit = fadeOut()
                             ) {
-                                // Proper button for Clear all
                                 TextButton(
                                     onClick = {
                                         selectedBrand = null
@@ -260,7 +246,7 @@ fun AutoEQPresetPickerBottomSheet(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(24.dp),
+                        .weight(1f),
                     contentAlignment = Alignment.Center
                 ) {
                     CircularProgressIndicator()
@@ -268,7 +254,9 @@ fun AutoEQPresetPickerBottomSheet(
             } else {
                 AdaptiveSheetScrollContainer(
                     lazyListState = listState,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
                 ) { endPadding ->
                     LazyColumn(
                         state = listState,
@@ -281,96 +269,26 @@ fun AutoEQPresetPickerBottomSheet(
                         ),
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                    item {
-                        val isCurrentlyActive = currentProfileName.isNullOrBlank() || currentProfileName == "None"
-                        Surface(
-                            onClick = {
-                                onProfileSelected(AutoEQProfile("None", "", "", List(10) { 0f }))
-                                scope.launch { sheetState.hide() }
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                            color = if (isCurrentlyActive)
-                                MaterialTheme.colorScheme.secondaryContainer
-                            else
-                                MaterialTheme.colorScheme.surface,
-                            shape = groupedPresetItemShape(0, filtered.size + 1),
-                            tonalElevation = if (isCurrentlyActive) 0.dp else 1.dp
-                        ) {
-                            ListItem(
-                                supportingContent = {
-                                    Text(
-                                        context.getString(R.string.autoeqpresetpickerbottomsheet_disable_desc),
-                                        color = if (isCurrentlyActive) MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f) else MaterialTheme.colorScheme.onSurfaceVariant,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-                                },
-                                trailingContent = {
-                                    if (isCurrentlyActive) {
-                                        Icon(
-                                            imageVector = RhythmIcons.Check,
-                                            contentDescription = stringResource(R.string.autoeqpresetpickerbottomsheet_currently_active),
-                                            tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                                            modifier = Modifier.size(24.dp)
-                                        )
-                                    }
-                                },
-                                colors = ListItemDefaults.colors(
-                                    containerColor = Color.Transparent
-                                ),
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Text(
-                                    context.getString(R.string.autoeqpresetpickerbottomsheet_disable),
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    fontWeight = if (isCurrentlyActive) FontWeight.SemiBold else FontWeight.Normal,
-                                    color = if (isCurrentlyActive) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurface,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                            }
-                        }
-                    }
-
-                    if (filtered.isEmpty()) {
                         item {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(32.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = stringResource(R.string.autoeqpresetpickerbottomsheet_no_presets_found),
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
-                    } else {
-                        itemsIndexed(
-                            items = filtered,
-                            key = { _, profile -> profile.name }
-                        ) { index, profile ->
-                            val isCurrentlyActive = profile.name == currentProfileName
+                            val isCurrentlyActive = currentProfileName.isNullOrBlank() || currentProfileName == "None"
                             Surface(
                                 onClick = {
-                                    onProfileSelected(profile)
+                                    onProfileSelected(AutoEQProfile("None", "", "", List(10) { 0f }))
                                     scope.launch { sheetState.hide() }
                                 },
                                 modifier = Modifier.fillMaxWidth(),
                                 color = if (isCurrentlyActive)
-                                    MaterialTheme.colorScheme.secondaryContainer
+                                    MaterialTheme.colorScheme.primaryContainer
                                 else
-                                    MaterialTheme.colorScheme.surface,
-                                shape = groupedPresetItemShape(index + 1, filtered.size + 1),
-                                tonalElevation = if (isCurrentlyActive) 0.dp else 1.dp
+                                    MaterialTheme.colorScheme.surfaceContainerHigh,
+                                shape = groupedPresetItemShape(0, filtered.size + 1),
+                                tonalElevation = 0.dp
                             ) {
                                 ListItem(
                                     supportingContent = {
                                         Text(
-                                            profile.brand,
-                                            color = if (isCurrentlyActive) MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f) else MaterialTheme.colorScheme.onSurfaceVariant,
+                                            context.getString(R.string.autoeqpresetpickerbottomsheet_disable_desc),
+                                            color = if (isCurrentlyActive) MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f) else MaterialTheme.colorScheme.onSurfaceVariant,
                                             maxLines = 1,
                                             overflow = TextOverflow.Ellipsis
                                         )
@@ -380,7 +298,7 @@ fun AutoEQPresetPickerBottomSheet(
                                             Icon(
                                                 imageVector = RhythmIcons.Check,
                                                 contentDescription = stringResource(R.string.autoeqpresetpickerbottomsheet_currently_active),
-                                                tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
                                                 modifier = Modifier.size(24.dp)
                                             )
                                         }
@@ -391,13 +309,84 @@ fun AutoEQPresetPickerBottomSheet(
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
                                     Text(
-                                        profile.name,
+                                        context.getString(R.string.autoeqpresetpickerbottomsheet_disable),
                                         style = MaterialTheme.typography.bodyLarge,
                                         fontWeight = if (isCurrentlyActive) FontWeight.SemiBold else FontWeight.Normal,
-                                        color = if (isCurrentlyActive) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurface,
+                                        color = if (isCurrentlyActive) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis
                                     )
+                                }
+                            }
+                        }
+
+                        if (filtered.isEmpty()) {
+                            item {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(32.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = stringResource(R.string.autoeqpresetpickerbottomsheet_no_presets_found),
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        } else {
+                            itemsIndexed(
+                                items = filtered,
+                                key = { _, profile -> profile.name }
+                            ) { index, profile ->
+                                val isCurrentlyActive = profile.name == currentProfileName
+                                Surface(
+                                    onClick = {
+                                        onProfileSelected(profile)
+                                        scope.launch { sheetState.hide() }
+                                    },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    color = if (isCurrentlyActive)
+                                        MaterialTheme.colorScheme.primaryContainer
+                                    else
+                                        MaterialTheme.colorScheme.surfaceContainerHigh,
+                                    shape = groupedPresetItemShape(index + 1, filtered.size + 1),
+                                    tonalElevation = 0.dp
+                                ) {
+                                    ListItem(
+                                        supportingContent = {
+                                            Text(
+                                                profile.brand,
+                                                color = if (isCurrentlyActive) MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f) else MaterialTheme.colorScheme.onSurfaceVariant,
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
+                                        },
+                                        trailingContent = {
+                                            if (isCurrentlyActive) {
+                                                Icon(
+                                                    imageVector = RhythmIcons.Check,
+                                                    contentDescription = stringResource(R.string.autoeqpresetpickerbottomsheet_currently_active),
+                                                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                                    modifier = Modifier.size(24.dp)
+                                                )
+                                            }
+                                        },
+                                        colors = ListItemDefaults.colors(
+                                            containerColor = Color.Transparent
+                                        ),
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Text(
+                                            profile.name,
+                                            style = MaterialTheme.typography.bodyLarge,
+                                            fontWeight = if (isCurrentlyActive) FontWeight.SemiBold else FontWeight.Normal,
+                                            color = if (isCurrentlyActive) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -406,7 +395,6 @@ fun AutoEQPresetPickerBottomSheet(
             }
         }
     }
-}
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -437,7 +425,6 @@ private fun FilterSection(
                 enter = fadeIn(),
                 exit = fadeOut()
             ) {
-                // Upgraded to a proper TextButton
                 TextButton(
                     onClick = onClear,
                     contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp)

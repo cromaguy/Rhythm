@@ -138,7 +138,6 @@ fun PlaylistSongOptionsBottomSheet(
     haptics: HapticFeedback
 ) {
     val context = LocalContext.current
-    var showContent by remember { mutableStateOf(true) }
     val sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded))
 
     val scrollState = rememberScrollState()
@@ -164,101 +163,90 @@ fun PlaylistSongOptionsBottomSheet(
                 .fillMaxWidth()
                 .padding(bottom = 16.dp)
         ) {
-            AnimatedVisibility(
-                visible = showContent,
-                enter = fadeIn() + slideInVertically { it },
-                exit = fadeOut() + slideOutVertically { it }
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 16.dp)
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 20.dp, vertical = 16.dp)
+                Text(
+                    text = stringResource(R.string.playlistsongoptionsbottomsheet_song_options),
+                    style = MaterialTheme.typography.displayMedium,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                
+                Spacer(modifier = Modifier.height(18.dp))
+
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+                    ),
+                    shape = RoundedCornerShape(20.dp)
                 ) {
-                    Text(
-                        text = stringResource(R.string.playlistsongoptionsbottomsheet_song_options),
-                        style = MaterialTheme.typography.displayMedium,
-                        fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    
-                    Spacer(modifier = Modifier.height(18.dp))
-
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
-                        ),
-                        shape = RoundedCornerShape(20.dp)
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(20.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(20.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                        Surface(
+                            modifier = Modifier.size(56.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            tonalElevation = 0.dp
                         ) {
-                            Surface(
-                                modifier = Modifier.size(56.dp),
-                                shape = RoundedCornerShape(12.dp),
-                                tonalElevation = 0.dp
-                            ) {
-                                AsyncImage(
-                                    model = ImageRequest.Builder(context)
-                                        .apply(ImageUtils.buildImageRequest(
-                                            song.artworkUri,
-                                            song.title,
-                                            context.cacheDir,
-                                            M3PlaceholderType.TRACK
-                                        ))
-                                        .build(),
-                                    contentDescription = null,
-                                    contentScale = ContentScale.Crop
-                                )
-                            }
+                            AsyncImage(
+                                model = ImageRequest.Builder(context)
+                                    .apply(ImageUtils.buildImageRequest(
+                                        song.artworkUri,
+                                        song.title,
+                                        context.cacheDir,
+                                        M3PlaceholderType.TRACK
+                                    ))
+                                    .build(),
+                                contentDescription = null,
+                                contentScale = ContentScale.Crop
+                            )
+                        }
 
-                            Spacer(modifier = Modifier.width(16.dp))
+                        Spacer(modifier = Modifier.width(16.dp))
 
-                            Column(
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Text(
-                                    text = stringResource(
-                                        if (isStreamingMode) R.string.playlistsongoptions_streaming_song else R.string.playlistsongoptions_local_song
-                                    ),
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = MaterialTheme.colorScheme.primary,
-                                    fontWeight = FontWeight.SemiBold
-                                )
+                        Column(
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text(
+                                text = stringResource(
+                                    if (isStreamingMode) R.string.playlistsongoptions_streaming_song else R.string.playlistsongoptions_local_song
+                                ),
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.SemiBold
+                            )
 
-                                Spacer(modifier = Modifier.height(4.dp))
+                            Spacer(modifier = Modifier.height(4.dp))
 
-                                Text(
-                                    text = song.title,
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
+                            Text(
+                                text = song.title,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
 
-                                Text(
-                                    text = song.artist,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                            }
+                            Text(
+                                text = song.artist,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
                         }
                     }
                 }
             }
-            
-            AnimatedVisibility(
-                visible = showContent,
-                enter = fadeIn() + slideInVertically { it },
-                exit = fadeOut() + slideOutVertically { it }
-            ) {
-                AdaptiveSheetScrollContainer(
+
+            AdaptiveSheetScrollContainer(
                     scrollState = scrollState,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -445,7 +433,6 @@ fun PlaylistSongOptionsBottomSheet(
             }
         }
     }
-}
 }
 
 @Composable

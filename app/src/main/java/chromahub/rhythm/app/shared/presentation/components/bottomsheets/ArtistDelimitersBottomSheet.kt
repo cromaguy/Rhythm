@@ -171,7 +171,7 @@ fun ArtistDelimitersBottomSheet(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .fillMaxHeight(0.85f)
+                .fillMaxHeight()
         ) {
             // Header Area per page
             AnimatedContent(

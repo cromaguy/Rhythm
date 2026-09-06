@@ -713,7 +713,7 @@ fun MaterialPlayerScreen(
 
     // Bottom sheet states
     val queueSheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded))
-    val addToPlaylistSheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden)
+    val addToPlaylistSheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded))
     val deviceOutputSheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded))
     var showQueueSheet by remember { mutableStateOf(false) }
     var showDeviceOutputSheet by remember { mutableStateOf(false) }
@@ -1554,7 +1554,7 @@ fun MaterialPlayerScreen(
                                         haptic,
                                         HapticType.HEAVY
                                     )
-                                    song?.let { openArtistForSong(it) }
+                                    openArtistForSong(song)
                                 }
                         )
                         
@@ -2396,7 +2396,7 @@ fun MaterialPlayerScreen(
                                             haptic,
                                             HapticType.HEAVY
                                         )
-                                        song?.let { openArtistForSong(it) }
+                                        openArtistForSong(song)
                                     },
                                 enabled = true
                             )

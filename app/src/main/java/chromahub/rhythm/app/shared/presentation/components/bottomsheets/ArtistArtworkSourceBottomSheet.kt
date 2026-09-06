@@ -37,7 +37,8 @@ fun ArtistArtworkSourceBottomSheet(
     appSettings: AppSettings,
     sheetState: SheetState = rememberBottomSheetState(
         initialValue = SheetValue.Hidden,
-        confirmValueChange = { true }
+        confirmValueChange = { true },
+        enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded)
     )
 ) {
     val context = LocalContext.current

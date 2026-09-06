@@ -104,14 +104,15 @@ fun AddToPlaylistBottomSheet(
     onDismissRequest: () -> Unit,
     onAddToPlaylist: (Playlist) -> Unit,
     onCreateNewPlaylist: () -> Unit,
-    sheetState: androidx.compose.material3.SheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden)
+    sheetState: androidx.compose.material3.SheetState = rememberBottomSheetState(
+        initialValue = SheetValue.Hidden,
+        enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded)
+    )
 ) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val haptics = LocalHapticFeedback.current
     
-    // Animation states
-    var showContent by remember { mutableStateOf(true) }
     val playlistListState = rememberLazyListState()
 
     RhythmAdaptiveModalSheet(
@@ -136,79 +137,62 @@ fun AddToPlaylistBottomSheet(
                 .padding(bottom = 24.dp)
         ) {
             // Header with title and song info
-            AnimatedVisibility(
-                visible = showContent,
-                enter = fadeIn() + slideInVertically { it },
-                exit = fadeOut() + slideOutVertically { it }
-            ) {
-                AddToPlaylistHeader(
-                    song = song,
-                    totalPlaylists = playlists.size
-                )
-            }
+            AddToPlaylistHeader(
+                song = song,
+                totalPlaylists = playlists.size
+            )
             
             Spacer(modifier = Modifier.height(16.dp))
 
             // Create new playlist button
-            AnimatedVisibility(
-                visible = showContent,
-                enter = fadeIn() + slideInVertically { it },
-                exit = fadeOut() + slideOutVertically { it }
-            ) {
-                CreateNewPlaylistCard(
-                    onClick = {
-                        HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
-                        scope.launch { sheetState.hide() }.invokeOnCompletion {
-                            if (!sheetState.isVisible) {
-                                onCreateNewPlaylist()
-                            }
+            CreateNewPlaylistCard(
+                onClick = {
+                    HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
+                    scope.launch { sheetState.hide() }.invokeOnCompletion {
+                        if (!sheetState.isVisible) {
+                            onCreateNewPlaylist()
                         }
                     }
-                )
-            }
+                }
+            )
 
             if (playlists.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(16.dp))
                 
                 // Playlists section
-                AnimatedVisibility(
-                    visible = showContent,
-                    enter = fadeIn() + slideInVertically { it },
-                    exit = fadeOut() + slideOutVertically { it }
-                ) {
-                    AdaptiveSheetScrollContainer(
-                        lazyListState = playlistListState,
-                        modifier = Modifier.fillMaxWidth()
-                    ) { endPadding ->
-                        // List of existing playlists
-                        LazyColumn(
-                            state = playlistListState,
-                            contentPadding = PaddingValues(
-                                start = 24.dp,
-                                end = 24.dp + endPadding,
-                                top = 8.dp,
-                                bottom = 8.dp
-                            ),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            itemsIndexed(
-                                items = playlists,
-                                key = { _, playlist -> "playlist_${playlist.id}" },
-                                contentType = { _, _ -> "playlist" }
-                            ) { index, playlist ->
-                                PlaylistCard(
-                                    playlist = playlist,
-                                    itemShape = groupedPlaylistItemShape(index, playlists.size),
-                                    onClick = {
-                                        HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
-                                        scope.launch { sheetState.hide() }.invokeOnCompletion {
-                                            if (!sheetState.isVisible) {
-                                                onAddToPlaylist(playlist)
-                                            }
+                AdaptiveSheetScrollContainer(
+                    lazyListState = playlistListState,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f, fill = false)
+                ) { endPadding ->
+                    LazyColumn(
+                        state = playlistListState,
+                        contentPadding = PaddingValues(
+                            start = 24.dp,
+                            end = 24.dp + endPadding,
+                            top = 8.dp,
+                            bottom = 8.dp
+                        ),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        itemsIndexed(
+                            items = playlists,
+                            key = { _, playlist -> "playlist_${playlist.id}" },
+                            contentType = { _, _ -> "playlist" }
+                        ) { index, playlist ->
+                            PlaylistCard(
+                                playlist = playlist,
+                                itemShape = groupedPlaylistItemShape(index, playlists.size),
+                                onClick = {
+                                    HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
+                                    scope.launch { sheetState.hide() }.invokeOnCompletion {
+                                        if (!sheetState.isVisible) {
+                                            onAddToPlaylist(playlist)
                                         }
                                     }
-                                )
-                            }
+                                }
+                            )
                         }
                     }
                 }
@@ -216,13 +200,7 @@ fun AddToPlaylistBottomSheet(
                 Spacer(modifier = Modifier.height(16.dp))
                 
                 // Empty state
-                AnimatedVisibility(
-                    visible = showContent,
-                    enter = fadeIn() + slideInVertically { it },
-                    exit = fadeOut() + slideOutVertically { it }
-                ) {
-                    EmptyPlaylistsState()
-                }
+                EmptyPlaylistsState()
             }
         }
     }

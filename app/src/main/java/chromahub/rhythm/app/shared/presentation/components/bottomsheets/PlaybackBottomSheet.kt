@@ -132,9 +132,6 @@ fun PlaybackBottomSheet(
     val context = LocalContext.current
     val haptics = LocalHapticFeedback.current
     
-    // Animation states
-    var showContent by remember { mutableStateOf(true) }
-    
     // System volume state
     var systemVolume by remember { mutableFloatStateOf(0.5f) }
     var systemMaxVolume by remember { mutableIntStateOf(15) }
@@ -167,24 +164,6 @@ fun PlaybackBottomSheet(
     val isOffloadEnforced = batterySaverEnabled && (batterySaverMode == "auto" || (batterySaverMode == "manual" && batterySaverEnableOffload))
     
     var showSpeedPitchSheet by remember { mutableStateOf(false) }
-    
-    val contentAlpha by animateFloatAsState(
-        targetValue = if (showContent) 1f else 0f,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessLow
-        ),
-        label = "contentAlpha"
-    )
-    
-    val contentTranslation by animateFloatAsState(
-        targetValue = if (showContent) 0f else 30f,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessLow
-        ),
-        label = "contentTranslation"
-    )
 
     // Quality sheet and restart dialog state
     var showQualitySheet by remember { mutableStateOf(false) }
@@ -251,15 +230,9 @@ fun PlaybackBottomSheet(
                 .padding(bottom = 24.dp)
         ) {
             // Header - Fixed at top, doesn't scroll
-            AnimatedVisibility(
-                visible = showContent,
-                enter = fadeIn() + slideInVertically { it },
-                exit = fadeOut() + slideOutVertically { it }
-            ) {
-                PlaybackHeader(
-                    haptics = haptics
-                )
-            }
+            PlaybackHeader(
+                haptics = haptics
+            )
             
             Spacer(modifier = Modifier.height(16.dp))
             
@@ -1333,44 +1306,7 @@ private fun AnimateIn(
     delay: Int = 50,
     content: @Composable () -> Unit
 ) {
-    var visible by remember { mutableStateOf(false) }
-    LaunchedEffect(Unit) {
-        delay(delay.toLong())
-        visible = true
-    }
-
-    val alpha by androidx.compose.animation.core.animateFloatAsState(
-        targetValue = if (visible) 1f else 0f,
-        animationSpec = androidx.compose.animation.core.tween(durationMillis = 350, delayMillis = 0),
-        label = "alpha"
-    )
-
-    val scale by androidx.compose.animation.core.animateFloatAsState(
-        targetValue = if (visible) 1f else 0.92f,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessMediumLow
-        ),
-        label = "scale"
-    )
-
-    val translationY by androidx.compose.animation.core.animateFloatAsState(
-        targetValue = if (visible) 0f else 20f,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessMediumLow
-        ),
-        label = "translationY"
-    )
-
-    Box(
-        modifier = modifier.graphicsLayer(
-            alpha = alpha,
-            scaleX = scale,
-            scaleY = scale,
-            translationY = translationY
-        )
-    ) {
+    Box(modifier = modifier) {
         content()
     }
 }

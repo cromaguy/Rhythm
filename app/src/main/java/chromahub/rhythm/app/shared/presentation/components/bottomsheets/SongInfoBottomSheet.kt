@@ -216,8 +216,6 @@ fun SongInfoBottomSheet(
     
     val useHoursFormat by appSettings.useHoursInTimeFormat.collectAsState()
     
-    var showContent by remember { mutableStateOf(true) }
-    
     var currentSong by remember(song?.id) { mutableStateOf(song) }
     
     LaunchedEffect(song) {
@@ -775,65 +773,59 @@ fun SongInfoBottomSheet(
                     .padding(bottom = 16.dp)
             ) {
                 // Header (Sticky at top)
-                AnimatedVisibility(
-                    visible = showContent,
-                    enter = fadeIn() + slideInVertically { it },
-                    exit = fadeOut() + slideOutVertically { it }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 24.dp, vertical = 8.dp),
-                        horizontalArrangement = Arrangement.spacedBy(16.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                    Surface(
+                        modifier = Modifier.size(80.dp),
+                        shape = songArtShape,
+                        tonalElevation = 0.dp,
+                        shadowElevation = 0.dp
                     ) {
-                        Surface(
-                            modifier = Modifier.size(80.dp),
-                            shape = songArtShape,
-                            tonalElevation = 0.dp,
-                            shadowElevation = 0.dp
-                        ) {
-                            AsyncImage(
-                                model = ImageRequest.Builder(context)
-                                    .apply(
-                                        ImageUtils.buildImageRequest(
-                                            displayArtworkUri,
-                                            displaySong.title,
-                                            context.cacheDir,
-                                            M3PlaceholderType.TRACK
-                                        )
+                        AsyncImage(
+                            model = ImageRequest.Builder(context)
+                                .apply(
+                                    ImageUtils.buildImageRequest(
+                                        displayArtworkUri,
+                                        displaySong.title,
+                                        context.cacheDir,
+                                        M3PlaceholderType.TRACK
                                     )
-                                    .build(),
-                                contentDescription = stringResource(R.string.songinfobottomsheet_song_artwork),
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier.fillMaxSize()
-                            )
-                        }
+                                )
+                                .build(),
+                            contentDescription = stringResource(R.string.songinfobottomsheet_song_artwork),
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
 
-                        Column(
-                            modifier = Modifier.weight(1f),
-                            verticalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            Text(
-                                text = displaySong.title,
-                                style = MaterialTheme.typography.headlineSmall.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                ),
-                                maxLines = 2,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                            
-                            MarqueeText(
-                                text = displaySong.artist,
-                                style = MaterialTheme.typography.titleMedium.copy(
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                ),
-                                gradientEdgeColor = MaterialTheme.colorScheme.surface,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        }
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Text(
+                            text = displaySong.title,
+                            style = MaterialTheme.typography.headlineSmall.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            ),
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        
+                        MarqueeText(
+                            text = displaySong.artist,
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            ),
+                            gradientEdgeColor = MaterialTheme.colorScheme.surface,
+                            modifier = Modifier.fillMaxWidth()
+                        )
                     }
                 }
 
@@ -971,47 +963,29 @@ fun SongInfoBottomSheet(
             }
             
             item {
-                androidx.compose.animation.AnimatedVisibility(
-                    visible = showContent,
-                    enter = fadeIn() + slideInVertically { it },
-                    exit = fadeOut() + slideOutVertically { it }
-                ) {
-                    SongInfoCard(
-                        song = displaySong,
-                        extendedInfo = extendedInfo,
-                        useHoursFormat = useHoursFormat,
-                        isLoading = isLoadingMetadata
-                    )
-                }
+                SongInfoCard(
+                    song = displaySong,
+                    extendedInfo = extendedInfo,
+                    useHoursFormat = useHoursFormat,
+                    isLoading = isLoadingMetadata
+                )
             }
 
             item {
-                androidx.compose.animation.AnimatedVisibility(
-                    visible = showContent,
-                    enter = fadeIn() + slideInVertically { it },
-                    exit = fadeOut() + slideOutVertically { it }
-                ) {
-                    RhythmStatsCard(
-                        songPlaybackStats = songPlaybackStats,
-                        useHoursFormat = useHoursFormat,
-                        isLoading = isLoadingStats
-                    )
-                }
+                RhythmStatsCard(
+                    songPlaybackStats = songPlaybackStats,
+                    useHoursFormat = useHoursFormat,
+                    isLoading = isLoadingStats
+                )
             }
 
             item {
-                androidx.compose.animation.AnimatedVisibility(
-                    visible = showContent,
-                    enter = fadeIn() + slideInVertically { it },
-                    exit = fadeOut() + slideOutVertically { it }
-                ) {
-                    FileInfoCard(
-                        song = displaySong,
-                        extendedInfo = extendedInfo,
-                        folderPath = folderPath,
-                        isLoading = isLoadingMetadata
-                    )
-                }
+                FileInfoCard(
+                    song = displaySong,
+                    extendedInfo = extendedInfo,
+                    folderPath = folderPath,
+                    isLoading = isLoadingMetadata
+                )
             }
             }
         }
@@ -1124,9 +1098,7 @@ private fun MetadataSection(
     content: @Composable () -> Unit
 ) {
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .animateContentSize(),
+        modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Row(
@@ -1549,7 +1521,6 @@ private fun EditSongSheet(
     var isSaving by remember { mutableStateOf(false) }
     var isFetchingOnlineArt by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
-    var showContent by remember { mutableStateOf(true) }
     var resolvedSongArtworkUri by remember(song.id, song.artworkUri, song.uri) {
         mutableStateOf(song.artworkUri)
     }

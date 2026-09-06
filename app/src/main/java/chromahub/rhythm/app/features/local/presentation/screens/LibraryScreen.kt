@@ -488,7 +488,7 @@ fun LibraryScreen(
     var explorerFolderSongs by remember { mutableStateOf<List<Song>>(emptyList()) }
     var selectedSong by remember { mutableStateOf<Song?>(null) }
     var songsToAddToPlaylist by remember { mutableStateOf<List<Song>>(emptyList()) }
-    val addToPlaylistSheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden)
+    val addToPlaylistSheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded))
     
     val multiSelectionState = remember { chromahub.rhythm.app.features.local.presentation.viewmodel.MultiSelectionStateHolder() }
     val selectedSongs by multiSelectionState.selectedSongs.collectAsState()

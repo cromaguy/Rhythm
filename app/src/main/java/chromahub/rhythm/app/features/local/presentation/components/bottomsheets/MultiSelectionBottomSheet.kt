@@ -142,8 +142,6 @@ fun MultiSelectionBottomSheet(
     val sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded))
     val haptics = LocalHapticFeedback.current
     
-    var showContent by remember { mutableStateOf(true) }
-    
     val allAreLiked by remember(selectedSongs, favoriteSongIds) {
         derivedStateOf {
             selectedSongs.isNotEmpty() && selectedSongs.all { favoriteSongIds.contains(it.id) }
@@ -174,21 +172,10 @@ fun MultiSelectionBottomSheet(
                 .padding(bottom = 16.dp)
         ) {
             // Header with selection info
-            AnimatedVisibility(
-                visible = showContent,
-                enter = fadeIn() + slideInVertically { it },
-                exit = fadeOut() + slideOutVertically { it }
-            ) {
-                MultiSelectionHeader(selectedSongs = selectedSongs)
-            }
+            MultiSelectionHeader(selectedSongs = selectedSongs)
             
             // Actions section with grouped grid layout
-            AnimatedVisibility(
-                visible = showContent,
-                enter = fadeIn() + slideInVertically { it },
-                exit = fadeOut() + slideOutVertically { it }
-            ) {
-                AdaptiveSheetScrollContainer(
+            AdaptiveSheetScrollContainer(
                     scrollState = scrollState,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -395,7 +382,6 @@ fun MultiSelectionBottomSheet(
             }
         }
     }
-}
 }
 
 /**

@@ -139,8 +139,6 @@ fun ExtraControlBottomSheet(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
-    var showContent by remember { mutableStateOf(true) }
-
     fun dismissAndDo(action: () -> Unit) {
         scope.launch {
             sheetState.hide()
@@ -317,47 +315,36 @@ fun ExtraControlBottomSheet(
                 .padding(bottom = 16.dp)
         ) {
             // Header — matches SongOptionsBottomSheet style
-            AnimatedVisibility(
-                visible = showContent,
-                enter = fadeIn() + slideInVertically { it },
-                exit = fadeOut() + slideOutVertically { it }
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 16.dp)
             ) {
-                Column(
+                Text(
+                    text = stringResource(R.string.settings_shapes_player_controls),
+                    style = MaterialTheme.typography.displayMedium,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Box(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 20.dp, vertical = 16.dp)
+                        .background(
+                            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                            shape = CircleShape
+                        )
                 ) {
                     Text(
-                        text = stringResource(R.string.settings_shapes_player_controls),
-                        style = MaterialTheme.typography.displayMedium,
-                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                        style = MaterialTheme.typography.labelLarge,
+                        text = stringResource(R.string.libraryscreen_more_actions),
                         color = MaterialTheme.colorScheme.onSurface
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Box(
-                        modifier = Modifier
-                            .background(
-                                color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                                shape = CircleShape
-                            )
-                    ) {
-                        Text(
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                            style = MaterialTheme.typography.labelLarge,
-                            text = stringResource(R.string.libraryscreen_more_actions),
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
                 }
             }
 
             // Grouped status grid layout matching RhythmGuardTrendsRow
-            AnimatedVisibility(
-                visible = showContent,
-                enter = fadeIn() + slideInVertically { it },
-                exit = fadeOut() + slideOutVertically { it }
-            ) {
-                AdaptiveSheetScrollContainer(
+            AdaptiveSheetScrollContainer(
                     scrollState = scrollState,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -406,7 +393,6 @@ fun ExtraControlBottomSheet(
             }
         }
     }
-}
 }
 
 @Composable

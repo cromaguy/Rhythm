@@ -317,9 +317,6 @@ fun LyricsEditorBottomSheet(
         timeOffset = initialTimeOffset
     }
 
-    // Animation states
-    var showContent by remember { mutableStateOf(true) }
-
     // Function to adjust LRC timestamps or word-by-word JSON timestamps
     fun adjustLyricsTimestamps(lyrics: String, offsetMs: Int): String {
         if (offsetMs == 0) return lyrics
@@ -663,18 +660,11 @@ fun LyricsEditorBottomSheet(
                 .fillMaxWidth()
                 .padding(bottom = 24.dp)
         ) {
-            // Header with animation
-            AnimatedVisibility(
-                visible = showContent,
-                enter = fadeIn() + slideInVertically { it },
-                exit = fadeOut() + slideOutVertically { it }
-            ) {
-                LyricsEditorHeader(
-                    songTitle = songTitle,
-                    hasLyrics = editedLyrics.isNotBlank(),
-                    formatLabel = detectedFormatLabel
-                )
-            }
+            LyricsEditorHeader(
+                songTitle = songTitle,
+                hasLyrics = editedLyrics.isNotBlank(),
+                formatLabel = detectedFormatLabel
+            )
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -853,16 +843,11 @@ fun LyricsEditorBottomSheet(
             }
 
             // Format Selector Button Group like Theme Switcher
-            AnimatedVisibility(
-                visible = showContent,
-                enter = fadeIn() + slideInVertically { it },
-                exit = fadeOut() + slideOutVertically { it }
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp)
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 24.dp)
-                ) {
                     RhythmToggleButtonGroup(
                         options = listOf(
                             RhythmToggleOption(text = stringResource(R.string.lyrics_source)),
@@ -917,21 +902,15 @@ fun LyricsEditorBottomSheet(
                         isShowingCheck = false
                     )
                 }
-            }
 
             Spacer(modifier = Modifier.height(16.dp))
 
             // Timestamp Adjustment Controls
-            AnimatedVisibility(
-                visible = showContent,
-                enter = fadeIn() + slideInVertically { it },
-                exit = fadeOut() + slideOutVertically { it }
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp)
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 24.dp)
-                ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
@@ -1166,50 +1145,41 @@ fun LyricsEditorBottomSheet(
                         }
                     }
                 }
-            }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Lyrics Text Field with animation
-            AnimatedVisibility(
-                visible = showContent,
-                enter = fadeIn() + slideInVertically { it },
-                exit = fadeOut() + slideOutVertically { it },
-                modifier = Modifier.weight(1f)
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .padding(horizontal = 24.dp)
             ) {
-                Column(
+                OutlinedTextField(
+                    value = editedLyrics,
+                    onValueChange = { updateEditedLyrics(it) },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .fillMaxHeight()
-                        .padding(horizontal = 24.dp)
-                ) {
-                    OutlinedTextField(
-                        value = editedLyrics,
-                        onValueChange = { updateEditedLyrics(it) },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .fillMaxHeight(),
-                        placeholder = {
-                            Text(
-                                text = when (selectedFormat) {
-                                    LyricFormat.WORD_BY_WORD -> "Enter word-by-word lyrics JSON…"
-                                    LyricFormat.LINE_BY_LINE -> "Enter timestamped LRC or Enhanced LRC ([00:12.34]<00:12.34>word)…"
-                                    LyricFormat.SOURCE -> "Enter raw TTML XML, LRC, or plain text…"
-                                },
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                            )
-                        },
-                        textStyle = MaterialTheme.typography.bodyMedium,
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = MaterialTheme.colorScheme.primary,
-                            unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
-                            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.5f),
-                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.3f)
-                        ),
-                        shape = RoundedCornerShape(16.dp)
-                    )
-                }
+                        .fillMaxHeight(),
+                    placeholder = {
+                        Text(
+                            text = when (selectedFormat) {
+                                LyricFormat.WORD_BY_WORD -> "Enter word-by-word lyrics JSON…"
+                                LyricFormat.LINE_BY_LINE -> "Enter timestamped LRC or Enhanced LRC ([00:12.34]<00:12.34>word)…"
+                                LyricFormat.SOURCE -> "Enter raw TTML XML, LRC, or plain text…"
+                            },
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                        )
+                    },
+                    textStyle = MaterialTheme.typography.bodyMedium,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                        focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.5f),
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.3f)
+                    ),
+                    shape = RoundedCornerShape(16.dp)
+                )
             }
 
             // Sticky Footer with action buttons

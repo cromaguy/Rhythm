@@ -130,6 +130,8 @@ fun AdaptiveSheetScrollContainer(
     blendHeight: Dp = 24.dp,
     blendColor: Color = MaterialTheme.colorScheme.surfaceContainer,
     scrollBarPaddingEnd: Dp = 4.dp,
+    scrollBarPaddingTop: Dp = 4.dp,
+    scrollBarPaddingBottom: Dp = 4.dp,
     content: @Composable BoxScope.(endPadding: Dp) -> Unit
 ) {
     val canScrollForward by remember(lazyListState, gridState, scrollState) {
@@ -229,7 +231,7 @@ fun AdaptiveSheetScrollContainer(
             ExpressiveScrollBar(
                 modifier = Modifier
                     .matchParentSize()
-                    .padding(end = scrollBarPaddingEnd, top = 4.dp, bottom = 4.dp)
+                    .padding(end = scrollBarPaddingEnd, top = scrollBarPaddingTop, bottom = scrollBarPaddingBottom)
                     .zIndex(10f),
                 listState = lazyListState,
                 gridState = gridState,

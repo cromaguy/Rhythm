@@ -38,7 +38,6 @@ import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.ModalBottomSheetDefaults
 import androidx.compose.material3.ModalBottomSheetProperties
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.SheetValue
@@ -421,7 +420,7 @@ fun RhythmAdaptiveModalSheet(
             color = MaterialTheme.colorScheme.primary
         )
     },
-    properties: ModalBottomSheetProperties = ModalBottomSheetDefaults.properties(),
+    properties: ModalBottomSheetProperties = ModalBottomSheetProperties(),
     content: @Composable RhythmAdaptiveSheetScope.() -> Unit
 ) {
     val screenWidth = windowScreenWidthDp()

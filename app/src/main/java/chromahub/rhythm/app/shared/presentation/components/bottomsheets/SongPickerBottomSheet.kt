@@ -62,7 +62,10 @@ fun SongPickerBottomSheet(
     availableSongs: List<Song>,
     onDismissRequest: () -> Unit,
     onAddSongsToPlaylist: (List<Song>) -> Unit,
-    sheetState: androidx.compose.material3.SheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden)
+    sheetState: androidx.compose.material3.SheetState = rememberBottomSheetState(
+        initialValue = SheetValue.Hidden,
+        enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded)
+    )
 ) {
     val context = LocalContext.current
     val haptics = LocalHapticFeedback.current
@@ -83,6 +86,7 @@ fun SongPickerBottomSheet(
 
     RhythmAdaptiveModalSheet(
         adaptiveType = SheetAdaptiveType.AUTO_DIALOG,
+        lazyListState = listState,
         modifier = Modifier.widthIn(max = 640.dp).fillMaxWidth(),
         onDismissRequest = onDismissRequest,
         sheetState = sheetState,
@@ -98,7 +102,11 @@ fun SongPickerBottomSheet(
             visible = true
         )
 
-        Column(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .fillMaxHeight()
+        ) {
             // Search + actions row
             Row(
                 modifier = Modifier
@@ -232,7 +240,9 @@ fun SongPickerBottomSheet(
             // Body: song list
             AdaptiveSheetScrollContainer(
                 lazyListState = listState,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
             ) { endPadding ->
                 LazyColumn(
                     state = listState,

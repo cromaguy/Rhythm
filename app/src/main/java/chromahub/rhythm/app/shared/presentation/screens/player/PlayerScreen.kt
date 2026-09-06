@@ -361,13 +361,7 @@ fun PlayerScreen(
 
         val queueSheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded))
         val deviceOutputSheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded))
-        val addToPlaylistSheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden)
-        val albumBottomSheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden)
-        val currentSongAlbumForSheet = remember(song, albums, songs) {
-            song?.let { currentSong ->
-                resolveAlbumForSong(currentSong)
-            }
-        }
+        val addToPlaylistSheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded))
         val currentSongArtistForSheet = remember(song, artists) {
             song?.let { currentSong ->
                 resolveArtistForSong(currentSong)

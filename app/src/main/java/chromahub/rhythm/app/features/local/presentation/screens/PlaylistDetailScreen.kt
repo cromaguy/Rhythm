@@ -283,7 +283,7 @@ fun PlaylistDetailScreen(
     val coroutineScope = rememberCoroutineScope()
     val allSongs by musicViewModel.filteredSongs.collectAsState()
     var showSongPicker by remember { mutableStateOf(false) }
-    val sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden)
+    val sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded))
 
     val haptics = LocalHapticFeedback.current
     val context = LocalContext.current

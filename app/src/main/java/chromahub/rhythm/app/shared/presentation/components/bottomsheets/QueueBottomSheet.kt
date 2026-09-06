@@ -11,9 +11,7 @@ import chromahub.rhythm.app.shared.presentation.components.icons.MaterialSymbolI
 import chromahub.rhythm.app.shared.presentation.components.icons.Icon
 
 import android.util.Log
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.animateFloat
@@ -23,10 +21,6 @@ import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -124,16 +118,6 @@ import chromahub.rhythm.app.util.HapticUtils
 import chromahub.rhythm.app.util.ImageUtils
 import androidx.compose.ui.res.stringResource
 
-private fun LazyListState.shouldShowScrollbar(): Boolean {
-    val layoutInfo = this.layoutInfo
-    val visibleItems = layoutInfo.visibleItemsInfo
-    if (visibleItems.isEmpty()) return false
-    val totalItems = layoutInfo.totalItemsCount
-    if (visibleItems.size < totalItems) return true
-    val lastItem = visibleItems.last()
-    val lastItemBottom = lastItem.offset + lastItem.size
-    return lastItemBottom > layoutInfo.viewportEndOffset - 80
-}
 
 private data class QueueItemCorners(
     val topStart: Dp,
@@ -240,8 +224,6 @@ fun QueueBottomSheet(
     val appSettings = remember(context) { AppSettings.getInstance(context) }
     val hidePlayedQueueSongs by appSettings.hidePlayedQueueSongs.collectAsState()
     val showAlreadyPlayedSongsInQueue = !hidePlayedQueueSongs
-    // Animation states
-    var showContent by remember { mutableStateOf(true) }
 
     var queueEpoch by remember { mutableIntStateOf(0) }
     var clearRequested by remember { mutableStateOf(false) }
@@ -302,8 +284,11 @@ fun QueueBottomSheet(
         }
     }
 
+    val lazyListState = rememberLazyListState()
+
     RhythmAdaptiveModalSheet(
         adaptiveType = SheetAdaptiveType.WIDE_DIALOG,
+        lazyListState = lazyListState,
         modifier = Modifier.widthIn(max = 640.dp).fillMaxWidth(),
         onDismissRequest = onDismiss,
         sheetState = sheetState,
@@ -321,74 +306,50 @@ fun QueueBottomSheet(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 24.dp)
-                .animateContentSize()
         ) {
             // Header with title and actions
-            AnimatedVisibility(
-                visible = showContent,
-                enter = fadeIn() + slideInVertically { it },
-                exit = fadeOut() + slideOutVertically { it }
-            ) {
-                QueueHeader(
-                    queueSize = displayQueue.size,
-                    isShuffleEnabled = isShuffleEnabled,
-                    repeatMode = repeatMode,
-                    onAddSongsClick = onAddSongsClick,
-                    onClearQueue = if (displayQueue.isNotEmpty()) {
-                        {
-                            queueEpoch++
-                            clearRequested = true
-                        }
-                    } else null,
-                    onToggleShuffle = onToggleShuffle,
-                    onToggleRepeat = onToggleRepeat
-                )
-            }
+            QueueHeader(
+                queueSize = displayQueue.size,
+                isShuffleEnabled = isShuffleEnabled,
+                repeatMode = repeatMode,
+                onAddSongsClick = onAddSongsClick,
+                onClearQueue = if (displayQueue.isNotEmpty()) {
+                    {
+                        queueEpoch++
+                        clearRequested = true
+                    }
+                } else null,
+                onToggleShuffle = onToggleShuffle,
+                onToggleRepeat = onToggleRepeat
+            )
             
             Spacer(modifier = Modifier.height(16.dp))
             
             // Queue settings info and warnings
             if (displayQueue.isNotEmpty() && hidePlayedQueueSongs) {
-                AnimatedVisibility(
-                    visible = showContent,
-                    enter = fadeIn() + slideInVertically { it },
-                    exit = fadeOut() + slideOutVertically { it }
+                Column(
+                    modifier = Modifier.graphicsLayer { alpha = clearFadeAlpha }
                 ) {
-                    Column(
-                        modifier = Modifier.graphicsLayer { alpha = clearFadeAlpha }
-                    ) {
-                        QueueSettingsInfo(
-                            isShuffleEnabled = isShuffleEnabled,
-                            repeatMode = repeatMode,
-                            hidePlayedSongs = hidePlayedQueueSongs,
-                            queueSize = displayQueue.size
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                    }
+                    QueueSettingsInfo(
+                        isShuffleEnabled = isShuffleEnabled,
+                        repeatMode = repeatMode,
+                        hidePlayedSongs = hidePlayedQueueSongs,
+                        queueSize = displayQueue.size
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
                 }
             }
             
             if (displayQueue.isEmpty()) {
-                AnimatedVisibility(
-                    visible = showContent,
-                    enter = fadeIn(tween(durationMillis = 180)),
-                    exit = fadeOut(tween(durationMillis = 120))
-                ) {
-                    EmptyQueueContent()
-                }
+                EmptyQueueContent()
             } else {
                 // Now Playing section - show current song separately
                 currentSong?.let { song ->
-                    AnimatedVisibility(                    visible = showContent,
-                    enter = fadeIn() + slideInVertically { it },
-                    exit = fadeOut() + slideOutVertically { it }
-                    ) {
-                        NowPlayingCard(
-                            song = song,
-                            onClick = { onSongClick(song) },
-                            modifier = Modifier.graphicsLayer { alpha = clearFadeAlpha }
-                        )
-                    }
+                    NowPlayingCard(
+                        song = song,
+                        onClick = { onSongClick(song) },
+                        modifier = Modifier.graphicsLayer { alpha = clearFadeAlpha }
+                    )
                 }
                 
                 val currentSongIndexInQueue = remember(currentSong, displayQueue, currentQueueIndex) {
@@ -446,34 +407,17 @@ fun QueueBottomSheet(
 
                 if (visibleQueue.isNotEmpty()) {
                     if (!hasPlayedSection) {
-                        AnimatedVisibility(
-                            visible = showContent,
-                            enter = fadeIn() + slideInVertically { it },
-                            exit = fadeOut() + slideOutVertically { it }
-                        ) {
-                            Text(
-                                text = context.getString(R.string.bottomsheet_up_next),
-                                style = MaterialTheme.typography.labelLarge,
-                                color = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier
-                                    .graphicsLayer { alpha = clearFadeAlpha }
-                                    .padding(start = 24.dp, end = 24.dp, top = 18.dp, bottom = 8.dp)
-                            )
-                        }
+                        Text(
+                            text = context.getString(R.string.bottomsheet_up_next),
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier
+                                .graphicsLayer { alpha = clearFadeAlpha }
+                                .padding(start = 24.dp, end = 24.dp, top = 18.dp, bottom = 8.dp)
+                        )
                     }
                     
-                    // Queue list with reordering using custom drag and drop (disabled when shuffle is enabled)
-                    val lazyListState = rememberLazyListState()
                     var hasScrolledOnOpening by remember { mutableStateOf(false) }
-
-                    val canScroll by remember(lazyListState) {
-                        derivedStateOf { lazyListState.shouldShowScrollbar() }
-                    }
-                    val animatedEndPadding by animateDpAsState(
-                        targetValue = if (canScroll) 36.dp else 16.dp,
-                        animationSpec = tween(durationMillis = 200),
-                        label = "QueueEndPadding"
-                    )
 
                     LaunchedEffect(queueListRows, currentSongIndexInQueue) {
                         if (!hasScrolledOnOpening && queueListRows.isNotEmpty()) {
@@ -490,83 +434,25 @@ fun QueueBottomSheet(
                         }
                     }
 
-                    val canScrollForward by remember(lazyListState) {
-                        derivedStateOf { lazyListState.canScrollForward }
-                    }
-                    val canScrollBackward by remember(lazyListState) {
-                        derivedStateOf { lazyListState.canScrollBackward }
-                    }
-                    val topBlendAlpha by animateFloatAsState(
-                        targetValue = if (canScrollBackward && !hasPlayedSection) 1f else 0f,
-                        animationSpec = spring(
-                            dampingRatio = Spring.DampingRatioNoBouncy,
-                            stiffness = Spring.StiffnessMedium
-                        ),
-                        label = "QueueTopBlendAlpha"
-                    )
-                    val bottomBlendAlpha by animateFloatAsState(
-                        targetValue = if (canScrollForward) 1f else 0f,
-                        animationSpec = spring(
-                            dampingRatio = Spring.DampingRatioNoBouncy,
-                            stiffness = Spring.StiffnessMedium
-                        ),
-                        label = "QueueBottomBlendAlpha"
-                    )
-
-                    Box(
+                    AdaptiveSheetScrollContainer(
+                        lazyListState = lazyListState,
+                        enableBlend = !hasPlayedSection,
+                        blendColor = MaterialTheme.colorScheme.surfaceContainer,
+                        scrollBarPaddingEnd = 4.dp,
+                        scrollBarPaddingTop = 8.dp,
+                        scrollBarPaddingBottom = 8.dp,
                         modifier = Modifier
                             .fillMaxWidth()
                             .weight(1f, fill = false)
                             .graphicsLayer { alpha = clearFadeAlpha }
-                    ) {
-                        if (!hasPlayedSection && topBlendAlpha > 0f) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(24.dp)
-                                    .align(Alignment.TopCenter)
-                                    .graphicsLayer { alpha = topBlendAlpha }
-                                    .background(
-                                        brush = Brush.verticalGradient(
-                                            colors = listOf(
-                                                MaterialTheme.colorScheme.surfaceContainer,
-                                                MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.72f),
-                                                MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.32f),
-                                                Color.Transparent
-                                            )
-                                        )
-                                    )
-                                    .zIndex(5f)
-                            )
-                        }
-
-                        if (bottomBlendAlpha > 0f) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(24.dp)
-                                    .align(Alignment.BottomCenter)
-                                    .graphicsLayer { alpha = bottomBlendAlpha }
-                                    .background(
-                                        brush = Brush.verticalGradient(
-                                            colors = listOf(
-                                                Color.Transparent,
-                                                MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.32f),
-                                                MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.72f),
-                                                MaterialTheme.colorScheme.surfaceContainer
-                                            )
-                                        )
-                                    )
-                                    .zIndex(5f)
-                            )
-                        }
-
+                    ) { endPadding ->
+                        val rowEndPadding = 16.dp + (endPadding * (20f / 12f))
                         if (isShuffleEnabled) {
                             // When shuffle is enabled, show queue but disable reordering
                             LazyColumn(
                                 state = lazyListState,
                                 modifier = Modifier.fillMaxWidth(),
-                                contentPadding = PaddingValues(top = 24.dp, bottom = 8.dp),
+                                contentPadding = PaddingValues(top = 8.dp, bottom = 8.dp),
                                 verticalArrangement = Arrangement.spacedBy(4.dp)
                             ) {
                                 itemsIndexed(
@@ -577,7 +463,7 @@ fun QueueBottomSheet(
                                         row = row,
                                         isDragging = false,
                                         reorderSupported = false,
-                                        endPadding = animatedEndPadding,
+                                        endPadding = rowEndPadding,
                                         isRemoving = { key -> removingQueueKeys[key] == true },
                                         onSongClickAtIndex = onSongClickAtIndex,
                                         onRequestRemove = { songRow, itemKey ->
@@ -610,7 +496,7 @@ fun QueueBottomSheet(
                                     row is QueueListRow.Song && !row.row.isPlayed
                                 },
                                 isStickyHeader = { row -> row is QueueListRow.Section },
-                                contentPadding = PaddingValues(top = 24.dp, bottom = 8.dp),
+                                contentPadding = PaddingValues(top = 8.dp, bottom = 8.dp),
                                 itemSpacing = 4.dp,
                                 animateItemPlacement = true,
                                 dragTopInset = 24.dp,
@@ -620,7 +506,7 @@ fun QueueBottomSheet(
                                     row = row,
                                     isDragging = isDragging,
                                     reorderSupported = true,
-                                    endPadding = animatedEndPadding,
+                                    endPadding = rowEndPadding,
                                     isRemoving = { key -> removingQueueKeys[key] == true },
                                     onSongClickAtIndex = onSongClickAtIndex,
                                     onRequestRemove = { songRow, itemKey ->
@@ -629,14 +515,6 @@ fun QueueBottomSheet(
                                 )
                             }
                         }
-
-                        ExpressiveScrollBar(
-                            modifier = Modifier
-                                .matchParentSize()
-                                .padding(end = 4.dp, top = 8.dp, bottom = 8.dp),
-                            listState = lazyListState,
-                            visible = canScroll
-                        )
                     }
                 } else if (currentSong != null) {
                     // Show empty up next content when only current song is in queue

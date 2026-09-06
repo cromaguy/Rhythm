@@ -310,7 +310,7 @@ fun HomeScreen(
     // State for AddToPlaylist bottom sheet
     var showAddToPlaylistSheet by remember { mutableStateOf(false) }
     var selectedSongForPlaylist by remember { mutableStateOf<Song?>(null) }
-    val addToPlaylistSheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden)
+    val addToPlaylistSheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded))
     var showCreatePlaylistDialog by remember { mutableStateOf(false) }
 
     // Song info bottom sheet state
