@@ -169,11 +169,27 @@ fun GesturesSettingsScreen(onBackClick: () -> Unit) {
     val appSettings = AppSettings.getInstance(context)
     val haptic = LocalHapticFeedback.current
 
-    // Gesture settings
-    val miniPlayerSwipeGestures by appSettings.miniPlayerSwipeGestures.collectAsState()
+    // Player Gestures
     val gesturePlayerSwipeDismiss by appSettings.gesturePlayerSwipeDismiss.collectAsState()
     val gesturePlayerSwipeTracks by appSettings.gesturePlayerSwipeTracks.collectAsState()
     val gestureArtworkDoubleTap by appSettings.gestureArtworkDoubleTap.collectAsState()
+    val gestureArtworkSingleTap by appSettings.gestureArtworkSingleTap.collectAsState()
+
+    // Mini Player Gestures
+    val miniPlayerSwipeGestures by appSettings.miniPlayerSwipeGestures.collectAsState()
+    val miniPlayerSwipeTracks by appSettings.miniPlayerSwipeTracks.collectAsState()
+    val miniPlayerSwipeDismiss by appSettings.miniPlayerSwipeDismiss.collectAsState()
+
+    // Queue Gestures
+    val gestureQueueSwipeToRemove by appSettings.gestureQueueSwipeToRemove.collectAsState()
+
+    // Library Gestures
+    val gestureLibrarySwipeTabs by appSettings.gestureLibrarySwipeTabs.collectAsState()
+
+    // Lyrics Gestures
+    val tapLyricsToFullScreen by appSettings.tapLyricsToFullScreen.collectAsState()
+    val tapLyricsToSeek by appSettings.tapLyricsToSeek.collectAsState()
+    val autoHideLyricsControls by appSettings.autoHideLyricsControls.collectAsState()
 
     CollapsibleHeaderScreen(
         title = context.getString(R.string.settings_gestures),
@@ -186,19 +202,97 @@ fun GesturesSettingsScreen(onBackClick: () -> Unit) {
                 .fillMaxSize()
                 .padding(horizontal = 24.dp)
         ) {
+            // Full Player Gestures
+            item(key = "player_gestures_group") {
+                Spacer(modifier = Modifier.height(24.dp))
+
+                val playerGestureItems = listOf(
+                    SettingItem(
+                        icon = MaterialSymbolIcon("swipe_down", filled = true),
+                        title = context.getString(R.string.settings_swipe_down_dismiss),
+                        description = context.getString(R.string.settings_swipe_down_dismiss_desc),
+                        toggleState = gesturePlayerSwipeDismiss,
+                        onToggleChange = {
+                            HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
+                            appSettings.setGesturePlayerSwipeDismiss(it)
+                        }
+                    ),
+                    SettingItem(
+                        icon = MaterialSymbolIcon("swipe_left", filled = true),
+                        title = context.getString(R.string.settings_swipe_artwork_tracks),
+                        description = context.getString(R.string.settings_swipe_artwork_tracks_desc),
+                        toggleState = gesturePlayerSwipeTracks,
+                        onToggleChange = {
+                            HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
+                            appSettings.setGesturePlayerSwipeTracks(it)
+                        }
+                    ),
+                    SettingItem(
+                        icon = MaterialSymbolIcon("touch_app", filled = true),
+                        title = context.getString(R.string.settings_double_tap_artwork),
+                        description = context.getString(R.string.settings_double_tap_artwork_desc),
+                        toggleState = gestureArtworkDoubleTap,
+                        onToggleChange = {
+                            HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
+                            appSettings.setGestureArtworkDoubleTap(it)
+                        }
+                    ),
+                    SettingItem(
+                        icon = MaterialSymbolIcon("music_note", filled = true),
+                        title = context.getString(R.string.settings_tap_artwork_lyrics),
+                        description = context.getString(R.string.settings_tap_artwork_lyrics_desc),
+                        toggleState = gestureArtworkSingleTap,
+                        onToggleChange = {
+                            HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
+                            appSettings.setGestureArtworkSingleTap(it)
+                        }
+                    )
+                )
+
+                Material3SettingsGroup(
+                    title = context.getString(R.string.settings_full_player),
+                    items = playerGestureItems.map { item ->
+                        toMaterial3SettingsItem(context = context, item = item, hapticFeedback = haptic)
+                    },
+                    containerColor = MaterialTheme.colorScheme.surfaceContainer
+                )
+            }
+
             // Mini Player Gestures
             item(key = "miniplayer_gestures_group") {
                 Spacer(modifier = Modifier.height(24.dp))
 
                 val miniPlayerItems = listOf(
                     SettingItem(
-                        MaterialSymbolIcon("swipe", filled = true),
-                        context.getString(R.string.settings_swipe_gestures),
-                        context.getString(R.string.settings_swipe_gestures_desc),
+                        icon = MaterialSymbolIcon("swipe", filled = true),
+                        title = context.getString(R.string.settings_swipe_gestures),
+                        description = context.getString(R.string.settings_swipe_gestures_desc),
                         toggleState = miniPlayerSwipeGestures,
                         onToggleChange = {
                             HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
                             appSettings.setMiniPlayerSwipeGestures(it)
+                        }
+                    ),
+                    SettingItem(
+                        icon = MaterialSymbolIcon("fast_forward", filled = true),
+                        title = context.getString(R.string.settings_miniplayer_swipe_tracks),
+                        description = context.getString(R.string.settings_miniplayer_swipe_tracks_desc),
+                        toggleState = miniPlayerSwipeTracks,
+                        enabled = miniPlayerSwipeGestures,
+                        onToggleChange = {
+                            HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
+                            appSettings.setMiniPlayerSwipeTracks(it)
+                        }
+                    ),
+                    SettingItem(
+                        icon = MaterialSymbolIcon("swipe_vertical", filled = true),
+                        title = context.getString(R.string.settings_miniplayer_swipe_dismiss),
+                        description = context.getString(R.string.settings_miniplayer_swipe_dismiss_desc),
+                        toggleState = miniPlayerSwipeDismiss,
+                        enabled = miniPlayerSwipeGestures,
+                        onToggleChange = {
+                            HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
+                            appSettings.setMiniPlayerSwipeDismiss(it)
                         }
                     )
                 )
@@ -212,46 +306,98 @@ fun GesturesSettingsScreen(onBackClick: () -> Unit) {
                 )
             }
 
-            // Full Player Gestures
-            item(key = "player_gestures_group") {
+            // Queue Gestures
+            item(key = "queue_gestures_group") {
                 Spacer(modifier = Modifier.height(24.dp))
 
-                val playerGestureItems = listOf(
+                val queueItems = listOf(
                     SettingItem(
-                        MaterialSymbolIcon("swipe_down", filled = true),
-                        context.getString(R.string.settings_swipe_down_dismiss),
-                        context.getString(R.string.settings_swipe_down_dismiss_desc),
-                        toggleState = gesturePlayerSwipeDismiss,
+                        icon = MaterialSymbolIcon("delete_sweep", filled = true),
+                        title = context.getString(R.string.settings_queue_swipe_remove),
+                        description = context.getString(R.string.settings_queue_swipe_remove_desc),
+                        toggleState = gestureQueueSwipeToRemove,
                         onToggleChange = {
                             HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
-                            appSettings.setGesturePlayerSwipeDismiss(it)
-                        }
-                    ),
-                    SettingItem(
-                        MaterialSymbolIcon("swipe_left", filled = true),
-                        context.getString(R.string.settings_swipe_artwork_tracks),
-                        context.getString(R.string.settings_swipe_artwork_tracks_desc),
-                        toggleState = gesturePlayerSwipeTracks,
-                        onToggleChange = {
-                            HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
-                            appSettings.setGesturePlayerSwipeTracks(it)
-                        }
-                    ),
-                    SettingItem(
-                        MaterialSymbolIcon("touch_app", filled = true),
-                        context.getString(R.string.settings_double_tap_artwork),
-                        context.getString(R.string.settings_double_tap_artwork_desc),
-                        toggleState = gestureArtworkDoubleTap,
-                        onToggleChange = {
-                            HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
-                            appSettings.setGestureArtworkDoubleTap(it)
+                            appSettings.setGestureQueueSwipeToRemove(it)
                         }
                     )
                 )
 
                 Material3SettingsGroup(
-                    title = context.getString(R.string.settings_full_player),
-                    items = playerGestureItems.map { item ->
+                    title = context.getString(R.string.settings_queue_gestures),
+                    items = queueItems.map { item ->
+                        toMaterial3SettingsItem(context = context, item = item, hapticFeedback = haptic)
+                    },
+                    containerColor = MaterialTheme.colorScheme.surfaceContainer
+                )
+            }
+
+            // Library & Navigation Gestures
+            item(key = "library_gestures_group") {
+                Spacer(modifier = Modifier.height(24.dp))
+
+                val libraryItems = listOf(
+                    SettingItem(
+                        icon = MaterialSymbolIcon("tab", filled = true),
+                        title = context.getString(R.string.settings_library_swipe_tabs),
+                        description = context.getString(R.string.settings_library_swipe_tabs_desc),
+                        toggleState = gestureLibrarySwipeTabs,
+                        onToggleChange = {
+                            HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
+                            appSettings.setGestureLibrarySwipeTabs(it)
+                        }
+                    )
+                )
+
+                Material3SettingsGroup(
+                    title = context.getString(R.string.settings_library_gestures),
+                    items = libraryItems.map { item ->
+                        toMaterial3SettingsItem(context = context, item = item, hapticFeedback = haptic)
+                    },
+                    containerColor = MaterialTheme.colorScheme.surfaceContainer
+                )
+            }
+
+            // Lyrics Gestures
+            item(key = "lyrics_gestures_group") {
+                Spacer(modifier = Modifier.height(24.dp))
+
+                val lyricsItems = listOf(
+                    SettingItem(
+                        icon = MaterialSymbolIcon("fullscreen", filled = true),
+                        title = context.getString(R.string.playercustomizationsettingsscreen_tap_lyrics_for_immersive),
+                        description = context.getString(R.string.lyrics_settings_open_fullscreen_desc),
+                        toggleState = tapLyricsToFullScreen,
+                        onToggleChange = {
+                            HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
+                            appSettings.setTapLyricsToFullScreen(it)
+                        }
+                    ),
+                    SettingItem(
+                        icon = MaterialSymbolIcon("ads_click", filled = true),
+                        title = context.getString(R.string.settings_lyrics_tap_seek),
+                        description = context.getString(R.string.settings_lyrics_tap_seek_desc),
+                        toggleState = tapLyricsToSeek,
+                        onToggleChange = {
+                            HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
+                            appSettings.setTapLyricsToSeek(it)
+                        }
+                    ),
+                    SettingItem(
+                        icon = MaterialSymbolIcon("visibility_off", filled = true),
+                        title = context.getString(R.string.lyrics_settings_autohide_controls),
+                        description = context.getString(R.string.lyrics_settings_autohide_controls_desc),
+                        toggleState = autoHideLyricsControls,
+                        onToggleChange = {
+                            HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
+                            appSettings.setAutoHideLyricsControls(it)
+                        }
+                    )
+                )
+
+                Material3SettingsGroup(
+                    title = context.getString(R.string.settings_lyrics_gestures),
+                    items = lyricsItems.map { item ->
                         toMaterial3SettingsItem(context = context, item = item, hapticFeedback = haptic)
                     },
                     containerColor = MaterialTheme.colorScheme.surfaceContainer

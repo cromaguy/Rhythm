@@ -167,6 +167,8 @@ fun MaterialMiniPlayer(
     
     // Gesture settings
     val miniPlayerSwipeGestures by appSettings.miniPlayerSwipeGestures.collectAsState()
+    val miniPlayerSwipeTracks by appSettings.miniPlayerSwipeTracks.collectAsState()
+    val miniPlayerSwipeDismiss by appSettings.miniPlayerSwipeDismiss.collectAsState()
     
     val density = LocalDensity.current
     val haptic = LocalHapticFeedback.current
@@ -286,6 +288,9 @@ fun MaterialMiniPlayer(
         }
     }
 
+    val canSwipeTracks = miniPlayerSwipeGestures && miniPlayerSwipeTracks
+    val canSwipeVertical = miniPlayerSwipeGestures && miniPlayerSwipeDismiss && verticalDragEnabled
+
     Box(
         modifier = modifier.fillMaxWidth(),
         contentAlignment = if (useTabletLayout) {
@@ -335,9 +340,8 @@ fun MaterialMiniPlayer(
                     translationX = translationOffsetX + miniPlayerOffset.x
                     alpha = alphaValue
                 }
-                .pointerInput(miniPlayerSwipeGestures, useTabletLayout, verticalDragEnabled) {
-                if (miniPlayerSwipeGestures) {
-                    if (verticalDragEnabled) {
+                .pointerInput(canSwipeTracks, canSwipeVertical, useTabletLayout) {
+                    if (canSwipeTracks && canSwipeVertical) {
                         detectDragGestures(
                             onDragStart = { 
                                 // Reset the last haptic offsets on new drag
@@ -448,7 +452,7 @@ fun MaterialMiniPlayer(
                                 }
                             }
                         )
-                    } else {
+                    } else if (canSwipeTracks) {
                         // Only horizontal drag for skip next/previous!
                         detectHorizontalDragGestures(
                             onDragStart = {
@@ -480,9 +484,66 @@ fun MaterialMiniPlayer(
                                 }
                             }
                         )
+                    } else if (canSwipeVertical) {
+                        detectVerticalDragGestures(
+                            onDragStart = {
+                                lastHapticOffset = 0f
+                                if (useTabletLayout) {
+                                    miniPlayerOffset = Offset.Zero
+                                }
+                                HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
+                            },
+                            onDragEnd = {
+                                if (useTabletLayout) {
+                                    if (miniPlayerOffset.y > swipeDownThreshold) {
+                                        HapticUtils.performHapticFeedback(context, haptic, HapticType.HEAVY)
+                                        isDismissingPlayer = true
+                                    } else {
+                                        miniPlayerOffset = Offset.Zero
+                                        HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
+                                    }
+                                } else {
+                                    if (offsetY < -swipeUpThreshold) {
+                                        HapticUtils.performHapticFeedback(context, haptic, HapticType.HEAVY)
+                                        onPlayerClick()
+                                    } else if (offsetY > swipeDownThreshold) {
+                                        HapticUtils.performHapticFeedback(context, haptic, HapticType.HEAVY)
+                                        isDismissingPlayer = true
+                                    } else {
+                                        HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
+                                    }
+                                }
+                                if (!isDismissingPlayer) {
+                                    offsetY = 0f
+                                }
+                            },
+                            onDragCancel = {
+                                HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
+                                if (!isDismissingPlayer) {
+                                    offsetY = 0f
+                                    if (useTabletLayout) {
+                                        miniPlayerOffset = Offset.Zero
+                                    }
+                                }
+                            },
+                            onVerticalDrag = { change, dragAmount ->
+                                change.consume()
+                                if (useTabletLayout) {
+                                    miniPlayerOffset = Offset(miniPlayerOffset.x, miniPlayerOffset.y + dragAmount)
+                                } else {
+                                    offsetY += dragAmount
+                                    if (offsetY < 0 && abs(offsetY) - abs(lastHapticOffset) > swipeUpThreshold / 3) {
+                                        HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
+                                        lastHapticOffset = offsetY
+                                    } else if (offsetY > swipeDownThreshold) {
+                                        HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
+                                        lastHapticOffset = offsetY
+                                    }
+                                }
+                            }
+                        )
                     }
-                }
-            },
+                },
         interactionSource = interactionSource
     ) {
         // Display visual hints when user starts dragging

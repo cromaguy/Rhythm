@@ -223,6 +223,7 @@ fun QueueBottomSheet(
     val context = LocalContext.current
     val appSettings = remember(context) { AppSettings.getInstance(context) }
     val hidePlayedQueueSongs by appSettings.hidePlayedQueueSongs.collectAsState()
+    val gestureQueueSwipeToRemove by appSettings.gestureQueueSwipeToRemove.collectAsState()
     val showAlreadyPlayedSongsInQueue = !hidePlayedQueueSongs
 
     var queueEpoch by remember { mutableIntStateOf(0) }
@@ -465,6 +466,7 @@ fun QueueBottomSheet(
                                         reorderSupported = false,
                                         endPadding = rowEndPadding,
                                         isRemoving = { key -> removingQueueKeys[key] == true },
+                                        enableSwipeToRemove = gestureQueueSwipeToRemove,
                                         onSongClickAtIndex = onSongClickAtIndex,
                                         onRequestRemove = { songRow, itemKey ->
                                             dismissQueueRow(itemKey) { removeQueueSong(songRow.song) }
@@ -508,6 +510,7 @@ fun QueueBottomSheet(
                                     reorderSupported = true,
                                     endPadding = rowEndPadding,
                                     isRemoving = { key -> removingQueueKeys[key] == true },
+                                    enableSwipeToRemove = gestureQueueSwipeToRemove,
                                     onSongClickAtIndex = onSongClickAtIndex,
                                     onRequestRemove = { songRow, itemKey ->
                                         dismissQueueRow(itemKey) { removeQueueSong(songRow.song) }
@@ -1047,7 +1050,8 @@ private fun DismissibleQueueItem(
     isRemoving: Boolean,
     onSongClickAtIndex: (Int) -> Unit,
     onRequestRemove: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    enableSwipeToRemove: Boolean = true
 ) {
     val context = LocalContext.current
     val haptic = LocalHapticFeedback.current
@@ -1072,14 +1076,14 @@ private fun DismissibleQueueItem(
 
         SwipeToDismissBox(
             state = dismissState,
-            enableDismissFromStartToEnd = true,
-            enableDismissFromEndToStart = true,
+            enableDismissFromStartToEnd = enableSwipeToRemove,
+            enableDismissFromEndToStart = enableSwipeToRemove,
             onDismiss = {
                 HapticUtils.performHapticFeedback(context, haptic, HapticType.HEAVY)
                 onRequestRemove()
             },
             backgroundContent = {
-                if (dismissState.dismissDirection != SwipeToDismissBoxValue.Settled) {
+                if (enableSwipeToRemove && dismissState.dismissDirection != SwipeToDismissBoxValue.Settled) {
                     val alignment = if (dismissState.dismissDirection == SwipeToDismissBoxValue.StartToEnd) {
                         Alignment.CenterStart
                     } else {
@@ -1131,7 +1135,8 @@ private fun QueueListRowContent(
     isRemoving: (String) -> Boolean,
     onSongClickAtIndex: (Int) -> Unit,
     onRequestRemove: (QueueSongRow, String) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    enableSwipeToRemove: Boolean = true
 ) {
     when (row) {
         is QueueListRow.Section -> {
@@ -1156,6 +1161,7 @@ private fun QueueListRowContent(
                 isRemoving = isRemoving(itemKey),
                 onSongClickAtIndex = onSongClickAtIndex,
                 onRequestRemove = { onRequestRemove(songRow, itemKey) },
+                enableSwipeToRemove = enableSwipeToRemove,
                 modifier = modifier
             )
         }

@@ -395,6 +395,9 @@ fun ExpressivePlayerScreen(
     val playerLyricsAlignment by appSettings.playerLyricsAlignment.collectAsState()
     val keepScreenOnLyrics by appSettings.keepScreenOnLyrics.collectAsState()
     val useExactArtworkColors by appSettings.useExactArtworkColors.collectAsState()
+    val gesturePlayerSwipeTracks by appSettings.gesturePlayerSwipeTracks.collectAsState()
+    val gestureArtworkDoubleTap by appSettings.gestureArtworkDoubleTap.collectAsState()
+    val gestureArtworkSingleTap by appSettings.gestureArtworkSingleTap.collectAsState()
 
     val postureState by rememberDevicePosture()
     val isFlexMode = postureState is DevicePosture.TableTop
@@ -1189,38 +1192,44 @@ fun ExpressivePlayerScreen(
                                     shape = artworkClipShape
                                     clip = true
                                 }
-                                .pointerInput(showLyrics, lyricsVisible) {
-                                    detectTapGestures(
-                                        onDoubleTap = {
-                                            HapticUtils.performHapticFeedback(context, haptic, HapticType.HEAVY)
-                                            onPlayPause()
-                                        },
-                                        onTap = {
-                                            if (showLyrics) {
-                                                HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
-                                                onToggleLyrics()
+                                .pointerInput(showLyrics, lyricsVisible, gestureArtworkDoubleTap, gestureArtworkSingleTap) {
+                                    if (gestureArtworkDoubleTap || (gestureArtworkSingleTap && showLyrics)) {
+                                        detectTapGestures(
+                                            onDoubleTap = {
+                                                if (gestureArtworkDoubleTap) {
+                                                    HapticUtils.performHapticFeedback(context, haptic, HapticType.HEAVY)
+                                                    onPlayPause()
+                                                }
+                                            },
+                                            onTap = {
+                                                if (gestureArtworkSingleTap && showLyrics) {
+                                                    HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
+                                                    onToggleLyrics()
+                                                }
                                             }
-                                        }
-                                    )
+                                        )
+                                    }
                                 }
-                                .pointerInput(Unit) {
-                                    detectDragGestures(
-                                        onDragEnd = {
-                                            if (artworkOffsetX < -artworkSwipeThreshold) {
-                                                HapticUtils.performHapticFeedback(context, haptic, HapticType.HEAVY)
-                                                onSkipNext()
-                                            } else if (artworkOffsetX > artworkSwipeThreshold) {
-                                                HapticUtils.performHapticFeedback(context, haptic, HapticType.HEAVY)
-                                                onSkipPrevious()
+                                .pointerInput(gesturePlayerSwipeTracks) {
+                                    if (gesturePlayerSwipeTracks) {
+                                        detectDragGestures(
+                                            onDragEnd = {
+                                                if (artworkOffsetX < -artworkSwipeThreshold) {
+                                                    HapticUtils.performHapticFeedback(context, haptic, HapticType.HEAVY)
+                                                    onSkipNext()
+                                                } else if (artworkOffsetX > artworkSwipeThreshold) {
+                                                    HapticUtils.performHapticFeedback(context, haptic, HapticType.HEAVY)
+                                                    onSkipPrevious()
+                                                }
+                                                artworkOffsetX = 0f
+                                            },
+                                            onDragCancel = { artworkOffsetX = 0f },
+                                            onDrag = { change, dragAmount ->
+                                                change.consume()
+                                                artworkOffsetX += dragAmount.x
                                             }
-                                            artworkOffsetX = 0f
-                                        },
-                                        onDragCancel = { artworkOffsetX = 0f },
-                                        onDrag = { change, dragAmount ->
-                                            change.consume()
-                                            artworkOffsetX += dragAmount.x
-                                        }
-                                    )
+                                        )
+                                    }
                                 }
                         ) {
                             val currentSongArt = debouncedSong.value?.artworkUri

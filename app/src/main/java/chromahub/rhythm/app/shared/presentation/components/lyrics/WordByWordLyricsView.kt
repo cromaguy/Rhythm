@@ -145,6 +145,7 @@ fun WordByWordLyricsView(
     val appSettings = remember(context) { AppSettings.getInstance(context) }
     val lyricBoldVal by appSettings.lyricBold.collectAsState()
     val lyricNoAnimationVal by appSettings.lyricNoAnimation.collectAsState()
+    val tapLyricsToSeek by appSettings.tapLyricsToSeek.collectAsState()
     
     val parsedLyrics = remember(wordByWordLyrics) {
         RhythmLyricsParser.parseWordByWordLyrics(wordByWordLyrics)
@@ -293,11 +294,13 @@ fun WordByWordLyricsView(
         }
     }
 
-    val handleSeek: (Long) -> Unit = remember(onSeek) {
+    val handleSeek: (Long) -> Unit = remember(onSeek, tapLyricsToSeek) {
         { timestamp ->
             userScrolledRecently = false
             previousLineIndex.intValue = -1
-            onSeek?.invoke(timestamp)
+            if (tapLyricsToSeek) {
+                onSeek?.invoke(timestamp)
+            }
         }
     }
 

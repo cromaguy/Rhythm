@@ -290,6 +290,7 @@ fun PlayerScreen(
         val playerMergeControlsToBottom by appSettings.playerMergeControlsToBottom.collectAsState()
         val artistSeparatorEnabled by appSettings.artistSeparatorEnabled.collectAsState()
         val artistSeparatorDelimiters by appSettings.artistSeparatorDelimiters.collectAsState()
+        val gesturePlayerSwipeDismiss by appSettings.gesturePlayerSwipeDismiss.collectAsState()
 
         val splitArtistNames: (String) -> List<String> = remember(artistSeparatorDelimiters, artistSeparatorEnabled) {
             { artistName ->
@@ -495,7 +496,7 @@ fun PlayerScreen(
             isStreamingMode = isStreamingMode,
             canvasArtwork = if (showFullScreenLyrics) null else canvasArtwork,
             canvasLoading = if (showFullScreenLyrics) false else canvasLoading,
-            swipeToDismissEnabled = swipeToDismissEnabled,
+            swipeToDismissEnabled = swipeToDismissEnabled && gesturePlayerSwipeDismiss,
             expansionFraction = expansionFraction,
             modifier = modifier
         )

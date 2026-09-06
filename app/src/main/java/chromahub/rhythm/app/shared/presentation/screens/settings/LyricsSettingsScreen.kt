@@ -212,6 +212,7 @@ fun LyricsSettingsScreen(onBackClick: () -> Unit) {
 
     val showLyrics by appSettings.showLyrics.collectAsState()
     val tapLyricsToFullScreen by appSettings.tapLyricsToFullScreen.collectAsState()
+    val tapLyricsToSeek by appSettings.tapLyricsToSeek.collectAsState()
     val keepScreenOnLyrics by appSettings.keepScreenOnLyrics.collectAsState()
     val autoHideLyricsControls by appSettings.autoHideLyricsControls.collectAsState()
     val showLyricsBackgroundArtwork by appSettings.showLyricsBackgroundArtwork.collectAsState()
@@ -284,6 +285,19 @@ fun LyricsSettingsScreen(onBackClick: () -> Unit) {
                                         description = context.getString(R.string.lyrics_settings_open_fullscreen_desc),
                                         toggleState = tapLyricsToFullScreen,
                                         onToggleChange = { appSettings.setTapLyricsToFullScreen(it) }
+                                    )
+                                )
+                            )
+                            add(
+                                toMaterial3SettingsItem(
+                                    context = context,
+                                    hapticFeedback = hapticFeedback,
+                                    item = SettingItem(
+                                        icon = MaterialSymbolIcon("ads_click"),
+                                        title = stringResource(R.string.settings_lyrics_tap_seek),
+                                        description = stringResource(R.string.settings_lyrics_tap_seek_desc),
+                                        toggleState = tapLyricsToSeek,
+                                        onToggleChange = { appSettings.setTapLyricsToSeek(it) }
                                     )
                                 )
                             )

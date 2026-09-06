@@ -1820,6 +1820,60 @@ fun buildSettingsSearchIndex(context: Context): List<SearchableSettingItem> {
             parentScreen = "Gestures"
         ))
         add(SearchableSettingItem(
+            id = "gesture_artwork_single_tap",
+            title = context.getString(R.string.settings_tap_artwork_lyrics),
+            description = context.getString(R.string.settings_tap_artwork_lyrics_desc),
+            keywords = listOf("tap", "artwork", "album art", "lyrics", "gesture", "toggle"),
+            icon = MaterialSymbolIcon("music_note", filled = true),
+            route = SettingsRoutes.GESTURES,
+            parentScreen = "Gestures"
+        ))
+        add(SearchableSettingItem(
+            id = "gesture_miniplayer_swipe_tracks",
+            title = context.getString(R.string.settings_miniplayer_swipe_tracks),
+            description = context.getString(R.string.settings_miniplayer_swipe_tracks_desc),
+            keywords = listOf("miniplayer", "swipe", "tracks", "skip", "next", "previous", "gesture"),
+            icon = MaterialSymbolIcon("fast_forward", filled = true),
+            route = SettingsRoutes.GESTURES,
+            parentScreen = "Gestures"
+        ))
+        add(SearchableSettingItem(
+            id = "gesture_miniplayer_swipe_dismiss",
+            title = context.getString(R.string.settings_miniplayer_swipe_dismiss),
+            description = context.getString(R.string.settings_miniplayer_swipe_dismiss_desc),
+            keywords = listOf("miniplayer", "swipe", "dismiss", "open", "close", "expand", "gesture"),
+            icon = MaterialSymbolIcon("swipe_vertical", filled = true),
+            route = SettingsRoutes.GESTURES,
+            parentScreen = "Gestures"
+        ))
+        add(SearchableSettingItem(
+            id = "gesture_queue_swipe_remove",
+            title = context.getString(R.string.settings_queue_swipe_remove),
+            description = context.getString(R.string.settings_queue_swipe_remove_desc),
+            keywords = listOf("queue", "swipe", "remove", "delete", "dismiss", "gesture"),
+            icon = MaterialSymbolIcon("delete_sweep", filled = true),
+            route = SettingsRoutes.GESTURES,
+            parentScreen = "Gestures"
+        ))
+        add(SearchableSettingItem(
+            id = "gesture_library_swipe_tabs",
+            title = context.getString(R.string.settings_library_swipe_tabs),
+            description = context.getString(R.string.settings_library_swipe_tabs_desc),
+            keywords = listOf("library", "swipe", "tabs", "switch", "pager", "gesture"),
+            icon = MaterialSymbolIcon("tab", filled = true),
+            route = SettingsRoutes.GESTURES,
+            parentScreen = "Gestures"
+        ))
+        add(SearchableSettingItem(
+            id = "gesture_lyrics_tap_seek",
+            title = context.getString(R.string.settings_lyrics_tap_seek),
+            description = context.getString(R.string.settings_lyrics_tap_seek_desc),
+            keywords = listOf("lyrics", "tap", "seek", "jump", "playback", "gesture"),
+            icon = MaterialSymbolIcon("ads_click", filled = true),
+            route = SettingsRoutes.GESTURES,
+            parentScreen = "Gestures"
+        ))
+        add(SearchableSettingItem(
             id = "gesture_disable_unused",
             title = context.getString(R.string.settings_disable_unused_gestures),
             description = context.getString(R.string.settings_gesture_disable_unused_desc),

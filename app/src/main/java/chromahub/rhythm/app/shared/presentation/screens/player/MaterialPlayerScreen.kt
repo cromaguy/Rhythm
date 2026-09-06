@@ -363,6 +363,7 @@ fun MaterialPlayerScreen(
     val gesturePlayerSwipeDismiss by appSettingsInstance.gesturePlayerSwipeDismiss.collectAsState()
     val gesturePlayerSwipeTracks by appSettingsInstance.gesturePlayerSwipeTracks.collectAsState()
     val gestureArtworkDoubleTap by appSettingsInstance.gestureArtworkDoubleTap.collectAsState()
+    val gestureArtworkSingleTap by appSettingsInstance.gestureArtworkSingleTap.collectAsState()
 
     // Helper function to split artist names
     val splitArtistNames: (String) -> List<String> = remember(artistSeparatorDelimiters, artistSeparatorEnabled) {
@@ -1643,8 +1644,8 @@ fun MaterialPlayerScreen(
                                     translationX = artworkTranslationX + albumSlideOffset
                                 }
                                 // Swipe gestures for changing tracks on artwork
-                                .pointerInput(gesturePlayerSwipeTracks, gestureArtworkDoubleTap) {
-                                    if (gesturePlayerSwipeTracks || gestureArtworkDoubleTap) {
+                                .pointerInput(gesturePlayerSwipeTracks, gestureArtworkDoubleTap, gestureArtworkSingleTap) {
+                                    if (gesturePlayerSwipeTracks || gestureArtworkDoubleTap || gestureArtworkSingleTap) {
                                         detectTapGestures(
                                             onDoubleTap = {
                                                 if (gestureArtworkDoubleTap) {
@@ -1654,13 +1655,15 @@ fun MaterialPlayerScreen(
                                                 }
                                             },
                                             onTap = {
-                                                // Single tap - toggle lyrics if available
-                                                if (showLyrics && !isLyricsContentVisible && isSongInfoVisible) {
-                                                    HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
-                                                    showLyricsView = !showLyricsView
-                                                } else if (showLyrics && isLyricsContentVisible && !isSongInfoVisible) {
-                                                    HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
-                                                    showLyricsView = !showLyricsView
+                                                if (gestureArtworkSingleTap) {
+                                                    // Single tap - toggle lyrics if available
+                                                    if (showLyrics && !isLyricsContentVisible && isSongInfoVisible) {
+                                                        HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
+                                                        showLyricsView = !showLyricsView
+                                                    } else if (showLyrics && isLyricsContentVisible && !isSongInfoVisible) {
+                                                        HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
+                                                        showLyricsView = !showLyricsView
+                                                    }
                                                 }
                                             }
                                         )

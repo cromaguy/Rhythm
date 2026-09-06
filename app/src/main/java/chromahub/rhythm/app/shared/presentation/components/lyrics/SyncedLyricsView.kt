@@ -178,6 +178,7 @@ fun SyncedLyricsView(
     val appSettings = remember(context) { AppSettings.getInstance(context) }
     val lyricBoldVal by appSettings.lyricBold.collectAsState()
     val lyricNoAnimationVal by appSettings.lyricNoAnimation.collectAsState()
+    val tapLyricsToSeek by appSettings.tapLyricsToSeek.collectAsState()
 
     // Track previous line for smooth transitions
     val previousLineIndex = remember { mutableIntStateOf(-1) }
@@ -262,11 +263,13 @@ fun SyncedLyricsView(
         }
     }
 
-    val handleSeek: (Long) -> Unit = remember(onSeek) {
+    val handleSeek: (Long) -> Unit = remember(onSeek, tapLyricsToSeek) {
         { timestamp ->
             userScrolledRecently = false
             previousLineIndex.intValue = -1
-            onSeek?.invoke(timestamp)
+            if (tapLyricsToSeek) {
+                onSeek?.invoke(timestamp)
+            }
         }
     }
 

@@ -603,6 +603,12 @@ class AppSettings private constructor(context: Context) {
         private const val KEY_GESTURE_PLAYER_SWIPE_DISMISS = "gesture_player_swipe_dismiss" // Swipe down to dismiss full player
         private const val KEY_GESTURE_PLAYER_SWIPE_TRACKS = "gesture_player_swipe_tracks" // Swipe left/right to change tracks in full player
         private const val KEY_GESTURE_ARTWORK_DOUBLE_TAP = "gesture_artwork_double_tap" // Double tap on artwork to play/pause
+        private const val KEY_GESTURE_ARTWORK_SINGLE_TAP = "gesture_artwork_single_tap" // Tap artwork to toggle lyrics
+        private const val KEY_GESTURE_QUEUE_SWIPE_TO_REMOVE = "gesture_queue_swipe_to_remove" // Swipe to remove from queue
+        private const val KEY_GESTURE_LIBRARY_SWIPE_TABS = "gesture_library_swipe_tabs" // Swipe between library tabs
+        private const val KEY_MINIPLAYER_SWIPE_TRACKS = "miniplayer_swipe_tracks" // Swipe horizontally on miniplayer to change tracks
+        private const val KEY_MINIPLAYER_SWIPE_DISMISS = "miniplayer_swipe_dismiss" // Swipe vertically on miniplayer to open/dismiss
+        private const val KEY_TAP_LYRICS_TO_SEEK = "tap_lyrics_to_seek" // Tap lyric line to seek playback
         
         // Expressive MaterialShapes Settings (M3 Expressive API)
         private const val KEY_EXPRESSIVE_SHAPES_ENABLED = "expressive_shapes_enabled" // Master toggle for expressive shapes
@@ -6190,6 +6196,48 @@ private val _autoCheckForUpdates = MutableStateFlow(prefs.getBoolean(KEY_AUTO_CH
     fun setGestureArtworkDoubleTap(value: Boolean) {
         _gestureArtworkDoubleTap.value = value
         prefs.edit { putBoolean(KEY_GESTURE_ARTWORK_DOUBLE_TAP, value) }
+    }
+    
+    private val _gestureArtworkSingleTap = MutableStateFlow(prefs.getBoolean(KEY_GESTURE_ARTWORK_SINGLE_TAP, true))
+    val gestureArtworkSingleTap: StateFlow<Boolean> = _gestureArtworkSingleTap.asStateFlow()
+    fun setGestureArtworkSingleTap(value: Boolean) {
+        _gestureArtworkSingleTap.value = value
+        prefs.edit { putBoolean(KEY_GESTURE_ARTWORK_SINGLE_TAP, value) }
+    }
+
+    private val _gestureQueueSwipeToRemove = MutableStateFlow(prefs.getBoolean(KEY_GESTURE_QUEUE_SWIPE_TO_REMOVE, true))
+    val gestureQueueSwipeToRemove: StateFlow<Boolean> = _gestureQueueSwipeToRemove.asStateFlow()
+    fun setGestureQueueSwipeToRemove(value: Boolean) {
+        _gestureQueueSwipeToRemove.value = value
+        prefs.edit { putBoolean(KEY_GESTURE_QUEUE_SWIPE_TO_REMOVE, value) }
+    }
+
+    private val _gestureLibrarySwipeTabs = MutableStateFlow(prefs.getBoolean(KEY_GESTURE_LIBRARY_SWIPE_TABS, true))
+    val gestureLibrarySwipeTabs: StateFlow<Boolean> = _gestureLibrarySwipeTabs.asStateFlow()
+    fun setGestureLibrarySwipeTabs(value: Boolean) {
+        _gestureLibrarySwipeTabs.value = value
+        prefs.edit { putBoolean(KEY_GESTURE_LIBRARY_SWIPE_TABS, value) }
+    }
+
+    private val _miniPlayerSwipeTracks = MutableStateFlow(prefs.getBoolean(KEY_MINIPLAYER_SWIPE_TRACKS, true))
+    val miniPlayerSwipeTracks: StateFlow<Boolean> = _miniPlayerSwipeTracks.asStateFlow()
+    fun setMiniPlayerSwipeTracks(value: Boolean) {
+        _miniPlayerSwipeTracks.value = value
+        prefs.edit { putBoolean(KEY_MINIPLAYER_SWIPE_TRACKS, value) }
+    }
+
+    private val _miniPlayerSwipeDismiss = MutableStateFlow(prefs.getBoolean(KEY_MINIPLAYER_SWIPE_DISMISS, true))
+    val miniPlayerSwipeDismiss: StateFlow<Boolean> = _miniPlayerSwipeDismiss.asStateFlow()
+    fun setMiniPlayerSwipeDismiss(value: Boolean) {
+        _miniPlayerSwipeDismiss.value = value
+        prefs.edit { putBoolean(KEY_MINIPLAYER_SWIPE_DISMISS, value) }
+    }
+
+    private val _tapLyricsToSeek = MutableStateFlow(prefs.getBoolean(KEY_TAP_LYRICS_TO_SEEK, true))
+    val tapLyricsToSeek: StateFlow<Boolean> = _tapLyricsToSeek.asStateFlow()
+    fun setTapLyricsToSeek(value: Boolean) {
+        _tapLyricsToSeek.value = value
+        prefs.edit { putBoolean(KEY_TAP_LYRICS_TO_SEEK, value) }
     }
     
     // Default section order for home screen
