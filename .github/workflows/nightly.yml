@@ -17,7 +17,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0 # Fetch all history for proper versioning and commit count
 
@@ -57,7 +57,7 @@ jobs:
 
       - name: set up JDK 17
         if: steps.check_version.outputs.should_run == 'true'
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v6
         with:
           java-version: '17'
           distribution: 'zulu'
@@ -217,7 +217,7 @@ jobs:
 
       - name: Upload Nightly APKs
         if: steps.check_version.outputs.should_run == 'true'
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: Rhythm-Nightly-Artifacts
           path: |

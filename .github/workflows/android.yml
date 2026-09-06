@@ -13,8 +13,8 @@ jobs:
   check:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-java@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
         with:
           java-version: 17
           distribution: 'zulu'
@@ -28,7 +28,7 @@ jobs:
       
       - name: Upload lint results
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: lint-results
           path: app/build/reports/lint-results*.html
@@ -37,8 +37,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v6
-    - uses: actions/setup-java@v5
+    - uses: actions/checkout@v7
+    - uses: actions/setup-java@v6
       with:
         java-version: 17
         distribution: 'zulu'
@@ -71,7 +71,7 @@ jobs:
 
     - name: Upload PR artifacts
       if: github.event_name == 'pull_request'
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: rhythm-pr-${{ github.event.pull_request.number }}
         path: |

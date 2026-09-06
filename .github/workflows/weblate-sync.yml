@@ -40,7 +40,7 @@ jobs:
     timeout-minutes: 25
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       # Fail fast if the repository's translations carry placeholders the app
       # cannot fill (the MissingFormatArgumentException crash class).
