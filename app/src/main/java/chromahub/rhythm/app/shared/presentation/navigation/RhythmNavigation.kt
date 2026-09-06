@@ -173,7 +173,17 @@ fun RhythmNavigation(
         NavHost(
             navController = rootNavController,
             startDestination = "main",
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier.fillMaxSize(),
+            predictivePopEnterTransition = {
+                fadeIn(animationSpec = tween(300))
+            },
+            predictivePopExitTransition = {
+                fadeOut(animationSpec = tween(300)) +
+                    slideOutVertically(
+                        targetOffsetY = { it / 4 },
+                        animationSpec = tween(350, easing = EaseInOutQuart)
+                    )
+            }
         ) {
             composable("main") {
                 AnimatedContent(

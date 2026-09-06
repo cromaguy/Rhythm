@@ -1812,7 +1812,63 @@ private fun LocalNavigationContent(
                 navController = navController,
                 startDestination = startDestination,
                 modifier = Modifier
-                    .fillMaxSize()
+                    .fillMaxSize(),
+                predictivePopEnterTransition = { swipeEdge ->
+                    when {
+                        targetState.destination.route == Screen.Player.route -> {
+                            EnterTransition.None
+                        }
+                        targetState.destination.route?.startsWith("home") == true &&
+                            initialState.destination.route?.startsWith("library") == true -> {
+                            fadeIn(animationSpec = tween(300)) +
+                                slideInHorizontally(
+                                    initialOffsetX = { -it },
+                                    animationSpec = tween(350, easing = EaseInOutQuart)
+                                )
+                        }
+                        targetState.destination.route?.startsWith("library") == true &&
+                            initialState.destination.route?.startsWith("home") == true -> {
+                            fadeIn(animationSpec = tween(300)) +
+                                slideInHorizontally(
+                                    initialOffsetX = { it },
+                                    animationSpec = tween(350, easing = EaseInOutQuart)
+                                )
+                        }
+                        else -> {
+                            fadeIn(animationSpec = tween(250))
+                        }
+                    }
+                },
+                predictivePopExitTransition = { swipeEdge ->
+                    when {
+                        initialState.destination.route == Screen.Player.route -> {
+                            ExitTransition.None
+                        }
+                        initialState.destination.route?.startsWith("library") == true &&
+                            targetState.destination.route?.startsWith("home") == true -> {
+                            fadeOut(animationSpec = tween(300)) +
+                                slideOutHorizontally(
+                                    targetOffsetX = { if (swipeEdge == 0) it else -it },
+                                    animationSpec = tween(350, easing = EaseInOutQuart)
+                                )
+                        }
+                        initialState.destination.route?.startsWith("home") == true &&
+                            targetState.destination.route?.startsWith("library") == true -> {
+                            fadeOut(animationSpec = tween(300)) +
+                                slideOutHorizontally(
+                                    targetOffsetX = { if (swipeEdge == 0) it else -it },
+                                    animationSpec = tween(350, easing = EaseInOutQuart)
+                                )
+                        }
+                        else -> {
+                            fadeOut(animationSpec = tween(300)) +
+                                slideOutVertically(
+                                    targetOffsetY = { it / 4 },
+                                    animationSpec = tween(350, easing = EaseInOutQuart)
+                                )
+                        }
+                    }
+                }
             ) {
                 composable(
                     route = Screen.Home.route,
