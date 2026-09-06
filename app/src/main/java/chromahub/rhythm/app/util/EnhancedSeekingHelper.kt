@@ -6,17 +6,21 @@
 package chromahub.rhythm.app.util
 
 import android.util.Log
+import androidx.annotation.OptIn
 import androidx.media3.common.Player
+import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.SeekParameters
 
 /**
- * Enhanced seeking utilities leveraging Media3 1.9.0 improvements
+ * Enhanced seeking utilities leveraging Media3 improvements
  * 
- * Media3 1.9.0 includes:
- * - Automatic seeking performance improvements for eligible videos
- * - Better scrubbing mode support
+ * Media3 includes:
+ * - Automatic seeking performance improvements
+ * - Better scrubbing mode support via SeekParameters
  * - Key-frame accurate seeking
  */
+@OptIn(UnstableApi::class)
 class EnhancedSeekingHelper(private val player: ExoPlayer) {
     
     companion object {
@@ -28,10 +32,14 @@ class EnhancedSeekingHelper(private val player: ExoPlayer) {
     /**
      * Enable scrubbing mode for frequent seeks
      * Optimizes for cases where user is dragging a seek bar
-     * Note: Manual implementation since setScrubbingModeEnabled requires newer API
      */
     fun enableScrubbingMode() {
         isScrubbingMode = true
+        try {
+            player.setSeekParameters(SeekParameters.CLOSEST_SYNC)
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to set CLOSEST_SYNC seek parameters", e)
+        }
         Log.d(TAG, "Scrubbing mode enabled for fast seeking")
     }
     
@@ -40,6 +48,11 @@ class EnhancedSeekingHelper(private val player: ExoPlayer) {
      */
     fun disableScrubbingMode() {
         isScrubbingMode = false
+        try {
+            player.setSeekParameters(SeekParameters.EXACT)
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to set EXACT seek parameters", e)
+        }
         Log.d(TAG, "Scrubbing mode disabled")
     }
     
@@ -82,7 +95,12 @@ class EnhancedSeekingHelper(private val player: ExoPlayer) {
     ) {
         seekBackIncrement = seekBackMs
         seekForwardIncrement = seekForwardMs
-        
+        try {
+            player.setSeekBackIncrementMs(seekBackMs)
+            player.setSeekForwardIncrementMs(seekForwardMs)
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to configure seek increments on player", e)
+        }
         Log.d(TAG, "Configured seek increments - Back: ${seekBackMs}ms, Forward: ${seekForwardMs}ms")
     }
     
