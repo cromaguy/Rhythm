@@ -10,6 +10,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - 
 
+## [5.5.480.1260] - 2026-09-06
+
+### Added
+- Rhythm Go offline music downloads: download tracks from Subsonic and Jellyfin servers with real-time progress tracking and offline management
+- Local network server discovery to auto-scan and connect to nearby Jellyfin and Subsonic servers
+- Adaptive Two-Pane layouts and dialogs designed specifically for tablets, foldables, and large screens
+- Enhanced tablet sheet navigation with pinned headers, interactive scrollbars, and desktop mouse-wheel support
+- Comprehensive gesture customization with independent controls across player, mini-player, queue, library tabs, and lyrics screens
+- Mini-player swipe gestures to configure horizontal track skipping and vertical dismiss actions independently
+- Album artwork tap actions including single-tap (toggle lyrics), double-tap (play/pause), and tap-to-seek controls
+- Customizable and reorderable bottom player action buttons for Normal and Merge modes
+- Revamped playback queue with played and up-next sections, swipe-to-dismiss tracks, sticky headers, and smooth drag-and-drop reordering
+- Context-aware playback queue preserving album and artist context on track taps (#546)
+- Option to keep shuffle active when manually selecting a song from the library
+- TTML and Enhanced LRC (.elrc) synchronized lyrics export, editing, and local file discovery
+- Streaming service selection step in the initial onboarding tour
+
+### Changed
+- Streaming resilience with automatic fallback to downloaded offline music when servers disconnect, plus faster sync and cover art caching
+- Touch-aware lyrics auto-scroll that pauses automatically while reading or interacting with lyrics
+- Updated translations from Weblate
+
+### Fixed
+- Audio service stability fixes preventing background playback termination and native audio engine crashes
+- Preserved correct playback queue order when using "Play Next" and "Add to Queue" while shuffle is active
+- Multi-artist delimiter handling preventing multi-character delimiters (such as "ft.") from splitting names into individual letters
+- Missing artist indexing, empty album navigation, and media scanner folder whitelist filtering
+- Normalized track added and modified timestamps to milliseconds with automatic database migration
+- Restored missing Favorite and Lyrics action buttons in Merge Mode bottom player controls
+- Bottom sheet visual jitter and layout jumps during transitions
+
+### Performance
+- Instant backward seeking with a 10-second back-buffer cache to eliminate re-buffering
+- Dynamic high-precision scrubbing with sample-accurate playback alignment on release
+
 ## [5.5.479.1258 Beta] - 2026-09-05
 
 ### Added
