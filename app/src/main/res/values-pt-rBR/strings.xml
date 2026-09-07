@@ -2770,4 +2770,19 @@
     <string name="settings_album_hide_about">Ocultar seção \'Sobre Álbum\'</string>
     <string name="settings_album_hide_about_desc">Ocultar seção descrição/sobre na tela de detalhes do álbum</string>
     <string name="settings_rhythm_guard_first_break_dialog_title">Sobre a pausa para ouvir</string>
+    <string name="widget_tip_cookie_corners">Escolha a função dos cantos inferiores do widget de cookies — pular, modo aleatório, repetir, favoritar ou ocultá-los</string>
+    <string name="widget_tip_stats_widget">Escolha o intervalo de tempo e o selo inferior exibidos pelo widget de estatísticas</string>
+    <string name="widget_tip_resize_settings">Pressione e segure um widget para redimensioná-lo ou abrir suas configurações</string>
+    <string name="settings_notifications_library_group">Biblioteca e sincronização</string>
+    <string name="settings_notifications_system_group">Controles do sistema</string>
+    <string name="settings_library_operations_notifications">Operações da biblioteca e backups</string>
+    <string name="settings_library_operations_notifications_desc">Mostrar notificações de progresso para indexação de mídia e exportação/importação de playlist</string>
+    <string name="settings_system_notification_channels">Configurações de notificação do Android</string>
+    <string name="settings_system_notification_channels_desc">Configure os canais de notificação do sistema, som, vibração e comportamento na tela de bloqueio</string>
+    <string name="settings_notification_permission_title">Permissão de notificação necessária</string>
+    <string name="settings_notification_permission_desc">Ative as permissões de notificação para que o Rhythm possa exibir controles de mídia e atualizações de tarefas em segundo plano.</string>
+    <string name="settings_notification_permission_grant">Ativar notificações</string>
+    <string name="settings_queue_autofill">Adicionar automaticamente</string>
+    <string name="settings_queue_display">Exibição da fila</string>
+    <string name="settings_respect_album_on_play_desc">Toque em uma música em um álbum ou artista para continuar reproduzindo o restante.</string>
 </resources>
