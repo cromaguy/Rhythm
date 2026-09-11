@@ -9,7 +9,7 @@
     <string name="media3_notification_channel_name">Rhythm Музыка</string>
     <string name="media3_notification_channel_description">Элементы управления воспроизведением мультимедиа</string>
     <!-- Widget strings -->
-    <string name="widget_description_glance">Музыка Rhythm - Управляйте воспроизведением с помощью 9 адаптивных макетов, дизайна Material 3 и обновлений состояния в реальном времени</string>
+    <string name="widget_description_glance">Смотрите и управляйте воспроизведением с домашнего экрана.</string>
     <string name="widget_name_glance">Rhythm Музыка</string>
     <string name="unknown_artist">Неизвестный исполнитель</string>
     <string name="play_pause">Воспроизведение/пауза</string>
@@ -27,9 +27,9 @@
     <string name="settings_notifications_updates_group">Обновления приложений</string>
     <string name="settings_notifications_rhythm_guard_group">Rhythm Guard</string>
     <string name="settings_notifications_rhythm_pulse_group">Rhythm Советы</string>
-    <string name="settings_update_notifications_merged_desc">Получайте оповещения о новых версиях и результатах фоновой проверки обновлений</string>
+    <string name="settings_update_notifications_merged_desc">Получайте оповещения о новых версиях Rhythm</string>
     <string name="settings_rhythm_guard_alert_notifications">Уведомления о безопасности</string>
-    <string name="settings_rhythm_guard_alert_notifications_desc">Показывать уведомление, когда Rhythm Guard обнаруживает опасный объем или риск</string>
+    <string name="settings_rhythm_guard_alert_notifications_desc">Показывать уведомление когда уровень громкости или звука превышает безопасное значение</string>
     <string name="settings_rhythm_guard_timer_notifications">Уведомления таймера перерыва</string>
     <string name="settings_rhythm_guard_timer_notifications_desc">Показывать уведомления о запланированных перерывах и обратном отсчете активного тайм-аута</string>
     <string name="settings_rhythm_pulse_notifications">Rhythm Советы Уведомления</string>
@@ -43,7 +43,7 @@
     <string name="settings_queue_title">Настройки очереди</string>
     <!-- Settings - Playback -->
     <string name="settings_playback">Воспроизведение</string>
-    <string name="settings_playback_desc">Состояния воспроизведения, плавное затухание, форматирование времени</string>
+    <string name="settings_playback_desc">Состояния воспроизведения, плавное затухание и отображение времени</string>
     <string name="settings_playback_title">Настройки воспроизведения</string>
     <string name="settings_queue_behavior">Правила очереди и перемешивание</string>
     <string name="settings_use_exoplayer_shuffle">Движок перемешивания</string>
@@ -72,7 +72,7 @@
     <string name="settings_gapless_playback_desc">Переключение треков без тишины.</string>
     <string name="settings_crossfade">Кроссфейд дорожки</string>
     <string name="settings_crossfade_desc">Смешайте исходящие и входящие дорожки.</string>
-    <string name="settings_crossfade_duration">Продолжительность затухания</string>
+    <string name="settings_crossfade_duration">Время затухания</string>
     <string name="settings_crossfade_duration_desc">%1$.1f секунд</string>
     <string name="settings_crossfade_repeat_one">Кроссфейд в первом повторе</string>
     <string name="settings_crossfade_repeat_one_desc">Разрешить плавное затухание при повторе одного трека.</string>
@@ -97,9 +97,9 @@
     <string name="settings_cleanup_empty_playlists">Очистка пустых плейлистов</string>
     <plurals name="settings_cleanup_empty_playlists_desc">
         <item quantity="one">Удалить %1$d пустой плейлист</item>
-        <item quantity="few">Удалить %1$d пустой плейлист</item>
-        <item quantity="many">Удалить %1$d пустой плейлист</item>
-        <item quantity="other">Удалить %1$d пустой плейлист</item>
+        <item quantity="few">Удалить %1$d пустой плейлиста</item>
+        <item quantity="many">Удалить %1$d пустой плейлистов</item>
+        <item quantity="other">Удалить %1$d пустой плейлистов</item>
     </plurals>
     <string name="settings_default_playlists">Плейлисты по умолчанию</string>
     <string name="settings_no_default_playlists">Нет плейлистов по умолчанию</string>
@@ -119,18 +119,18 @@
     <string name="notification_operations_channel_name">Библиотека Rhythm</string>
     <string name="notification_operations_channel_desc">Ход выполнения и результаты сканирования библиотеки и действий со списками воспроизведения</string>
     <string name="notification_media_scan_title">Rhythm Сканирование библиотеки</string>
-    <string name="notification_media_scan_stage_songs">Сканирование памяти устройства на наличие аудиодорожек…</string>
+    <string name="notification_media_scan_stage_songs">Сканирование памяти устройства на наличие аудио файлов…</string>
     <string name="notification_media_scan_stage_saving">Оптимизация и сохранение базы данных аудиодорожек…</string>
     <string name="notification_media_scan_stage_finishing">Завершение индексации аудио…</string>
-    <string name="notification_media_scan_complete_pending_setup">Сканирование звука завершено, инициализация фоновых задач…</string>
+    <string name="notification_media_scan_complete_pending_setup">Сканирование библиотеки завершено. Библиотека готова.</string>
     <string name="notification_media_scan_cancelled">Сканирование библиотеки отменено.</string>
     <string name="notification_media_scan_failed">Сканирование библиотеки не удалось. Проверьте права доступа к хранилищу и повторите попытку.</string>
-    <string name="notification_playlist_export_title">Rhythm Экспорт библиотеки</string>
-    <string name="notification_playlist_import_title">Rhythm Импорт библиотеки</string>
-    <string name="notification_library_setup_title">Настройка библиотеки Rhythm</string>
+    <string name="notification_playlist_export_title">Экспорт плейлиста</string>
+    <string name="notification_playlist_import_title">Импорт плейлиста</string>
+    <string name="notification_library_setup_title">Настройка библиотеки</string>
     <plurals name="notification_library_setup_complete_summary">
-        <item quantity="one">Библиотека оптимизирована и готова: %1$d треков, %2$d альбомов, %3$d исполнителей</item>
-        <item quantity="few">Библиотека оптимизирована и готова: %1$d треков, %2$d альбомов, %3$d исполнителей</item>
+        <item quantity="one">Библиотека оптимизирована и готов: %1$d трек, %2$d альбом, %3$d исполнитель</item>
+        <item quantity="few">Библиотека оптимизирована и готова: %1$d трека, %2$d альбома, %3$d исполнителя</item>
         <item quantity="many">Библиотека оптимизирована и готова: %1$d треков, %2$d альбомов, %3$d исполнителей</item>
         <item quantity="other">Библиотека оптимизирована и готова: %1$d треков, %2$d альбомов, %3$d исполнителей</item>
     </plurals>
@@ -139,10 +139,10 @@
     <string name="notification_operation_timed_out">Время ожидания операции истекло. Пожалуйста, попробуйте еще раз.</string>
     <string name="notification_playlist_export_complete">Плейлист успешно экспортирован в хранилище.</string>
     <plurals name="notification_playlist_export_all_complete">
-        <item quantity="one">Плейлисты %1$d успешно экспортированы в хранилище.</item>
-        <item quantity="few">Плейлисты %1$d успешно экспортированы в хранилище.</item>
-        <item quantity="many">Плейлисты %1$d успешно экспортированы в хранилище.</item>
-        <item quantity="other">Плейлисты %1$d успешно экспортированы в хранилище.</item>
+        <item quantity="one">%1$d Плейлист успешно экспортированы в хранилище.</item>
+        <item quantity="few">%1$d Плейлиста успешно экспортированы в хранилище.</item>
+        <item quantity="many">%1$d Плейлистов успешно экспортированы в хранилище.</item>
+        <item quantity="other">%1$d Плейлистов успешно экспортированы в хранилище.</item>
     </plurals>
     <string name="notification_playlist_export_failed">Не удалось экспортировать плейлист. Попробуйте еще раз.</string>
     <plurals name="notification_playlist_import_complete">
@@ -157,7 +157,7 @@
     <string name="notification_updater_title">Средство обновления Rhythm</string>
     <string name="notification_updater_downloading">⬇ Загрузка: %1$d%%</string>
     <string name="notification_updater_download_complete">✓ Готов к установке. Нажмите, чтобы обновить.</string>
-    <string name="notification_updater_available_title">Доступно обновление!</string>
+    <string name="notification_updater_available_title">Доступно новое обновление</string>
     <string name="notification_updater_available_text">🆕 Вышла новая версия Rhythm.</string>
     <string name="notification_sleep_timer_channel_name">Rhythm Таймер сна</string>
     <string name="notification_sleep_timer_channel_desc">Обратный отсчет и статус действий таймера сна</string>
@@ -176,16 +176,16 @@
     <string name="notification_streaming_sync_title">Синхронизация вашей библиотеки</string>
     <string name="notification_streaming_sync_started">Синхронизация с %1$s…</string>
     <plurals name="notification_streaming_sync_progress">
-        <item quantity="one">Синхронизация: %1$d песен • %2$d альбомов • %3$d исполнителей</item>
+        <item quantity="one">Синхронизация: %1$d песни • %2$d альбома • %3$d исполнитель</item>
         <item quantity="few">Синхронизация: %1$d песен • %2$d альбомов • %3$d исполнителей</item>
         <item quantity="many">Синхронизация: %1$d песен • %2$d альбомов • %3$d исполнителей</item>
         <item quantity="other">Синхронизация: %1$d песен • %2$d альбомов • %3$d исполнителей</item>
     </plurals>
     <plurals name="notification_streaming_sync_complete">
-        <item quantity="one">✓ Синхронизировано %1$d песен из %2$s!</item>
-        <item quantity="few">✓ Синхронизировано %1$d песен из %2$s!</item>
-        <item quantity="many">✓ Синхронизировано %1$d песен из %2$s!</item>
-        <item quantity="other">✓ Синхронизировано %1$d песен из %2$s!</item>
+        <item quantity="one">Синхронизирована %1$d песня из %2$s.</item>
+        <item quantity="few">Синхронизировано %1$d песени из %2$s.</item>
+        <item quantity="many">Синхронизировано %1$d песен из %2$s.</item>
+        <item quantity="other">Синхронизировано %1$d песен из %2$s.</item>
     </plurals>
     <string name="notification_streaming_sync_failed">Синхронизация не удалась. Проверьте подключение и повторите попытку.</string>
     <!-- Streaming Liked Songs -->
@@ -221,9 +221,9 @@
     <string name="dialog_cleanup_empty_playlists_title">Очистить пустые плейлисты?</string>
     <plurals name="dialog_cleanup_empty_playlists_message">
         <item quantity="one">Это приведет к безвозвратному удалению %1$d пустого плейлиста. Это действие невозможно отменить.</item>
-        <item quantity="few">Это приведет к безвозвратному удалению %1$d пустого плейлиста. Это действие невозможно отменить.</item>
-        <item quantity="many">Это приведет к безвозвратному удалению %1$d пустого плейлиста. Это действие невозможно отменить.</item>
-        <item quantity="other">Это приведет к безвозвратному удалению %1$d пустого плейлиста. Это действие невозможно отменить.</item>
+        <item quantity="few">Это приведет к безвозвратному удалению %1$d пустых плейлистов. Это действие невозможно отменить.</item>
+        <item quantity="many">Это приведет к безвозвратному удалению %1$d пустых плейлистов. Это действие невозможно отменить.</item>
+        <item quantity="other">Это приведет к безвозвратному удалению %1$d пустых плейлистов. Это действие невозможно отменить.</item>
     </plurals>
     <string name="dialog_delete_playlist_title">Удалить плейлист?</string>
     <string name="dialog_delete_playlist_message">Вы уверены, что хотите удалить «%1$s»? Это действие невозможно отменить.</string>
@@ -245,8 +245,8 @@
     <string name="playlist_remove_song">Удалить песню</string>
     <string name="playlist_remove_song_confirm">Удалить «%1$s» из этого плейлиста?</string>
     <plurals name="playlist_remove_songs_count">
-        <item quantity="one">Удалить %1$d песен</item>
-        <item quantity="few">Удалить %1$d песен</item>
+        <item quantity="one">Удалить %1$d песню</item>
+        <item quantity="few">Удалить %1$d песни</item>
         <item quantity="many">Удалить %1$d песен</item>
         <item quantity="other">Удалить %1$d песен</item>
     </plurals>
@@ -1620,8 +1620,8 @@
     <string name="streaming_home_no_content_title">Домашнего контента пока нет</string>
     <string name="streaming_home_no_content_hint">Попробуйте обновить данные после завершения синхронизации службы.</string>
     <plurals name="streaming_home_widget_playlist_track_count">
-        <item quantity="one">%1$d треков</item>
-        <item quantity="few">%1$d треков</item>
+        <item quantity="one">%1$d трек</item>
+        <item quantity="few">%1$d трека</item>
         <item quantity="many">%1$d треков</item>
         <item quantity="other">%1$d треков</item>
     </plurals>
@@ -2804,4 +2804,22 @@
     <string name="lyrically_sources_title">Источники Lyrically</string>
     <string name="lyrically_sources_desc">Настройте и расставьте приоритеты для источников текста песен в Lyrically. Сначала будут опробованы дословные источники, затем перейдут к синхронизированным/простым.</string>
     <string name="error_no_document_app">Отсутствует системное приложение для выбора папки.</string>
+    <string name="rhythmwidgetpreview_str_12_vertical_widget">1×2 Вертикальный Виджет</string>
+    <string name="rhythmwidgetpreview_str_32_medium_widget">3×2 Средний Виджет</string>
+    <string name="widget_cookie_action_skip">Пропустить трек</string>
+    <string name="widget_cookie_action_shuffle">Перемешать</string>
+    <string name="widget_stats_range_today">Сегодня</string>
+    <string name="widget_stats_range_today_desc">Время прослушивания за сегодня</string>
+    <string name="widget_stats_range_week">Эта неделя</string>
+    <string name="widget_stats_range_week_desc">Время прослушивания за последнюю неделю</string>
+    <string name="widget_stats_range_month">Этот месяц</string>
+    <string name="widget_stats_range_month_desc">Время прослушивания за последний месяц</string>
+    <string name="widget_stats_range_all_time">Всё время</string>
+    <string name="widget_stats_range_all_time_desc">Время прослушивания за всё время</string>
+    <string name="settings_queue_autofill">Авто добавление</string>
+    <string name="settings_queue_display">Отображение очереди</string>
+    <string name="settings_formats_select_all">Выбрать все</string>
+    <string name="settings_min_duration_minutes">%1$d мин %2$d сек</string>
+    <string name="settings_min_duration_seconds">%1$d секунд</string>
+    <string name="settings_min_duration_minutes_only">%1$d минут</string>
 </resources>
