@@ -23,7 +23,7 @@
 [<img src="https://shields.rbtlog.dev/simple/chromahub.rhythm.app?style=flat-square" alt="RB shield">](https://shields.rbtlog.dev/chromahub.rhythm.app)
 [![Translation status](https://hosted.weblate.org/widget/rhythm/strings/svg-badge.svg)](https://hosted.weblate.org/engage/rhythm/)
 
-### [🌐 Website](https://rhythmweb.vercel.app/) • [📥 Download](https://github.com/cromaguy/Rhythm/releases/latest) • [🎧 Discord](https://discord.gg/XjPyUYPQYc) • [💬 Telegram](https://t.me/RhythmSupport) • [📖 Wiki](https://github.com/cromaguy/Rhythm/wiki)
+### [🌐 Website](https://rhythmweb.vercel.app/) • [▶️ Google Play](https://play.google.com/store/apps/details?id=chromahub.rhythm.play) • [📥 Download](https://github.com/cromaguy/Rhythm/releases/latest) • [🎧 Discord](https://discord.gg/XjPyUYPQYc) • [💬 Telegram](https://t.me/RhythmSupport) • [📖 Wiki](https://github.com/cromaguy/Rhythm/wiki)
 
 </div>
 
@@ -166,6 +166,7 @@ Choose your preferred platform to download the latest version of Rhythm:
 
 | Source | Badge | Details |
 | :--- | :---: | :--- |
+| **Google Play** | [<img src="assets/badge-googleplay.png" alt="Get it on Google Play" height="35">](https://play.google.com/store/apps/details?id=chromahub.rhythm.play) | [Install on Android](https://play.google.com/store/apps/details?id=chromahub.rhythm.play) • [Join from Web (Open Testing)](https://play.google.com/apps/testing/chromahub.rhythm.play) |
 | **GitHub** | [<img src="assets/badge-github.png" alt="Download APK" height="35">](https://github.com/cromaguy/Rhythm/releases/latest) | Direct APK download (Full Features) |
 | **F-Droid** | [<img src="assets/badge-fdroid.png" alt="F-Droid" height="35">](https://f-droid.org/packages/chromahub.rhythm.app) | Official repository (Full Features) |
 | **IzzyOnDroid** | [<img src="assets/badge-izzyondroid.png" alt="IzzyOnDroid" height="35">](https://apt.izzysoft.de/fdroid/index/apk/chromahub.rhythm.app) | Privacy-focused repo (Full Features) |

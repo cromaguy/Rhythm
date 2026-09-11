@@ -1,0 +1,15 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 564 168" width="564" height="168">
+  <defs>
+    <linearGradient id="atGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1f77b4" />
+      <stop offset="100%" stop-color="#0d5080" />
+    </linearGradient>
+  </defs>
+  <rect x="2" y="2" width="560" height="164" rx="28" ry="28" fill="#0c0c0c" stroke="rgba(255, 255, 255, 0.35)" stroke-width="4" />
+  <g transform="translate(42, 34)">
+    <rect width="100" height="100" rx="22" fill="url(#atGrad)" />
+    <path d="M 50,22 L 58,40 L 78,42 L 63,55 L 68,75 L 50,64 L 32,75 L 37,55 L 22,42 L 42,40 Z" fill="#ffffff" />
+  </g>
+  <text x="175" y="65" fill="#ffffff" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="28" font-weight="600" letter-spacing="1.5">RATE &amp; REVIEW ON</text>
+  <text x="175" y="124" fill="#ffffff" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="52" font-weight="800">AlternativeTo</text>
+</svg>

@@ -261,24 +261,10 @@ fun RhythmTheme(
     
     val view = LocalView.current
     if (!view.isInEditMode) {
-        @Suppress("DEPRECATION")
         SideEffect {
-            val window = (view.context as Activity).window
-            
-            // Enable edge-to-edge display
-            WindowCompat.setDecorFitsSystemWindows(window, false)
-            
-            // Set system bar colors to transparent for true edge-to-edge
-            window.setStatusBarColor(android.graphics.Color.TRANSPARENT)
-            window.setNavigationBarColor(android.graphics.Color.TRANSPARENT)
-            
-            // Handle system bar appearance based on theme
+            val window = (view.context as? Activity)?.window ?: return@SideEffect
             val insetsController = WindowCompat.getInsetsController(window, view)
-            
-            // Status bar icons/text color
             insetsController.isAppearanceLightStatusBars = !darkTheme
-            
-            // Navigation bar icons/buttons color
             insetsController.isAppearanceLightNavigationBars = !darkTheme
         }
     }
