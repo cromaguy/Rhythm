@@ -6,10 +6,10 @@
     <string name="library">図書館</string>
     <string name="search">検索</string>
     <!-- Media3 notification configuration -->
-    <string name="media3_notification_channel_name">Rhythm 音楽</string>
+    <string name="media3_notification_channel_name">Rhythm 再生中</string>
     <string name="media3_notification_channel_description">メディア再生コントロール</string>
     <!-- Widget strings -->
-    <string name="widget_description_glance">Rhythm 音楽 - 9 つのレスポンシブ レイアウト、Material 3 つのデザイン、およびリアルタイムの状態更新による再生の制御</string>
+    <string name="widget_description_glance">Rhythm 音楽プレイヤー、Material 3 デザインやリアルタイムの状態更新による再生の制御</string>
     <string name="widget_name_glance">Rhythm 音楽</string>
     <string name="unknown_artist">不明なアーティスト</string>
     <string name="play_pause">再生/一時停止</string>
@@ -25,31 +25,31 @@
     <!-- Settings - Notifications -->
     <string name="settings_notifications">お知らせ</string>
     <string name="settings_notifications_updates_group">アプリのアップデート</string>
-    <string name="settings_notifications_rhythm_guard_group">Rhythm ガード</string>
+    <string name="settings_notifications_rhythm_guard_group">Rhythm ガードと安全性</string>
     <string name="settings_notifications_rhythm_pulse_group">Rhythm 個のヒント</string>
-    <string name="settings_update_notifications_merged_desc">新しいバージョンとバックグラウンド更新チェック結果のアラートを取得する</string>
+    <string name="settings_update_notifications_merged_desc">新しいバージョンとバックグラウンド更新チェック結果の通知を受け取る</string>
     <string name="settings_rhythm_guard_alert_notifications">安全上の注意通知</string>
-    <string name="settings_rhythm_guard_alert_notifications_desc">Rhythm Guard が危険なボリュームまたは露出を検出したときに通知を表示します</string>
-    <string name="settings_rhythm_guard_timer_notifications">休憩タイマー通知</string>
-    <string name="settings_rhythm_guard_timer_notifications_desc">スケジュールされた休憩とアクティブなタイムアウトのカウントダウンの通知を表示します</string>
-    <string name="settings_rhythm_pulse_notifications">Rhythm ヒントの通知</string>
-    <string name="settings_rhythm_pulse_notifications_desc">フレンドリーなリマインダーとリスニングのヒントを受け取ります。</string>
+    <string name="settings_rhythm_guard_alert_notifications_desc">Rhythm Guard が危険な音量または音響暴露を検出したときに通知を表示します</string>
+    <string name="settings_rhythm_guard_timer_notifications">休憩通知タイマー</string>
+    <string name="settings_rhythm_guard_timer_notifications_desc">休憩通知とアクティブなタイマーの通知を表示します</string>
+    <string name="settings_rhythm_pulse_notifications">Rhythmのヒント通知</string>
+    <string name="settings_rhythm_pulse_notifications_desc">個人向けのリマインダーとリスニング設定のヒントを受け取ります</string>
     <string name="settings_rhythm_pulse_interval">ヒントの間隔</string>
-    <string name="settings_rhythm_pulse_interval_dialog_title">Rhythm ヒント間隔</string>
+    <string name="settings_rhythm_pulse_interval_dialog_title">ヒント通知の間隔を選ぶ</string>
     <!-- Settings - Queue & Playback -->
     <!-- Settings - Queue -->
     <string name="settings_queue">キュー</string>
-    <string name="settings_queue_desc">キュールール、自動生成、動作</string>
+    <string name="settings_queue_desc">キューの動作 シャッフルや自動生成</string>
     <string name="settings_queue_title">キューの設定</string>
     <!-- Settings - Playback -->
     <string name="settings_playback">再生</string>
-    <string name="settings_playback_desc">再生状態、クロスフェード、時間フォーマット</string>
+    <string name="settings_playback_desc">再生の動作 クロスフェードや時間の表示</string>
     <string name="settings_playback_title">再生設定</string>
-    <string name="settings_queue_behavior">キュールールとシャッフル</string>
-    <string name="settings_use_exoplayer_shuffle">シャッフルエンジン</string>
+    <string name="settings_queue_behavior">再生を始めています</string>
+    <string name="settings_use_exoplayer_shuffle">シャッフル再生</string>
     <string name="settings_use_exoplayer_shuffle_desc">シャッフル順序にはプレーヤーのタイムラインを使用します。</string>
-    <string name="settings_auto_queue">コンテキストキュー</string>
-    <string name="settings_auto_queue_desc">再生開始時に関連キューを構築します。</string>
+    <string name="settings_auto_queue">自動追加</string>
+    <string name="settings_auto_queue_desc">再生開始時に関連した曲をキューに入れます</string>
     <string name="settings_context_queue_preference">コンテキストキューの設定</string>
     <string name="settings_context_queue_preference_desc">コンテキスト キューが最初に優先するメタデータを選択します。</string>
     <string name="settings_context_pref_artist_first">アーティストファースト</string>
@@ -2704,4 +2704,16 @@
         <item quantity="other">%1$d プレイリスト</item>
     </plurals>
     <string name="duration_minutes_format">%1$dメートル</string>
+    <string name="widget_tip_cookie_corners">スキップやシャッフル、リピート、好きな曲または隠すなど下部ウィジェットの動きを選んで下さい</string>
+    <string name="settings_notifications_library_group">音楽ライブラリと同期</string>
+    <string name="settings_notifications_system_group">システム制御</string>
+    <string name="settings_library_operations_notifications">音楽ライブラリとバックアップ</string>
+    <string name="settings_system_notification_channels">Androidの通知設定</string>
+    <string name="settings_notification_permission_title">通知権限が必要</string>
+    <string name="settings_notification_permission_desc">通知権限を有効にするとRhythmは音楽の制御やバックグラウンドのタスク更新通知を受けとることができます</string>
+    <string name="settings_notification_permission_grant">通知を有効にする</string>
+    <string name="settings_queue_autofill">自動追加</string>
+    <string name="settings_queue_display">再生キューを表示</string>
+    <string name="settings_respect_album_on_play">アルバムとアーティストを再生する</string>
+    <string name="settings_respect_album_on_play_desc">アルバムやアーティスト内の曲をタップすると、その続きが再生されます</string>
 </resources>
