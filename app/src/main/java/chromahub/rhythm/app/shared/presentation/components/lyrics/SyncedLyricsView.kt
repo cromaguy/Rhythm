@@ -507,21 +507,22 @@ private fun SyncedLyricItem(
         label = "lineTranslationY_$index"
     )
 
+    val isVoice2 = line.voiceTag in listOf("v2", "voice2")
+    val isVoice3 = line.voiceTag in listOf("v3", "voice3", "group")
+
     // Color transition for active line with voice-specific colors
     val lineColor = when {
         isCurrentLine -> {
-            // Apply different colors based on voice tag
-            when (line.voiceTag) {
-                "v2" -> activeColor ?: MaterialTheme.colorScheme.secondary // Different color for second voice
-                "v3" -> activeColor ?: MaterialTheme.colorScheme.tertiary  // Third voice
-                else -> activeColor ?: MaterialTheme.colorScheme.primary   // Default/v1
+            when {
+                isVoice2 -> activeColor ?: MaterialTheme.colorScheme.secondary
+                isVoice3 -> activeColor ?: MaterialTheme.colorScheme.tertiary
+                else -> activeColor ?: MaterialTheme.colorScheme.primary
             }
         }
         else -> {
-            // Inactive lines also get subtle voice coloring (alpha applied via modifier)
-            when (line.voiceTag) {
-                "v2" -> activeColor ?: MaterialTheme.colorScheme.secondary
-                "v3" -> activeColor ?: MaterialTheme.colorScheme.tertiary
+            when {
+                isVoice2 -> activeColor ?: MaterialTheme.colorScheme.secondary
+                isVoice3 -> activeColor ?: MaterialTheme.colorScheme.tertiary
                 else -> textColor ?: MaterialTheme.colorScheme.onSurface
             }
         }
@@ -538,7 +539,12 @@ private fun SyncedLyricItem(
     // Subtle letter spacing for emphasis
     val letterSpacing = if (isCurrentLine) 0.05.sp else 0.sp
 
-    val columnAlignment = when (textAlignment) {
+    val lineTextAlignment = if (textAlignment == TextAlign.Start && isVoice2) {
+        TextAlign.End
+    } else {
+        textAlignment
+    }
+    val columnAlignment = when (lineTextAlignment) {
         TextAlign.Start -> Alignment.Start
         TextAlign.End -> Alignment.End
         else -> Alignment.CenterHorizontally
@@ -569,7 +575,7 @@ private fun SyncedLyricItem(
                 letterSpacing = letterSpacing
             ),
             color = lineColor,
-            textAlign = textAlignment,
+            textAlign = lineTextAlignment,
             modifier = Modifier.fillMaxWidth()
         )
         
@@ -584,7 +590,7 @@ private fun SyncedLyricItem(
                     lineHeight = MaterialTheme.typography.bodyMedium.lineHeight * 1.4f
                 ),
                 color = (subtitleColor ?: MaterialTheme.colorScheme.tertiary).copy(alpha = if (isCurrentLine) 0.84f else 0.62f),
-                textAlign = textAlignment,
+                textAlign = lineTextAlignment,
                 modifier = Modifier
                     .fillMaxWidth()
                     .alpha(if (isCurrentLine) 0.9f else 0.7f)
@@ -608,7 +614,7 @@ private fun SyncedLyricItem(
                 color = (textColor ?: MaterialTheme.colorScheme.onSurface).copy(
                     alpha = if (isCurrentLine) 0.65f else 0.5f
                 ),
-                textAlign = textAlignment,
+                textAlign = lineTextAlignment,
                 modifier = Modifier
                     .fillMaxWidth()
                     .alpha(if (isCurrentLine) 0.9f else 0.7f)

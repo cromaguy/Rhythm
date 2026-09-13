@@ -288,9 +288,9 @@ def main():
         
     # Badges Table
     github_notes.append('<div align="center">\n')
-    github_notes.append('| | | | | |')
-    github_notes.append('|:---:|:---:|:---:|:---:|:---:|')
-    github_notes.append('| [<img src="https://github.com/user-attachments/assets/7ec1bd6a-7258-42ae-a264-12bbb51917be" alt="F-Droid" height="35">](https://f-droid.org/packages/chromahub.rhythm.app) | [<img src="https://github.com/user-attachments/assets/d3a1dfc4-e192-418a-8f5b-e21eaf6ba194" alt="IzzyOnDroid" height="35">](https://apt.izzysoft.de/fdroid/index/apk/chromahub.rhythm.app) | [<img src="https://github.com/user-attachments/assets/c479857e-83ab-4709-be48-d221321a4559" alt="Download APK" height="35">](https://github.com/cromaguy/Rhythm/releases/latest) | [<img src="https://github.com/user-attachments/assets/291f5586-b98f-4991-ac03-9a4eae1db159" alt="OpenAPK" height="35">](https://www.openapk.net/rhythm/chromahub.rhythm.app/) | [<img src="https://github.com/user-attachments/assets/22adc0a8-52b1-4977-9e6f-cbca95b14eec" alt="Obtainium" height="35">](https://apps.obtainium.imranr.dev/redirect?r=obtainium://add/https://github.com/cromaguy/Rhythm/) |')
+    github_notes.append('| | | | | | |')
+    github_notes.append('|:---:|:---:|:---:|:---:|:---:|:---:|')
+    github_notes.append('| [<img src="https://raw.githubusercontent.com/cromaguy/Rhythm/main/assets/badge-googleplay.png" alt="Google Play" height="35">](https://play.google.com/store/apps/details?id=chromahub.rhythm.play) | [<img src="https://raw.githubusercontent.com/cromaguy/Rhythm/main/assets/badge-github.png" alt="Download APK" height="35">](https://github.com/cromaguy/Rhythm/releases/latest) | [<img src="https://raw.githubusercontent.com/cromaguy/Rhythm/main/assets/badge-fdroid.png" alt="F-Droid" height="35">](https://f-droid.org/packages/chromahub.rhythm.app) | [<img src="https://raw.githubusercontent.com/cromaguy/Rhythm/main/assets/badge-izzyondroid.png" alt="IzzyOnDroid" height="35">](https://apt.izzysoft.de/fdroid/index/apk/chromahub.rhythm.app) | [<img src="https://raw.githubusercontent.com/cromaguy/Rhythm/main/assets/badge-obtainium.png" alt="Obtainium" height="35">](https://apps.obtainium.imranr.dev/redirect?r=obtainium://add/https://github.com/cromaguy/Rhythm/) | [<img src="https://raw.githubusercontent.com/cromaguy/Rhythm/main/assets/badge-openapk.png" alt="OpenAPK" height="35">](https://www.openapk.net/rhythm/chromahub.rhythm.app/) |')
     github_notes.append('\n</div>\n')
     
     github_notes.append("---")

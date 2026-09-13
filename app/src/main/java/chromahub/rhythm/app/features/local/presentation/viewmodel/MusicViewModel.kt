@@ -7659,7 +7659,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
     fun setLyricsSourcePreference(preference: LyricsSourcePreference) {
         appSettings.setLyricsSourcePreference(preference)
         if (showLyrics.value && currentSong.value != null) {
-            fetchLyricsForCurrentSong()
+            fetchLyricsForCurrentSong(forceRefresh = true)
         }
     }
     
@@ -7667,7 +7667,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
      * Fetches lyrics for the current song if settings allow, with automatic retry logic
      * Now properly handles race conditions and song changes
      */
-    private fun fetchLyricsForCurrentSong(retryCount: Int = 0) {
+    private fun fetchLyricsForCurrentSong(retryCount: Int = 0, forceRefresh: Boolean = false) {
         val song = currentSong.value ?: return
         
         // Cancel any previous lyrics fetch to prevent race conditions
@@ -7693,14 +7693,15 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
             try {
                 // Store the song ID to validate it hasn't changed
                 val fetchingSongId = song.id
-                Log.d(TAG, "Fetching lyrics for: ${song.artist} - ${song.title} (ID: $fetchingSongId) using preference: $lyricsPreference")
+                Log.d(TAG, "Fetching lyrics for: ${song.artist} - ${song.title} (ID: $fetchingSongId) using preference: $lyricsPreference, forceRefresh: $forceRefresh")
                 
                 val lyricsData = repository.fetchLyrics(
                     artist = song.artist, 
                     title = song.title, 
                     songId = song.id,
                     songUri = song.uri,
-                    sourcePreference = lyricsPreference
+                    sourcePreference = lyricsPreference,
+                    forceRefresh = forceRefresh
                 )
                 
                 // Verify the song hasn't changed before updating lyrics
@@ -7733,7 +7734,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                     
                     // Check if the song is still the same before retrying
                     if (currentSong.value?.id == song.id && isActive) {
-                        fetchLyricsForCurrentSong(retryCount + 1)
+                        fetchLyricsForCurrentSong(retryCount + 1, forceRefresh = forceRefresh)
                         return@launch
                     } else {
                         Log.d(TAG, "Song changed during retry, cancelling lyrics fetch")
@@ -7758,7 +7759,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
      */
     fun retryFetchLyrics() {
         Log.d(TAG, "Manual retry of lyrics fetch requested")
-        fetchLyricsForCurrentSong(0)
+        fetchLyricsForCurrentSong(retryCount = 0, forceRefresh = true)
     }
     
     /**

@@ -15,7 +15,8 @@ interface ITunesSearchApiService {
         @Query("term") term: String,
         @Query("media") media: String = "music",
         @Query("entity") entity: String = "song",
-        @Query("limit") limit: Int = 10
+        @Query("limit") limit: Int = 10,
+        @Query("explicit") explicit: String = "Yes"
     ): ITunesSearchResponse
 }
 

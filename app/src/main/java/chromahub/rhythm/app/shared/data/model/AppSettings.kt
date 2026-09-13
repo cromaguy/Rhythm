@@ -1011,24 +1011,9 @@ class AppSettings private constructor(context: Context) {
     
     // Lyrically Sources Order
     val defaultLyricallySources = listOf(
-        "APPLE_MUSIC",
-        "SPOTIFY",
-        "NETEASE",
-        "QQ_MUSIC",
-        "KUGOU",
-        "YOUTUBE",
-        "DEEZER",
-        "MUSIXMATCH",
-        "GENIUS"
+        "APPLE_MUSIC"
     )
-    val defaultDisabledLyricallySources = setOf(
-        "SPOTIFY",
-        "QQ_MUSIC",
-        "YOUTUBE",
-        "DEEZER",
-        "MUSIXMATCH",
-        "GENIUS"
-    )
+    val defaultDisabledLyricallySources = emptySet<String>()
     private val _lyricallySourcesOrder = MutableStateFlow(
         prefs.getString(KEY_LYRICALLY_SOURCES_ORDER, null)
             ?.split(",")

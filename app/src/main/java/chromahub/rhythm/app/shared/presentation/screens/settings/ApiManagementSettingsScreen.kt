@@ -116,7 +116,6 @@ import chromahub.rhythm.app.shared.presentation.components.common.ProgressStyle
 import chromahub.rhythm.app.shared.presentation.components.common.ThumbStyle
 import chromahub.rhythm.app.shared.presentation.components.bottomsheets.LicensesBottomSheet
 import chromahub.rhythm.app.shared.presentation.components.bottomsheets.UpdateBottomSheet
-import chromahub.rhythm.app.shared.presentation.components.bottomsheets.LyricallySourcesBottomSheet
 import chromahub.rhythm.app.ui.utils.LazyListStateSaver
 import chromahub.rhythm.app.features.local.presentation.viewmodel.MusicViewModel
 import chromahub.rhythm.app.shared.presentation.components.common.ExpressiveShapeProvider
@@ -178,7 +177,6 @@ fun ApiManagementSettingsScreen(onBackClick: () -> Unit) {
     val ytMusicApiEnabled by appSettings.ytMusicApiEnabled.collectAsState()
     val lyricallyApiEnabled by appSettings.lyricallyApiEnabled.collectAsState()
     val wikipediaApiEnabled by appSettings.wikipediaApiEnabled.collectAsState()
-    var showLyricallySourcesBottomSheet by remember { mutableStateOf(false) }
     val appleCanvasEnabled by appSettings.appleCanvasEnabled.collectAsState()
     val appleCanvasNetworkMode by appSettings.appleCanvasNetworkMode.collectAsState()
     var showCanvasNetworkModeDialog by remember { mutableStateOf(false) }
@@ -271,13 +269,7 @@ fun ApiManagementSettingsScreen(onBackClick: () -> Unit) {
                                     title = stringResource(R.string.apimanagementsettingsscreen_lyrically),
                                     description = context.getString(R.string.api_lyrically_desc),
                                     toggleState = lyricallyApiEnabled,
-                                    onToggleChange = { enabled -> appSettings.setLyricallyApiEnabled(enabled) },
-                                    onClick = {
-                                        if (lyricallyApiEnabled) {
-                                            HapticUtils.performHapticFeedback(context, hapticFeedback, HapticType.LIGHT)
-                                            showLyricallySourcesBottomSheet = true
-                                        }
-                                    }
+                                    onToggleChange = { enabled -> appSettings.setLyricallyApiEnabled(enabled) }
                                 )
                             )
                         )
@@ -396,14 +388,6 @@ fun ApiManagementSettingsScreen(onBackClick: () -> Unit) {
                     }
                 }
             }
-        }
-
-        if (showLyricallySourcesBottomSheet) {
-            LyricallySourcesBottomSheet(
-                onDismiss = { showLyricallySourcesBottomSheet = false },
-                appSettings = appSettings,
-                haptics = hapticFeedback
-            )
         }
 
         if (showCanvasNetworkModeDialog) {

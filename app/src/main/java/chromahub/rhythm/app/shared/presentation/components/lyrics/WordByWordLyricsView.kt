@@ -583,15 +583,18 @@ private fun WordByWordLyricLineItem(
         line.words.forEachIndexed { wordIndex, word ->
             val isWordActive = isCurrentLine && wordIndex == activeWordIndex
             
-            val baseColor = when (line.voiceTag) {
-                "v2" -> activeColor ?: MaterialTheme.colorScheme.secondary
-                "v3" -> activeColor ?: MaterialTheme.colorScheme.tertiary
+            val isVoice2 = line.voiceTag in listOf("v2", "voice2")
+            val isVoice3 = line.voiceTag in listOf("v3", "voice3", "group")
+
+            val baseColor = when {
+                isVoice2 -> activeColor ?: MaterialTheme.colorScheme.secondary
+                isVoice3 -> activeColor ?: MaterialTheme.colorScheme.tertiary
                 else -> activeColor ?: MaterialTheme.colorScheme.primary
             }
 
-            val inactiveWordColor = when (line.voiceTag) {
-                "v2" -> if (isCurrentLine) baseColor.copy(alpha = 0.5f) else baseColor
-                "v3" -> if (isCurrentLine) baseColor.copy(alpha = 0.5f) else baseColor
+            val inactiveWordColor = when {
+                isVoice2 -> if (isCurrentLine) baseColor.copy(alpha = 0.5f) else baseColor
+                isVoice3 -> if (isCurrentLine) baseColor.copy(alpha = 0.5f) else baseColor
                 else -> if (isCurrentLine) baseColor.copy(alpha = 0.5f) else (textColor ?: MaterialTheme.colorScheme.onSurface)
             }
 
@@ -648,6 +651,18 @@ private fun WordByWordLyricLineItem(
         }
     }
 
+    val isVoice2Line = line.voiceTag in listOf("v2", "voice2")
+    val lineTextAlignment = if (textAlignment == TextAlign.Start && isVoice2Line) {
+        TextAlign.End
+    } else {
+        textAlignment
+    }
+    val columnAlignment = when (lineTextAlignment) {
+        TextAlign.Start -> Alignment.Start
+        TextAlign.End -> Alignment.End
+        else -> Alignment.CenterHorizontally
+    }
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -662,11 +677,7 @@ private fun WordByWordLyricLineItem(
                 alpha = opacity
                 translationY = animatedTranslationY
             },
-        horizontalAlignment = when (textAlignment) {
-            TextAlign.Start -> Alignment.Start
-            TextAlign.End -> Alignment.End
-            else -> Alignment.CenterHorizontally
-        }
+        horizontalAlignment = columnAlignment
     ) {
         Text(
             text = annotatedText,
@@ -675,7 +686,7 @@ private fun WordByWordLyricLineItem(
                 fontSize = MaterialTheme.typography.headlineSmall.fontSize * textSizeMultiplier,
                 lineHeight = MaterialTheme.typography.headlineSmall.lineHeight * 1.4f * textSizeMultiplier
             ),
-            textAlign = textAlignment,
+            textAlign = lineTextAlignment,
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -694,7 +705,7 @@ private fun WordByWordLyricLineItem(
                 color = (subtitleColor ?: MaterialTheme.colorScheme.tertiary).copy(
                     alpha = if (isCurrentLine) 0.86f else 0.62f
                 ),
-                textAlign = textAlignment,
+                textAlign = lineTextAlignment,
                 modifier = Modifier
                     .fillMaxWidth()
                     .alpha(translationAlpha)
@@ -718,7 +729,7 @@ private fun WordByWordLyricLineItem(
                 color = (textColor ?: MaterialTheme.colorScheme.onSurface).copy(
                     alpha = if (isCurrentLine) 0.68f else 0.5f
                 ),
-                textAlign = textAlignment,
+                textAlign = lineTextAlignment,
                 modifier = Modifier.fillMaxWidth()
             )
         }

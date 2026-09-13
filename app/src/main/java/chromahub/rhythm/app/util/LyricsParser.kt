@@ -32,8 +32,11 @@ object LyricsParser {
     // Enhanced LRC word-level timestamp pattern: <mm:ss.xx> or <mm:ss.xxx>
     private val wordTimestampPattern = Pattern.compile("<(\\d{1,3}):(\\d{2})(?:\\.(\\d{2,3}))?>")
     
-    // Pattern to detect voice tags in lyrics text (e.g., "v1: text" or "v2: text")
-    private val voiceTagInLinePattern = Pattern.compile("^(v\\d+):\\s*(.*)$", Pattern.CASE_INSENSITIVE)
+    // Pattern to detect voice tags in lyrics text (e.g., "v1: text", "[v1] text", "<v1> text", "(v1) text", "{v1} text", "v1. text", "voice1: text")
+    private val voiceTagInLinePattern = Pattern.compile(
+        """^(?:\[(v\d+|voice\d+)\][:.]?|<(v\d+|voice\d+)>[:.]?|\((v\d+|voice\d+)\)[:.]?|\{(v\d+|voice\d+)\}[:.]?|(v\d+|voice\d+)[:.])\s*(.*)$""",
+        Pattern.CASE_INSENSITIVE
+    )
 
     private val splitWordStopWords = setOf(
         "a", "an", "and", "as", "at", "be", "but", "by", "can", "could", "did",
@@ -43,6 +46,22 @@ object LyricsParser {
         "will", "would", "am", "are", "was", "were", "been", "being", "there", "here"
     )
     
+    /**
+     * Normalizes voice tags to standard format (e.g., "v1", "v2", "v3")
+     */
+    fun normalizeVoiceTag(rawTag: String?): String? {
+        if (rawTag.isNullOrBlank()) return null
+        val lower = rawTag.trim().lowercase()
+        return when {
+            lower == "v1" || lower == "voice1" || lower == "voice1background" || lower == "voice" || lower == "1" -> "v1"
+            lower == "v2" || lower == "voice2" || lower == "voice2background" || lower == "2" -> "v2"
+            lower == "v3" || lower == "voice3" || lower == "group" || lower == "groupbackground" || lower == "3" -> "v3"
+            lower.startsWith("voice") -> "v" + lower.removePrefix("voice")
+            lower.startsWith("v") -> lower
+            else -> lower
+        }
+    }
+
     /**
      * Check if lyrics contain word-level timestamps (Enhanced LRC format)
      */
@@ -58,9 +77,9 @@ object LyricsParser {
     private fun extractVoiceTag(text: String): Pair<String?, String> {
         val matcher = voiceTagInLinePattern.matcher(text.trim())
         return if (matcher.matches()) {
-            val voiceTag = matcher.group(1) ?: ""
-            val cleanedText = matcher.group(2) ?: text
-            Pair(voiceTag.lowercase(), cleanedText.trim())
+            val rawTag = matcher.group(1) ?: matcher.group(2) ?: matcher.group(3) ?: matcher.group(4) ?: matcher.group(5) ?: ""
+            val cleanedText = matcher.group(6) ?: text
+            Pair(normalizeVoiceTag(rawTag), cleanedText.trim())
         } else {
             Pair(null, text)
         }
@@ -437,10 +456,16 @@ object LyricsParser {
                 }
                 
                 val (voiceTag, cleanedText) = extractVoiceTag(mainText)
+                val resolvedVoiceTag = voiceTag ?: when {
+                    mainLine.speaker?.isVoice2 == true -> "v2"
+                    mainLine.speaker?.isGroup == true -> "v3"
+                    mainLine.speaker?.isWidthLimited == true -> "v1"
+                    else -> normalizeVoiceTag(mainLine.speaker?.name)
+                }
                 LyricLine(
                     timestamp = start.toLong(),
                     text = cleanedText,
-                    voiceTag = voiceTag ?: mainLine.speaker?.name?.lowercase(),
+                    voiceTag = resolvedVoiceTag,
                     translation = translation,
                     romanization = romanization,
                     endTime = if (mainLine.end > 0uL && !mainLine.endIsImplicit) mainLine.end.toLong() else null

@@ -18,8 +18,24 @@ import kotlin.math.abs
 object RhythmLyricsParser {
     private const val TAG = "RhythmLyricsParser"
     
-    // Pattern to detect voice tags in lyrics text (e.g., "v1: text" or "v2: text")
-    private val voiceTagPattern = java.util.regex.Pattern.compile("^(v\\d+):\\s*(.*)$", java.util.regex.Pattern.CASE_INSENSITIVE)
+    // Pattern to detect voice tags in lyrics text (e.g., "v1: text", "[v1] text", "<v1> text", "(v1) text", "{v1} text", "v1. text", "voice1: text")
+    private val voiceTagPattern = java.util.regex.Pattern.compile(
+        """^(?:\[(v\d+|voice\d+)\][:.]?|<(v\d+|voice\d+)>[:.]?|\((v\d+|voice\d+)\)[:.]?|\{(v\d+|voice\d+)\}[:.]?|(v\d+|voice\d+)[:.])\s*(.*)$""",
+        java.util.regex.Pattern.CASE_INSENSITIVE
+    )
+
+    fun normalizeVoiceTag(rawTag: String?): String? {
+        if (rawTag.isNullOrBlank()) return null
+        val lower = rawTag.trim().lowercase()
+        return when {
+            lower == "v1" || lower == "voice1" || lower == "voice1background" || lower == "voice" || lower == "1" -> "v1"
+            lower == "v2" || lower == "voice2" || lower == "voice2background" || lower == "2" -> "v2"
+            lower == "v3" || lower == "voice3" || lower == "group" || lower == "groupbackground" || lower == "3" -> "v3"
+            lower.startsWith("voice") -> "v" + lower.removePrefix("voice")
+            lower.startsWith("v") -> lower
+            else -> lower
+        }
+    }
 
     private enum class SupplementalLineKind {
         TRANSLATION,
@@ -38,6 +54,7 @@ object RhythmLyricsParser {
             val gson = Gson()
             val listType = object : TypeToken<List<RhythmLyricsLine>>() {}.type
             val rhythmLyricsLines: List<RhythmLyricsLine> = gson.fromJson(jsonContent, listType)
+            val hasOppositeTurnInSong = rhythmLyricsLines.any { it.oppositeTurn == true }
             
             val parsedLines = rhythmLyricsLines.mapNotNull { line ->
                 var words = line.text?.mapNotNull { word ->
@@ -68,8 +85,9 @@ object RhythmLyricsParser {
                     val firstWordText = words.first().text
                     val matcher = voiceTagPattern.matcher(firstWordText)
                     if (matcher.matches()) {
-                        voiceTag = matcher.group(1)?.lowercase()
-                        val cleanedText = matcher.group(2)?.trim() ?: ""
+                        val rawTag = matcher.group(1) ?: matcher.group(2) ?: matcher.group(3) ?: matcher.group(4) ?: matcher.group(5) ?: ""
+                        voiceTag = normalizeVoiceTag(rawTag)
+                        val cleanedText = matcher.group(6)?.trim() ?: ""
                         // Replace first word with cleaned text (without voice tag)
                         if (cleanedText.isNotEmpty()) {
                             words = listOf(
@@ -79,6 +97,14 @@ object RhythmLyricsParser {
                             // If cleaned text is empty, remove the first word entirely
                             words = words.drop(1)
                         }
+                    }
+                }
+                
+                if (voiceTag == null) {
+                    if (line.oppositeTurn == true) {
+                        voiceTag = "v2"
+                    } else if (hasOppositeTurnInSong) {
+                        voiceTag = "v1"
                     }
                 }
                 
@@ -688,7 +714,7 @@ object RhythmLyricsParser {
                 text = wordsWithVoice,
                 background = if (line.background) true else null,
                 backgroundText = backgroundText,
-                oppositeTurn = null,
+                oppositeTurn = if (line.voiceTag in listOf("v2", "voice2")) true else null,
                 timestamp = line.lineTimestamp,
                 endtime = line.lineEndtime,
                 endIsImplicit = line.endIsImplicit
@@ -912,12 +938,17 @@ object RhythmLyricsParser {
                 val translation = translationsMap[key]
                 val bgText = if (translation != null) listOf("($translation)") else null
 
+                val isVoice2 = attrs["agent"]?.lowercase() in listOf("v2", "2", "voice2") ||
+                               attrs["role"]?.lowercase() in listOf("v2", "voice2") ||
+                               attrs["textalign"]?.lowercase() in listOf("right", "end") ||
+                               attrs["align"]?.lowercase() in listOf("right", "end")
+
                 lines.add(
                     RhythmLyricsLine(
                         text = finalWords,
                         background = false,
                         backgroundText = bgText,
-                        oppositeTurn = null,
+                        oppositeTurn = if (isVoice2) true else null,
                         timestamp = beginMs,
                         endtime = endMs,
                         endIsImplicit = false

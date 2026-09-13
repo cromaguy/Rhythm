@@ -70,31 +70,3 @@ data class RhythmLyricsTrackInfo(
     @SerializedName("hasLyrics") val hasLyrics: Boolean?,
     @SerializedName("hasTimeSyncedLyrics") val hasTimeSyncedLyrics: Boolean?
 )
-
-/**
- * Represents a generic track search result from various Lyrically API search endpoints (Spotify, NetEase, QQ, Kugou, YouTube).
- */
-data class RhythmLyricsGenericSearchResult(
-    @SerializedName("trackId") val trackId: String?,
-    @SerializedName("id") val id: String?,
-    @SerializedName("videoId") val videoId: String?,
-    @SerializedName("songmid") val songmid: String?,
-    @SerializedName("hash") val hash: String?,
-    @SerializedName("name") val name: String?,
-    @SerializedName("title") val title: String?,
-    @SerializedName("artistName") val artistName: String?,
-    @SerializedName("author") val author: String?,
-    @SerializedName("artist") val artist: String?
-) {
-    fun getCanonicalId(): String? {
-        return trackId ?: id ?: videoId ?: songmid ?: hash
-    }
-    
-    fun getCanonicalName(): String? {
-        return name ?: title
-    }
-    
-    fun getCanonicalArtist(): String? {
-        return artistName ?: author ?: artist
-    }
-}

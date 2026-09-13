@@ -129,18 +129,26 @@ object NetworkClient {
         throw lastException ?: IOException("Request failed after $MAX_RETRIES retries")
     }
     
-    private fun deezerHeadersInterceptor() = Interceptor { chain ->
+    private fun appHeadersInterceptor(
+        customUserAgent: String? = null,
+        extraHeaders: Map<String, String> = emptyMap()
+    ) = Interceptor { chain ->
         try {
-            val request = chain.request().newBuilder()
-                .header("User-Agent", "RhythmApp/${BuildConfig.VERSION_NAME} (Android)")
+            val userAgent = customUserAgent ?: "Rhythm/${BuildConfig.VERSION_NAME} (https://github.com/cromaguy/Rhythm)"
+            val requestBuilder = chain.request().newBuilder()
+                .header("User-Agent", userAgent)
                 .header("Accept", "application/json")
-                .build()
-            chain.proceed(request)
+            extraHeaders.forEach { (key, value) ->
+                requestBuilder.header(key, value)
+            }
+            chain.proceed(requestBuilder.build())
         } catch (e: Exception) {
-            Log.e(TAG, "Error in deezer headers interceptor: ${e.message}")
+            Log.e(TAG, "Error in app headers interceptor: ${e.message}")
             throw e
         }
     }
+
+    private fun deezerHeadersInterceptor() = appHeadersInterceptor("RhythmApp/${BuildConfig.VERSION_NAME} (Android)")
     
     private val deezerHttpClient: OkHttpClient by lazy {
         OkHttpClient.Builder()
@@ -164,7 +172,12 @@ object NetworkClient {
     
     private val lrclibHttpClient: OkHttpClient by lazy {
         OkHttpClient.Builder()
+            .addInterceptor(appHeadersInterceptor(
+                customUserAgent = "Rhythm/${BuildConfig.VERSION_NAME} (https://github.com/cromaguy/Rhythm)",
+                extraHeaders = mapOf("Lrclib-Client" to "Rhythm/${BuildConfig.VERSION_NAME} (https://github.com/cromaguy/Rhythm)")
+            ))
             .addInterceptor(loggingInterceptor)
+            .addInterceptor(retryInterceptor)
             .connectTimeout(CONNECT_TIMEOUT, TimeUnit.SECONDS)
             .readTimeout(READ_TIMEOUT, TimeUnit.SECONDS)
             .writeTimeout(WRITE_TIMEOUT, TimeUnit.SECONDS)
@@ -182,7 +195,9 @@ object NetworkClient {
     
     private val betterlyricsHttpClient: OkHttpClient by lazy {
         OkHttpClient.Builder()
+            .addInterceptor(appHeadersInterceptor())
             .addInterceptor(loggingInterceptor)
+            .addInterceptor(retryInterceptor)
             .connectTimeout(CONNECT_TIMEOUT, TimeUnit.SECONDS)
             .readTimeout(READ_TIMEOUT, TimeUnit.SECONDS)
             .writeTimeout(WRITE_TIMEOUT, TimeUnit.SECONDS)
@@ -220,6 +235,7 @@ object NetworkClient {
     
     private val spotifyHttpClient: OkHttpClient by lazy {
         OkHttpClient.Builder()
+            .addInterceptor(appHeadersInterceptor())
             .addInterceptor(loggingInterceptor)
             .addInterceptor(retryInterceptor)
             .connectTimeout(CONNECT_TIMEOUT, TimeUnit.SECONDS)
@@ -259,6 +275,7 @@ object NetworkClient {
 
     private val itunesHttpClient: OkHttpClient by lazy {
         OkHttpClient.Builder()
+            .addInterceptor(appHeadersInterceptor())
             .addInterceptor(loggingInterceptor)
             .addInterceptor(retryInterceptor)
             .connectTimeout(CONNECT_TIMEOUT, TimeUnit.SECONDS)

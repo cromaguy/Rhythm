@@ -198,7 +198,6 @@ import chromahub.rhythm.app.shared.presentation.screens.settings.statsRangeIcon
 import chromahub.rhythm.app.shared.presentation.screens.settings.statsRangeLabel
 import chromahub.rhythm.app.shared.presentation.screens.settings.updateAllWidgets
 import chromahub.rhythm.app.shared.presentation.viewmodel.ThemeViewModel
-import chromahub.rhythm.app.shared.presentation.components.bottomsheets.LyricallySourcesBottomSheet
 import chromahub.rhythm.app.shared.presentation.components.bottomsheets.ShapePresetsBottomSheet
 import chromahub.rhythm.app.shared.presentation.components.bottomsheets.getLocalizedShapePresetName
 import chromahub.rhythm.app.shared.presentation.components.bottomsheets.ArtistDelimitersBottomSheet
@@ -257,7 +256,6 @@ fun OnboardingScreen(
 
     // Bottom sheet states
     var showLibraryTabOrderBottomSheet by remember { mutableStateOf(false) }
-    var showLyricallySourcesBottomSheet by remember { mutableStateOf(false) }
     var showCanvasNetworkModeDialog by remember { mutableStateOf(false) }
     var showAutoEQSelector by remember { mutableStateOf(false) }
     var showArtistArtworkSourceBottomSheet by remember { mutableStateOf(false) }
@@ -637,7 +635,6 @@ fun OnboardingScreen(
                                     onNextStep = onNextStep,
                                     appSettings = appSettings,
                                     isTablet = isTablet,
-                                    onLyricallyConfigure = { showLyricallySourcesBottomSheet = true },
                                     onAppleCanvasConfigure = { showCanvasNetworkModeDialog = true },
                                     backButton = tabletBackButton,
                                     nextButton = tabletNextButton
@@ -859,14 +856,6 @@ fun OnboardingScreen(
                 musicViewModel.applyAutoEQProfile(profile)
                 showAutoEQSelector = false
             }
-        )
-    }
-
-    if (showLyricallySourcesBottomSheet) {
-        LyricallySourcesBottomSheet(
-            onDismiss = { showLyricallySourcesBottomSheet = false },
-            appSettings = appSettings,
-            haptics = haptic
         )
     }
 
@@ -8744,7 +8733,6 @@ fun EnhancedIntegrationsContent(
     onNextStep: () -> Unit,
     appSettings: AppSettings,
     isTablet: Boolean = false,
-    onLyricallyConfigure: () -> Unit = {},
     onAppleCanvasConfigure: () -> Unit = {},
     backButton: @Composable (() -> Unit)? = null,
     nextButton: @Composable () -> Unit
@@ -8847,8 +8835,7 @@ fun EnhancedIntegrationsContent(
                         }
                     },
                     onAppleCanvasChange = { appSettings.setAppleCanvasEnabled(it) },
-                    onAppleCanvasConfigure = onAppleCanvasConfigure,
-                    onLyricallyConfigure = onLyricallyConfigure
+                    onAppleCanvasConfigure = onAppleCanvasConfigure
                 )
             }
         }
@@ -8911,8 +8898,7 @@ fun EnhancedIntegrationsContent(
                     }
                 },
                 onAppleCanvasChange = { appSettings.setAppleCanvasEnabled(it) },
-                onAppleCanvasConfigure = onAppleCanvasConfigure,
-                onLyricallyConfigure = onLyricallyConfigure
+                onAppleCanvasConfigure = onAppleCanvasConfigure
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -8947,8 +8933,7 @@ private fun IntegrationsSettingsCards(
     onBroadcastChange: (Boolean) -> Unit,
     onBluetoothLyricsChange: (Boolean) -> Unit,
     onAppleCanvasChange: (Boolean) -> Unit,
-    onAppleCanvasConfigure: () -> Unit,
-    onLyricallyConfigure: () -> Unit
+    onAppleCanvasConfigure: () -> Unit
 ) {
     val context = LocalContext.current
     val haptic = LocalHapticFeedback.current
@@ -9048,7 +9033,7 @@ private fun IntegrationsSettingsCards(
                     "Enjoy beautiful, word-by-word synchronized lyrics",
                     lyricallyApiEnabled,
                     onLyricallyChange,
-                    onLyricallyConfigure
+                    null
                 )
             )
         }
