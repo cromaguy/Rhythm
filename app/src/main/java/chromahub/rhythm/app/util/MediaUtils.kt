@@ -540,7 +540,7 @@ object MediaUtils {
         var format = "Unknown"
         var dateAdded = song.dateAdded
         var dateModified = 0L
-        var filePath = ""
+        var filePath = song.path ?: ""
         var composer = ""
         var discNumber = 0
         var totalTracks = 0
@@ -599,24 +599,28 @@ object MediaUtils {
                 null
             )?.use { cursor ->
                 if (cursor.moveToFirst()) {
-                    val dataIndex = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DATA)
-                    val sizeIndex = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.SIZE)
-                    val dateAddedIndex =
-                        cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DATE_ADDED)
-                    val dateModifiedIndex =
-                        cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DATE_MODIFIED)
-                    val composerIndex =
-                        cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.COMPOSER)
-                    val trackIndex = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.TRACK)
+                    val dataIndex = cursor.getColumnIndex(MediaStore.Audio.Media.DATA)
+                    val sizeIndex = cursor.getColumnIndex(MediaStore.Audio.Media.SIZE)
+                    val dateAddedIndex = cursor.getColumnIndex(MediaStore.Audio.Media.DATE_ADDED)
+                    val dateModifiedIndex = cursor.getColumnIndex(MediaStore.Audio.Media.DATE_MODIFIED)
+                    val composerIndex = cursor.getColumnIndex(MediaStore.Audio.Media.COMPOSER)
+                    val trackIndex = cursor.getColumnIndex(MediaStore.Audio.Media.TRACK)
                     val discNumberIndex = cursor.getColumnIndex(MediaStore.Audio.Media.DISC_NUMBER)
                     val albumArtistIndex = cursor.getColumnIndex(MediaStore.Audio.Media.ALBUM_ARTIST)
-                    val yearIndex = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.YEAR)
-                    val mimeTypeIndex =
-                        cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.MIME_TYPE)
-                    val songIdIndex = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media._ID)
-                    filePath = cursor.getString(dataIndex) ?: ""
-                    fileSize = cursor.getLong(sizeIndex)
-                    val rawDateAdded = cursor.getLong(dateAddedIndex)
+                    val yearIndex = cursor.getColumnIndex(MediaStore.Audio.Media.YEAR)
+                    val mimeTypeIndex = cursor.getColumnIndex(MediaStore.Audio.Media.MIME_TYPE)
+                    val songIdIndex = cursor.getColumnIndex(MediaStore.Audio.Media._ID)
+
+                    if (dataIndex != -1) {
+                        val retrievedPath = cursor.getString(dataIndex)
+                        if (!retrievedPath.isNullOrBlank()) {
+                            filePath = retrievedPath
+                        }
+                    }
+                    if (sizeIndex != -1) {
+                        fileSize = cursor.getLong(sizeIndex)
+                    }
+                    val rawDateAdded = if (dateAddedIndex != -1) cursor.getLong(dateAddedIndex) else 0L
                     val mediaStoreDateAdded = if (rawDateAdded in 1..99_999_999_999L) rawDateAdded * 1000L else rawDateAdded
                     val normalizedSongDateAdded = if (dateAdded in 1..99_999_999_999L) dateAdded * 1000L else dateAdded
                     dateAdded = when {
@@ -624,13 +628,13 @@ object MediaUtils {
                         mediaStoreDateAdded > 0L -> mediaStoreDateAdded
                         else -> normalizedSongDateAdded
                     }
-                    val rawDateModified = cursor.getLong(dateModifiedIndex)
+                    val rawDateModified = if (dateModifiedIndex != -1) cursor.getLong(dateModifiedIndex) else 0L
                     dateModified = if (rawDateModified in 1..99_999_999_999L) rawDateModified * 1000L else rawDateModified
-                    composer = cursor.getString(composerIndex) ?: ""
+                    composer = if (composerIndex != -1) cursor.getString(composerIndex) ?: "" else ""
                     albumArtist = if (albumArtistIndex != -1) cursor.getString(albumArtistIndex) ?: "" else ""
-                    year = cursor.getInt(yearIndex)
-                    mimeType = cursor.getString(mimeTypeIndex) ?: ""
-                    val songId = cursor.getLong(songIdIndex)
+                    year = if (yearIndex != -1) cursor.getInt(yearIndex) else 0
+                    mimeType = if (mimeTypeIndex != -1) cursor.getString(mimeTypeIndex) ?: "" else ""
+                    val songId = if (songIdIndex != -1) cursor.getLong(songIdIndex) else song.id.toLongOrNull() ?: 0L
 
                     // Use enhanced genre detection with multiple fallbacks
                     if (genre.isNullOrEmpty()) {
@@ -640,7 +644,7 @@ object MediaUtils {
                     // isBookmark is not available in all Android versions, so we'll skip it
 
                     // Extract track and disc numbers from TRACK field
-                    val trackInfo = cursor.getInt(trackIndex)
+                    val trackInfo = if (trackIndex != -1) cursor.getInt(trackIndex) else 0
                     if (trackInfo > 0) {
                         if (trackInfo >= 1000) {
                             discNumber = trackInfo / 1000
@@ -652,6 +656,17 @@ object MediaUtils {
                     if (discNumberIndex >= 0 && !cursor.isNull(discNumberIndex)) {
                         cursor.getInt(discNumberIndex).takeIf { it > 0 }?.let { discNumber = it }
                     }
+                }
+            }
+
+            if (fileSize <= 0L && filePath.isNotEmpty()) {
+                try {
+                    val file = File(filePath)
+                    if (file.exists()) {
+                        fileSize = file.length()
+                    }
+                } catch (e: Exception) {
+                    // Ignore
                 }
             }
 
@@ -2097,6 +2112,8 @@ object MediaUtils {
      * @return The genre name, or null if not found
      */
     private fun getGenreNameFromMediaStore(contentResolver: ContentResolver, songId: Int): String? {
+        // MediaStore.Audio.Genres table was deprecated in API 29 and is broken/unsupported on Android 11+ (API 30+)
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) return null
         return try {
             // First get the genre ID from the audio_genres_map table
             val genreIdProjection = arrayOf(MediaStore.Audio.Genres.Members.GENRE_ID)

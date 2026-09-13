@@ -242,37 +242,48 @@ fun SongInfoBottomSheet(
     
     val isWhitelisted = song?.let { whitelistedSongs.contains(it.id) } ?: false
     
-    val folderPath = remember(song?.uri) {
-        song?.let { 
-            try {
-                when (it.uri.scheme) {
-                    "content" -> {
-                        val projection = arrayOf(MediaStore.Audio.Media.DATA)
-                        context.contentResolver.query(it.uri, projection, null, null, null)
-                            ?.use { cursor ->
-                                if (cursor.moveToFirst()) {
-                                    val dataIndex = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DATA)
-                                    val filePath = cursor.getString(dataIndex)
+    val initialFolderPath = remember(song?.id, song?.path, song?.uri) {
+        song?.path?.takeIf { it.isNotBlank() }?.let { File(it).parent }
+            ?: if (song?.uri?.scheme == "file") song.uri.path?.let { File(it).parent } else null
+    }
+    var folderPath by remember(song?.id) { mutableStateOf(initialFolderPath) }
+
+    LaunchedEffect(song?.id, song?.uri, song?.path) {
+        val pathFromSong = song?.path?.takeIf { it.isNotBlank() }?.let { File(it).parent }
+            ?: if (song?.uri?.scheme == "file") song.uri.path?.let { File(it).parent } else null
+        if (pathFromSong != null) {
+            folderPath = pathFromSong
+        } else if (song != null && song.uri.scheme == "content") {
+            folderPath = withContext(Dispatchers.IO) {
+                try {
+                    val projection = arrayOf(MediaStore.Audio.Media.DATA)
+                    context.contentResolver.query(song.uri, projection, null, null, null)?.use { cursor ->
+                        if (cursor.moveToFirst()) {
+                            val dataIndex = cursor.getColumnIndex(MediaStore.Audio.Media.DATA)
+                            if (dataIndex != -1) {
+                                val filePath = cursor.getString(dataIndex)
+                                if (!filePath.isNullOrBlank()) {
                                     File(filePath).parent
                                 } else null
-                            }
+                            } else null
+                        } else null
                     }
-                    "file" -> File(it.uri.path ?: "").parent
-                    else -> null
+                } catch (e: Exception) {
+                    null
                 }
-            } catch (e: Exception) {
-                null
             }
+        } else {
+            folderPath = null
         }
     }
     
-    val isInBlacklistedFolder = folderPath != null && blacklistedFolders.any { blacklistedPath ->
-        folderPath.startsWith(blacklistedPath, ignoreCase = true)
-    }
+    val isInBlacklistedFolder = folderPath?.let { currentPath ->
+        blacklistedFolders.any { currentPath.startsWith(it, ignoreCase = true) }
+    } ?: false
     
-    val isInWhitelistedFolder = folderPath != null && whitelistedFolders.any { whitelistedPath ->
-        folderPath.startsWith(whitelistedPath, ignoreCase = true)
-    }
+    val isInWhitelistedFolder = folderPath?.let { currentPath ->
+        whitelistedFolders.any { currentPath.startsWith(it, ignoreCase = true) }
+    } ?: false
 
     if (song == null) {
         onDismiss()
