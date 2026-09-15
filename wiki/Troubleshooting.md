@@ -159,8 +159,8 @@ Before diving into specific issues, try these general fixes:
    - Rescan media library
 
 4. **Check file permissions:**
-   - Ensure Rhythm can read image files
-   - Grant `READ_MEDIA_IMAGES` permission
+   - Ensure Rhythm has audio access permission granted
+   - Rescan media library in Settings
 
 ### Incorrect Metadata
 

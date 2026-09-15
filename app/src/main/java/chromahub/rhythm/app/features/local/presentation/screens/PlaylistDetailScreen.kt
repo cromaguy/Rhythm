@@ -12,6 +12,7 @@ import chromahub.rhythm.app.shared.presentation.components.icons.Icon
 import android.content.Context
 import androidx.compose.ui.focus.FocusRequester
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import android.widget.Toast
 import chromahub.rhythm.app.shared.presentation.screens.settings.SettingsSearchBar
@@ -252,7 +253,7 @@ fun PlaylistDetailScreen(
     var showCustomizeImageDialog by remember { mutableStateOf(false) }
 
     val imagePickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
+        contract = ActivityResultContracts.PickVisualMedia()
     ) { uri ->
         if (uri != null) {
             musicViewModel.updatePlaylistArtwork(playlist.id, uri) {
@@ -265,7 +266,11 @@ fun PlaylistDetailScreen(
         CustomizePlaylistImageDialog(
             playlistName = playlist.name,
             onDismiss = { showCustomizeImageDialog = false },
-            onSelectImage = { imagePickerLauncher.launch("image/*") },
+            onSelectImage = {
+                imagePickerLauncher.launch(
+                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                )
+            },
             onResetImage = {
                 musicViewModel.updatePlaylistArtwork(playlist.id, null) {
                     currentArtworkUri = null

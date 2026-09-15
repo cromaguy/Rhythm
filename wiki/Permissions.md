@@ -20,8 +20,6 @@ Rhythm is **100% FOSS-compliant** and respects your privacy:
 **Permissions:**
 - `READ_EXTERNAL_STORAGE` (Android ≤12)
 - `READ_MEDIA_AUDIO` (Android 13+)
-- `READ_MEDIA_IMAGES` (Android 13+)
-- `READ_MEDIA_VISUAL_USER_SELECTED` (Android 14+)
 
 **Why Needed:**
 - Scan and index your music files
@@ -300,7 +298,7 @@ For optional online features: lyrics (LRCLib), artwork (Deezer), and updates (Gi
 Yes, but you won't see playback controls in the notification shade. Player screen still works normally.
 
 ### Does Rhythm access my photos?
-No. Even though `READ_MEDIA_IMAGES` is requested (for album art embedded in music files), Rhythm only accesses images associated with audio files, not your photo gallery.
+No. Rhythm does not request or require photo permissions. Custom artwork selection uses the secure system Android Photo Picker, granting access only to the specific image you pick.
 
 ### Why Bluetooth permissions?
 To detect when you connect Bluetooth headphones/speakers and auto-resume playback. Optional feature.

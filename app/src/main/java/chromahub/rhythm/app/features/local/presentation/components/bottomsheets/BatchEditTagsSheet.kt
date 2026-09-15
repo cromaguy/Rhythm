@@ -15,6 +15,7 @@ import chromahub.rhythm.app.shared.presentation.components.icons.MaterialSymbolI
 import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
@@ -195,7 +196,7 @@ fun BatchEditTagsSheet(
     val coroutineScope = rememberCoroutineScope()
 
     val imagePickerLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.GetContent()
+        contract = ActivityResultContracts.PickVisualMedia()
     ) { uri ->
         selectedImageUri = uri
         if (uri != null) {
@@ -489,7 +490,11 @@ fun BatchEditTagsSheet(
                                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                                     ) {
                                         RhythmDetailActionButton(
-                                            onClick = { imagePickerLauncher.launch("image/*") },
+                                            onClick = {
+                                                imagePickerLauncher.launch(
+                                                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                                )
+                                            },
                                             height = 44.dp,
                                             isFirst = true,
                                             isLast = false,

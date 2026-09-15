@@ -10,6 +10,7 @@ package chromahub.rhythm.app.features.local.presentation.screens
 import chromahub.rhythm.app.shared.presentation.components.icons.RhythmIcons
 import chromahub.rhythm.app.shared.presentation.components.icons.Icon
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import chromahub.rhythm.app.shared.presentation.components.dialogs.CustomizeArtistImageDialog
 
@@ -162,7 +163,7 @@ fun ArtistDetailScreen(
     var showCustomizeImageDialog by remember { mutableStateOf(false) }
 
     val imagePickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
+        contract = ActivityResultContracts.PickVisualMedia()
     ) { uri ->
         if (uri != null && artist != null) {
             viewModel.updateArtistArtwork(artist, uri) {
@@ -175,7 +176,11 @@ fun ArtistDetailScreen(
         CustomizeArtistImageDialog(
             artistName = artist.name,
             onDismiss = { showCustomizeImageDialog = false },
-            onSelectImage = { imagePickerLauncher.launch("image/*") },
+            onSelectImage = {
+                imagePickerLauncher.launch(
+                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                )
+            },
             onResetImage = {
                 viewModel.updateArtistArtwork(artist, null) {
                     currentArtworkUri = null

@@ -9,6 +9,7 @@ import chromahub.rhythm.app.shared.presentation.components.bottomsheets.SheetAda
 import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
@@ -144,7 +145,7 @@ fun EditAlbumSheet(
     val coroutineScope = rememberCoroutineScope()
 
     val imagePickerLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.GetContent()
+        contract = ActivityResultContracts.PickVisualMedia()
     ) { uri ->
         selectedImageUri = uri
         if (uri != null) {
@@ -292,7 +293,11 @@ fun EditAlbumSheet(
                                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                                 ) {
                                     OutlinedButton(
-                                        onClick = { imagePickerLauncher.launch("image/*") },
+                                        onClick = {
+                                            imagePickerLauncher.launch(
+                                                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                            )
+                                        },
                                         enabled = !isSaving,
                                         modifier = Modifier.weight(1f)
                                     ) {
@@ -709,7 +714,11 @@ fun EditAlbumSheet(
                                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                                 ) {
                                     OutlinedButton(
-                                        onClick = { imagePickerLauncher.launch("image/*") },
+                                        onClick = {
+                                            imagePickerLauncher.launch(
+                                                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                            )
+                                        },
                                         enabled = !isSaving,
                                         modifier = Modifier.weight(1f)
                                     ) {

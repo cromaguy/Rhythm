@@ -24,6 +24,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import android.widget.Toast
 import androidx.compose.foundation.shape.CircleShape
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.compose.foundation.*
@@ -1615,7 +1616,7 @@ private fun EditSongSheet(
     }
     
     val imagePickerLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.GetContent()
+        contract = ActivityResultContracts.PickVisualMedia()
     ) { uri ->
         selectedImageUri = uri
         if (uri != null) {
@@ -1769,7 +1770,9 @@ private fun EditSongSheet(
 
                                     IconButton(
                                         onClick = {
-                                            imagePickerLauncher.launch("image/*")
+                                            imagePickerLauncher.launch(
+                                                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                            )
                                         },
                                         modifier = Modifier
                                             .align(Alignment.TopEnd)
@@ -2324,7 +2327,11 @@ private fun EditSongSheet(
                                 )
 
                                 IconButton(
-                                    onClick = { imagePickerLauncher.launch("image/*") },
+                                    onClick = {
+                                        imagePickerLauncher.launch(
+                                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                        )
+                                    },
                                     modifier = Modifier
                                         .align(Alignment.TopEnd)
                                         .size(40.dp)
@@ -2346,7 +2353,11 @@ private fun EditSongSheet(
                                 horizontalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
                                 RhythmDetailActionButton(
-                                    onClick = { imagePickerLauncher.launch("image/*") },
+                                    onClick = {
+                                        imagePickerLauncher.launch(
+                                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                        )
+                                    },
                                     height = 48.dp,
                                     isFirst = true,
                                     isLast = !hasArtworkPreview,
