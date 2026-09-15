@@ -780,11 +780,7 @@ class MainActivity : AppCompatActivity() {
                     val playPauseIntent = Intent(this, chromahub.rhythm.app.infrastructure.service.MediaPlaybackService::class.java).apply {
                         action = chromahub.rhythm.app.infrastructure.service.MediaPlaybackService.ACTION_PLAY_PAUSE
                     }
-                    try {
-                        androidx.core.content.ContextCompat.startForegroundService(this, playPauseIntent)
-                    } catch (e: Exception) {
-                        Log.e(TAG, "Failed to start service for play/pause shortcut", e)
-                    }
+                    ServiceStartUtils.startServiceSafely(this, playPauseIntent, TAG, "shortcut_play_pause")
                 }
                 "chromahub.rhythm.app.action.SHORTCUT_SKIP_NEXT" -> {
                     ShortcutManagerCompat.reportShortcutUsed(this, "shortcut_next")
@@ -792,11 +788,7 @@ class MainActivity : AppCompatActivity() {
                     val nextIntent = Intent(this, chromahub.rhythm.app.infrastructure.service.MediaPlaybackService::class.java).apply {
                         action = chromahub.rhythm.app.infrastructure.service.MediaPlaybackService.ACTION_SKIP_NEXT
                     }
-                    try {
-                        androidx.core.content.ContextCompat.startForegroundService(this, nextIntent)
-                    } catch (e: Exception) {
-                        Log.e(TAG, "Failed to start service for next shortcut", e)
-                    }
+                    ServiceStartUtils.startServiceSafely(this, nextIntent, TAG, "shortcut_skip_next")
                 }
                 "chromahub.rhythm.app.action.SHORTCUT_SKIP_PREVIOUS" -> {
                     ShortcutManagerCompat.reportShortcutUsed(this, "shortcut_previous")
@@ -804,11 +796,7 @@ class MainActivity : AppCompatActivity() {
                     val prevIntent = Intent(this, chromahub.rhythm.app.infrastructure.service.MediaPlaybackService::class.java).apply {
                         action = chromahub.rhythm.app.infrastructure.service.MediaPlaybackService.ACTION_SKIP_PREVIOUS
                     }
-                    try {
-                        androidx.core.content.ContextCompat.startForegroundService(this, prevIntent)
-                    } catch (e: Exception) {
-                        Log.e(TAG, "Failed to start service for previous shortcut", e)
-                    }
+                    ServiceStartUtils.startServiceSafely(this, prevIntent, TAG, "shortcut_skip_previous")
                 }
                 Intent.ACTION_VIEW -> {
                     // Handle external audio file with validation

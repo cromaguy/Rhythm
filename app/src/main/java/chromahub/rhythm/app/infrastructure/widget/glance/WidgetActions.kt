@@ -44,10 +44,15 @@ private fun dispatchServiceAction(context: Context, action: String) {
         this.action = action
     }
     try {
-        ContextCompat.startForegroundService(context, intent)
+        context.startService(intent)
     } catch (e: Exception) {
-        Log.w("WidgetAction", "Cannot start foreground service for action: $action", e)
-        openRhythm(context)
+        Log.w("WidgetAction", "startService failed for $action, retrying with startForegroundService", e)
+        try {
+            ContextCompat.startForegroundService(context, intent)
+        } catch (fgsError: Exception) {
+            Log.w("WidgetAction", "Cannot start foreground service for action: $action", fgsError)
+            openRhythm(context)
+        }
     }
 }
 

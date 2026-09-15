@@ -561,18 +561,7 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
         // Create notification channel first (required for Android 8.0+)
         createNotificationChannel()
 
-        // Try foreground promotion early; on newer Android versions this can be blocked
-        // when the service is started from background contexts.
-        startForegroundWithNotification(
-            getString(chromahub.rhythm.app.R.string.service_rhythm_music),
-            getString(chromahub.rhythm.app.R.string.service_starting)
-        )
-
         // Initialize settings manager (fast operation)
-        updateForegroundNotification(
-            getString(chromahub.rhythm.app.R.string.service_rhythm_music),
-            getString(chromahub.rhythm.app.R.string.service_loading_settings)
-        )
         appSettings = AppSettings.getInstance(applicationContext)
         
         // Initialize preloader
@@ -607,10 +596,6 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
         statusBroadcaster = chromahub.rhythm.app.utils.StatusBroadcaster(applicationContext)
 
         // Register BroadcastReceiver for favorite changes
-        updateForegroundNotification(
-            getString(chromahub.rhythm.app.R.string.service_rhythm_music),
-            getString(chromahub.rhythm.app.R.string.service_setup_components)
-        )
         androidx.core.content.ContextCompat.registerReceiver(
             this,
             favoriteChangeReceiver,
@@ -647,30 +632,13 @@ btProxy = chromahub.rhythm.app.util.BtCodecInfo.getCodec(this) { info ->
 
         try {
             // Initialize core components on main thread (required for media service)
-            updateForegroundNotification(
-                getString(chromahub.rhythm.app.R.string.service_rhythm_music),
-                getString(chromahub.rhythm.app.R.string.service_initializing_player)
-            )
             initializePlayer()
-
-            updateForegroundNotification(
-                getString(chromahub.rhythm.app.R.string.service_rhythm_music),
-                getString(chromahub.rhythm.app.R.string.service_creating_controls)
-            )
             createCustomCommands()
 
             // Create the media session (required synchronously)
-            updateForegroundNotification(
-                getString(chromahub.rhythm.app.R.string.service_rhythm_music),
-                getString(chromahub.rhythm.app.R.string.service_setup_media_session)
-            )
             mediaSession = createMediaSession()
 
             // Initialize controller asynchronously to avoid blocking
-            updateForegroundNotification(
-                getString(chromahub.rhythm.app.R.string.service_rhythm_music),
-                getString(chromahub.rhythm.app.R.string.service_initializing_controller)
-            )
             createController()
 
             // Rhythm Guard background check loop (every 10 seconds)
@@ -1980,6 +1948,25 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
             }
         }
         
+        // If an external trigger (such as widget or tile) started this service via startForegroundService
+        // while playback is paused or stopped, satisfy the Android OS contract to avoid ForegroundServiceDidNotStartInTimeException.
+        if (::player.isInitialized && !player.isPlaying) {
+            when (intent?.action) {
+                ACTION_PLAY_PAUSE, ACTION_SKIP_NEXT, ACTION_SKIP_PREVIOUS,
+                ACTION_TOGGLE_FAVORITE, ACTION_TOGGLE_SHUFFLE, ACTION_TOGGLE_REPEAT -> {
+                    try {
+                        startForegroundWithNotification(
+                            getString(chromahub.rhythm.app.R.string.service_rhythm_music),
+                            getString(chromahub.rhythm.app.R.string.service_ready)
+                        )
+                        androidx.core.app.ServiceCompat.stopForeground(this, androidx.core.app.ServiceCompat.STOP_FOREGROUND_REMOVE)
+                    } catch (e: Exception) {
+                        Log.w(TAG, "Could not satisfy foreground contract for action: ${intent.action}", e)
+                    }
+                }
+            }
+        }
+
         // We make sure to call the super implementation
         return super.onStartCommand(intent, flags, startId)
     }

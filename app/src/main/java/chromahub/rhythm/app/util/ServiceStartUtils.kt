@@ -27,17 +27,9 @@ object ServiceStartUtils {
         } catch (startException: Exception) {
             Log.w(
                 logTag,
-                "startService failed for $reason, retrying with startForegroundService",
-                startException
+                "startService failed for $reason: ${startException.javaClass.simpleName}: ${startException.message}"
             )
-
-            try {
-                ContextCompat.startForegroundService(context, intent)
-                true
-            } catch (foregroundException: Exception) {
-                Log.e(logTag, "Unable to start service for $reason", foregroundException)
-                false
-            }
+            false
         }
     }
 }

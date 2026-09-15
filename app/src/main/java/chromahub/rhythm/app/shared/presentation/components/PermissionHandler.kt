@@ -220,13 +220,9 @@ fun PermissionHandler(
                 currentOnboardingStep = OnboardingStep.COMPLETE
                 onSetIsInitializingApp(true) // Start app initialization
                 try {
-                    val intent = Intent(context, chromahub.rhythm.app.infrastructure.service.MediaPlaybackService::class.java)
-                    intent.action = chromahub.rhythm.app.infrastructure.service.MediaPlaybackService.ACTION_INIT_SERVICE
-                    // Must use startForegroundService to avoid BackgroundServiceStartNotAllowedException on Android 12+
-                    ContextCompat.startForegroundService(context, intent)
-                    delay(1000) // Give service time to initialize
-                } catch (_: Exception) {
-                    // Fallback: service will be started when the activity is fully foregrounded
+                    musicViewModel.connectToMediaService()
+                } catch (e: Exception) {
+                    android.util.Log.w("PermissionHandler", "Failed to connect to media service", e)
                 }
                 onSetIsInitializingApp(false) // End app initialization
             }
