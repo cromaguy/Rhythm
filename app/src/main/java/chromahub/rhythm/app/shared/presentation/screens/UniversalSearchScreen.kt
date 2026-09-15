@@ -1819,16 +1819,19 @@ fun UniversalSearchSongItem(
                     HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
                     onMoreClick()
                 },
-                modifier = Modifier.size(36.dp),
+                modifier = Modifier
+                    .width(32.dp)
+                    .height(44.dp),
+                shape = RoundedCornerShape(50),
                 colors = IconButtonDefaults.filledIconButtonColors(
-                    containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onTertiaryContainer
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
                 )
             ) {
                 Icon(
                     imageVector = RhythmIcons.More,
                     contentDescription = stringResource(R.string.content_desc_more_options),
-                    modifier = Modifier.size(18.dp)
+                    modifier = Modifier.size(22.dp)
                 )
             }
         }

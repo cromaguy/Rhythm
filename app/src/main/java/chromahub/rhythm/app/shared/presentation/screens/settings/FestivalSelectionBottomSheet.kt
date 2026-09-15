@@ -227,7 +227,7 @@ fun FestivalSelectionBottomSheet(
                                 modifier = Modifier.fillMaxWidth(),
                                 colors = CardDefaults.cardColors(
                                     containerColor = if (isSelected)
-                                        MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.5f)
+                                        MaterialTheme.colorScheme.primaryContainer
                                     else
                                         MaterialTheme.colorScheme.surfaceContainerHigh
                                 ),
@@ -256,7 +256,7 @@ fun FestivalSelectionBottomSheet(
                                             contentDescription = null,
                                             tint = when {
                                                 !isAvailable -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
-                                                isSelected -> MaterialTheme.colorScheme.primaryContainer
+                                                isSelected -> MaterialTheme.colorScheme.onPrimaryContainer
                                                 else -> MaterialTheme.colorScheme.onSurfaceVariant
                                             },
                                             modifier = Modifier.size(if (isSelected) 30.dp else 26.dp)
@@ -269,7 +269,7 @@ fun FestivalSelectionBottomSheet(
                                                 ),
                                                 color = when {
                                                     !isAvailable -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
-                                                    isSelected -> MaterialTheme.colorScheme.primaryContainer
+                                                    isSelected -> MaterialTheme.colorScheme.onPrimaryContainer
                                                     else -> MaterialTheme.colorScheme.onSurface
                                                 }
                                             )
@@ -280,7 +280,7 @@ fun FestivalSelectionBottomSheet(
                                         Icon(
                                             imageVector = RhythmIcons.CheckCircle,
                                             contentDescription = context.getString(R.string.ui_selected),
-                                            tint = MaterialTheme.colorScheme.primaryContainer,
+                                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
                                             modifier = Modifier.size(24.dp)
                                         )
                                     }

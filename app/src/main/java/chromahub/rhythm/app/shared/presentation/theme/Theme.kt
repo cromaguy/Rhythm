@@ -87,11 +87,26 @@ private val PRESET_THEMES_MAP = PRESET_THEMES.associateBy { it.name }
 private val presetSchemeCache = java.util.concurrent.ConcurrentHashMap<String, ColorScheme>()
 
 /**
+ * Resolve contrast level and chroma multiplier based on theme intensity setting
+ */
+fun resolveIntensity(themeIntensity: String): Pair<Double, Double> {
+    return when (themeIntensity.uppercase()) {
+        "VIVID" -> Pair(0.22, 1.25)
+        "MEDIUM" -> Pair(0.12, 1.12)
+        else -> Pair(0.0, 1.0)
+    }
+}
+
+/**
  * Get preset color scheme options for settings and onboarding screens
  */
-fun getPresetColorSchemeOptions(context: Context, darkTheme: Boolean = false): List<ColorSchemeOption> {
+fun getPresetColorSchemeOptions(
+    context: Context,
+    darkTheme: Boolean = false,
+    themeIntensity: String = "STANDARD"
+): List<ColorSchemeOption> {
     return PRESET_THEMES.map { preset ->
-        val scheme = getCustomColorScheme(preset.name, darkTheme)
+        val scheme = getCustomColorScheme(preset.name, darkTheme, themeIntensity)
         ColorSchemeOption(
             name = preset.name,
             displayName = context.getString(preset.titleRes),
@@ -107,19 +122,30 @@ fun getPresetColorSchemeOptions(context: Context, darkTheme: Boolean = false): L
  * Get custom color scheme based on preset name
  */
 @SuppressLint("RestrictedApi")
-fun getCustomColorScheme(schemeName: String, darkTheme: Boolean): ColorScheme {
+fun getCustomColorScheme(
+    schemeName: String,
+    darkTheme: Boolean,
+    themeIntensity: String = "STANDARD"
+): ColorScheme {
     // Check if it's a custom hex color scheme first
-    val customScheme = parseCustomColorScheme(schemeName, darkTheme)
+    val customScheme = parseCustomColorScheme(schemeName, darkTheme, themeIntensity)
     if (customScheme != null) {
         return customScheme
     }
 
-    val cacheKey = "${schemeName}_${if (darkTheme) "dark" else "light"}"
+    val cacheKey = "${schemeName}_${if (darkTheme) "dark" else "light"}_${themeIntensity}"
     presetSchemeCache[cacheKey]?.let { return it }
 
     val preset = PRESET_THEMES_MAP[schemeName] ?: return if (darkTheme) DarkColorScheme else LightColorScheme
     val hct = Hct.fromInt(preset.seedColor.toArgb())
-    val scheme = ColorExtractor.createDynamicScheme(hct, preset.paletteStyle, darkTheme)
+    val (contrastLevel, chromaMultiplier) = resolveIntensity(themeIntensity)
+    val scheme = ColorExtractor.createDynamicScheme(
+        hct,
+        preset.paletteStyle,
+        darkTheme,
+        contrastLevel = contrastLevel,
+        chromaMultiplier = chromaMultiplier
+    )
     presetSchemeCache[cacheKey] = scheme
     return scheme
 }
@@ -128,10 +154,14 @@ fun getCustomColorScheme(schemeName: String, darkTheme: Boolean): ColorScheme {
  * Parse custom color scheme from format: custom_primaryHex_secondaryHex_tertiaryHex or custom_primaryHex
  */
 @SuppressLint("RestrictedApi")
-fun parseCustomColorScheme(schemeName: String, darkTheme: Boolean): ColorScheme? {
+fun parseCustomColorScheme(
+    schemeName: String,
+    darkTheme: Boolean,
+    themeIntensity: String = "STANDARD"
+): ColorScheme? {
     if (!schemeName.startsWith("custom_")) return null
 
-    val cacheKey = "${schemeName}_${if (darkTheme) "dark" else "light"}"
+    val cacheKey = "${schemeName}_${if (darkTheme) "dark" else "light"}_${themeIntensity}"
     presetSchemeCache[cacheKey]?.let { return it }
 
     val parts = schemeName.split("_")
@@ -141,7 +171,14 @@ fun parseCustomColorScheme(schemeName: String, darkTheme: Boolean): ColorScheme?
         val primaryHex = parts[1].padStart(6, '0')
         val primaryArgb = ("FF$primaryHex").toLong(16).toInt()
         val hct = Hct.fromInt(primaryArgb)
-        val scheme = ColorExtractor.createDynamicScheme(hct, "TONAL_SPOT", darkTheme)
+        val (contrastLevel, chromaMultiplier) = resolveIntensity(themeIntensity)
+        val scheme = ColorExtractor.createDynamicScheme(
+            hct,
+            "TONAL_SPOT",
+            darkTheme,
+            contrastLevel = contrastLevel,
+            chromaMultiplier = chromaMultiplier
+        )
         presetSchemeCache[cacheKey] = scheme
         scheme
     } catch (e: Exception) {
@@ -156,13 +193,13 @@ fun parseCustomColorScheme(schemeName: String, darkTheme: Boolean): ColorScheme?
 fun getAlbumArtColorScheme(
     colorsJson: String,
     darkTheme: Boolean,
-    useExactArtworkColors: Boolean
+    themeIntensity: String = "STANDARD"
 ): androidx.compose.material3.ColorScheme {
     val extractedColors = chromahub.rhythm.app.util.ColorExtractor.jsonToColors(colorsJson)
     
     // Fallback to default if parsing fails
     if (extractedColors == null) {
-        return getCustomColorScheme("Default", darkTheme)
+        return getCustomColorScheme("Default", darkTheme, themeIntensity)
     }
     
     val seedArgb = if (extractedColors.seedColor != 0) extractedColors.seedColor else {
@@ -174,17 +211,28 @@ fun getAlbumArtColorScheme(
         sourceHct.chroma <= 8.0 ||
         chromahub.rhythm.app.util.ColorExtractor.isArgbNearGrayscale(seedArgb)
 
+    val (contrastLevel, chromaMultiplier) = resolveIntensity(themeIntensity)
+
     return if (isMonochrome) {
-        chromahub.rhythm.app.util.ColorExtractor.createDynamicScheme(sourceHct, "MONOCHROME", darkTheme)
-    } else if (useExactArtworkColors) {
-        chromahub.rhythm.app.util.ColorExtractor.createDynamicScheme(sourceHct, "CONTENT", darkTheme)
+        chromahub.rhythm.app.util.ColorExtractor.createDynamicScheme(
+            sourceHct,
+            "MONOCHROME",
+            darkTheme,
+            contrastLevel = contrastLevel,
+            chromaMultiplier = chromaMultiplier
+        )
     } else {
         val schemeType = when {
-            sourceHct.chroma > 45.0 -> "VIBRANT"
-            sourceHct.chroma > 18.0 -> "EXPRESSIVE"
+            sourceHct.chroma > 18.0 -> "VIBRANT"
             else -> "TONAL_SPOT"
         }
-        chromahub.rhythm.app.util.ColorExtractor.createDynamicScheme(sourceHct, schemeType, darkTheme)
+        chromahub.rhythm.app.util.ColorExtractor.createDynamicScheme(
+            sourceHct,
+            schemeType,
+            darkTheme,
+            contrastLevel = contrastLevel,
+            chromaMultiplier = chromaMultiplier
+        )
     }
 }
 
@@ -199,43 +247,72 @@ fun RhythmTheme(
     customFontPath: String? = null,
     colorSource: String = "CUSTOM",
     extractedAlbumColorsJson: String? = null,
+    expressiveColors: Boolean = true,
+    themeIntensity: String = "STANDARD",
     content: @Composable () -> Unit
 ) {
     val context = LocalContext.current
-    val appSettings = remember(context) { AppSettings.getInstance(context) }
-    val useExactArtworkColors by appSettings.useExactArtworkColors.collectAsState()
     
     val colorScheme = remember(
         darkTheme, amoledTheme, dynamicColor, customColorScheme,
-        colorSource, extractedAlbumColorsJson, useExactArtworkColors
+        colorSource, extractedAlbumColorsJson, expressiveColors, themeIntensity
     ) {
-        when {
+        val baseScheme = when {
             // Album art colors take highest priority when available
             colorSource == "ALBUM_ART" && extractedAlbumColorsJson != null -> {
-                getAlbumArtColorScheme(extractedAlbumColorsJson, darkTheme, useExactArtworkColors)
+                getAlbumArtColorScheme(extractedAlbumColorsJson, darkTheme, themeIntensity)
             }
             // Dynamic Material You colors
             dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
                 if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
             }
             // Custom preset color schemes & default scheme
-            else -> getCustomColorScheme(customColorScheme, darkTheme)
-        }.let { scheme ->
-            // Apply AMOLED theme modifications if enabled and in dark mode
-            if (amoledTheme && darkTheme) {
-                scheme.copy(
-                    background = Color.Black,
-                    surface = Color.Black,
-                    surfaceVariant = Color(0xFF121212),
-                    surfaceContainer = Color(0xFF121212),
-                    surfaceContainerLow = Color(0xFF0A0A0A),
-                    surfaceContainerLowest = Color.Black,
-                    surfaceContainerHigh = Color(0xFF1E1E1E),
-                    surfaceContainerHighest = Color(0xFF2A2A2A),
-                    surfaceDim = Color.Black,
-                    surfaceBright = Color(0xFF2A2A2A)
+            else -> getCustomColorScheme(customColorScheme, darkTheme, themeIntensity)
+        }
+
+        // Apply Expressive Color Set
+        val expressiveScheme = if (expressiveColors) {
+            if (darkTheme) {
+                baseScheme.copy(
+                    background = baseScheme.surfaceContainerLowest,
+                    surface = baseScheme.surfaceContainerLowest,
+                    surfaceContainerLowest = baseScheme.surfaceContainerLowest,
+                    surfaceContainerLow = baseScheme.surfaceContainerLow,
+                    surfaceContainer = baseScheme.surfaceContainer,
+                    surfaceContainerHigh = baseScheme.surfaceContainerHigh,
+                    surfaceContainerHighest = baseScheme.surfaceContainerHighest
                 )
-            } else scheme
+            } else {
+                baseScheme.copy(
+                    background = baseScheme.surfaceContainerLow,
+                    surface = baseScheme.surfaceContainerLow,
+                    surfaceContainerLowest = Color.White,
+                    surfaceContainerLow = baseScheme.surfaceContainerLow,
+                    surfaceContainer = Color.White,
+                    surfaceContainerHigh = baseScheme.surfaceContainerHigh,
+                    surfaceContainerHighest = baseScheme.surfaceContainerHighest
+                )
+            }
+        } else {
+            baseScheme
+        }
+
+        // Apply AMOLED theme modifications if enabled and in dark mode
+        if (amoledTheme && darkTheme) {
+            expressiveScheme.copy(
+                background = Color.Black,
+                surface = Color.Black,
+                surfaceVariant = Color(0xFF121212),
+                surfaceContainer = Color(0xFF121212),
+                surfaceContainerLow = Color(0xFF0A0A0A),
+                surfaceContainerLowest = Color.Black,
+                surfaceContainerHigh = Color(0xFF1E1E1E),
+                surfaceContainerHighest = Color(0xFF2A2A2A),
+                surfaceDim = Color.Black,
+                surfaceBright = Color(0xFF2A2A2A)
+            )
+        } else {
+            expressiveScheme
         }
     }
     

@@ -63,6 +63,8 @@ import chromahub.rhythm.app.util.PlaylistImportExportUtils
 import chromahub.rhythm.app.util.RhythmBackupDetectedException
 import chromahub.rhythm.app.util.PlaybackCommandSerializer
 import chromahub.rhythm.app.util.RhythmLyricsParser
+import chromahub.rhythm.app.util.ImageUtils
+import chromahub.rhythm.app.util.ColorExtractor
 import com.google.common.util.concurrent.ListenableFuture
 import com.google.common.util.concurrent.MoreExecutors
 import kotlinx.coroutines.Job
@@ -1412,6 +1414,29 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                 }
             }
         }
+
+        viewModelScope.launch {
+            var lastExtractedUri: Uri? = null
+            combine(
+                appSettings.colorSource,
+                _currentSong
+            ) { source, song ->
+                source to song
+            }.collect { (source, song) ->
+                if (source == "ALBUM_ART") {
+                    if (song?.artworkUri != null) {
+                        if (song.artworkUri != lastExtractedUri || appSettings.extractedAlbumColors.value == null) {
+                            lastExtractedUri = song.artworkUri
+                            extractColorsFromAlbumArt(song)
+                        }
+                    } else {
+                        lastExtractedUri = null
+                        appSettings.setExtractedAlbumColors(null)
+                    }
+                }
+            }
+        }
+
         androidx.core.content.ContextCompat.registerReceiver(
             getApplication<Application>(),
             favoriteChangeReceiver,
@@ -4899,6 +4924,9 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
 
         updateRecentlyPlayed(song)
         updateListeningStats(song)
+        if (appSettings.colorSource.value == "ALBUM_ART") {
+            extractColorsFromAlbumArt(song)
+        }
 
         val shouldClearQueue = clearQueueOnNewSong.value
         val shouldAutoAddToQueue = autoAddToQueue.value
@@ -5386,35 +5414,12 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                 val artworkUri = song.artworkUri
                 if (artworkUri == null) {
                     Log.d(TAG, "No artwork URI for song: ${song.title}")
+                    appSettings.setExtractedAlbumColors(null)
                     return@launch
                 }
                 
-                // Load bitmap from URI (local via ContentResolver, streaming via Coil).
                 val context = getApplication<Application>().applicationContext
-                val isRemote = artworkUri.scheme == "http" || artworkUri.scheme == "https"
-                val bitmap = if (isRemote) {
-                    try {
-                        val request = coil.request.ImageRequest.Builder(context)
-                            .data(artworkUri.toString())
-                            .size(512)
-                            .allowHardware(false)
-                            .build()
-                        val result = Coil.imageLoader(context).execute(request)
-                        (result.drawable as? android.graphics.drawable.BitmapDrawable)?.bitmap
-                    } catch (e: Exception) {
-                        Log.e(TAG, "Failed to load remote artwork: $artworkUri", e)
-                        null
-                    }
-                } else {
-                    try {
-                        context.contentResolver.openInputStream(artworkUri)?.use { inputStream ->
-                            android.graphics.BitmapFactory.decodeStream(inputStream)
-                        }
-                    } catch (e: Exception) {
-                        Log.e(TAG, "Failed to load bitmap from URI: $artworkUri", e)
-                        null
-                    }
-                }
+                val bitmap = ImageUtils.loadArtworkBitmap(context, artworkUri, 512)
                 
                 if (bitmap == null) {
                     Log.d(TAG, "Could not decode bitmap for song: ${song.title}")
@@ -5422,11 +5427,11 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                 }
                 
                 // Extract colors using ColorExtractor utility
-                val extractedColors = chromahub.rhythm.app.util.ColorExtractor.extractColorsFromBitmap(bitmap)
+                val extractedColors = ColorExtractor.extractColorsFromBitmap(bitmap)
                 
                 if (extractedColors != null) {
                     // Convert to JSON and save to settings
-                    val colorsJson = chromahub.rhythm.app.util.ColorExtractor.colorsToJson(extractedColors)
+                    val colorsJson = ColorExtractor.colorsToJson(extractedColors)
                     appSettings.setExtractedAlbumColors(colorsJson)
                     Log.d(TAG, "Successfully extracted and saved colors from: ${song.title}")
                 } else {

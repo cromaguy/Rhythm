@@ -277,7 +277,7 @@ fun SettingsScreen(
                     add(SettingItem(RhythmIcons.Palette, context.getString(R.string.settings_theme_customization), context.getString(R.string.settings_theme_customization_desc), palette = SettingsPalettes.Purple, onClick = { onNavigateTo(SettingsRoutes.THEME_CUSTOMIZATION) }))
                     add(SettingItem(MaterialSymbolIcon("interests"), context.getString(R.string.settings_shapes), context.getString(R.string.settings_shapes_desc), palette = SettingsPalettes.Purple, onClick = { onNavigateTo(SettingsRoutes.EXPRESSIVE_SHAPES) }))
                     add(SettingItem(RhythmIcons.MusicNote, context.getString(R.string.settings_player_customization), context.getString(R.string.settings_player_customization_desc), palette = SettingsPalettes.SkyBlue, onClick = { onNavigateTo(SettingsRoutes.PLAYER_CUSTOMIZATION) }))
-                    add(SettingItem(RhythmIcons.PlayCircle, context.getString(R.string.settings_miniplayer_customization), context.getString(R.string.settings_miniplayer_customization_desc), palette = SettingsPalettes.Rose, onClick = { onNavigateTo(SettingsRoutes.MINIPLAYER_CUSTOMIZATION) }))
+                    add(SettingItem(MaterialSymbolIcon("dock_to_bottom"), context.getString(R.string.settings_miniplayer_customization), context.getString(R.string.settings_miniplayer_customization_desc), palette = SettingsPalettes.Rose, onClick = { onNavigateTo(SettingsRoutes.MINIPLAYER_CUSTOMIZATION) }))
                 }
             ),
             // 2. Home & Widgets - only show in LOCAL mode
@@ -650,7 +650,7 @@ fun SettingsScreen(
                             },
                             colors = CardDefaults.cardColors(
                                 containerColor = if (defaultScreen == "home") 
-                                    MaterialTheme.colorScheme.onPrimaryContainer 
+                                    MaterialTheme.colorScheme.primaryContainer 
                                 else 
                                     MaterialTheme.colorScheme.surfaceContainerHigh
                             ),
@@ -667,7 +667,7 @@ fun SettingsScreen(
                                     imageVector = RhythmIcons.Home,
                                     contentDescription = null,
                                     tint = if (defaultScreen == "home") 
-                                        MaterialTheme.colorScheme.primaryContainer
+                                        MaterialTheme.colorScheme.onPrimaryContainer
                                     else 
                                         MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.size(if (defaultScreen == "home") 30.dp else 26.dp)
@@ -681,7 +681,7 @@ fun SettingsScreen(
                                         style = MaterialTheme.typography.titleMedium,
                                         fontWeight = FontWeight.SemiBold,
                                         color = if (defaultScreen == "home") 
-                                            MaterialTheme.colorScheme.primaryContainer 
+                                            MaterialTheme.colorScheme.onPrimaryContainer 
                                         else 
                                             MaterialTheme.colorScheme.onSurface
                                     )
@@ -689,7 +689,7 @@ fun SettingsScreen(
                                         text = context.getString(R.string.settings_home_desc),
                                         style = MaterialTheme.typography.bodySmall,
                                         color = if (defaultScreen == "home") 
-                                            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f)
+                                            MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
                                         else 
                                             MaterialTheme.colorScheme.onSurfaceVariant
                                     )
@@ -699,7 +699,7 @@ fun SettingsScreen(
                                     Icon(
                                         imageVector = RhythmIcons.CheckCircle,
                                         contentDescription = stringResource(R.string.streaming_selected),
-                                        tint = MaterialTheme.colorScheme.primaryContainer,
+                                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
                                         modifier = Modifier.size(24.dp)
                                     )
                                 }
@@ -715,7 +715,7 @@ fun SettingsScreen(
                             },
                             colors = CardDefaults.cardColors(
                                 containerColor = if (defaultScreen == "library") 
-                                    MaterialTheme.colorScheme.onPrimaryContainer 
+                                    MaterialTheme.colorScheme.primaryContainer 
                                 else 
                                     MaterialTheme.colorScheme.surfaceContainerHigh
                             ),
@@ -732,7 +732,7 @@ fun SettingsScreen(
                                     imageVector = RhythmIcons.Library,
                                     contentDescription = null,
                                     tint = if (defaultScreen == "library") 
-                                        MaterialTheme.colorScheme.primaryContainer
+                                        MaterialTheme.colorScheme.onPrimaryContainer
                                     else 
                                         MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.size(if (defaultScreen == "library") 30.dp else 26.dp)
@@ -746,7 +746,7 @@ fun SettingsScreen(
                                         style = MaterialTheme.typography.titleMedium,
                                         fontWeight = FontWeight.SemiBold,
                                         color = if (defaultScreen == "library") 
-                                            MaterialTheme.colorScheme.primaryContainer 
+                                            MaterialTheme.colorScheme.onPrimaryContainer 
                                         else 
                                             MaterialTheme.colorScheme.onSurface
                                     )
@@ -754,7 +754,7 @@ fun SettingsScreen(
                                         text = context.getString(R.string.settings_library_desc),
                                         style = MaterialTheme.typography.bodySmall,
                                         color = if (defaultScreen == "library") 
-                                            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f)
+                                            MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
                                         else 
                                             MaterialTheme.colorScheme.onSurfaceVariant
                                     )
@@ -764,7 +764,7 @@ fun SettingsScreen(
                                     Icon(
                                         imageVector = RhythmIcons.CheckCircle,
                                         contentDescription = stringResource(R.string.streaming_selected),
-                                        tint = MaterialTheme.colorScheme.primaryContainer,
+                                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
                                         modifier = Modifier.size(24.dp)
                                     )
                                 }
@@ -1613,7 +1613,7 @@ fun SettingsTipsRow(
             }
             add(
                 SettingsTipData(
-                    icon = MaterialSymbolIcon("play_circle_filled"),
+                    icon = MaterialSymbolIcon("dock_to_bottom"),
                     title = context.getString(R.string.settings_shapes_mini_player),
                     text = miniplayerDescs.random(random),
                     route = SettingsRoutes.MINIPLAYER_CUSTOMIZATION

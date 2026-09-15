@@ -200,65 +200,7 @@ internal val accentSchemeCache = java.util.concurrent.ConcurrentHashMap<String, 
  * ColorExtractor.QuantizerCelebi has enough pixels to produce meaningful clusters.
  */
 private suspend fun loadArtworkBitmap(context: android.content.Context, uri: android.net.Uri, maxSize: Int = 512): android.graphics.Bitmap? {
-    return try {
-        val isRemote = uri.scheme == "http" || uri.scheme == "https"
-        if (isRemote) {
-            val request = ImageRequest.Builder(context)
-                .data(uri.toString())
-                .memoryCacheKey(uri.toString())
-                .size(maxSize)
-                .crossfade(false)
-                .allowHardware(false)
-                .build()
-            val result = coil.Coil.imageLoader(context).execute(request)
-            val bitmapDrawable = result.drawable as? android.graphics.drawable.BitmapDrawable
-            if (bitmapDrawable != null) {
-                return bitmapDrawable.bitmap.copy(android.graphics.Bitmap.Config.ARGB_8888, false)
-            }
-            val bytes = (result.drawable as? android.graphics.drawable.BitmapDrawable)?.bitmap
-                ?: run {
-                    val url = java.net.URL(uri.toString())
-                    val peekOpts = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-                    val conn = url.openConnection()
-                    conn.connectTimeout = 3000
-                    conn.readTimeout = 5000
-                    conn.getInputStream().use { BitmapFactory.decodeStream(it, null, peekOpts) }
-                    val sample = calculateInSampleSize(peekOpts.outWidth, peekOpts.outHeight, maxSize)
-                    val conn2 = url.openConnection()
-                    conn2.connectTimeout = 3000
-                    conn2.readTimeout = 5000
-                    val opts = BitmapFactory.Options().apply { inSampleSize = sample }
-                    conn2.getInputStream().use { BitmapFactory.decodeStream(it, null, opts) }
-                }
-            bytes
-        } else {
-            val peekOpts = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-            context.contentResolver.openInputStream(uri)?.use { stream ->
-                BitmapFactory.decodeStream(stream, null, peekOpts)
-            }
-            val srcW = peekOpts.outWidth
-            val srcH = peekOpts.outHeight
-            val sample = calculateInSampleSize(srcW, srcH, maxSize)
-            val opts = BitmapFactory.Options().apply { inSampleSize = sample }
-            context.contentResolver.openInputStream(uri)?.use { stream ->
-                BitmapFactory.decodeStream(stream, null, opts)
-            }
-        }
-    } catch (e: Exception) {
-        null
-    }
-}
-
-/**
- * Calculate a power-of-two [inSampleSize] so the decoded bitmap fits within [maxSize]
- * on its longest dimension. On zero / missing dimensions returns 1 (no downscale).
- */
-private fun calculateInSampleSize(srcW: Int, srcH: Int, maxSize: Int): Int {
-    if (srcW <= 0 || srcH <= 0 || maxSize <= 0) return 1
-    val longest = maxOf(srcW, srcH)
-    var sample = 1
-    while (longest / (sample * 2) >= maxSize) sample *= 2
-    return sample
+    return chromahub.rhythm.app.util.ImageUtils.loadArtworkBitmap(context, uri, maxSize)
 }
 
 @Composable
@@ -394,7 +336,7 @@ fun ExpressivePlayerScreen(
     val autoHideLyricsControls by appSettings.autoHideLyricsControls.collectAsState()
     val playerLyricsAlignment by appSettings.playerLyricsAlignment.collectAsState()
     val keepScreenOnLyrics by appSettings.keepScreenOnLyrics.collectAsState()
-    val useExactArtworkColors by appSettings.useExactArtworkColors.collectAsState()
+    val themeIntensity by appSettings.themeIntensity.collectAsState()
     val gesturePlayerSwipeTracks by appSettings.gesturePlayerSwipeTracks.collectAsState()
     val gestureArtworkDoubleTap by appSettings.gestureArtworkDoubleTap.collectAsState()
     val gestureArtworkSingleTap by appSettings.gestureArtworkSingleTap.collectAsState()
@@ -535,14 +477,14 @@ fun ExpressivePlayerScreen(
     val useAccentBackground = !isBackdropEnabled && playerAccentBackgroundEnabled
     val currentArtworkUri = song?.artworkUri
     val accentArtScheme = produceState<Pair<Color, Color>?>(
-        initialValue = currentArtworkUri?.let { uri -> accentSchemeCache["${uri}_${isDarkTheme}_${useExactArtworkColors}"] },
+        initialValue = currentArtworkUri?.let { uri -> accentSchemeCache["${uri}_${isDarkTheme}_${themeIntensity}"] },
         currentArtworkUri,
         useAccentBackground,
         isDarkTheme,
-        useExactArtworkColors
+        themeIntensity
     ) {
         if (!useAccentBackground || currentArtworkUri == null) return@produceState
-        val cacheKey = "${currentArtworkUri}_${isDarkTheme}_${useExactArtworkColors}"
+        val cacheKey = "${currentArtworkUri}_${isDarkTheme}_${themeIntensity}"
         accentSchemeCache[cacheKey]?.let { cached ->
             value = cached
             return@produceState
@@ -567,8 +509,15 @@ fun ExpressivePlayerScreen(
                         val fg = if (isDarkTheme) Color.White else Color.Black
                         bg to fg
                     } else {
-                        val schemeType = if (useExactArtworkColors) "CONTENT" else if (sourceHct.chroma > 18.0) "VIBRANT" else "TONAL_SPOT"
-                        val dynamicScheme = ColorExtractor.createDynamicScheme(sourceHct, schemeType, isDarkTheme)
+                        val schemeType = if (sourceHct.chroma > 18.0) "VIBRANT" else "TONAL_SPOT"
+                        val (contrastLevel, chromaMultiplier) = chromahub.rhythm.app.ui.theme.resolveIntensity(themeIntensity)
+                        val dynamicScheme = ColorExtractor.createDynamicScheme(
+                            sourceHct,
+                            schemeType,
+                            isDarkTheme,
+                            contrastLevel = contrastLevel,
+                            chromaMultiplier = chromaMultiplier
+                        )
                         dynamicScheme.primary to dynamicScheme.onPrimary
                     }
                 }

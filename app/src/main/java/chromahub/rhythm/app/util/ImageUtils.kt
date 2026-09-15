@@ -184,5 +184,75 @@ object ImageUtils {
         diskCachePolicy(coil.request.CachePolicy.ENABLED)
         memoryCachePolicy(coil.request.CachePolicy.ENABLED)
     }
-    
+
+    /**
+     * Loads an artwork bitmap safely with downsampling to prevent OutOfMemoryError.
+     * Supports both remote (http/https) and local (content/file) URIs.
+     */
+    suspend fun loadArtworkBitmap(
+        context: android.content.Context,
+        uri: Uri,
+        maxSize: Int = 512
+    ): Bitmap? {
+        return try {
+            val isRemote = uri.scheme == "http" || uri.scheme == "https"
+            if (isRemote) {
+                val request = ImageRequest.Builder(context)
+                    .data(uri.toString())
+                    .memoryCacheKey(uri.toString())
+                    .size(maxSize)
+                    .crossfade(false)
+                    .allowHardware(false)
+                    .build()
+                val result = coil.Coil.imageLoader(context).execute(request)
+                val bitmapDrawable = result.drawable as? android.graphics.drawable.BitmapDrawable
+                if (bitmapDrawable != null) {
+                    return bitmapDrawable.bitmap.copy(Bitmap.Config.ARGB_8888, false)
+                }
+                val bytes = (result.drawable as? android.graphics.drawable.BitmapDrawable)?.bitmap
+                    ?: run {
+                        val url = java.net.URL(uri.toString())
+                        val peekOpts = android.graphics.BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                        val conn = url.openConnection()
+                        conn.connectTimeout = 3000
+                        conn.readTimeout = 5000
+                        conn.getInputStream().use { android.graphics.BitmapFactory.decodeStream(it, null, peekOpts) }
+                        val sample = calculateInSampleSize(peekOpts.outWidth, peekOpts.outHeight, maxSize)
+                        val conn2 = url.openConnection()
+                        conn2.connectTimeout = 3000
+                        conn2.readTimeout = 5000
+                        val opts = android.graphics.BitmapFactory.Options().apply { inSampleSize = sample }
+                        conn2.getInputStream().use { android.graphics.BitmapFactory.decodeStream(it, null, opts) }
+                    }
+                bytes
+            } else {
+                val peekOpts = android.graphics.BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                context.contentResolver.openInputStream(uri)?.use { stream ->
+                    android.graphics.BitmapFactory.decodeStream(stream, null, peekOpts)
+                }
+                val srcW = peekOpts.outWidth
+                val srcH = peekOpts.outHeight
+                val sample = calculateInSampleSize(srcW, srcH, maxSize)
+                val opts = android.graphics.BitmapFactory.Options().apply { inSampleSize = sample }
+                context.contentResolver.openInputStream(uri)?.use { stream ->
+                    android.graphics.BitmapFactory.decodeStream(stream, null, opts)
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error loading artwork bitmap for $uri", e)
+            null
+        }
+    }
+
+    /**
+     * Calculate a power-of-two [inSampleSize] so the decoded bitmap fits within [maxSize]
+     * on its longest dimension. On zero / missing dimensions returns 1 (no downscale).
+     */
+    fun calculateInSampleSize(srcW: Int, srcH: Int, maxSize: Int): Int {
+        if (srcW <= 0 || srcH <= 0 || maxSize <= 0) return 1
+        val longest = maxOf(srcW, srcH)
+        var sample = 1
+        while (longest / (sample * 2) >= maxSize) sample *= 2
+        return sample
+    }
 }

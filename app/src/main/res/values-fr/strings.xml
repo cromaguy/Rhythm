@@ -2960,8 +2960,6 @@
     <string name="licenses_desc_media3_exoplayer">Bibliothèque moderne de lecture multimédia pour Android</string>
     <string name="licenses_desc_kotlin_coroutines">Framework de programmation asynchrone pour Kotlin</string>
     <string name="licenses_desc_coil">Bibliothèque de chargement d\'images pour Android s\'appuyant sur les coroutines Kotlin</string>
-    <string name="settings_use_exact_artwork_colors">Utilisez les couleurs exactes des illustrations</string>
-    <string name="settings_use_exact_artwork_colors_desc">Utiliser les couleurs exactes de l\'arrière-plan et du texte telles qu\'elles apparaissent dans le visuel</string>
     <string name="settings_player_thumb_style_desc">Choisissez la forme du curseur de la barre de recherche (cercle, carré, pilule, losange, fleur, cœur…)</string>
     <string name="settings_gesture_disable_unused_desc">Désactivez les gestes que vous n\'utilisez jamais</string>
     <string name="player_ambient_motion_zoom_desc">Effectuer un zoom progressif et animer en continu les illustrations d\'ambiance</string>

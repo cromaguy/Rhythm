@@ -351,19 +351,29 @@ object ColorExtractor {
     fun createDynamicScheme(
         sourceHct: Hct,
         paletteStyle: String,
-        isDark: Boolean
+        isDark: Boolean,
+        contrastLevel: Double = 0.0,
+        chromaMultiplier: Double = 1.0
     ): androidx.compose.material3.ColorScheme {
+        val effectiveHct = if (chromaMultiplier != 1.0 && sourceHct.chroma > 0.0) {
+            val adjustedChroma = (sourceHct.chroma * chromaMultiplier).coerceIn(0.0, 150.0)
+            Hct.from(sourceHct.hue, adjustedChroma, sourceHct.tone)
+        } else {
+            sourceHct
+        }
+
+        val clampedContrast = contrastLevel.coerceIn(-1.0, 1.0)
         val scheme = when (paletteStyle) {
-            "TONAL_SPOT" -> SchemeTonalSpot(sourceHct, isDark, 0.0)
-            "VIBRANT" -> SchemeVibrant(sourceHct, isDark, 0.0)
-            "EXPRESSIVE" -> SchemeExpressive(sourceHct, isDark, 0.0)
-            "FRUIT_SALAD" -> SchemeFruitSalad(sourceHct, isDark, 0.0)
-            "CONTENT" -> SchemeContent(sourceHct, isDark, 0.0)
-            "MONOCHROME" -> SchemeMonochrome(sourceHct, isDark, 0.0)
-            "NEUTRAL" -> SchemeNeutral(sourceHct, isDark, 0.0)
-            "FIDELITY" -> SchemeFidelity(sourceHct, isDark, 0.0)
-            "RAINBOW" -> SchemeRainbow(sourceHct, isDark, 0.0)
-            else -> SchemeTonalSpot(sourceHct, isDark, 0.0)
+            "TONAL_SPOT" -> SchemeTonalSpot(effectiveHct, isDark, clampedContrast)
+            "VIBRANT" -> SchemeVibrant(effectiveHct, isDark, clampedContrast)
+            "EXPRESSIVE" -> SchemeExpressive(effectiveHct, isDark, clampedContrast)
+            "FRUIT_SALAD" -> SchemeFruitSalad(effectiveHct, isDark, clampedContrast)
+            "CONTENT" -> SchemeContent(effectiveHct, isDark, clampedContrast)
+            "MONOCHROME" -> SchemeMonochrome(effectiveHct, isDark, clampedContrast)
+            "NEUTRAL" -> SchemeNeutral(effectiveHct, isDark, clampedContrast)
+            "FIDELITY" -> SchemeFidelity(effectiveHct, isDark, clampedContrast)
+            "RAINBOW" -> SchemeRainbow(effectiveHct, isDark, clampedContrast)
+            else -> SchemeTonalSpot(effectiveHct, isDark, clampedContrast)
         }
 
         return androidx.compose.material3.ColorScheme(

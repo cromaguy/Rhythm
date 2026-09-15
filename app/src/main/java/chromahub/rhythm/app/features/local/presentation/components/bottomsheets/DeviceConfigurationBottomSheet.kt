@@ -798,20 +798,14 @@ private fun DeviceCard(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
             containerColor = if (isActive)
-                MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.6f)
+                MaterialTheme.colorScheme.primaryContainer
             else
                 MaterialTheme.colorScheme.surfaceContainerHighest
         ),
         elevation = CardDefaults.cardElevation(
             defaultElevation = if (isActive) 0.dp else 0.dp
         ),
-        shape = RoundedCornerShape(24.dp),
-//        border = if (isActive) {
-//            androidx.compose.foundation.BorderStroke(
-//                1.dp,
-//                MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
-//            )
-//        } else null
+        shape = RoundedCornerShape(24.dp)
     ) {
         Column(
             modifier = Modifier
@@ -856,7 +850,7 @@ private fun DeviceCard(
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold,
                         color = if (isActive)
-                            MaterialTheme.colorScheme.primaryContainer
+                            MaterialTheme.colorScheme.onPrimaryContainer
                         else
                             MaterialTheme.colorScheme.onSurface,
                         maxLines = 1,
@@ -1381,7 +1375,7 @@ private fun EQProfileCard(
             .clip(RoundedCornerShape(20.dp)),
         colors = CardDefaults.cardColors(
             containerColor = if (isSelected)
-                MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                MaterialTheme.colorScheme.primaryContainer
             else
                 MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
         ),
@@ -1406,7 +1400,7 @@ private fun EQProfileCard(
                     imageVector = MaterialSymbolIcon("headset_mic", filled = true),
                     contentDescription = null,
                     tint = if (isSelected)
-                        MaterialTheme.colorScheme.primaryContainer
+                        MaterialTheme.colorScheme.onPrimaryContainer
                     else
                         MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(if (isSelected) 30.dp else 26.dp)
@@ -1419,7 +1413,7 @@ private fun EQProfileCard(
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
                         color = if (isSelected)
-                            MaterialTheme.colorScheme.primaryContainer
+                            MaterialTheme.colorScheme.onPrimaryContainer
                         else
                             MaterialTheme.colorScheme.onSurface,
                         maxLines = 1,
@@ -1435,7 +1429,7 @@ private fun EQProfileCard(
                                 text = profile.brand,
                                 style = MaterialTheme.typography.bodySmall,
                                 color = if (isSelected)
-                                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f)
+                                    MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
                                 else
                                     MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -1452,7 +1446,7 @@ private fun EQProfileCard(
                                 text = profile.type,
                                 style = MaterialTheme.typography.bodySmall,
                                 color = if (isSelected)
-                                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f)
+                                    MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
                                 else
                                     MaterialTheme.colorScheme.onSurfaceVariant
                             )

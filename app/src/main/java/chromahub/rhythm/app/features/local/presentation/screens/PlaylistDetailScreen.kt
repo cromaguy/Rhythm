@@ -3030,22 +3030,30 @@ fun PlaylistSongItem(
                     )
                 }
             } else {
-                // 3-dot menu button matching SearchSongItem style
                 FilledIconButton(
                     onClick = {
-                        HapticUtils.performHapticFeedback(context, haptics, HapticType.LIGHT)
+                        HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
                         onMoreClick?.invoke()
                     },
-                    modifier = Modifier.size(36.dp),
+                    modifier = Modifier
+                        .width(32.dp)
+                        .height(44.dp),
+                    shape = RoundedCornerShape(50),
                     colors = IconButtonDefaults.filledIconButtonColors(
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                        containerColor = if (isCurrentSong && !isSelected)
+                            MaterialTheme.colorScheme.primary
+                        else
+                            MaterialTheme.colorScheme.primaryContainer,
+                        contentColor = if (isCurrentSong && !isSelected)
+                            MaterialTheme.colorScheme.onPrimary
+                        else
+                            MaterialTheme.colorScheme.onPrimaryContainer
                     )
                 ) {
                     Icon(
                         imageVector = RhythmIcons.More,
                         contentDescription = stringResource(R.string.content_desc_more_options),
-                        modifier = Modifier.size(18.dp)
+                        modifier = Modifier.size(22.dp)
                     )
                 }
             }

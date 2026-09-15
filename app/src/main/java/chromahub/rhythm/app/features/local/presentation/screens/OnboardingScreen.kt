@@ -178,6 +178,7 @@ import chromahub.rhythm.app.ui.theme.getPresetColorSchemeOptions
 import chromahub.rhythm.app.shared.presentation.screens.settings.ColorSchemePaletteRow
 import chromahub.rhythm.app.shared.presentation.screens.settings.ActionPickerSheet
 import chromahub.rhythm.app.shared.presentation.screens.settings.ColorSource
+import chromahub.rhythm.app.shared.presentation.screens.settings.ThemeIntensityDialog
 import chromahub.rhythm.app.shared.presentation.screens.settings.ColorSourceDialog
 import chromahub.rhythm.app.shared.presentation.screens.settings.FontOption
 import chromahub.rhythm.app.shared.presentation.screens.settings.FontSelectionBottomSheet
@@ -1730,7 +1731,7 @@ fun EnhancedPermissionCard(
 
     val containerColor by animateColorAsState(
         targetValue = if (isGranted)
-            MaterialTheme.colorScheme.onPrimaryContainer
+            MaterialTheme.colorScheme.primaryContainer
         else
             MaterialTheme.colorScheme.surfaceContainerHigh,
         animationSpec = spring(
@@ -1742,7 +1743,7 @@ fun EnhancedPermissionCard(
 
     val contentColor by animateColorAsState(
         targetValue = if (isGranted)
-            MaterialTheme.colorScheme.primaryContainer
+            MaterialTheme.colorScheme.onPrimaryContainer
         else
             MaterialTheme.colorScheme.onSurface,
         animationSpec = spring(
@@ -1754,7 +1755,7 @@ fun EnhancedPermissionCard(
 
     val secondaryContentColor by animateColorAsState(
         targetValue = if (isGranted)
-            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.8f)
+            MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
         else
             MaterialTheme.colorScheme.onSurfaceVariant,
         animationSpec = spring(
@@ -1766,7 +1767,7 @@ fun EnhancedPermissionCard(
 
     val iconTint by animateColorAsState(
         targetValue = if (isGranted)
-            MaterialTheme.colorScheme.primaryContainer
+            MaterialTheme.colorScheme.onPrimaryContainer
         else
             MaterialTheme.colorScheme.onSurfaceVariant,
         animationSpec = spring(
@@ -1838,7 +1839,7 @@ fun EnhancedPermissionCard(
                     Icon(
                         imageVector = RhythmIcons.CheckCircle,
                         contentDescription = context.getString(R.string.onboarding_granted),
-                        tint = MaterialTheme.colorScheme.primaryContainer,
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
                         modifier = Modifier.size(24.dp)
                     )
                 }
@@ -8541,17 +8542,20 @@ private fun ThemingCustomizationSection(
 ) {
     val haptic = LocalHapticFeedback.current
     var showColorSourceDialog by remember { mutableStateOf(false) }
+    var showThemeIntensityDialog by remember { mutableStateOf(false) }
     var showFontSelectionDialog by remember { mutableStateOf(false) }
     var showShapePresetsBottomSheet by remember { mutableStateOf(false) }
 
     val colorSource by appSettings.colorSource.collectAsState()
     val customColorScheme by appSettings.customColorScheme.collectAsState()
     val customFont by appSettings.customFont.collectAsState()
+    val themeIntensity by appSettings.themeIntensity.collectAsState()
+    val expressiveColors by appSettings.expressiveColors.collectAsState()
 
     // Color schemes - dynamic Material 3 preset schemes
     val isSystemDark = isSystemInDarkTheme()
-    val colorSchemes = remember(context, isSystemDark) {
-        getPresetColorSchemeOptions(context, isSystemDark)
+    val colorSchemes = remember(context, isSystemDark, themeIntensity) {
+        getPresetColorSchemeOptions(context, isSystemDark, themeIntensity)
     }
 
     val fontOptions = remember(context) {
@@ -8576,7 +8580,7 @@ private fun ThemingCustomizationSection(
     Material3SettingsGroup(
         items = listOf(
             Material3SettingsItem(
-                icon = RhythmIcons.Palette,
+                icon = MaterialSymbolIcon("colorize"),
                 title = { Text(context.getString(R.string.settings_color_source)) },
                 description = { Text(colorSourceDescription) },
                 trailingContent = {
@@ -8594,7 +8598,7 @@ private fun ThemingCustomizationSection(
         ) + if (colorSource == "CUSTOM") {
             listOf(
                 Material3SettingsItem(
-                    icon = MaterialSymbolIcon("color_lens"),
+                    icon = MaterialSymbolIcon("palette"),
                     title = { Text(context.getString(R.string.settings_color_schemes)) },
                     description = {
                         Column {
@@ -8618,7 +8622,40 @@ private fun ThemingCustomizationSection(
             )
         } else {
             emptyList()
-        },
+        } + listOf(
+            Material3SettingsItem(
+                icon = MaterialSymbolIcon("tune"),
+                title = { Text(context.getString(R.string.settings_theme_intensity)) },
+                description = {
+                    Text(
+                        when (themeIntensity.uppercase()) {
+                            "VIVID" -> context.getString(R.string.theme_intensity_vivid)
+                            "MEDIUM" -> context.getString(R.string.theme_intensity_medium)
+                            else -> context.getString(R.string.theme_intensity_standard)
+                        }
+                    )
+                },
+                trailingContent = {
+                    Icon(
+                        imageVector = RhythmIcons.Forward,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                },
+                onClick = {
+                    HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
+                    showThemeIntensityDialog = true
+                }
+            ),
+            tourToggleItem(
+                icon = MaterialSymbolIcon("layers"),
+                title = context.getString(R.string.settings_expressive_colors),
+                description = context.getString(R.string.settings_expressive_colors_desc),
+                checked = expressiveColors,
+                context = context,
+                onCheckedChange = { appSettings.setExpressiveColors(it) }
+            )
+        ),
         containerColor = MaterialTheme.colorScheme.surface
     )
 
@@ -8698,6 +8735,15 @@ private fun ThemingCustomizationSection(
         },
         onColorSourceSelected = { _ -> /* applied internally via appSettings */ },
         appSettings = appSettings,
+        context = context,
+        haptic = haptic
+    )
+
+    ThemeIntensityDialog(
+        showDialog = showThemeIntensityDialog,
+        onDismiss = { showThemeIntensityDialog = false },
+        currentIntensity = themeIntensity,
+        onIntensitySelected = { appSettings.setThemeIntensity(it) },
         context = context,
         haptic = haptic
     )

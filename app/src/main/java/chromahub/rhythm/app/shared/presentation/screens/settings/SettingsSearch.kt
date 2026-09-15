@@ -134,7 +134,7 @@ fun buildSettingsSearchIndex(context: Context): List<SearchableSettingItem> {
             title = context.getString(R.string.settings_miniplayer_customization),
             description = context.getString(R.string.settings_miniplayer_customization_desc),
             keywords = listOf("miniplayer", "mini player", "compact player", "bottom bar", "progress"),
-            icon = MaterialSymbolIcon("play_circle_filled"),
+            icon = MaterialSymbolIcon("dock_to_bottom"),
             route = SettingsRoutes.MINIPLAYER_CUSTOMIZATION,
             parentScreen = context.getString(R.string.settings_section_appearance)
         ))
@@ -1281,27 +1281,37 @@ fun buildSettingsSearchIndex(context: Context): List<SearchableSettingItem> {
             id = "theme_color_source",
             title = context.getString(R.string.settings_theme_color_source),
             description = context.getString(R.string.settings_theme_color_source_desc),
-            keywords = listOf("color source", "album art colors", "monet", "material you", "dynamic colors", "custom colors"),
-            icon = RhythmIcons.Palette,
+            keywords = listOf("color source", "album art colors", "monet", "material you", "dynamic colors", "custom colors", "palette"),
+            icon = MaterialSymbolIcon("colorize"),
             route = SettingsRoutes.THEME_CUSTOMIZATION,
             parentScreen = "Theme"
         ))
         add(SearchableSettingItem(
-            id = "theme_use_exact_artwork_colors",
-            title = context.getString(R.string.settings_use_exact_artwork_colors),
-            description = context.getString(R.string.settings_use_exact_artwork_colors_desc),
-            keywords = listOf("exact", "artwork colors", "album art colors", "dynamic theme", "dynamic background"),
-            icon = RhythmIcons.Palette,
+            id = "theme_expressive_colors",
+            title = context.getString(R.string.settings_expressive_colors),
+            description = context.getString(R.string.settings_expressive_colors_desc),
+            keywords = listOf("expressive", "expressive color palette", "expressive colors", "elevation", "containers", "contrast", "surface", "tonal depth", "cards"),
+            icon = MaterialSymbolIcon("layers"),
             route = SettingsRoutes.THEME_CUSTOMIZATION,
             parentScreen = "Theme",
-            settingKey = "useExactArtworkColors"
+            settingKey = "expressiveColors"
+        ))
+        add(SearchableSettingItem(
+            id = "theme_intensity",
+            title = context.getString(R.string.settings_theme_intensity),
+            description = context.getString(R.string.settings_theme_intensity_desc),
+            keywords = listOf("intensity", "theme intensity", "vivid", "medium", "standard", "contrast", "saturation", "vibrancy", "monet contrast"),
+            icon = MaterialSymbolIcon("tune"),
+            route = SettingsRoutes.THEME_CUSTOMIZATION,
+            parentScreen = "Theme",
+            settingKey = "themeIntensity"
         ))
         add(SearchableSettingItem(
             id = "theme_color_schemes",
             title = context.getString(R.string.settings_theme_color_schemes),
             description = context.getString(R.string.settings_theme_color_schemes_desc),
             keywords = listOf("color scheme", "palette", "preset", "default purple", "warm sunset", "cool ocean", "forest green", "rose pink"),
-            icon = MaterialSymbolIcon("color_lens"),
+            icon = MaterialSymbolIcon("palette"),
             route = SettingsRoutes.THEME_CUSTOMIZATION,
             parentScreen = "Theme"
         ))
@@ -1718,6 +1728,16 @@ fun buildSettingsSearchIndex(context: Context): List<SearchableSettingItem> {
         ))
         
         // ======================== MINIPLAYER CUSTOMIZATION SCREEN ========================
+        add(SearchableSettingItem(
+            id = "miniplayer_theme",
+            title = context.getString(R.string.miniplayercustomizationsettingsscreen_miniplayer_theme),
+            description = context.getString(R.string.miniplayercustomizationsettingsscreen_choose_between_rhythm_default),
+            keywords = listOf("miniplayer theme", "mini player", "expressive", "material", "default", "theme", "bottom bar"),
+            icon = MaterialSymbolIcon("dock_to_bottom"),
+            route = SettingsRoutes.MINIPLAYER_CUSTOMIZATION,
+            parentScreen = "MiniPlayer",
+            settingKey = "miniPlayerThemeId"
+        ))
         add(SearchableSettingItem(
             id = "miniplayer_show_progress",
             title = context.getString(R.string.settings_miniplayer_show_progress),
@@ -2586,7 +2606,7 @@ fun buildSettingsSearchIndex(context: Context): List<SearchableSettingItem> {
             title = context.getString(R.string.settings_shape_mini_player),
             description = context.getString(R.string.settings_shape_mini_player_desc),
             keywords = listOf("mini player", "artwork", "shape", "compact", "bottom bar"),
-            icon = MaterialSymbolIcon("play_circle_filled"),
+            icon = MaterialSymbolIcon("dock_to_bottom"),
             route = SettingsRoutes.EXPRESSIVE_SHAPES,
             parentScreen = "Shapes",
             settingKey = "expressiveShapeMiniPlayer"

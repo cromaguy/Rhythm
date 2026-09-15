@@ -104,7 +104,7 @@ fun CanvasNetworkModeDialog(
                         },
                         colors = CardDefaults.cardColors(
                             containerColor = if (isSelected)
-                                MaterialTheme.colorScheme.onPrimaryContainer
+                                MaterialTheme.colorScheme.primaryContainer
                             else
                                 MaterialTheme.colorScheme.surfaceContainerHigh
                         ),
@@ -121,7 +121,7 @@ fun CanvasNetworkModeDialog(
                                 imageVector = icon,
                                 contentDescription = null,
                                 tint = if (isSelected)
-                                    MaterialTheme.colorScheme.primaryContainer
+                                    MaterialTheme.colorScheme.onPrimaryContainer
                                 else
                                     MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(if (isSelected) 30.dp else 26.dp)
@@ -135,7 +135,7 @@ fun CanvasNetworkModeDialog(
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.SemiBold,
                                     color = if (isSelected)
-                                        MaterialTheme.colorScheme.primaryContainer
+                                        MaterialTheme.colorScheme.onPrimaryContainer
                                     else
                                         MaterialTheme.colorScheme.onSurface
                                 )
@@ -143,7 +143,7 @@ fun CanvasNetworkModeDialog(
                                     text = description,
                                     style = MaterialTheme.typography.bodySmall,
                                     color = if (isSelected)
-                                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f)
+                                        MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
                                     else
                                         MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -153,7 +153,7 @@ fun CanvasNetworkModeDialog(
                                 Icon(
                                     imageVector = RhythmIcons.CheckCircle,
                                     contentDescription = context.getString(R.string.cd_selected),
-                                    tint = MaterialTheme.colorScheme.primaryContainer,
+                                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
                                     modifier = Modifier.size(24.dp)
                                 )
                             }

@@ -1026,7 +1026,7 @@ fun ProgressStyleBottomSheet(
                         shape = RoundedCornerShape(24.dp),
                         colors = CardDefaults.cardColors(
                             containerColor = if (isSelected)
-                                MaterialTheme.colorScheme.onPrimaryContainer
+                                MaterialTheme.colorScheme.primaryContainer
                             else
                                 MaterialTheme.colorScheme.surfaceContainerHigh
                         ),
@@ -1049,11 +1049,11 @@ fun ProgressStyleBottomSheet(
                                     style = progressStyleEnum,
                                     modifier = Modifier.fillMaxWidth(),
                                     progressColor = if (isSelected)
-                                        MaterialTheme.colorScheme.primaryContainer
+                                        MaterialTheme.colorScheme.onPrimaryContainer
                                     else
                                         MaterialTheme.colorScheme.primary,
                                     trackColor = if (isSelected)
-                                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f)
+                                        MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.2f)
                                     else
                                         MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f),
                                     height = 6.dp,
@@ -1073,7 +1073,7 @@ fun ProgressStyleBottomSheet(
                                     style = MaterialTheme.typography.titleLarge,
                                     fontWeight = FontWeight.Bold,
                                     color = if (isSelected)
-                                        MaterialTheme.colorScheme.primaryContainer
+                                        MaterialTheme.colorScheme.onPrimaryContainer
                                     else
                                         MaterialTheme.colorScheme.onSurface,
                                     maxLines = 1,
@@ -1189,7 +1189,7 @@ fun ThumbStyleBottomSheet(
                         shape = RoundedCornerShape(24.dp),
                         colors = CardDefaults.cardColors(
                             containerColor = if (isSelected)
-                                MaterialTheme.colorScheme.onPrimaryContainer
+                                MaterialTheme.colorScheme.primaryContainer
                             else
                                 MaterialTheme.colorScheme.surfaceContainerHigh
                         ),
@@ -1212,11 +1212,11 @@ fun ThumbStyleBottomSheet(
                                     style = ProgressStyle.NORMAL,
                                     modifier = Modifier.fillMaxWidth(),
                                     progressColor = if (isSelected)
-                                        MaterialTheme.colorScheme.primaryContainer
+                                        MaterialTheme.colorScheme.onPrimaryContainer
                                     else
                                         MaterialTheme.colorScheme.primary,
                                     trackColor = if (isSelected)
-                                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f)
+                                        MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.2f)
                                     else
                                         MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f),
                                     height = 6.dp,
@@ -1239,7 +1239,7 @@ fun ThumbStyleBottomSheet(
                                     style = MaterialTheme.typography.titleLarge,
                                     fontWeight = FontWeight.Bold,
                                     color = if (isSelected)
-                                        MaterialTheme.colorScheme.primaryContainer
+                                        MaterialTheme.colorScheme.onPrimaryContainer
                                     else
                                         MaterialTheme.colorScheme.onSurface,
                                     maxLines = 1,
@@ -1318,7 +1318,7 @@ fun PlayerTextAlignmentBottomSheet(
                         shape = RoundedCornerShape(24.dp),
                         colors = CardDefaults.cardColors(
                             containerColor = if (isSelected)
-                                MaterialTheme.colorScheme.onPrimaryContainer
+                                MaterialTheme.colorScheme.primaryContainer
                             else
                                 MaterialTheme.colorScheme.surfaceContainerHigh
                         ),
@@ -1362,7 +1362,7 @@ fun PlayerTextAlignmentBottomSheet(
                                 style = MaterialTheme.typography.bodyLarge,
                                 fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
                                 color = if (isSelected)
-                                    MaterialTheme.colorScheme.primaryContainer
+                                    MaterialTheme.colorScheme.onPrimaryContainer
                                 else
                                     MaterialTheme.colorScheme.onSurface
                             )
@@ -1371,7 +1371,7 @@ fun PlayerTextAlignmentBottomSheet(
                                 Icon(
                                     imageVector = RhythmIcons.Check,
                                     contentDescription = stringResource(R.string.streaming_selected),
-                                    tint = MaterialTheme.colorScheme.primaryContainer,
+                                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
                                     modifier = Modifier.size(20.dp)
                                 )
                             }

@@ -1635,8 +1635,14 @@ private fun ArtistSongItem(
                             .height(44.dp),
                         shape = RoundedCornerShape(50),
                         colors = IconButtonDefaults.filledIconButtonColors(
-                            containerColor = MaterialTheme.colorScheme.primaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                            containerColor = if (isCurrentSong)
+                                MaterialTheme.colorScheme.primary
+                            else
+                                MaterialTheme.colorScheme.primaryContainer,
+                            contentColor = if (isCurrentSong)
+                                MaterialTheme.colorScheme.onPrimary
+                            else
+                                MaterialTheme.colorScheme.onPrimaryContainer
                         )
                     ) {
                         Icon(

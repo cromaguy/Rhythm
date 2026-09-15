@@ -461,7 +461,7 @@ fun ExpressiveShapesSettingsScreen(onBackClick: () -> Unit) {
                                 shape = RoundedCornerShape(16.dp),
                                 colors = CardDefaults.cardColors(
                                     containerColor = if (isSelected)
-                                        MaterialTheme.colorScheme.onPrimaryContainer
+                                        MaterialTheme.colorScheme.primaryContainer
                                     else
                                         MaterialTheme.colorScheme.surfaceContainerHigh
                                 )
@@ -477,7 +477,7 @@ fun ExpressiveShapesSettingsScreen(onBackClick: () -> Unit) {
                                         imageVector = preset.icon,
                                         contentDescription = getLocalizedPresetName(preset.id),
                                         tint = if (isSelected)
-                                            MaterialTheme.colorScheme.primaryContainer
+                                            MaterialTheme.colorScheme.onPrimaryContainer
                                         else
                                             MaterialTheme.colorScheme.onSurfaceVariant,
                                         modifier = Modifier.size(28.dp)
@@ -488,7 +488,7 @@ fun ExpressiveShapesSettingsScreen(onBackClick: () -> Unit) {
                                         style = MaterialTheme.typography.labelMedium,
                                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                                         color = if (isSelected)
-                                            MaterialTheme.colorScheme.primaryContainer
+                                            MaterialTheme.colorScheme.onPrimaryContainer
                                         else
                                             MaterialTheme.colorScheme.onSurfaceVariant,
                                         maxLines = 1,
@@ -575,7 +575,7 @@ fun ExpressiveShapesSettingsScreen(onBackClick: () -> Unit) {
                                         "PLAYLIST_ART" -> RhythmIcons.Queue
                                         "ARTIST_ART" -> RhythmIcons.Artist
                                         "PLAYER_CONTROLS" -> MaterialSymbolIcon("play_circle")
-                                        "MINI_PLAYER" -> RhythmIcons.MusicNote
+                                        "MINI_PLAYER" -> MaterialSymbolIcon("dock_to_bottom")
                                         else -> RhythmIcons.Category
                                     },
                                     title = targetName,
@@ -728,7 +728,7 @@ fun ExpressiveShapesSettingsScreen(onBackClick: () -> Unit) {
 
                             val containerColor by animateColorAsState(
                                 targetValue = if (isSelected)
-                                    MaterialTheme.colorScheme.onPrimaryContainer
+                                    MaterialTheme.colorScheme.primaryContainer
                                 else
                                     MaterialTheme.colorScheme.surfaceContainerHigh,
                                 animationSpec = spring(
@@ -793,7 +793,7 @@ fun ExpressiveShapesSettingsScreen(onBackClick: () -> Unit) {
                                             style = MaterialTheme.typography.titleLarge,
                                             fontWeight = FontWeight.Bold,
                                             color = if (isSelected)
-                                                MaterialTheme.colorScheme.primaryContainer
+                                                MaterialTheme.colorScheme.onPrimaryContainer
                                             else
                                                 MaterialTheme.colorScheme.onSurface,
                                             maxLines = 1,

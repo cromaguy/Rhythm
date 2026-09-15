@@ -752,7 +752,7 @@ private fun DelimiterGridCard(
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(
             containerColor = if (isSelected)
-                MaterialTheme.colorScheme.onPrimaryContainer
+                MaterialTheme.colorScheme.primaryContainer
             else
                 MaterialTheme.colorScheme.surfaceContainerHigh
         ),
@@ -771,7 +771,7 @@ private fun DelimiterGridCard(
                     style = MaterialTheme.typography.headlineLarge,
                     fontWeight = FontWeight.Bold,
                     color = if (isSelected)
-                        MaterialTheme.colorScheme.primaryContainer
+                        MaterialTheme.colorScheme.onPrimaryContainer
                     else
                         MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                     maxLines = 1,
@@ -790,7 +790,7 @@ private fun DelimiterGridCard(
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                     color = if (isSelected)
-                        MaterialTheme.colorScheme.primaryContainer
+                        MaterialTheme.colorScheme.onPrimaryContainer
                     else
                         MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,

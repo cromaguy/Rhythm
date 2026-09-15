@@ -107,7 +107,7 @@ fun LrcRenameBehaviorBottomSheet(
                         },
                         colors = CardDefaults.cardColors(
                             containerColor = if (isSelected)
-                                MaterialTheme.colorScheme.onPrimaryContainer
+                                MaterialTheme.colorScheme.primaryContainer
                             else
                                 MaterialTheme.colorScheme.surfaceContainerHigh
                         ),
@@ -124,7 +124,7 @@ fun LrcRenameBehaviorBottomSheet(
                                 imageVector = icon,
                                 contentDescription = null,
                                 tint = if (isSelected)
-                                    MaterialTheme.colorScheme.primaryContainer
+                                    MaterialTheme.colorScheme.onPrimaryContainer
                                 else
                                     MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(if (isSelected) 30.dp else 26.dp)
@@ -138,7 +138,7 @@ fun LrcRenameBehaviorBottomSheet(
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.SemiBold,
                                     color = if (isSelected)
-                                        MaterialTheme.colorScheme.primaryContainer
+                                        MaterialTheme.colorScheme.onPrimaryContainer
                                     else
                                         MaterialTheme.colorScheme.onSurface
                                 )
@@ -146,7 +146,7 @@ fun LrcRenameBehaviorBottomSheet(
                                     text = description,
                                     style = MaterialTheme.typography.bodySmall,
                                     color = if (isSelected)
-                                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f)
+                                        MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
                                     else
                                         MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -156,7 +156,7 @@ fun LrcRenameBehaviorBottomSheet(
                                 Icon(
                                     imageVector = RhythmIcons.CheckCircle,
                                     contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primaryContainer,
+                                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
                                     modifier = Modifier.size(24.dp)
                                 )
                             }

@@ -2293,7 +2293,7 @@ fun ExplorerItemCard(
                                     Icon(
                                         imageVector = RhythmIcons.More,
                                         contentDescription = stringResource(R.string.cd_folder_options),
-                                        modifier = Modifier.size(20.dp)
+                                        modifier = Modifier.size(22.dp)
                                     )
                                 }
 

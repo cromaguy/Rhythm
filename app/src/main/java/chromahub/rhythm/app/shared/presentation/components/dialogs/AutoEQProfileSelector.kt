@@ -494,7 +494,7 @@ private fun ProfileCard(
             .clip(RoundedCornerShape(20.dp)),
         colors = CardDefaults.cardColors(
             containerColor = if (isActive)
-                MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                MaterialTheme.colorScheme.primaryContainer
             else
                 MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
         ),
@@ -544,7 +544,7 @@ private fun ProfileCard(
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = if (isActive) FontWeight.SemiBold else FontWeight.Medium,
                         color = if (isActive)
-                            MaterialTheme.colorScheme.primaryContainer
+                            MaterialTheme.colorScheme.onPrimaryContainer
                         else
                             MaterialTheme.colorScheme.onSurface,
                         maxLines = 1,
@@ -560,7 +560,7 @@ private fun ProfileCard(
                                 text = profile.brand,
                                 style = MaterialTheme.typography.bodySmall,
                                 color = if (isActive)
-                                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f)
+                                    MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
                                 else
                                     MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -577,7 +577,7 @@ private fun ProfileCard(
                                 text = profile.type,
                                 style = MaterialTheme.typography.bodySmall,
                                 color = if (isActive)
-                                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f)
+                                    MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
                                 else
                                     MaterialTheme.colorScheme.onSurfaceVariant
                             )

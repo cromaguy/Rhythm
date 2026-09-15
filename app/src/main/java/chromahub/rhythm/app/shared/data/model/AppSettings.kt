@@ -471,7 +471,8 @@ class AppSettings private constructor(context: Context) {
         private const val KEY_SYNC_SPEED_AND_PITCH = "sync_speed_and_pitch"
         private const val KEY_USE_HOURS_IN_TIME_FORMAT = "use_hours_in_time_format"
         private const val KEY_SHOW_REMAINING_TIME = "show_remaining_time"
-        private const val KEY_USE_EXACT_ARTWORK_COLORS = "use_exact_artwork_colors"
+        private const val KEY_EXPRESSIVE_COLORS = "expressive_colors"
+        private const val KEY_THEME_INTENSITY = "theme_intensity"
         private const val KEY_STOP_PLAYBACK_ON_APP_CLOSE = "stop_playback_on_app_close"
         private const val KEY_QUEUE_PERSISTENCE_ENABLED = "queue_persistence_enabled" // Enable/disable queue persistence
         private const val KEY_SAVED_QUEUE = "saved_queue" // Queue persistence - list of song IDs
@@ -1220,9 +1221,11 @@ class AppSettings private constructor(context: Context) {
     private val _showRemainingTime = MutableStateFlow(prefs.getBoolean(KEY_SHOW_REMAINING_TIME, false))
     val showRemainingTime: StateFlow<Boolean> = _showRemainingTime.asStateFlow()
     
-    // Exact extracted colors from artwork settings
-    private val _useExactArtworkColors = MutableStateFlow(prefs.getBoolean(KEY_USE_EXACT_ARTWORK_COLORS, false))
-    val useExactArtworkColors: StateFlow<Boolean> = _useExactArtworkColors.asStateFlow()
+    private val _expressiveColors = MutableStateFlow(prefs.getBoolean(KEY_EXPRESSIVE_COLORS, true))
+    val expressiveColors: StateFlow<Boolean> = _expressiveColors.asStateFlow()
+
+    private val _themeIntensity = MutableStateFlow(prefs.getString(KEY_THEME_INTENSITY, "STANDARD") ?: "STANDARD")
+    val themeIntensity: StateFlow<String> = _themeIntensity.asStateFlow()
     
     // Stop Playback on App Close
     private val _stopPlaybackOnAppClose = MutableStateFlow(prefs.getBoolean(KEY_STOP_PLAYBACK_ON_APP_CLOSE, false))
@@ -2986,10 +2989,14 @@ private val _autoCheckForUpdates = MutableStateFlow(prefs.getBoolean(KEY_AUTO_CH
         _showRemainingTime.value = enabled
     }
     
-    // Exact extracted colors from artwork settings methods
-    fun setUseExactArtworkColors(enabled: Boolean) {
-        prefs.edit { putBoolean(KEY_USE_EXACT_ARTWORK_COLORS, enabled) }
-        _useExactArtworkColors.value = enabled
+    fun setExpressiveColors(enabled: Boolean) {
+        prefs.edit { putBoolean(KEY_EXPRESSIVE_COLORS, enabled) }
+        _expressiveColors.value = enabled
+    }
+
+    fun setThemeIntensity(intensity: String) {
+        prefs.edit { putString(KEY_THEME_INTENSITY, intensity) }
+        _themeIntensity.value = intensity
     }
     
     // Stop Playback on App Close Methods

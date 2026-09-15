@@ -3125,8 +3125,6 @@
     <string name="media_suggested_folders">Pastas sugeridas (música detectada)</string>
     <string name="settings_search_suggestions_desc">Exibir sugestões contextuais no topo</string>
     <string name="performancesettingsscreen_performance_desc">Otimiza feedback tátil, decodificação e o efeito marquee para consumo de energia</string>
-    <string name="settings_use_exact_artwork_colors">Usar cores exatas da capa</string>
-    <string name="settings_use_exact_artwork_colors_desc">Usa as cores exatas de fundo e texto da capa</string>
     <string name="settings_player_thumb_style_desc">Escolha a forma do indicador da barra de progresso (círculo, quadrado, pílula, diamante, flor, coração…)</string>
     <string name="settings_gesture_disable_unused_desc">Desativa os gestos que você nunca usa</string>
     <string name="settings_home_start_collapsed_desc">Inicia o cabeçalho da tela inicial recolhido</string>

@@ -220,7 +220,7 @@ fun ContextQueuePreferenceBottomSheet(
                         },
                         colors = CardDefaults.cardColors(
                             containerColor = if (isSelected) {
-                                MaterialTheme.colorScheme.onPrimaryContainer
+                                MaterialTheme.colorScheme.primaryContainer
                             } else {
                                 MaterialTheme.colorScheme.surfaceContainerLow
                             }
@@ -238,7 +238,7 @@ fun ContextQueuePreferenceBottomSheet(
                                 text = label,
                                 style = MaterialTheme.typography.titleMedium,
                                 color = if (isSelected) {
-                                    MaterialTheme.colorScheme.primaryContainer
+                                    MaterialTheme.colorScheme.onPrimaryContainer
                                 } else {
                                     MaterialTheme.colorScheme.onSurface
                                 },
@@ -250,7 +250,7 @@ fun ContextQueuePreferenceBottomSheet(
                                     imageVector = RhythmIcons.CheckCircle,
                                     contentDescription = context.getString(R.string.ui_selected),
                                     modifier = Modifier.size(24.dp),
-                                    tint = MaterialTheme.colorScheme.primaryContainer
+                                    tint = MaterialTheme.colorScheme.onPrimaryContainer
                                 )
                             }
                         }

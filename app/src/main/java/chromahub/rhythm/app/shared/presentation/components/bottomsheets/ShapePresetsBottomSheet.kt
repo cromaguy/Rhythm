@@ -121,7 +121,7 @@ fun ShapePresetsBottomSheet(
 
                     val containerColor by animateColorAsState(
                         targetValue = if (isSelected)
-                            MaterialTheme.colorScheme.onPrimaryContainer
+                            MaterialTheme.colorScheme.primaryContainer
                         else
                             MaterialTheme.colorScheme.surfaceContainerHigh,
                         animationSpec = spring(
@@ -165,7 +165,7 @@ fun ShapePresetsBottomSheet(
                                     imageVector = preset.icon,
                                     contentDescription = preset.displayName,
                                     tint = if (isSelected)
-                                        MaterialTheme.colorScheme.primaryContainer
+                                        MaterialTheme.colorScheme.onPrimaryContainer
                                     else
                                         MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.size(32.dp)
@@ -176,7 +176,7 @@ fun ShapePresetsBottomSheet(
                                         style = MaterialTheme.typography.bodyLarge,
                                         fontWeight = FontWeight.Medium,
                                         color = if (isSelected)
-                                            MaterialTheme.colorScheme.primaryContainer
+                                            MaterialTheme.colorScheme.onPrimaryContainer
                                         else
                                             MaterialTheme.colorScheme.onSurface
                                     )
@@ -184,7 +184,7 @@ fun ShapePresetsBottomSheet(
                                         text = getLocalizedShapePresetDesc(preset.id),
                                         style = MaterialTheme.typography.bodySmall,
                                         color = if (isSelected)
-                                            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.8f)
+                                            MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
                                         else
                                             MaterialTheme.colorScheme.onSurfaceVariant
                                     )
@@ -195,7 +195,7 @@ fun ShapePresetsBottomSheet(
                                 Icon(
                                     imageVector = RhythmIcons.Check,
                                     contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primaryContainer,
+                                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
                                     modifier = Modifier.size(24.dp)
                                 )
                             }

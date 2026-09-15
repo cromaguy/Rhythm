@@ -186,6 +186,8 @@ class MainActivity : AppCompatActivity() {
             val customFontPath by appSettings.customFontPath.collectAsState()
             val colorSource by appSettings.colorSource.collectAsState()
             val extractedAlbumColors by appSettings.extractedAlbumColors.collectAsState()
+            val expressiveColors by appSettings.expressiveColors.collectAsState()
+            val themeIntensity by appSettings.themeIntensity.collectAsState()
             val appMode by appSettings.appMode.collectAsState()
             
             // Determine the theme based on settings
@@ -207,7 +209,9 @@ class MainActivity : AppCompatActivity() {
                 fontSource = fontSource,
                 customFontPath = customFontPath,
                 colorSource = colorSource,
-                extractedAlbumColorsJson = extractedAlbumColors
+                extractedAlbumColorsJson = extractedAlbumColors,
+                expressiveColors = expressiveColors,
+                themeIntensity = themeIntensity
             ) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),

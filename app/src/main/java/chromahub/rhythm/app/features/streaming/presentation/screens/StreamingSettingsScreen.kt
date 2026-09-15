@@ -484,7 +484,7 @@ private fun ServiceSelectionBottomSheet(
                         shape = groupedBottomSheetItemShape(index, StreamingServiceOptions.defaults.size),
                         colors = CardDefaults.cardColors(
                             containerColor = if (isSelected) {
-                                MaterialTheme.colorScheme.onPrimaryContainer
+                                MaterialTheme.colorScheme.primaryContainer
                             } else {
                                 MaterialTheme.colorScheme.surfaceContainerHigh
                             }
@@ -502,7 +502,7 @@ private fun ServiceSelectionBottomSheet(
                                 imageVector = MaterialSymbolIcon("cloud_queue"),
                                 contentDescription = null,
                                 tint = if (isSelected) {
-                                    MaterialTheme.colorScheme.primaryContainer
+                                    MaterialTheme.colorScheme.onPrimaryContainer
                                 } else {
                                     MaterialTheme.colorScheme.onSurfaceVariant
                                 },
@@ -517,7 +517,7 @@ private fun ServiceSelectionBottomSheet(
                                     overflow = TextOverflow.Ellipsis,
                                     fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
                                     color = if (isSelected) {
-                                        MaterialTheme.colorScheme.primaryContainer
+                                        MaterialTheme.colorScheme.onPrimaryContainer
                                     } else {
                                         MaterialTheme.colorScheme.onSurface
                                     }
@@ -530,7 +530,7 @@ private fun ServiceSelectionBottomSheet(
                                     },
                                     style = MaterialTheme.typography.bodySmall,
                                     color = if (isSelected) {
-                                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.85f)
+                                        MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.85f)
                                     } else {
                                         MaterialTheme.colorScheme.onSurfaceVariant
                                     }
@@ -541,7 +541,7 @@ private fun ServiceSelectionBottomSheet(
                                 Icon(
                                     imageVector = RhythmIcons.Check,
                                     contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primaryContainer,
+                                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
                                     modifier = Modifier.size(20.dp)
                                 )
                             }
@@ -597,7 +597,7 @@ private fun QualitySelectionBottomSheet(
                         shape = groupedBottomSheetItemShape(index, streamingQualityOptions.size),
                         colors = CardDefaults.cardColors(
                             containerColor = if (isSelected) {
-                                MaterialTheme.colorScheme.onPrimaryContainer
+                                MaterialTheme.colorScheme.primaryContainer
                             } else {
                                 MaterialTheme.colorScheme.surfaceContainerHigh
                             }
@@ -615,7 +615,7 @@ private fun QualitySelectionBottomSheet(
                                 imageVector = MaterialSymbolIcon("high_quality"),
                                 contentDescription = null,
                                 tint = if (isSelected) {
-                                    MaterialTheme.colorScheme.primaryContainer
+                                    MaterialTheme.colorScheme.onPrimaryContainer
                                 } else {
                                     MaterialTheme.colorScheme.onSurfaceVariant
                                 },
@@ -630,7 +630,7 @@ private fun QualitySelectionBottomSheet(
                                     overflow = TextOverflow.Ellipsis,
                                     fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
                                     color = if (isSelected) {
-                                        MaterialTheme.colorScheme.primaryContainer
+                                        MaterialTheme.colorScheme.onPrimaryContainer
                                     } else {
                                         MaterialTheme.colorScheme.onSurface
                                     }
@@ -639,7 +639,7 @@ private fun QualitySelectionBottomSheet(
                                     text = stringResource(id = option.descriptionRes),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = if (isSelected) {
-                                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.85f)
+                                        MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.85f)
                                     } else {
                                         MaterialTheme.colorScheme.onSurfaceVariant
                                     }
@@ -650,7 +650,7 @@ private fun QualitySelectionBottomSheet(
                                 Icon(
                                     imageVector = RhythmIcons.Check,
                                     contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primaryContainer,
+                                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
                                     modifier = Modifier.size(20.dp)
                                 )
                             }

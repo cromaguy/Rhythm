@@ -591,7 +591,7 @@ fun ActionPickerSheet(
                         },
                         colors = CardDefaults.cardColors(
                             containerColor = if (isSelected)
-                                MaterialTheme.colorScheme.onPrimaryContainer
+                                MaterialTheme.colorScheme.primaryContainer
                             else
                                 MaterialTheme.colorScheme.surfaceContainerHigh
                         ),
@@ -608,7 +608,7 @@ fun ActionPickerSheet(
                                 imageVector = option.icon,
                                 contentDescription = null,
                                 tint = if (isSelected)
-                                    MaterialTheme.colorScheme.primaryContainer
+                                    MaterialTheme.colorScheme.onPrimaryContainer
                                 else
                                     MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(if (isSelected) 30.dp else 26.dp)
@@ -622,7 +622,7 @@ fun ActionPickerSheet(
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.SemiBold,
                                     color = if (isSelected)
-                                        MaterialTheme.colorScheme.primaryContainer
+                                        MaterialTheme.colorScheme.onPrimaryContainer
                                     else
                                         MaterialTheme.colorScheme.onSurface
                                 )
@@ -631,7 +631,7 @@ fun ActionPickerSheet(
                                     text = option.desc,
                                     style = MaterialTheme.typography.bodySmall,
                                     color = if (isSelected)
-                                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.8f)
+                                        MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
                                     else
                                         MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -641,7 +641,7 @@ fun ActionPickerSheet(
                                 Icon(
                                     imageVector = RhythmIcons.CheckCircle,
                                     contentDescription = stringResource(R.string.streaming_selected),
-                                    tint = MaterialTheme.colorScheme.primaryContainer,
+                                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
                                     modifier = Modifier.size(28.dp)
                                 )
                             }
@@ -842,7 +842,7 @@ fun WidgetThemeSheet(
                         },
                         colors = CardDefaults.cardColors(
                             containerColor = if (isSelected)
-                                MaterialTheme.colorScheme.onPrimaryContainer
+                                MaterialTheme.colorScheme.primaryContainer
                             else
                                 MaterialTheme.colorScheme.surfaceContainerHigh
                         ),
@@ -859,7 +859,7 @@ fun WidgetThemeSheet(
                                 imageVector = icon,
                                 contentDescription = null,
                                 tint = if (isSelected)
-                                    MaterialTheme.colorScheme.primaryContainer
+                                    MaterialTheme.colorScheme.onPrimaryContainer
                                 else
                                     MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(if (isSelected) 30.dp else 26.dp)
@@ -873,7 +873,7 @@ fun WidgetThemeSheet(
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.SemiBold,
                                     color = if (isSelected)
-                                        MaterialTheme.colorScheme.primaryContainer
+                                        MaterialTheme.colorScheme.onPrimaryContainer
                                     else
                                         MaterialTheme.colorScheme.onSurface
                                 )
@@ -882,7 +882,7 @@ fun WidgetThemeSheet(
                                     text = desc,
                                     style = MaterialTheme.typography.bodySmall,
                                     color = if (isSelected)
-                                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.8f)
+                                        MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
                                     else
                                         MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -892,7 +892,7 @@ fun WidgetThemeSheet(
                                 Icon(
                                     imageVector = RhythmIcons.CheckCircle,
                                     contentDescription = stringResource(R.string.streaming_selected),
-                                    tint = MaterialTheme.colorScheme.primaryContainer,
+                                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
                                     modifier = Modifier.size(28.dp)
                                 )
                             }

@@ -404,7 +404,7 @@ fun QueueSettingsScreen(onBackClick: () -> Unit) {
                             },
                             colors = CardDefaults.cardColors(
                                 containerColor = if (isSelected)
-                                    MaterialTheme.colorScheme.onPrimaryContainer
+                                    MaterialTheme.colorScheme.primaryContainer
                                 else
                                     MaterialTheme.colorScheme.surfaceContainerHigh
                             ),
@@ -421,7 +421,7 @@ fun QueueSettingsScreen(onBackClick: () -> Unit) {
                                     imageVector = option.third,
                                     contentDescription = null,
                                     tint = if (isSelected)
-                                        MaterialTheme.colorScheme.primaryContainer
+                                        MaterialTheme.colorScheme.onPrimaryContainer
                                     else
                                         MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.size(if (isSelected) 30.dp else 26.dp)
@@ -435,7 +435,7 @@ fun QueueSettingsScreen(onBackClick: () -> Unit) {
                                         style = MaterialTheme.typography.titleMedium,
                                         fontWeight = FontWeight.SemiBold,
                                         color = if (isSelected)
-                                            MaterialTheme.colorScheme.primaryContainer
+                                            MaterialTheme.colorScheme.onPrimaryContainer
                                         else
                                             MaterialTheme.colorScheme.onSurface
                                     )
@@ -444,7 +444,7 @@ fun QueueSettingsScreen(onBackClick: () -> Unit) {
                                         text = option.second,
                                         style = MaterialTheme.typography.bodySmall,
                                         color = if (isSelected)
-                                            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.8f)
+                                            MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
                                         else
                                             MaterialTheme.colorScheme.onSurfaceVariant
                                     )
@@ -454,7 +454,7 @@ fun QueueSettingsScreen(onBackClick: () -> Unit) {
                                     Icon(
                                         imageVector = RhythmIcons.CheckCircle,
                                         contentDescription = context.getString(R.string.ui_selected),
-                                        tint = MaterialTheme.colorScheme.primaryContainer,
+                                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
                                         modifier = Modifier.size(28.dp)
                                     )
                                 }
@@ -512,7 +512,7 @@ fun QueueSettingsScreen(onBackClick: () -> Unit) {
                         },
                         colors = CardDefaults.cardColors(
                             containerColor = if (showQueueDialog)
-                                MaterialTheme.colorScheme.onPrimaryContainer
+                                MaterialTheme.colorScheme.primaryContainer
                             else
                                 MaterialTheme.colorScheme.surfaceContainerHigh
                         ),
@@ -529,7 +529,7 @@ fun QueueSettingsScreen(onBackClick: () -> Unit) {
                                 imageVector = MaterialSymbolIcon("help", filled = true),
                                 contentDescription = null,
                                 tint = if (showQueueDialog)
-                                    MaterialTheme.colorScheme.primaryContainer
+                                    MaterialTheme.colorScheme.onPrimaryContainer
                                 else
                                     MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(if (showQueueDialog) 30.dp else 26.dp)
@@ -543,7 +543,7 @@ fun QueueSettingsScreen(onBackClick: () -> Unit) {
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.SemiBold,
                                     color = if (showQueueDialog)
-                                        MaterialTheme.colorScheme.primaryContainer
+                                        MaterialTheme.colorScheme.onPrimaryContainer
                                     else
                                         MaterialTheme.colorScheme.onSurface
                                 )
@@ -552,7 +552,7 @@ fun QueueSettingsScreen(onBackClick: () -> Unit) {
                                     text = context.getString(R.string.queue_action_ask_desc),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = if (showQueueDialog)
-                                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.8f)
+                                        MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
                                     else
                                         MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -562,7 +562,7 @@ fun QueueSettingsScreen(onBackClick: () -> Unit) {
                                 Icon(
                                     imageVector = RhythmIcons.CheckCircle,
                                     contentDescription = stringResource(R.string.streaming_selected),
-                                    tint = MaterialTheme.colorScheme.primaryContainer,
+                                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
                                     modifier = Modifier.size(28.dp)
                                 )
                             }
@@ -579,7 +579,7 @@ fun QueueSettingsScreen(onBackClick: () -> Unit) {
                         },
                         colors = CardDefaults.cardColors(
                             containerColor = if (!showQueueDialog)
-                                MaterialTheme.colorScheme.onPrimaryContainer
+                                MaterialTheme.colorScheme.primaryContainer
                             else
                                 MaterialTheme.colorScheme.surfaceContainerHigh
                         ),
@@ -596,7 +596,7 @@ fun QueueSettingsScreen(onBackClick: () -> Unit) {
                                 imageVector = RhythmIcons.Play,
                                 contentDescription = null,
                                 tint = if (!showQueueDialog)
-                                    MaterialTheme.colorScheme.primaryContainer
+                                    MaterialTheme.colorScheme.onPrimaryContainer
                                 else
                                     MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(if (!showQueueDialog) 30.dp else 26.dp)
@@ -610,7 +610,7 @@ fun QueueSettingsScreen(onBackClick: () -> Unit) {
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.SemiBold,
                                     color = if (!showQueueDialog)
-                                        MaterialTheme.colorScheme.primaryContainer
+                                        MaterialTheme.colorScheme.onPrimaryContainer
                                     else
                                         MaterialTheme.colorScheme.onSurface
                                 )
@@ -619,7 +619,7 @@ fun QueueSettingsScreen(onBackClick: () -> Unit) {
                                     text = context.getString(R.string.queue_action_always_add_desc),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = if (!showQueueDialog)
-                                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.8f)
+                                        MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
                                     else
                                         MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -629,7 +629,7 @@ fun QueueSettingsScreen(onBackClick: () -> Unit) {
                                 Icon(
                                     imageVector = RhythmIcons.CheckCircle,
                                     contentDescription = stringResource(R.string.streaming_selected),
-                                    tint = MaterialTheme.colorScheme.primaryContainer,
+                                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
                                     modifier = Modifier.size(28.dp)
                                 )
                             }

@@ -238,7 +238,8 @@ fun ThemeCustomizationSettingsScreen(onBackClick: () -> Unit) {
     val customColorScheme by appSettings.customColorScheme.collectAsState()
     val colorSource by appSettings.colorSource.collectAsState()
     val extractedAlbumColors by appSettings.extractedAlbumColors.collectAsState()
-    val useExactArtworkColors by appSettings.useExactArtworkColors.collectAsState()
+    val expressiveColors by appSettings.expressiveColors.collectAsState()
+    val themeIntensity by appSettings.themeIntensity.collectAsState()
     val floatingNavigationBar by appSettings.floatingNavigationBar.collectAsState()
 
     // Font states
@@ -306,8 +307,8 @@ fun ThemeCustomizationSettingsScreen(onBackClick: () -> Unit) {
 
     // Color schemes - dynamic Material 3 preset schemes
     val isCurrentDarkTheme = if (useSystemTheme) isSystemInDarkTheme() else darkMode
-    val colorSchemes = remember(context, isCurrentDarkTheme) {
-        getPresetColorSchemeOptions(context, isCurrentDarkTheme)
+    val colorSchemes = remember(context, isCurrentDarkTheme, themeIntensity) {
+        getPresetColorSchemeOptions(context, isCurrentDarkTheme, themeIntensity)
     }
 
     // Font options - matching bottomsheet
@@ -349,6 +350,7 @@ fun ThemeCustomizationSettingsScreen(onBackClick: () -> Unit) {
 
     // Dialog states
     var showColorSourceDialog by remember { mutableStateOf(false) }
+    var showThemeIntensityDialog by remember { mutableStateOf(false) }
     var showFontSourceDialog by remember { mutableStateOf(false) }
     var showFontSelectionDialog by remember { mutableStateOf(false) }
     var navigateToExpressiveShapes by remember { mutableStateOf(false) }
@@ -481,34 +483,41 @@ fun ThemeCustomizationSettingsScreen(onBackClick: () -> Unit) {
             ),
             SettingGroup(
                 title = context.getString(R.string.settings_color_customization),
-                items = buildList {
-                    add(
-                        SettingItem(
-                            RhythmIcons.Palette,
-                            context.getString(R.string.settings_color_source),
-                            when (selectedColorSource) {
-                                ColorSource.ALBUM_ART -> context.getString(R.string.settings_color_source_album)
-                                ColorSource.MONET -> context.getString(R.string.settings_color_source_monet)
-                                ColorSource.CUSTOM -> context.getString(R.string.settings_color_source_custom, customColorScheme)
-                            },
-                            onClick = {
-                                HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
-                                showColorSourceDialog = true
-                            }
-                        )
+                items = listOf(
+                    SettingItem(
+                        MaterialSymbolIcon("colorize"),
+                        context.getString(R.string.settings_color_source),
+                        when (selectedColorSource) {
+                            ColorSource.ALBUM_ART -> context.getString(R.string.settings_color_source_album)
+                            ColorSource.MONET -> context.getString(R.string.settings_color_source_monet)
+                            ColorSource.CUSTOM -> context.getString(R.string.settings_color_source_custom, customColorScheme)
+                        },
+                        onClick = {
+                            HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
+                            showColorSourceDialog = true
+                        }
+                    ),
+                    SettingItem(
+                        MaterialSymbolIcon("tune"),
+                        context.getString(R.string.settings_theme_intensity),
+                        when (themeIntensity.uppercase()) {
+                            "VIVID" -> context.getString(R.string.theme_intensity_vivid)
+                            "MEDIUM" -> context.getString(R.string.theme_intensity_medium)
+                            else -> context.getString(R.string.theme_intensity_standard)
+                        },
+                        onClick = {
+                            HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
+                            showThemeIntensityDialog = true
+                        }
+                    ),
+                    SettingItem(
+                        MaterialSymbolIcon("layers"),
+                        context.getString(R.string.settings_expressive_colors),
+                        context.getString(R.string.settings_expressive_colors_desc),
+                        toggleState = expressiveColors,
+                        onToggleChange = { appSettings.setExpressiveColors(it) }
                     )
-                    if (selectedColorSource == ColorSource.ALBUM_ART) {
-                        add(
-                            SettingItem(
-                                RhythmIcons.Palette,
-                                "Use Exact Artwork Colors",
-                                "Use exact background and text colors from artwork",
-                                toggleState = useExactArtworkColors,
-                                onToggleChange = { appSettings.setUseExactArtworkColors(it) }
-                            )
-                        )
-                    }
-                }
+                )
             ),
             SettingGroup(
                 title = context.getString(R.string.settings_font_customization),
@@ -693,7 +702,7 @@ fun ThemeCustomizationSettingsScreen(onBackClick: () -> Unit) {
                             // Inline color scheme picker
                             add(
                                 Material3SettingsItem(
-                                    icon = MaterialSymbolIcon("color_lens"),
+                                    icon = MaterialSymbolIcon("palette"),
                                     title = { Text(context.getString(R.string.settings_color_schemes)) },
                                     description = {
                                         Column {
@@ -828,6 +837,15 @@ fun ThemeCustomizationSettingsScreen(onBackClick: () -> Unit) {
         haptic = haptic
     )
 
+    ThemeIntensityDialog(
+        showDialog = showThemeIntensityDialog,
+        onDismiss = { showThemeIntensityDialog = false },
+        currentIntensity = themeIntensity,
+        onIntensitySelected = { appSettings.setThemeIntensity(it) },
+        context = context,
+        haptic = haptic
+    )
+
     FontSourceDialog(
         showDialog = showFontSourceDialog,
         onDismiss = { showFontSourceDialog = false },
@@ -925,7 +943,7 @@ fun ThemeCustomizationSettingsScreen(onBackClick: () -> Unit) {
                                         shape = groupedBottomSheetItemShape(index, festivals.size),
                                         colors = CardDefaults.cardColors(
                                             containerColor = if (isSelected)
-                                                MaterialTheme.colorScheme.onPrimaryContainer
+                                                MaterialTheme.colorScheme.primaryContainer
                                             else
                                                 MaterialTheme.colorScheme.surfaceContainerHigh
                                         ),
@@ -941,7 +959,7 @@ fun ThemeCustomizationSettingsScreen(onBackClick: () -> Unit) {
                                                 style = MaterialTheme.typography.titleMedium,
                                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                                                 color = if (isSelected)
-                                                    MaterialTheme.colorScheme.primaryContainer
+                                                    MaterialTheme.colorScheme.onPrimaryContainer
                                                 else
                                                     MaterialTheme.colorScheme.onSurface,
                                                 modifier = Modifier.weight(1f)
@@ -950,7 +968,7 @@ fun ThemeCustomizationSettingsScreen(onBackClick: () -> Unit) {
                                                 Icon(
                                                     imageVector = RhythmIcons.CheckCircle,
                                                     contentDescription = context.getString(R.string.ui_selected),
-                                                    tint = MaterialTheme.colorScheme.primaryContainer,
+                                                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
                                                     modifier = Modifier.size(24.dp)
                                                 )
                                             }
@@ -1287,7 +1305,7 @@ fun FontCard(
         onClick = onSelect,
         colors = CardDefaults.cardColors(
             containerColor = if (isSelected)
-                MaterialTheme.colorScheme.onPrimaryContainer
+                MaterialTheme.colorScheme.primaryContainer
             else
                 MaterialTheme.colorScheme.surfaceContainerHigh
         ),
@@ -1309,7 +1327,7 @@ fun FontCard(
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold,
                         color = if (isSelected)
-                            MaterialTheme.colorScheme.primaryContainer
+                            MaterialTheme.colorScheme.onPrimaryContainer
                         else
                             MaterialTheme.colorScheme.onSurface
                     )
@@ -1318,7 +1336,7 @@ fun FontCard(
                         text = option.description,
                         style = MaterialTheme.typography.bodySmall,
                         color = if (isSelected)
-                            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.8f)
+                            MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
                         else
                             MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -1328,7 +1346,7 @@ fun FontCard(
                     Icon(
                         imageVector = RhythmIcons.CheckCircle,
                         contentDescription = stringResource(R.string.streaming_selected),
-                        tint = MaterialTheme.colorScheme.primaryContainer,
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
                         modifier = Modifier.size(28.dp)
                     )
                 }
@@ -1387,5 +1405,116 @@ fun ThemeTipItem(
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onPrimaryContainer
         )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ThemeIntensityDialog(
+    showDialog: Boolean,
+    onDismiss: () -> Unit,
+    currentIntensity: String,
+    onIntensitySelected: (String) -> Unit,
+    context: Context,
+    haptic: HapticFeedback
+) {
+    if (!showDialog) return
+
+    val intensities = listOf(
+        Triple("STANDARD", context.getString(R.string.theme_intensity_standard), context.getString(R.string.theme_intensity_standard_desc)),
+        Triple("MEDIUM", context.getString(R.string.theme_intensity_medium), context.getString(R.string.theme_intensity_medium_desc)),
+        Triple("VIVID", context.getString(R.string.theme_intensity_vivid), context.getString(R.string.theme_intensity_vivid_desc))
+    )
+
+    val sheetState = rememberBottomSheetState(
+        initialValue = SheetValue.Hidden,
+        enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded)
+    )
+
+    RhythmAdaptiveModalSheet(
+        adaptiveType = SheetAdaptiveType.COMPACT_DIALOG,
+        modifier = Modifier.widthIn(max = 640.dp).fillMaxWidth(),
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        dragHandle = {
+            BottomSheetDefaults.DragHandle(
+                color = MaterialTheme.colorScheme.primary
+            )
+        },
+        containerColor = MaterialTheme.colorScheme.surfaceContainer
+    ) {
+        StandardBottomSheetHeader(
+            title = context.getString(R.string.settings_theme_intensity),
+            subtitle = context.getString(R.string.settings_theme_intensity_desc),
+            visible = true
+        )
+
+        val scrollState = rememberScrollState()
+
+        AdaptiveSheetScrollContainer(
+            scrollState = scrollState,
+            modifier = Modifier.fillMaxWidth()
+        ) { endPadding ->
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(scrollState)
+                    .padding(start = 24.dp, end = 24.dp + endPadding, bottom = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                intensities.forEachIndexed { index, (key, title, desc) ->
+                    val isSelected = currentIntensity.equals(key, ignoreCase = true)
+                    Card(
+                        onClick = {
+                            HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
+                            onIntensitySelected(key)
+                            onDismiss()
+                        },
+                        colors = CardDefaults.cardColors(
+                            containerColor = if (isSelected)
+                                MaterialTheme.colorScheme.primaryContainer
+                            else
+                                MaterialTheme.colorScheme.surfaceContainerHigh
+                        ),
+                        shape = groupedBottomSheetItemShape(index, intensities.size),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = title,
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = if (isSelected)
+                                        MaterialTheme.colorScheme.onPrimaryContainer
+                                    else
+                                        MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = desc,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = if (isSelected)
+                                        MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                                    else
+                                        MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            if (isSelected) {
+                                Icon(
+                                    imageVector = MaterialSymbolIcon("check"),
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 }
