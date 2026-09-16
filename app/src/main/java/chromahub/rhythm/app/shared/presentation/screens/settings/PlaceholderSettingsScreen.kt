@@ -163,9 +163,6 @@ import chromahub.rhythm.app.shared.presentation.screens.settings.SettingGroup
 
 @Composable
 fun PlaceholderSettingsScreen() {
-    val context = LocalContext.current
-    val hapticFeedback = LocalHapticFeedback.current
-
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -175,69 +172,50 @@ fun PlaceholderSettingsScreen() {
         verticalArrangement = Arrangement.Center
     ) {
         val cookieShape = rememberExpressiveShape("COOKIE_12")
-        Surface(
-            shape = cookieShape,
-            color = MaterialTheme.colorScheme.primaryContainer,
-            modifier = Modifier.size(120.dp)
-        ) {
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier.fillMaxSize()
-            ) {
-                Icon(
-                    imageVector = RhythmIcons.Settings,
-                    contentDescription = null,
-                    modifier = Modifier.size(64.dp)
-                )
-            }
-        }
 
-        Spacer(modifier = Modifier.height(32.dp))
-
-        // Title
-        Text(
-            text = context.getString(R.string.settings_select_option),
-            style = MaterialTheme.typography.headlineMedium,
-            color = MaterialTheme.colorScheme.onSurface,
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-            fontWeight = FontWeight.SemiBold
-        )
-
-        Spacer(modifier = Modifier.height(48.dp))
-
-        // Additional visual elements for tablet UI
         Card(
             modifier = Modifier
-                .fillMaxWidth(0.8f)
-                .height(200.dp),
-            shape = RoundedCornerShape(24.dp),
+                .widthIn(max = 440.dp)
+                .fillMaxWidth(),
+            shape = RoundedCornerShape(28.dp),
             colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+                containerColor = MaterialTheme.colorScheme.surfaceContainer
             ),
             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
         ) {
             Column(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(24.dp),
+                    .fillMaxWidth()
+                    .padding(vertical = 36.dp, horizontal = 28.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                Icon(
-                    imageVector = MaterialSymbolIcon("lightbulb"),
-                    contentDescription = null,
-                    
-                    modifier = Modifier.size(48.dp)
-                )
+                Surface(
+                    shape = cookieShape,
+                    color = MaterialTheme.colorScheme.primaryContainer,
+                    modifier = Modifier.size(96.dp)
+                ) {
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        Icon(
+                            imageVector = RhythmIcons.Settings,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                            modifier = Modifier.size(48.dp)
+                        )
+                    }
+                }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(20.dp))
 
                 Text(
                     text = stringResource(R.string.placeholdersettingsscreen_choose_a_setting_from),
                     style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                    fontWeight = FontWeight.Medium
+                    color = MaterialTheme.colorScheme.onSurface,
+                    textAlign = TextAlign.Center,
+                    fontWeight = FontWeight.SemiBold
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -245,8 +223,8 @@ fun PlaceholderSettingsScreen() {
                 Text(
                     text = stringResource(R.string.placeholdersettingsscreen_tap_on_any_setting),
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
-                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center
                 )
             }
         }

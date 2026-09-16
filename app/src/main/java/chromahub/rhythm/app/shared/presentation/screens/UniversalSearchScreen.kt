@@ -14,6 +14,7 @@ import chromahub.rhythm.app.shared.presentation.components.icons.MaterialSymbolI
 import chromahub.rhythm.app.shared.presentation.components.icons.Icon
 import chromahub.rhythm.app.shared.presentation.components.common.ExpressiveCookieEmptyState
 import chromahub.rhythm.app.shared.presentation.components.common.rememberExpressiveShape
+import chromahub.rhythm.app.shared.presentation.components.common.M3CircularLoader
 
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
@@ -683,7 +684,7 @@ fun UniversalSearchScreen(
                             if (isStreamingLoading && !hasResults) {
                                 item(key = "loading_left") {
                                     Box(modifier = Modifier.fillMaxWidth().padding(vertical = 48.dp), contentAlignment = Alignment.Center) {
-                                        WavyLoader()
+                                        M3CircularLoader(modifier = Modifier.size(48.dp), strokeWidth = 4f)
                                     }
                                 }
                             } else {
@@ -895,7 +896,7 @@ fun UniversalSearchScreen(
                                 item(key = "streaming_loading_right") {
                                     Box(modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp).animateItem(), contentAlignment = Alignment.Center) {
                                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                                            WavyLoader()
+                                            M3CircularLoader(modifier = Modifier.size(20.dp), strokeWidth = 2.5f)
                                             Text(stringResource(R.string.universalsearchscreen_loading_streaming_results), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                         }
                                     }
@@ -917,7 +918,7 @@ fun UniversalSearchScreen(
                         if (isStreamingLoading && !hasResults) {
                             item(key = "loading") {
                                 Box(modifier = Modifier.fillMaxWidth().padding(vertical = 48.dp).animateItem(), contentAlignment = Alignment.Center) {
-                                    WavyLoader()
+                                    M3CircularLoader(modifier = Modifier.size(48.dp), strokeWidth = 4f)
                                 }
                             }
                         } else {
@@ -1116,7 +1117,7 @@ fun UniversalSearchScreen(
                                 item(key = "streaming_loading") {
                                     Box(modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp).animateItem(), contentAlignment = Alignment.Center) {
                                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                                            WavyLoader()
+                                            M3CircularLoader(modifier = Modifier.size(20.dp), strokeWidth = 2.5f)
                                             Text(stringResource(R.string.universalsearchscreen_loading_streaming_results), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                         }
                                     }
@@ -1968,37 +1969,6 @@ private fun SearchGridCard(
     }
 }
 
-@Composable
-fun WavyLoader(
-    modifier: Modifier = Modifier,
-    color: Color = MaterialTheme.colorScheme.primary
-) {
-    val infiniteTransition = rememberInfiniteTransition(label = "WavyLoader")
-    Row(
-        modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        for (i in 0 until 4) {
-            val scale by infiniteTransition.animateFloat(
-                initialValue = 0.4f,
-                targetValue = 1f,
-                animationSpec = infiniteRepeatable(
-                    animation = tween(durationMillis = 300, delayMillis = i * 100, easing = LinearOutSlowInEasing),
-                    repeatMode = RepeatMode.Reverse
-                ),
-                label = "bar_$i"
-            )
-            Box(
-                modifier = Modifier
-                    .width(4.dp)
-                    .height(20.dp)
-                    .graphicsLayer { scaleY = scale }
-                    .background(color, CircleShape)
-            )
-        }
-    }
-}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -2194,7 +2164,7 @@ fun UniversalSongOptionsBottomSheet(
                                 )
                                 add(
                                     UniversalOptionItem(
-                                        icon = if (isFavorite) MaterialSymbolIcon("thumb_down", filled = true) else MaterialSymbolIcon("thumb_up", filled = true),
+                                        icon = if (isFavorite) MaterialSymbolIcon("thumb_up", filled = true) else MaterialSymbolIcon("thumb_up", filled = false),
                                         text = if (isFavorite) context.getString(R.string.action_dislike) else context.getString(R.string.action_like),
                                         containerColor = tertiaryContainer,
                                         iconColor = onTertiaryContainer,
@@ -2567,7 +2537,11 @@ private fun UniversalGenreBrowseSection(
                     .padding(vertical = 32.dp),
                 contentAlignment = Alignment.Center
             ) {
-                WavyLoader(color = MaterialTheme.colorScheme.tertiary)
+                M3CircularLoader(
+                    modifier = Modifier.size(36.dp),
+                    color = MaterialTheme.colorScheme.tertiary,
+                    strokeWidth = 3f
+                )
             }
         } else if (genres.isNotEmpty()) {
             val isTablet = windowScreenWidthDp() >= 600

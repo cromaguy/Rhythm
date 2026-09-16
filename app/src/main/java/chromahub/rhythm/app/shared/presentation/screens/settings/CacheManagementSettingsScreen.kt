@@ -108,6 +108,7 @@ import chromahub.rhythm.app.shared.presentation.components.common.CollapsibleHea
 import chromahub.rhythm.app.shared.presentation.components.common.ButtonGroupStyle
 import chromahub.rhythm.app.shared.presentation.components.common.ExpressiveScrollBar
 import chromahub.rhythm.app.shared.presentation.components.common.ExpressiveButtonGroup
+import chromahub.rhythm.app.shared.presentation.components.common.M3CircularLoader
 import chromahub.rhythm.app.shared.presentation.components.common.ExpressiveGroupButton
 import chromahub.rhythm.app.shared.presentation.components.bottomsheets.StandardBottomSheetHeader
 import chromahub.rhythm.app.shared.presentation.components.common.StyledProgressBar
@@ -362,7 +363,7 @@ fun CacheManagementSettingsScreen(onBackClick: () -> Unit) {
                                 .height(200.dp),
                             contentAlignment = Alignment.Center
                         ) {
-                            CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                            M3CircularLoader(modifier = Modifier.size(48.dp), strokeWidth = 4f)
                         }
                     } else {
                         // Hero Stat
@@ -504,7 +505,7 @@ fun CacheManagementSettingsScreen(onBackClick: () -> Unit) {
 
                                 Material3SettingsGroup(
                                     items = breakdownItems,
-                                    containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+                                    containerColor = MaterialTheme.colorScheme.surfaceContainer
                                 )
                             }
                         }
@@ -587,9 +588,9 @@ fun CacheManagementSettingsScreen(onBackClick: () -> Unit) {
                             description = { Text(context.getString(R.string.settings_clear_all_cache_desc)) },
                             trailingContent = {
                                 if (isClearingCache) {
-                                    CircularProgressIndicator(
+                                    M3CircularLoader(
                                         modifier = Modifier.size(20.dp),
-                                        strokeWidth = 2.dp,
+                                        strokeWidth = 2.5f,
                                         color = MaterialTheme.colorScheme.error
                                     )
                                 } else {

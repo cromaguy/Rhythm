@@ -1060,9 +1060,12 @@ private fun computeGridCellInfo(
     var col = 0
     for (i in 0 until itemCount) {
         if (isFullWidth(i)) {
+            if (col > 0) {
+                row++
+                col = 0
+            }
             cells.add(Pair(row, 2))
             row++
-            col = 0
         } else {
             cells.add(Pair(row, col))
             col++
@@ -1467,7 +1470,12 @@ private fun InfoGridItem(
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier
                     .align(Alignment.TopStart)
-                    .padding(top = MusicDimensions.infoTileInset, start = MusicDimensions.infoTileInset)
+                    .fillMaxWidth()
+                    .padding(
+                        top = MusicDimensions.infoTileInset,
+                        start = MusicDimensions.infoTileInset,
+                        end = MusicDimensions.infoTileInset
+                    )
             )
         }
     }
@@ -1556,6 +1564,67 @@ private fun EditSongSheet(
         selectedImageUri = null
         removeArtwork = false
         HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
+    }
+
+    val fetchOnlineArtwork: () -> Unit = {
+        if (!isFetchingOnlineArt && title.isNotBlank() && artist.isNotBlank()) {
+            isFetchingOnlineArt = true
+            coroutineScope.launch(Dispatchers.IO) {
+                try {
+                    val apiService = NetworkClient.ytmusicApiService
+                    if (apiService != null) {
+                        val searchQuery = "${title.trim()} ${artist.trim()}"
+                        val searchRequest = YTMusicSearchRequest(
+                            context = YTMusicContext(YTMusicClient()),
+                            query = searchQuery,
+                            params = "EgWKAQIIAWoKEAoQAxAEEAkQBQ%3D%3D"
+                        )
+                        val response = apiService.search(request = searchRequest)
+                        if (response.isSuccessful) {
+                            val imageUrl = response.body()?.extractAlbumImageUrl()
+                            if (!imageUrl.isNullOrEmpty()) {
+                                val okRequest = okhttp3.Request.Builder().url(imageUrl).build()
+                                val okResponse = NetworkClient.genericHttpClient.newCall(okRequest).execute()
+                                if (okResponse.isSuccessful) {
+                                    val bytes = okResponse.body.bytes()
+                                    val tempFile = File(context.cacheDir, "temp_artwork_fetched_${song.id}.jpg")
+                                    tempFile.writeBytes(bytes)
+                                    withContext(Dispatchers.Main) {
+                                        selectedImageUri = Uri.fromFile(tempFile)
+                                        removeArtwork = false
+                                        Toast.makeText(context, R.string.songinfobottomsheet_artwork_fetched_successfully_click, Toast.LENGTH_SHORT).show()
+                                    }
+                                } else {
+                                    withContext(Dispatchers.Main) {
+                                        Toast.makeText(context, R.string.songinfobottomsheet_failed_to_download_artwork_1, Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                            } else {
+                                withContext(Dispatchers.Main) {
+                                    Toast.makeText(context, R.string.songinfobottomsheet_no_artwork_found_for, Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        } else {
+                            withContext(Dispatchers.Main) {
+                                Toast.makeText(context, R.string.songinfobottomsheet_online_search_failed, Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    } else {
+                        withContext(Dispatchers.Main) {
+                            Toast.makeText(context, R.string.songinfobottomsheet_online_api_service_unavailable, Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                } catch (e: Exception) {
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(context, context.getString(R.string.error_fetching_artwork, e.message ?: ""), Toast.LENGTH_LONG).show()
+                    }
+                } finally {
+                    withContext(Dispatchers.Main) {
+                        isFetchingOnlineArt = false
+                    }
+                }
+            }
+        }
     }
     
     val proceedWithSave = { 
@@ -1795,20 +1864,70 @@ private fun EditSongSheet(
 
                                 Spacer(modifier = Modifier.height(16.dp))
 
-                                RhythmDetailActionButtonFullWidth(
-                                    onClick = {
-                                        selectedImageUri = null
-                                        removeArtwork = true
-                                    },
-                                    enabled = hasArtworkPreview,
-                                    height = 48.dp,
-                                    type = RhythmButtonType.Tonal,
-                                    icon = RhythmIcons.Delete,
-                                    iconSize = 18.dp,
-                                    text = stringResource(R.string.songinfobottomsheet_remove_artwork),
-                                    containerColor = MaterialTheme.colorScheme.errorContainer,
-                                    contentColor = MaterialTheme.colorScheme.onErrorContainer
-                                )
+                                if (hasArtworkPreview) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                    ) {
+                                        RhythmDetailActionButton(
+                                            onClick = {
+                                                imagePickerLauncher.launch(
+                                                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                                )
+                                            },
+                                            height = 48.dp,
+                                            isFirst = true,
+                                            isLast = false,
+                                            type = RhythmButtonType.Filled,
+                                            icon = RhythmIcons.Image,
+                                            iconSize = 18.dp,
+                                            text = "Change"
+                                        )
+
+                                        RhythmDetailActionButton(
+                                            onClick = {
+                                                selectedImageUri = null
+                                                removeArtwork = true
+                                            },
+                                            height = 48.dp,
+                                            isFirst = false,
+                                            isLast = true,
+                                            type = RhythmButtonType.Tonal,
+                                            icon = RhythmIcons.Delete,
+                                            iconSize = 18.dp,
+                                            text = stringResource(R.string.content_desc_remove),
+                                            containerColor = MaterialTheme.colorScheme.errorContainer,
+                                            contentColor = MaterialTheme.colorScheme.onErrorContainer
+                                        )
+                                    }
+                                } else {
+                                    RhythmDetailActionButtonFullWidth(
+                                        onClick = {
+                                            imagePickerLauncher.launch(
+                                                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                            )
+                                        },
+                                        height = 48.dp,
+                                        type = RhythmButtonType.Filled,
+                                        icon = RhythmIcons.Image,
+                                        iconSize = 18.dp,
+                                        text = "Select Artwork"
+                                    )
+                                }
+
+                                if (NetworkClient.isYTMusicApiEnabled()) {
+                                    Spacer(modifier = Modifier.height(10.dp))
+                                    RhythmDetailActionButtonFullWidth(
+                                        onClick = fetchOnlineArtwork,
+                                        enabled = !isFetchingOnlineArt && title.isNotBlank() && artist.isNotBlank(),
+                                        isLoading = isFetchingOnlineArt,
+                                        height = 48.dp,
+                                        type = RhythmButtonType.Tonal,
+                                        icon = MaterialSymbolIcon("cloud_download", filled = true),
+                                        iconSize = 18.dp,
+                                        text = stringResource(R.string.songinfobottomsheet_fetch_online_art)
+                                    )
+                                }
                             }
                         }
 
@@ -1863,7 +1982,7 @@ private fun EditSongSheet(
                                         OutlinedTextField(
                                             value = title,
                                             onValueChange = { title = it },
-                                            label = { Text(stringResource(R.string.bottomsheet_title)) },
+                                            label = { Text(stringResource(R.string.bottomsheet_title), maxLines = 1, overflow = TextOverflow.Ellipsis) },
                                             leadingIcon = {
                                                 Icon(
                                                     imageVector = RhythmIcons.MusicNote,
@@ -1878,7 +1997,7 @@ private fun EditSongSheet(
                                         OutlinedTextField(
                                             value = artist,
                                             onValueChange = { artist = it },
-                                            label = { Text(stringResource(R.string.player_chip_artist)) },
+                                            label = { Text(stringResource(R.string.player_chip_artist), maxLines = 1, overflow = TextOverflow.Ellipsis) },
                                             leadingIcon = {
                                                 Icon(
                                                     imageVector = RhythmIcons.ArtistFilled,
@@ -1893,7 +2012,7 @@ private fun EditSongSheet(
                                         OutlinedTextField(
                                             value = album,
                                             onValueChange = { album = it },
-                                            label = { Text(stringResource(R.string.player_chip_album)) },
+                                            label = { Text(stringResource(R.string.player_chip_album), maxLines = 1, overflow = TextOverflow.Ellipsis) },
                                             leadingIcon = {
                                                 Icon(
                                                     imageVector = RhythmIcons.AlbumFilled,
@@ -1908,7 +2027,7 @@ private fun EditSongSheet(
                                         OutlinedTextField(
                                             value = albumArtist,
                                             onValueChange = { albumArtist = it },
-                                            label = { Text(stringResource(R.string.metadata_album_artist)) },
+                                            label = { Text(stringResource(R.string.metadata_album_artist), maxLines = 1, overflow = TextOverflow.Ellipsis) },
                                             leadingIcon = {
                                                 Icon(
                                                     imageVector = RhythmIcons.ArtistFilled,
@@ -1923,7 +2042,7 @@ private fun EditSongSheet(
                                         OutlinedTextField(
                                             value = composer,
                                             onValueChange = { composer = it },
-                                            label = { Text(stringResource(R.string.metadata_composer)) },
+                                            label = { Text(stringResource(R.string.metadata_composer), maxLines = 1, overflow = TextOverflow.Ellipsis) },
                                             leadingIcon = {
                                                 Icon(
                                                     imageVector = RhythmIcons.Edit,
@@ -1938,7 +2057,7 @@ private fun EditSongSheet(
                                         OutlinedTextField(
                                             value = genre,
                                             onValueChange = { genre = it },
-                                            label = { Text(stringResource(R.string.bottomsheet_genre)) },
+                                            label = { Text(stringResource(R.string.bottomsheet_genre), maxLines = 1, overflow = TextOverflow.Ellipsis) },
                                             leadingIcon = {
                                                 Icon(
                                                     imageVector = RhythmIcons.Category,
@@ -1950,29 +2069,38 @@ private fun EditSongSheet(
                                             singleLine = true
                                         )
 
+                                        OutlinedTextField(
+                                            value = year,
+                                            onValueChange = { input ->
+                                                if (input.all { it.isDigit() } && input.length <= 4) {
+                                                    year = input
+                                                }
+                                            },
+                                            label = { Text(stringResource(R.string.bottomsheet_year), maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                                            leadingIcon = {
+                                                Icon(
+                                                    imageVector = RhythmIcons.DateRange,
+                                                    contentDescription = null
+                                                )
+                                            },
+                                            modifier = Modifier.fillMaxWidth(),
+                                            shape = RoundedCornerShape(16.dp),
+                                            singleLine = true,
+                                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                                        )
+
                                         Row(
                                             modifier = Modifier.fillMaxWidth(),
                                             horizontalArrangement = Arrangement.spacedBy(12.dp)
                                         ) {
                                             OutlinedTextField(
-                                                value = year,
-                                                onValueChange = { year = it },
-                                                label = { Text(stringResource(R.string.bottomsheet_year)) },
-                                                leadingIcon = {
-                                                    Icon(
-                                                        imageVector = RhythmIcons.DateRange,
-                                                        contentDescription = null
-                                                    )
-                                                },
-                                                modifier = Modifier.weight(1f),
-                                                shape = RoundedCornerShape(16.dp),
-                                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-                                            )
-
-                                            OutlinedTextField(
                                                 value = trackNumber,
-                                                onValueChange = { trackNumber = it },
-                                                label = { Text(stringResource(R.string.bottomsheet_track)) },
+                                                onValueChange = { input ->
+                                                    if (input.all { it.isDigit() } && input.length <= 3) {
+                                                        trackNumber = input
+                                                    }
+                                                },
+                                                label = { Text(stringResource(R.string.bottomsheet_track), maxLines = 1, overflow = TextOverflow.Ellipsis) },
                                                 leadingIcon = {
                                                     Icon(
                                                         imageVector = RhythmIcons.FormatListNumbered,
@@ -1981,13 +2109,18 @@ private fun EditSongSheet(
                                                 },
                                                 modifier = Modifier.weight(1f),
                                                 shape = RoundedCornerShape(16.dp),
+                                                singleLine = true,
                                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                                             )
 
                                             OutlinedTextField(
                                                 value = discNumber,
-                                                onValueChange = { discNumber = it },
-                                                label = { Text(stringResource(R.string.metadata_disc)) },
+                                                onValueChange = { input ->
+                                                    if (input.all { it.isDigit() } && input.length <= 3) {
+                                                        discNumber = input
+                                                    }
+                                                },
+                                                label = { Text(stringResource(R.string.metadata_disc), maxLines = 1, overflow = TextOverflow.Ellipsis) },
                                                 leadingIcon = {
                                                     Icon(
                                                         imageVector = RhythmIcons.FormatListNumbered,
@@ -1996,6 +2129,7 @@ private fun EditSongSheet(
                                                 },
                                                 modifier = Modifier.weight(1f),
                                                 shape = RoundedCornerShape(16.dp),
+                                                singleLine = true,
                                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                                             )
                                         }
@@ -2076,95 +2210,6 @@ private fun EditSongSheet(
                                                 Text(stringResource(R.string.ui_save))
                                             }
                                         }
-
-                                        Spacer(modifier = Modifier.height(16.dp))
-
-                                if (NetworkClient.isYTMusicApiEnabled()) {
-                                    Button(
-                                        onClick = {
-                                            isFetchingOnlineArt = true
-                                            coroutineScope.launch(Dispatchers.IO) {
-                                                try {
-                                                    val apiService = NetworkClient.ytmusicApiService
-                                                    if (apiService != null) {
-                                                        val searchQuery = "${title.trim()} ${artist.trim()}"
-                                                        val searchRequest = YTMusicSearchRequest(
-                                                            context = YTMusicContext(YTMusicClient()),
-                                                            query = searchQuery,
-                                                            params = "EgWKAQIIAWoKEAoQAxAEEAkQBQ%3D%3D"
-                                                        )
-                                                        val response = apiService.search(request = searchRequest)
-                                                        if (response.isSuccessful) {
-                                                            val imageUrl = response.body()?.extractAlbumImageUrl()
-                                                            if (!imageUrl.isNullOrEmpty()) {
-                                                                val okRequest = okhttp3.Request.Builder().url(imageUrl).build()
-                                                                val okResponse = NetworkClient.genericHttpClient.newCall(okRequest).execute()
-                                                                if (okResponse.isSuccessful) {
-                                                                    val bytes = okResponse.body.bytes()
-                                                                    val tempFile = File(context.cacheDir, "temp_artwork_fetched_${song.id}.jpg")
-                                                                    tempFile.writeBytes(bytes)
-                                                                    withContext(Dispatchers.Main) {
-                                                                        selectedImageUri = Uri.fromFile(tempFile)
-                                                                        removeArtwork = false
-                                                                        Toast.makeText(context, R.string.songinfobottomsheet_artwork_fetched_successfully_click, Toast.LENGTH_SHORT).show()
-                                                                    }
-                                                                } else {
-                                                                    withContext(Dispatchers.Main) {
-                                                                        Toast.makeText(context, R.string.songinfobottomsheet_failed_to_download_artwork_1, Toast.LENGTH_SHORT).show()
-                                                                    }
-                                                                }
-                                                            } else {
-                                                                withContext(Dispatchers.Main) {
-                                                                    Toast.makeText(context, R.string.songinfobottomsheet_no_artwork_found_for, Toast.LENGTH_SHORT).show()
-                                                                }
-                                                            }
-                                                        } else {
-                                                            withContext(Dispatchers.Main) {
-                                                                Toast.makeText(context, R.string.songinfobottomsheet_online_search_failed, Toast.LENGTH_SHORT).show()
-                                                            }
-                                                        }
-                                                    } else {
-                                                        withContext(Dispatchers.Main) {
-                                                            Toast.makeText(context, R.string.songinfobottomsheet_online_api_service_unavailable, Toast.LENGTH_SHORT).show()
-                                                        }
-                                                    }
-                                                } catch (e: Exception) {
-                                                    withContext(Dispatchers.Main) {
-                                                        Toast.makeText(context, context.getString(R.string.error_fetching_artwork, e.message ?: ""), Toast.LENGTH_LONG).show()
-                                                    }
-                                                } finally {
-                                                    withContext(Dispatchers.Main) {
-                                                        isFetchingOnlineArt = false
-                                                    }
-                                                }
-                                            }
-                                        },
-                                        enabled = !isFetchingOnlineArt && title.isNotBlank() && artist.isNotBlank(),
-                                        shape = RoundedCornerShape(14.dp),
-                                        colors = ButtonDefaults.buttonColors(
-                                            containerColor = MaterialTheme.colorScheme.primaryContainer,
-                                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                                        )
-                                    ) {
-                                        if (isFetchingOnlineArt) {
-                                            ActionProgressLoader(
-                                                size = 18.dp,
-                                                color = MaterialTheme.colorScheme.onPrimaryContainer
-                                            )
-                                            Spacer(modifier = Modifier.width(8.dp))
-                                            Text(stringResource(R.string.songinfobottomsheet_fetching))
-                                        } else {
-                                            Icon(
-                                                imageVector = MaterialSymbolIcon("cloud_download", filled = true),
-                                                contentDescription = null,
-                                                modifier = Modifier.size(18.dp)
-                                            )
-                                            Spacer(modifier = Modifier.width(8.dp))
-                                            Text(stringResource(R.string.songinfobottomsheet_fetch_online_art))
-                                        }
-                                    }
-                                    Spacer(modifier = Modifier.height(8.dp))
-                                }
                                     }
                                 }
                             }
@@ -2281,374 +2326,286 @@ private fun EditSongSheet(
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
+                        .padding(horizontal = 20.dp)
                         .padding(end = endPadding)
                         .verticalScroll(editScrollState),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     Spacer(modifier = Modifier.height(2.dp))
 
-                    Surface(
+                    Box(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 20.dp),
-                        shape = RoundedCornerShape(24.dp),
-                        color = MaterialTheme.colorScheme.surfaceContainerLow,
-                        tonalElevation = 1.dp
+                            .size(196.dp)
+                            .align(Alignment.CenterHorizontally)
+                            .clip(songArtShape)
+                            .background(MaterialTheme.colorScheme.surfaceVariant),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Column(
+                        AsyncImage(
+                            model = ImageRequest.Builder(context)
+                                .apply(
+                                    ImageUtils.buildImageRequest(
+                                        artworkPreviewUri,
+                                        song.title,
+                                        context.cacheDir,
+                                        M3PlaceholderType.TRACK
+                                    )
+                                )
+                                .crossfade(true)
+                                .build(),
+                            contentDescription = stringResource(R.string.content_desc_album_artwork),
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+
+                        IconButton(
+                            onClick = {
+                                imagePickerLauncher.launch(
+                                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                )
+                            },
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(14.dp)
+                                .align(Alignment.TopEnd)
+                                .size(40.dp)
+                                .background(
+                                    color = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.86f),
+                                    shape = CircleShape
+                                )
                         ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(196.dp)
-                                    .clip(songArtShape)
-                                    .background(MaterialTheme.colorScheme.surfaceVariant),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                AsyncImage(
-                                    model = ImageRequest.Builder(context)
-                                        .apply(
-                                            ImageUtils.buildImageRequest(
-                                                artworkPreviewUri,
-                                                song.title,
-                                                context.cacheDir,
-                                                M3PlaceholderType.TRACK
-                                            )
-                                        )
-                                        .crossfade(true)
-                                        .build(),
-                                    contentDescription = stringResource(R.string.content_desc_album_artwork),
-                                    modifier = Modifier.fillMaxSize(),
-                                    contentScale = ContentScale.Crop
-                                )
-
-                                IconButton(
-                                    onClick = {
-                                        imagePickerLauncher.launch(
-                                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                                        )
-                                    },
-                                    modifier = Modifier
-                                        .align(Alignment.TopEnd)
-                                        .size(40.dp)
-                                        .background(
-                                            color = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.86f),
-                                            shape = CircleShape
-                                        )
-                                ) {
-                                    Icon(
-                                        imageVector = RhythmIcons.Image,
-                                        contentDescription = stringResource(R.string.songinfobottomsheet_change_artwork),
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                }
-                            }
-
-                                                        Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(12.dp)
-                            ) {
-                                RhythmDetailActionButton(
-                                    onClick = {
-                                        imagePickerLauncher.launch(
-                                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                                        )
-                                    },
-                                    height = 48.dp,
-                                    isFirst = true,
-                                    isLast = !hasArtworkPreview,
-                                    type = RhythmButtonType.Filled,
-                                    icon = RhythmIcons.Image,
-                                    iconSize = 18.dp,
-                                    text = if (selectedImageUri != null) "Change" else "Select"
-                                )
-
-                                if (hasArtworkPreview) {
-                                    RhythmDetailActionButton(
-                                        onClick = {
-                                            selectedImageUri = null
-                                            removeArtwork = true
-                                        },
-                                        height = 48.dp,
-                                        isFirst = false,
-                                        isLast = true,
-                                        type = RhythmButtonType.Tonal,
-                                        icon = RhythmIcons.Delete,
-                                        iconSize = 18.dp,
-                                        text = stringResource(R.string.content_desc_remove),
-                                        containerColor = MaterialTheme.colorScheme.errorContainer,
-                                        contentColor = MaterialTheme.colorScheme.onErrorContainer
-                                    )
-                                }
-                            }
-
-                            if (NetworkClient.isYTMusicApiEnabled()) {
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Button(
-                                    onClick = {
-                                        isFetchingOnlineArt = true
-                                        coroutineScope.launch(Dispatchers.IO) {
-                                            try {
-                                                val apiService = NetworkClient.ytmusicApiService
-                                                if (apiService != null) {
-                                                    val searchQuery = "${title.trim()} ${artist.trim()}"
-                                                    val searchRequest = YTMusicSearchRequest(
-                                                        context = YTMusicContext(YTMusicClient()),
-                                                        query = searchQuery,
-                                                        params = "EgWKAQIIAWoKEAoQAxAEEAkQBQ%3D%3D"
-                                                    )
-                                                    val response = apiService.search(request = searchRequest)
-                                                    if (response.isSuccessful) {
-                                                        val imageUrl = response.body()?.extractAlbumImageUrl()
-                                                        if (!imageUrl.isNullOrEmpty()) {
-                                                            val okRequest = okhttp3.Request.Builder().url(imageUrl).build()
-                                                            val okResponse = NetworkClient.genericHttpClient.newCall(okRequest).execute()
-                                                            if (okResponse.isSuccessful) {
-                                                                val bytes = okResponse.body.bytes()
-                                                                val tempFile = File(context.cacheDir, "temp_artwork_fetched_${song.id}.jpg")
-                                                                tempFile.writeBytes(bytes)
-                                                                withContext(Dispatchers.Main) {
-                                                                    selectedImageUri = Uri.fromFile(tempFile)
-                                                                    removeArtwork = false
-                                                                    Toast.makeText(context, R.string.songinfobottomsheet_artwork_fetched_successfully_click, Toast.LENGTH_SHORT).show()
-                                                                }
-                                                            } else {
-                                                                withContext(Dispatchers.Main) {
-                                                                    Toast.makeText(context, R.string.songinfobottomsheet_failed_to_download_artwork_1, Toast.LENGTH_SHORT).show()
-                                                                }
-                                                            }
-                                                        } else {
-                                                            withContext(Dispatchers.Main) {
-                                                                    Toast.makeText(context, R.string.songinfobottomsheet_no_artwork_found_for, Toast.LENGTH_SHORT).show()
-                                                            }
-                                                        }
-                                                    } else {
-                                                        withContext(Dispatchers.Main) {
-                                                            Toast.makeText(context, R.string.songinfobottomsheet_online_search_failed, Toast.LENGTH_SHORT).show()
-                                                        }
-                                                    }
-                                                } else {
-                                                    withContext(Dispatchers.Main) {
-                                                        Toast.makeText(context, R.string.songinfobottomsheet_online_api_service_unavailable, Toast.LENGTH_SHORT).show()
-                                                    }
-                                                }
-                                            } catch (e: Exception) {
-                                                withContext(Dispatchers.Main) {
-                                                    Toast.makeText(context, context.getString(R.string.error_fetching_artwork, e.message ?: ""), Toast.LENGTH_LONG).show()
-                                                }
-                                            } finally {
-                                                withContext(Dispatchers.Main) {
-                                                    isFetchingOnlineArt = false
-                                                }
-                                            }
-                                        }
-                                    },
-                                    enabled = !isFetchingOnlineArt && title.isNotBlank() && artist.isNotBlank(),
-                                    modifier = Modifier.fillMaxWidth(),
-                                    shape = RoundedCornerShape(16.dp),
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = MaterialTheme.colorScheme.primaryContainer,
-                                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                                    )
-                                ) {
-                                    if (isFetchingOnlineArt) {
-                                        ActionProgressLoader(
-                                            size = 18.dp,
-                                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                                        )
-                                        Spacer(modifier = Modifier.width(8.dp))
-                                        Text(stringResource(R.string.songinfobottomsheet_fetching_artwork))
-                                    } else {
-                                        Icon(
-                                            imageVector = MaterialSymbolIcon("cloud_download", filled = true),
-                                            contentDescription = null,
-                                            modifier = Modifier.size(18.dp)
-                                        )
-                                        Spacer(modifier = Modifier.width(8.dp))
-                                        Text(stringResource(R.string.songinfobottomsheet_fetch_online_art))
-                                    }
-                                }
-                            }
+                            Icon(
+                                imageVector = RhythmIcons.Image,
+                                contentDescription = stringResource(R.string.songinfobottomsheet_change_artwork),
+                                modifier = Modifier.size(20.dp)
+                            )
                         }
                     }
 
-                    Surface(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 20.dp),
-                        shape = RoundedCornerShape(24.dp),
-                        color = MaterialTheme.colorScheme.surfaceContainerLow,
-                        tonalElevation = 1.dp
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                    if (hasArtworkPreview) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            Text(
-                                text = context.getString(R.string.song_info_title),
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-
-                            OutlinedTextField(
-                                value = title,
-                                onValueChange = { title = it },
-                                label = { Text(stringResource(R.string.bottomsheet_title)) },
-                                leadingIcon = {
-                                    Icon(
-                                        imageVector = RhythmIcons.MusicNote,
-                                        contentDescription = null
+                            RhythmDetailActionButton(
+                                onClick = {
+                                    imagePickerLauncher.launch(
+                                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
                                     )
                                 },
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(16.dp),
-                                singleLine = true
+                                height = 48.dp,
+                                isFirst = true,
+                                isLast = false,
+                                type = RhythmButtonType.Filled,
+                                icon = RhythmIcons.Image,
+                                iconSize = 18.dp,
+                                text = if (selectedImageUri != null) "Change" else "Select"
                             )
 
-                            OutlinedTextField(
-                                value = artist,
-                                onValueChange = { artist = it },
-                                label = { Text(stringResource(R.string.player_chip_artist)) },
-                                leadingIcon = {
-                                    Icon(
-                                        imageVector = RhythmIcons.ArtistFilled,
-                                        contentDescription = null
-                                    )
+                            RhythmDetailActionButton(
+                                onClick = {
+                                    selectedImageUri = null
+                                    removeArtwork = true
                                 },
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(16.dp),
-                                singleLine = true
+                                height = 48.dp,
+                                isFirst = false,
+                                isLast = true,
+                                type = RhythmButtonType.Tonal,
+                                icon = RhythmIcons.Delete,
+                                iconSize = 18.dp,
+                                text = stringResource(R.string.content_desc_remove),
+                                containerColor = MaterialTheme.colorScheme.errorContainer,
+                                contentColor = MaterialTheme.colorScheme.onErrorContainer
                             )
-
-                            OutlinedTextField(
-                                value = album,
-                                onValueChange = { album = it },
-                                label = { Text(stringResource(R.string.player_chip_album)) },
-                                leadingIcon = {
-                                    Icon(
-                                        imageVector = RhythmIcons.AlbumFilled,
-                                        contentDescription = null
-                                    )
-                                },
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(16.dp),
-                                singleLine = true
-                            )
-
-                            OutlinedTextField(
-                                value = albumArtist,
-                                onValueChange = { albumArtist = it },
-                                label = { Text(stringResource(R.string.metadata_album_artist)) },
-                                leadingIcon = {
-                                    Icon(
-                                        imageVector = RhythmIcons.ArtistFilled,
-                                        contentDescription = null
-                                    )
-                                },
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(16.dp),
-                                singleLine = true
-                            )
-
-                            OutlinedTextField(
-                                value = composer,
-                                onValueChange = { composer = it },
-                                label = { Text(stringResource(R.string.metadata_composer)) },
-                                leadingIcon = {
-                                    Icon(
-                                        imageVector = RhythmIcons.Edit,
-                                        contentDescription = null
-                                    )
-                                },
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(16.dp),
-                                singleLine = true
-                            )
-
-                            OutlinedTextField(
-                                value = genre,
-                                onValueChange = { genre = it },
-                                label = { Text(stringResource(R.string.bottomsheet_genre)) },
-                                leadingIcon = {
-                                    Icon(
-                                        imageVector = RhythmIcons.Category,
-                                        contentDescription = null
-                                    )
-                                },
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(16.dp),
-                                singleLine = true
-                            )
-
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(12.dp)
-                            ) {
-                                OutlinedTextField(
-                                    value = year,
-                                    onValueChange = { input ->
-                                        if (input.all { it.isDigit() } && input.length <= 4) {
-                                            year = input
-                                        }
-                                    },
-                                    label = { Text(stringResource(R.string.bottomsheet_year)) },
-                                    leadingIcon = {
-                                        Icon(
-                                            imageVector = RhythmIcons.DateRange,
-                                            contentDescription = null
-                                        )
-                                    },
-                                    modifier = Modifier.weight(1f),
-                                    shape = RoundedCornerShape(16.dp),
-                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-                                )
-
-                                OutlinedTextField(
-                                    value = trackNumber,
-                                    onValueChange = { input ->
-                                        if (input.all { it.isDigit() } && input.length <= 3) {
-                                            trackNumber = input
-                                        }
-                                    },
-                                    label = { Text(stringResource(R.string.bottomsheet_track)) },
-                                    leadingIcon = {
-                                        Icon(
-                                            imageVector = RhythmIcons.FormatListNumbered,
-                                            contentDescription = null
-                                        )
-                                    },
-                                    modifier = Modifier.weight(1f),
-                                    shape = RoundedCornerShape(16.dp),
-                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-                                )
-
-                                OutlinedTextField(
-                                    value = discNumber,
-                                    onValueChange = { input ->
-                                        if (input.all { it.isDigit() } && input.length <= 3) {
-                                            discNumber = input
-                                        }
-                                    },
-                                    label = { Text(stringResource(R.string.metadata_disc)) },
-                                    leadingIcon = {
-                                        Icon(
-                                            imageVector = RhythmIcons.FormatListNumbered,
-                                            contentDescription = null
-                                        )
-                                    },
-                                    modifier = Modifier.weight(1f),
-                                    shape = RoundedCornerShape(16.dp),
-                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-                                )
-                            }
                         }
+                    } else {
+                        RhythmDetailActionButtonFullWidth(
+                            onClick = {
+                                imagePickerLauncher.launch(
+                                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                )
+                            },
+                            height = 48.dp,
+                            type = RhythmButtonType.Filled,
+                            icon = RhythmIcons.Image,
+                            iconSize = 18.dp,
+                            text = "Select Artwork"
+                        )
+                    }
+
+                    if (NetworkClient.isYTMusicApiEnabled()) {
+                        RhythmDetailActionButtonFullWidth(
+                            onClick = fetchOnlineArtwork,
+                            enabled = !isFetchingOnlineArt && title.isNotBlank() && artist.isNotBlank(),
+                            isLoading = isFetchingOnlineArt,
+                            height = 48.dp,
+                            type = RhythmButtonType.Tonal,
+                            icon = MaterialSymbolIcon("cloud_download", filled = true),
+                            iconSize = 18.dp,
+                            text = stringResource(R.string.songinfobottomsheet_fetch_online_art)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    Text(
+                        text = context.getString(R.string.song_info_title),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+
+                    OutlinedTextField(
+                        value = title,
+                        onValueChange = { title = it },
+                        label = { Text(stringResource(R.string.bottomsheet_title), maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = RhythmIcons.MusicNote,
+                                contentDescription = null
+                            )
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        singleLine = true
+                    )
+
+                    OutlinedTextField(
+                        value = artist,
+                        onValueChange = { artist = it },
+                        label = { Text(stringResource(R.string.player_chip_artist), maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = RhythmIcons.ArtistFilled,
+                                contentDescription = null
+                            )
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        singleLine = true
+                    )
+
+                    OutlinedTextField(
+                        value = album,
+                        onValueChange = { album = it },
+                        label = { Text(stringResource(R.string.player_chip_album), maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = RhythmIcons.AlbumFilled,
+                                contentDescription = null
+                            )
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        singleLine = true
+                    )
+
+                    OutlinedTextField(
+                        value = albumArtist,
+                        onValueChange = { albumArtist = it },
+                        label = { Text(stringResource(R.string.metadata_album_artist), maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = RhythmIcons.ArtistFilled,
+                                contentDescription = null
+                            )
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        singleLine = true
+                    )
+
+                    OutlinedTextField(
+                        value = composer,
+                        onValueChange = { composer = it },
+                        label = { Text(stringResource(R.string.metadata_composer), maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = RhythmIcons.Edit,
+                                contentDescription = null
+                            )
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        singleLine = true
+                    )
+
+                    OutlinedTextField(
+                        value = genre,
+                        onValueChange = { genre = it },
+                        label = { Text(stringResource(R.string.bottomsheet_genre), maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = RhythmIcons.Category,
+                                contentDescription = null
+                            )
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        singleLine = true
+                    )
+
+                    OutlinedTextField(
+                        value = year,
+                        onValueChange = { input ->
+                            if (input.all { it.isDigit() } && input.length <= 4) {
+                                year = input
+                            }
+                        },
+                        label = { Text(stringResource(R.string.bottomsheet_year), maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = RhythmIcons.DateRange,
+                                contentDescription = null
+                            )
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                    )
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = trackNumber,
+                            onValueChange = { input ->
+                                if (input.all { it.isDigit() } && input.length <= 3) {
+                                    trackNumber = input
+                                }
+                            },
+                            label = { Text(stringResource(R.string.bottomsheet_track), maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = RhythmIcons.FormatListNumbered,
+                                    contentDescription = null
+                                )
+                            },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(16.dp),
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                        )
+
+                        OutlinedTextField(
+                            value = discNumber,
+                            onValueChange = { input ->
+                                if (input.all { it.isDigit() } && input.length <= 3) {
+                                    discNumber = input
+                                }
+                            },
+                            label = { Text(stringResource(R.string.metadata_disc), maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = RhythmIcons.FormatListNumbered,
+                                    contentDescription = null
+                                )
+                            },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(16.dp),
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                        )
                     }
                 }
             }

@@ -20,6 +20,10 @@ import chromahub.rhythm.app.shared.presentation.components.common.RhythmButtonWe
 import chromahub.rhythm.app.shared.presentation.components.common.RhythmButtonSize
 import chromahub.rhythm.app.shared.presentation.components.common.RhythmButtonType
 import chromahub.rhythm.app.shared.presentation.screens.settings.TunerAnimatedSwitch
+import chromahub.rhythm.app.shared.presentation.theme.ExpressiveMaterialShape
+import chromahub.rhythm.app.shared.presentation.theme.rememberExpressiveShape
+import chromahub.rhythm.app.shared.presentation.components.dialogs.AutoEQSuggestionDialog
+import chromahub.rhythm.app.shared.presentation.components.common.getDeviceIcon
 
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -146,6 +150,8 @@ fun DeviceConfigurationBottomSheet(
     // Import/Export states
     var showImportDialog by remember { mutableStateOf(false) }
     var showExportDialog by remember { mutableStateOf(false) }
+    var showDetectionBottomSheet by remember { mutableStateOf(false) }
+    var detectedDeviceForSheet by remember { mutableStateOf<UserAudioDevice?>(null) }
     var importText by remember { mutableStateOf("") }
     var importError by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
@@ -177,17 +183,11 @@ fun DeviceConfigurationBottomSheet(
         modifier = Modifier.widthIn(max = 640.dp).fillMaxWidth(),
         onDismissRequest = onDismiss,
         sheetState = bottomSheetState,
-        dragHandle = {
-            BottomSheetDefaults.DragHandle(
-                color = MaterialTheme.colorScheme.primary
-            )
-        },
         shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
         containerColor = MaterialTheme.colorScheme.surfaceContainer
     ) {
         StandardBottomSheetHeader(
             title = stringResource(R.string.autoeq_manage),
-            subtitle = pluralStringResource(R.plurals.device_configuration_devices_configured, userDevices.size, userDevices.size),
             visible = true
         )
 
@@ -199,22 +199,32 @@ fun DeviceConfigurationBottomSheet(
         ) {
             
             Column {
-                // Description text
-                Text(
-                    text = stringResource(R.string.autoeq_configure_desc),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(vertical = 4.dp)
-                )
-                
                 // Current device detection hint
                 val currentLocation = musicViewModel.audioDeviceManager.currentDevice.collectAsState().value
                 if (currentLocation != null && currentLocation.id != "speaker") {
                     val matchedDevice = musicViewModel.findMatchingUserDevice(currentLocation.name)
-                    
-                    Spacer(modifier = Modifier.height(12.dp))
+                    val detectedType = matchedDevice?.type ?: UserAudioDevice.inferDeviceType(currentLocation.name, currentLocation.id)
+                    val detectedBrand = if (matchedDevice != null && matchedDevice.brand.isNotEmpty()) {
+                        matchedDevice.brand
+                    } else {
+                        UserAudioDevice.inferDeviceBrand(currentLocation.name)
+                    }
+                    val effectiveDevice = matchedDevice?.copy(
+                        brand = if (matchedDevice.brand.isNotEmpty()) matchedDevice.brand else detectedBrand
+                    ) ?: UserAudioDevice(
+                        id = currentLocation.id,
+                        name = currentLocation.name,
+                        type = detectedType,
+                        brand = detectedBrand,
+                        autoEQProfileName = null
+                    )
                     
                     Card(
+                        onClick = {
+                            HapticUtils.performHapticFeedback(context, haptics, HapticType.LIGHT)
+                            detectedDeviceForSheet = effectiveDevice
+                            showDetectionBottomSheet = true
+                        },
                         modifier = Modifier.fillMaxWidth(),
                         colors = CardDefaults.cardColors(
                             containerColor = if (matchedDevice != null) {
@@ -223,7 +233,7 @@ fun DeviceConfigurationBottomSheet(
                                 MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.3f)
                             }
                         ),
-                        shape = RoundedCornerShape(16.dp)
+                        shape = RoundedCornerShape(20.dp)
                     ) {
                         Row(
                             modifier = Modifier
@@ -233,7 +243,7 @@ fun DeviceConfigurationBottomSheet(
                             horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
                             Icon(
-                                imageVector = if (matchedDevice != null) RhythmIcons.Check else RhythmIcons.Info,
+                                imageVector = getDeviceIcon(effectiveDevice.type),
                                 contentDescription = null,
                                 tint = if (matchedDevice != null) {
                                     MaterialTheme.colorScheme.primary
@@ -311,43 +321,65 @@ fun DeviceConfigurationBottomSheet(
                 
                 // Devices List
                 if (userDevices.isEmpty()) {
-                    // Empty state
+                    // Empty state matching LibraryScreen
+                    val cookieShape = rememberExpressiveShape(ExpressiveMaterialShape.COOKIE_12)
+
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(48.dp),
+                            .padding(vertical = 12.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(24.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+                            )
                         ) {
-                            Surface(
-                                shape = CircleShape,
-                                color = MaterialTheme.colorScheme.surfaceVariant,
-                                modifier = Modifier.size(80.dp)
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 24.dp, vertical = 28.dp)
                             ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Icon(
-                                        imageVector = RhythmIcons.Headphones,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                                        modifier = Modifier.size(40.dp)
-                                    )
+                                Surface(
+                                    shape = cookieShape,
+                                    color = MaterialTheme.colorScheme.primaryContainer,
+                                    modifier = Modifier.size(72.dp)
+                                ) {
+                                    Box(
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = RhythmIcons.HeadphonesFilled,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                            modifier = Modifier.size(34.dp)
+                                        )
+                                    }
                                 }
+
+                                Spacer(modifier = Modifier.height(16.dp))
+
+                                Text(
+                                    text = stringResource(R.string.autoeq_no_devices),
+                                    style = MaterialTheme.typography.titleLarge,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                )
+
+                                Spacer(modifier = Modifier.height(6.dp))
+
+                                Text(
+                                    text = stringResource(R.string.autoeq_add_prompt),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                )
                             }
-                            Text(
-                                text = stringResource(R.string.autoeq_no_devices),
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Medium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Text(
-                                text = stringResource(R.string.autoeq_add_prompt),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                            )
                         }
                     }
                 } else {
@@ -391,8 +423,69 @@ fun DeviceConfigurationBottomSheet(
                         }
                     }
                 }
+
+                // Tips Card
+                Spacer(modifier = Modifier.height(16.dp))
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.4f)
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = MaterialSymbolIcon("lightbulb", filled = true),
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(
+                            text = stringResource(R.string.autoeq_configure_desc),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.85f)
+                        )
+                    }
+                }
             }
         }
+    }
+
+    // AutoEQ Suggestion BottomSheet for detected device
+    if (showDetectionBottomSheet && detectedDeviceForSheet != null) {
+        val equalizerEnabled by musicViewModel.appSettings.equalizerEnabled.collectAsState()
+        AutoEQSuggestionDialog(
+            deviceName = detectedDeviceForSheet!!.name,
+            savedDevice = detectedDeviceForSheet!!,
+            equalizerEnabled = equalizerEnabled,
+            onApplyProfile = {
+                val profile = autoEQProfiles.find { it.name == detectedDeviceForSheet!!.autoEQProfileName }
+                if (profile != null) {
+                    musicViewModel.applyAutoEQProfile(profile)
+                    musicViewModel.setActiveAudioDevice(detectedDeviceForSheet!!)
+                    Toast.makeText(context, "Applied ${profile.name} profile", Toast.LENGTH_SHORT).show()
+                }
+                showDetectionBottomSheet = false
+            },
+            onDismiss = {
+                showDetectionBottomSheet = false
+            },
+            onDontAskAgain = {
+                musicViewModel.dismissAutoEQSuggestion(detectedDeviceForSheet!!.id)
+                showDetectionBottomSheet = false
+            },
+            onConfigureDevice = {
+                showDetectionBottomSheet = false
+                deviceForAutoEQ = detectedDeviceForSheet
+                showAutoEQSelector = true
+            }
+        )
     }
     
     // Add/Edit Device Dialog
@@ -435,11 +528,23 @@ fun DeviceConfigurationBottomSheet(
                         containerColor = MaterialTheme.colorScheme.error
                     )
                 ) {
+                    Icon(
+                        imageVector = RhythmIcons.Delete,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(Modifier.width(8.dp))
                     Text(stringResource(R.string.button_delete))
                 }
             },
             dismissButton = {
                 OutlinedButton(onClick = { showDeleteConfirmDialog = null }) {
+                    Icon(
+                        imageVector = RhythmIcons.Close,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(Modifier.width(8.dp))
                     Text(stringResource(R.string.ui_cancel))
                 }
             },
@@ -449,27 +554,32 @@ fun DeviceConfigurationBottomSheet(
     
     // AutoEQ Profile Selector for Device
     if (showAutoEQSelector && deviceForAutoEQ != null) {
-        DeviceAutoEQSelector(
-            musicViewModel = musicViewModel,
-            device = deviceForAutoEQ!!,
-            onDismiss = {
+        AutoEQPresetPickerBottomSheet(
+            device = deviceForAutoEQ,
+            onDismissRequest = {
                 showAutoEQSelector = false
                 deviceForAutoEQ = null
             },
             onProfileSelected = { profile ->
+                val isNone = profile.name.isBlank() || profile.name.equals("None", ignoreCase = true)
                 // Save profile to device
                 val updatedDevice = deviceForAutoEQ!!.copy(
-                    autoEQProfileName = profile.name
+                    autoEQProfileName = if (isNone) null else profile.name
                 )
                 musicViewModel.saveUserAudioDevice(updatedDevice)
                 
-                // Apply the profile immediately
+                // Apply or reset the profile immediately
                 musicViewModel.applyAutoEQProfile(profile)
                 
                 // Show feedback
+                val message = if (isNone) {
+                    context.getString(R.string.device_configuration_disable_compensation)
+                } else {
+                    context.getString(R.string.device_configuration_applied_profile, profile.name)
+                }
                 Toast.makeText(
                     context,
-                    context.getString(R.string.device_configuration_applied_profile, profile.name),
+                    message,
                     Toast.LENGTH_SHORT
                 ).show()
                 
@@ -481,148 +591,173 @@ fun DeviceConfigurationBottomSheet(
     
     // Import Dialog
     if (showImportDialog) {
-        AlertDialog(
+        val importSheetState = rememberBottomSheetState(
+            initialValue = SheetValue.Hidden,
+            enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded)
+        )
+        LaunchedEffect(Unit) {
+            importSheetState.show()
+        }
+        val dismissImport = {
+            scope.launch {
+                importSheetState.hide()
+                showImportDialog = false
+                importText = ""
+                importError = null
+            }
+        }
+
+        RhythmAdaptiveModalSheet(
+            adaptiveType = SheetAdaptiveType.AUTO_DIALOG,
+            modifier = Modifier.widthIn(max = 640.dp).fillMaxWidth(),
             onDismissRequest = { 
                 showImportDialog = false
                 importText = ""
                 importError = null
             },
-            icon = {
-                Icon(
-                    imageVector = RhythmIcons.Download,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(28.dp)
+            sheetState = importSheetState,
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            containerColor = MaterialTheme.colorScheme.surfaceContainer
+        ) {
+            StandardBottomSheetHeader(
+                title = stringResource(R.string.autoeq_import_profile),
+                visible = true
+            )
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp)
+                    .padding(bottom = 24.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Text(
+                    text = stringResource(R.string.autoeq_import_paste_hint),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-            },
-            title = {
-                Text(stringResource(R.string.autoeq_import_profile))
-            },
-            text = {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(max = 500.dp)
-                        .verticalScroll(rememberScrollState())
+                
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                    ),
+                    shape = RoundedCornerShape(16.dp)
                 ) {
-                    Text(
-                        text = stringResource(R.string.autoeq_import_paste_hint),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    
-                    Surface(
-                        color = MaterialTheme.colorScheme.surfaceVariant,
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Column(modifier = Modifier.padding(12.dp)) {
-                            Text(
-                                text = stringResource(R.string.deviceconfigurationbottomsheet_supported_formats_fixedbandeq_text),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-                    
-                    OutlinedTextField(
-                        value = importText,
-                        onValueChange = { 
-                            importText = it
-                            importError = null
-                        },
-                        label = { Text(stringResource(R.string.autoeq_eq_settings_label)) },
-                        placeholder = { Text(stringResource(R.string.deviceconfigurationbottomsheet_paste_eq_data_here)) },
-                        minLines = 6,
-                        maxLines = 10,
-                        modifier = Modifier.fillMaxWidth(),
-                        isError = importError != null,
-                        supportingText = if (importError != null) {
-                            { Text(importError!!, color = MaterialTheme.colorScheme.error) }
-                        } else null,
-                        shape = RoundedCornerShape(12.dp)
-                    )
-                    
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        FilledTonalButton(
-                            onClick = { filePickerLauncher.launch("*/*") },
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            Icon(MaterialSymbolIcon("file_upload"), null, modifier = Modifier.size(16.dp))
-                            Spacer(Modifier.width(4.dp))
-                            Text(stringResource(R.string.text_file), style = MaterialTheme.typography.labelLarge)
-                        }
-                        FilledTonalButton(
-                            onClick = {
-                                clipboardManager.primaryClip?.getItemAt(0)?.text?.let {
-                                    importText = it.toString()
-                                }
-                            },
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            Icon(MaterialSymbolIcon("content_paste"), null, modifier = Modifier.size(16.dp))
-                            Spacer(Modifier.width(4.dp))
-                            Text(stringResource(R.string.text_paste), style = MaterialTheme.typography.labelLarge)
-                        }
-                    }
-                    
-                    FilledTonalButton(
-                        onClick = {
-                            val intent = Intent(Intent.ACTION_VIEW, ("https://autoeq.app").toUri())
-                            context.startActivity(intent)
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Icon(RhythmIcons.Link, null, modifier = Modifier.size(16.dp))
-                        Spacer(Modifier.width(6.dp))
-                        Text(stringResource(R.string.deviceconfigurationbottomsheet_open_autoeqapp))
+                    Column(modifier = Modifier.padding(14.dp)) {
+                        Text(
+                            text = stringResource(R.string.deviceconfigurationbottomsheet_supported_formats_fixedbandeq_text),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
                 }
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        val parsedProfiles = AutoEQImportExport.autoDetectAndParse(importText, context.getString(R.string.device_configuration_imported_profile))
-                        
-                        if (parsedProfiles.isNotEmpty()) {
-                            val profile = parsedProfiles.first()
-                            musicViewModel.applyAutoEQProfile(profile)
-                            showImportDialog = false
-                            importText = ""
-                            importError = null
-                            Toast.makeText(context, context.getString(R.string.deviceconfiguration_profile_imported, profile.name), Toast.LENGTH_SHORT).show()
-                        } else {
-                            importError = context.getString(R.string.device_configuration_parse_error)
-                        }
-                    },
-                    enabled = importText.isNotBlank()
-                ) {
-                    Icon(RhythmIcons.Check, null, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(6.dp))
-                    Text(stringResource(R.string.button_import))
-                }
-            },
-            dismissButton = {
-                OutlinedButton(
-                    onClick = { 
-                        showImportDialog = false
-                        importText = ""
+                
+                OutlinedTextField(
+                    value = importText,
+                    onValueChange = { 
+                        importText = it
                         importError = null
-                    }
+                    },
+                    label = { Text(stringResource(R.string.autoeq_eq_settings_label)) },
+                    placeholder = { Text(stringResource(R.string.deviceconfigurationbottomsheet_paste_eq_data_here)) },
+                    minLines = 5,
+                    maxLines = 8,
+                    modifier = Modifier.fillMaxWidth(),
+                    isError = importError != null,
+                    supportingText = if (importError != null) {
+                        { Text(importError!!, color = MaterialTheme.colorScheme.error) }
+                    } else null,
+                    shape = RoundedCornerShape(16.dp)
+                )
+                
+                RhythmGroupedButton(
+                    modifier = Modifier.fillMaxWidth(),
+                    size = RhythmButtonSize.Medium
                 ) {
-                    Icon(RhythmIcons.Close, null, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(6.dp))
-                    Text(stringResource(R.string.ui_cancel))
+                    RhythmButtonWeighted(
+                        onClick = { filePickerLauncher.launch("*/*") },
+                        weight = 1f,
+                        isFirst = true,
+                        isLast = false,
+                        size = RhythmButtonSize.Medium,
+                        type = RhythmButtonType.Tonal,
+                        icon = MaterialSymbolIcon("file_upload"),
+                        text = stringResource(R.string.text_file)
+                    )
+                    RhythmButtonWeighted(
+                        onClick = {
+                            clipboardManager.primaryClip?.getItemAt(0)?.text?.let {
+                                importText = it.toString()
+                            }
+                        },
+                        weight = 1f,
+                        isFirst = false,
+                        isLast = true,
+                        size = RhythmButtonSize.Medium,
+                        type = RhythmButtonType.Tonal,
+                        icon = MaterialSymbolIcon("content_paste"),
+                        text = stringResource(R.string.text_paste)
+                    )
                 }
-            },
-            shape = RoundedCornerShape(24.dp)
-        )
+                
+                FilledTonalButton(
+                    onClick = {
+                        val intent = Intent(Intent.ACTION_VIEW, ("https://autoeq.app").toUri())
+                        context.startActivity(intent)
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Icon(RhythmIcons.Link, null, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text(stringResource(R.string.deviceconfigurationbottomsheet_open_autoeqapp))
+                }
+
+                RhythmGroupedButton(
+                    modifier = Modifier.fillMaxWidth(),
+                    size = RhythmButtonSize.Large
+                ) {
+                    RhythmButtonWeighted(
+                        onClick = { dismissImport() },
+                        weight = 1f,
+                        isFirst = true,
+                        isLast = false,
+                        size = RhythmButtonSize.Large,
+                        type = RhythmButtonType.Tonal,
+                        icon = RhythmIcons.Close,
+                        text = stringResource(R.string.ui_cancel)
+                    )
+                    RhythmButtonWeighted(
+                        onClick = {
+                            val parsedProfiles = AutoEQImportExport.autoDetectAndParse(importText, context.getString(R.string.device_configuration_imported_profile))
+                            
+                            if (parsedProfiles.isNotEmpty()) {
+                                val profile = parsedProfiles.first()
+                                musicViewModel.applyAutoEQProfile(profile)
+                                scope.launch {
+                                    importSheetState.hide()
+                                    showImportDialog = false
+                                    importText = ""
+                                    importError = null
+                                }
+                                Toast.makeText(context, context.getString(R.string.deviceconfiguration_profile_imported, profile.name), Toast.LENGTH_SHORT).show()
+                            } else {
+                                importError = context.getString(R.string.device_configuration_parse_error)
+                            }
+                        },
+                        enabled = importText.isNotBlank(),
+                        weight = 1.3f,
+                        isFirst = false,
+                        isLast = true,
+                        size = RhythmButtonSize.Large,
+                        type = RhythmButtonType.Filled,
+                        icon = RhythmIcons.Check,
+                        text = stringResource(R.string.button_import)
+                    )
+                }
+            }
+        }
     }
     
     // Export Dialog
@@ -678,114 +813,159 @@ fun DeviceConfigurationBottomSheet(
             } else null
         }
         
-        AlertDialog(
+        val exportSheetState = rememberBottomSheetState(
+            initialValue = SheetValue.Hidden,
+            enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded)
+        )
+        LaunchedEffect(Unit) {
+            exportSheetState.show()
+        }
+        val dismissExport = {
+            scope.launch {
+                exportSheetState.hide()
+                showExportDialog = false
+            }
+        }
+
+        RhythmAdaptiveModalSheet(
+            adaptiveType = SheetAdaptiveType.AUTO_DIALOG,
+            modifier = Modifier.widthIn(max = 640.dp).fillMaxWidth(),
             onDismissRequest = { showExportDialog = false },
-            icon = {
-                Icon(
-                    imageVector = MaterialSymbolIcon("file_upload"),
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(28.dp)
-                )
-            },
-            title = {
-                Text(stringResource(R.string.deviceconfigurationbottomsheet_export_eq_profile))
-            },
-            text = {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    if (profileToExport != null) {
-                        val exportText = AutoEQImportExport.generateShareableText(profileToExport)
-                        
-                        Text(
-                            text = stringResource(R.string.bottomsheet_export_eq),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+            sheetState = exportSheetState,
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            containerColor = MaterialTheme.colorScheme.surfaceContainer
+        ) {
+            StandardBottomSheetHeader(
+                title = stringResource(R.string.deviceconfigurationbottomsheet_export_eq_profile),
+                visible = true
+            )
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp)
+                    .padding(bottom = 24.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                if (profileToExport != null) {
+                    val exportText = AutoEQImportExport.generateShareableText(profileToExport)
+                    
+                    Text(
+                        text = stringResource(R.string.bottomsheet_export_eq),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                        ),
+                        shape = RoundedCornerShape(16.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text(
+                                text = context.getString(R.string.device_configuration_active_profile_label, profileToExport.name),
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Text(
+                                text = exportText,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 8,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
+                    
+                    RhythmGroupedButton(
+                        modifier = Modifier.fillMaxWidth(),
+                        size = RhythmButtonSize.Medium
+                    ) {
+                        RhythmButtonWeighted(
+                            onClick = {
+                                clipboardManager.setPrimaryClip(ClipData.newPlainText(context.getString(R.string.deviceconfiguration_clip_label), exportText))
+                                Toast.makeText(context, R.string.deviceconfigurationbottomsheet_copied_to_clipboard, Toast.LENGTH_SHORT).show()
+                            },
+                            weight = 1f,
+                            isFirst = true,
+                            isLast = false,
+                            size = RhythmButtonSize.Medium,
+                            type = RhythmButtonType.Tonal,
+                            icon = MaterialSymbolIcon("content_paste"),
+                            text = stringResource(R.string.deviceconfigurationbottomsheet_copy)
                         )
-                        
-                        Surface(
-                            color = MaterialTheme.colorScheme.surfaceVariant,
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            Column(modifier = Modifier.padding(12.dp)) {
-                                Text(
-                                    text = context.getString(R.string.device_configuration_active_profile_label, profileToExport.name),
-                                    style = MaterialTheme.typography.titleSmall,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                                Spacer(modifier = Modifier.height(6.dp))
-                                Text(
-                                    text = exportText,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    maxLines = 8,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                            }
-                        }
-                        
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            FilledTonalButton(
-                                onClick = {
-                                    clipboardManager.setPrimaryClip(ClipData.newPlainText(context.getString(R.string.deviceconfiguration_clip_label), exportText))
-                                    Toast.makeText(context, R.string.deviceconfigurationbottomsheet_copied_to_clipboard, Toast.LENGTH_SHORT).show()
-                                },
-                                modifier = Modifier.weight(1f),
-                                shape = RoundedCornerShape(12.dp)
-                            ) {
-                                Icon(MaterialSymbolIcon("content_paste"), null, modifier = Modifier.size(16.dp))
-                                Spacer(Modifier.width(4.dp))
-                                Text(stringResource(R.string.deviceconfigurationbottomsheet_copy), style = MaterialTheme.typography.labelLarge)
-                            }
-                            FilledTonalButton(
-                                onClick = {
-                                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                                        type = "text/plain"
-                                        putExtra(Intent.EXTRA_SUBJECT, context.getString(R.string.device_configuration_share_subject, profileToExport.name))
-                                        putExtra(Intent.EXTRA_TEXT, exportText)
-                                    }
-                                    context.startActivity(Intent.createChooser(shareIntent, context.getString(R.string.device_configuration_share_title)))
-                                },
-                                modifier = Modifier.weight(1f),
-                                shape = RoundedCornerShape(12.dp)
-                            ) {
-                                Icon(RhythmIcons.Share, null, modifier = Modifier.size(16.dp))
-                                Spacer(Modifier.width(4.dp))
-                                Text(stringResource(R.string.crashactivity_share), style = MaterialTheme.typography.labelLarge)
-                            }
-                        }
-                    } else {
-                        Text(
-                            text = stringResource(R.string.bottomsheet_no_eq_export),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        RhythmButtonWeighted(
+                            onClick = {
+                                val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                                    type = "text/plain"
+                                    putExtra(Intent.EXTRA_SUBJECT, context.getString(R.string.device_configuration_share_subject, profileToExport.name))
+                                    putExtra(Intent.EXTRA_TEXT, exportText)
+                                }
+                                context.startActivity(Intent.createChooser(shareIntent, context.getString(R.string.device_configuration_share_title)))
+                            },
+                            weight = 1f,
+                            isFirst = false,
+                            isLast = true,
+                            size = RhythmButtonSize.Medium,
+                            type = RhythmButtonType.Tonal,
+                            icon = RhythmIcons.Share,
+                            text = stringResource(R.string.crashactivity_share)
                         )
                     }
+                } else {
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                        ),
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Icon(
+                                imageVector = RhythmIcons.Info,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Text(
+                                text = stringResource(R.string.bottomsheet_no_eq_export),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
                 }
-            },
-            confirmButton = {
-                Button(
-                    onClick = { showExportDialog = false }
+
+                RhythmGroupedButton(
+                    modifier = Modifier.fillMaxWidth(),
+                    size = RhythmButtonSize.Large
                 ) {
-                    Icon(RhythmIcons.Check, null, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(6.dp))
-                    Text(stringResource(R.string.ui_done))
+                    RhythmButtonWeighted(
+                        onClick = { dismissExport() },
+                        weight = 1f,
+                        isFirst = true,
+                        isLast = true,
+                        size = RhythmButtonSize.Large,
+                        type = RhythmButtonType.Filled,
+                        icon = RhythmIcons.Check,
+                        text = stringResource(R.string.ui_done)
+                    )
                 }
-            },
-            dismissButton = null,
-            shape = RoundedCornerShape(24.dp)
-        )
+            }
+        }
     }
 }
 
 @Composable
-private fun DeviceCard(
+internal fun DeviceCard(
     device: UserAudioDevice,
     isActive: Boolean,
     onSelect: () -> Unit,
@@ -793,6 +973,8 @@ private fun DeviceCard(
     onDelete: () -> Unit,
     onConfigureAutoEQ: () -> Unit
 ) {
+    val deviceShape = rememberExpressiveShape(ExpressiveMaterialShape.COOKIE_4)
+
     Card(
         onClick = onSelect,
         modifier = Modifier.fillMaxWidth(),
@@ -800,10 +982,10 @@ private fun DeviceCard(
             containerColor = if (isActive)
                 MaterialTheme.colorScheme.primaryContainer
             else
-                MaterialTheme.colorScheme.surfaceContainerHighest
+                MaterialTheme.colorScheme.surfaceContainerHigh
         ),
         elevation = CardDefaults.cardElevation(
-            defaultElevation = if (isActive) 0.dp else 0.dp
+            defaultElevation = 0.dp
         ),
         shape = RoundedCornerShape(24.dp)
     ) {
@@ -823,12 +1005,12 @@ private fun DeviceCard(
                 Box(
                     modifier = Modifier
                         .size(48.dp)
-                        .clip(CircleShape)
+                        .clip(deviceShape)
                         .background(
                             if (isActive)
-                                MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                                MaterialTheme.colorScheme.primary
                             else
-                                MaterialTheme.colorScheme.surfaceVariant
+                                MaterialTheme.colorScheme.surfaceContainerHighest
                         ),
                     contentAlignment = Alignment.Center
                 ) {
@@ -836,7 +1018,7 @@ private fun DeviceCard(
                         imageVector = getDeviceIcon(device.type),
                         contentDescription = null,
                         tint = if (isActive)
-                            MaterialTheme.colorScheme.primary
+                            MaterialTheme.colorScheme.onPrimary
                         else
                             MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(24.dp)
@@ -864,13 +1046,19 @@ private fun DeviceCard(
                         Text(
                             text = device.type.displayName,
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = if (isActive)
+                                MaterialTheme.colorScheme.onPrimaryContainer
+                            else
+                                MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                        if (device.autoEQProfileName != null) {
+                        if (!device.autoEQProfileName.isNullOrBlank()) {
                             Text(
                                 text = "•",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                color = if (isActive)
+                                    MaterialTheme.colorScheme.onPrimaryContainer
+                                else
+                                    MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Text(
                                 text = device.autoEQProfileName,
@@ -887,7 +1075,10 @@ private fun DeviceCard(
                             Text(
                                 text = "•",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                color = if (isActive)
+                                    MaterialTheme.colorScheme.onPrimaryContainer
+                                else
+                                    MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Text(
                                 text = stringResource(R.string.settings_mono_audio),
@@ -903,106 +1094,84 @@ private fun DeviceCard(
                 if (isActive) {
                     Box(
                         modifier = Modifier
-                            .size(32.dp)
+                            .size(28.dp)
                             .clip(CircleShape)
                             .background(MaterialTheme.colorScheme.primary),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = RhythmIcons.Check,
-                        contentDescription = stringResource(R.string.bottomsheet_active_device),
-                        tint = MaterialTheme.colorScheme.onPrimary,
+                            contentDescription = stringResource(R.string.bottomsheet_active_device),
+                            tint = MaterialTheme.colorScheme.onPrimary,
                             modifier = Modifier.size(18.dp)
                         )
                     }
                 }
             }
             
-            // Action Buttons - Centered Horizontally
-            Row(
+            // Action Buttons
+            RhythmGroupedButton(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
-                verticalAlignment = Alignment.CenterVertically
+                size = RhythmButtonSize.Medium
             ) {
-                FilledTonalButton(
+                RhythmButtonWeighted(
                     onClick = onConfigureAutoEQ,
-                    modifier = Modifier
-                        .weight(1f)
-                        .heightIn(min = 40.dp),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Icon(
-                        imageVector = MaterialSymbolIcon("headset_mic", filled = true),
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(Modifier.width(6.dp))
-                    Text(
-                        text = stringResource(R.string.license_autoeq_name),
-                        style = MaterialTheme.typography.labelMedium,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-                
-                OutlinedButton(
+                    weight = 1.1f,
+                    isFirst = true,
+                    isLast = false,
+                    size = RhythmButtonSize.Medium,
+                    type = RhythmButtonType.Tonal,
+                    containerColor = if (isActive) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.surfaceContainerHighest,
+                    contentColor = if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                    icon = MaterialSymbolIcon("headset_mic", filled = true),
+                    text = stringResource(R.string.license_autoeq_name)
+                )
+                RhythmButtonWeighted(
                     onClick = onEdit,
-                    modifier = Modifier
-                        .weight(1f)
-                        .heightIn(min = 40.dp),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Icon(
-                        imageVector = RhythmIcons.Edit,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(Modifier.width(6.dp))
-                    Text(
-                        text = stringResource(R.string.bottomsheet_timer_edit),
-                        style = MaterialTheme.typography.labelMedium,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-                
-                OutlinedButton(
+                    weight = 0.95f,
+                    isFirst = false,
+                    isLast = false,
+                    size = RhythmButtonSize.Medium,
+                    type = RhythmButtonType.Tonal,
+                    containerColor = if (isActive) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.surfaceContainerHighest,
+                    contentColor = MaterialTheme.colorScheme.onSurface,
+                    icon = RhythmIcons.Edit,
+                    text = stringResource(R.string.bottomsheet_timer_edit)
+                )
+                RhythmButtonWeighted(
                     onClick = onDelete,
-                    modifier = Modifier
-                        .weight(1f)
-                        .heightIn(min = 40.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = MaterialTheme.colorScheme.error
-                    ),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Icon(
-                        imageVector = RhythmIcons.Delete,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(Modifier.width(6.dp))
-                    Text(
-                        text = stringResource(R.string.button_delete),
-                        style = MaterialTheme.typography.labelMedium,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
+                    weight = 0.95f,
+                    isFirst = false,
+                    isLast = true,
+                    size = RhythmButtonSize.Medium,
+                    type = RhythmButtonType.Tonal,
+                    containerColor = MaterialTheme.colorScheme.errorContainer,
+                    contentColor = MaterialTheme.colorScheme.onErrorContainer,
+                    icon = RhythmIcons.Delete,
+                    text = stringResource(R.string.button_delete)
+                )
             }
         }
     }
 }
 
 @Composable
-private fun AddEditDeviceDialog(
+internal fun AddEditDeviceDialog(
     existingDevice: UserAudioDevice?,
     onDismiss: () -> Unit,
     onSave: (UserAudioDevice) -> Unit
 ) {
     var deviceName by remember { mutableStateOf(existingDevice?.name ?: "") }
-    var deviceBrand by remember { mutableStateOf(existingDevice?.brand ?: "") }
-    var selectedType by remember { mutableStateOf(existingDevice?.type ?: UserAudioDevice.DeviceType.HEADPHONES) }
+    var deviceBrand by remember {
+        mutableStateOf(
+            existingDevice?.brand ?: if (deviceName.isNotBlank()) UserAudioDevice.inferDeviceBrand(deviceName) else ""
+        )
+    }
+    var selectedType by remember {
+        mutableStateOf(
+            existingDevice?.type ?: if (deviceName.isNotBlank()) UserAudioDevice.inferDeviceType(deviceName) else UserAudioDevice.DeviceType.HEADPHONES
+        )
+    }
     var monoAudioEnabled by remember { mutableStateOf(existingDevice?.monoAudioEnabled ?: false) }
     
     val isEditing = existingDevice != null
@@ -1026,7 +1195,16 @@ private fun AddEditDeviceDialog(
             ) {
                 OutlinedTextField(
                     value = deviceName,
-                    onValueChange = { deviceName = it },
+                    onValueChange = { 
+                        deviceName = it
+                        if (!isEditing) {
+                            val inferredBrand = UserAudioDevice.inferDeviceBrand(it)
+                            if (inferredBrand.isNotEmpty()) {
+                                deviceBrand = inferredBrand
+                            }
+                            selectedType = UserAudioDevice.inferDeviceType(it)
+                        }
+                    },
                     label = { Text(stringResource(R.string.deviceconfigurationbottomsheet_device_name)) },
                     placeholder = { Text(stringResource(R.string.deviceconfigurationbottomsheet_eg_sony_wh1000xm4)) },
                     singleLine = true,
@@ -1160,331 +1338,4 @@ private fun AddEditDeviceDialog(
         },
         shape = RoundedCornerShape(24.dp)
     )
-}
-
-@Composable
-private fun DeviceAutoEQSelector(
-    musicViewModel: MusicViewModel,
-    device: UserAudioDevice,
-    onDismiss: () -> Unit,
-    onProfileSelected: (AutoEQProfile) -> Unit
-) {
-    val context = LocalContext.current
-    val haptics = LocalHapticFeedback.current
-    val profiles by musicViewModel.autoEQProfiles.collectAsState()
-    var searchQuery by remember { mutableStateOf(device.brand.ifEmpty { device.name }) }
-    var selectedBrand by remember { mutableStateOf<String?>(null) }
-    var selectedType by remember { mutableStateOf<String?>(null) }
-    
-    // Extract unique brands and types
-    val brands = remember(profiles) {
-        profiles.map { it.brand }.filter { it.isNotEmpty() }.distinct().sorted()
-    }
-    
-    val types = remember(profiles) {
-        profiles.map { it.type }.filter { it.isNotEmpty() }.distinct().sorted()
-    }
-    
-    val filteredProfiles = remember(profiles, searchQuery, selectedBrand, selectedType) {
-        var result = profiles
-        
-        if (searchQuery.isNotBlank()) {
-            val query = searchQuery.lowercase()
-            result = result.filter { 
-                it.name.lowercase().contains(query) ||
-                it.brand.lowercase().contains(query) ||
-                it.type.lowercase().contains(query)
-            }
-        }
-        
-        if (selectedBrand != null) {
-            result = result.filter { it.brand == selectedBrand }
-        }
-        
-        if (selectedType != null) {
-            result = result.filter { it.type == selectedType }
-        }
-        
-        result
-    }
-    
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        icon = {
-            Surface(
-                shape = CircleShape,
-                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
-                modifier = Modifier.size(40.dp)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        imageVector = MaterialSymbolIcon("headset_mic", filled = true),
-                        contentDescription = null,
-                        modifier = Modifier.size(28.dp)
-                    )
-                }
-            }
-        },
-        title = {
-            Column {
-                Text(
-                    text = stringResource(R.string.deviceconfigurationbottomsheet_select_autoeq_profile),
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    text = stringResource(R.string.device_configuration_for_device, device.name),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        },
-        text = {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(max = 500.dp)
-            ) {
-                // Enhanced Search Field
-                OutlinedTextField(
-                    value = searchQuery,
-                    onValueChange = { searchQuery = it },
-                    modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text(stringResource(R.string.deviceconfigurationbottomsheet_find_a_profile_for)) },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = RhythmIcons.SearchFilled,
-                            contentDescription = null,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    },
-                    trailingIcon = {
-                        if (searchQuery.isNotEmpty()) {
-                            IconButton(onClick = { searchQuery = "" }) {
-                                Icon(
-                                    imageVector = RhythmIcons.Close,
-                                    contentDescription = stringResource(R.string.ui_clear),
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            }
-                        }
-                    },
-                    shape = RoundedCornerShape(18.dp),
-                    singleLine = true
-                )
-                
-                Surface(
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                    shape = RoundedCornerShape(8.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(
-                        text = pluralStringResource(R.plurals.device_configuration_profiles_available, filteredProfiles.size, filteredProfiles.size),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
-                    )
-                }
-                
-                // Profile List
-                LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.weight(1f)
-                ) {
-                    item {
-                        val isNoneSelected = device.autoEQProfileName.isNullOrBlank() || device.autoEQProfileName == "None"
-                        EQProfileCard(
-                            profile = AutoEQProfile(
-                                name = context.getString(R.string.common_none),
-                                brand = context.getString(R.string.device_configuration_disable_compensation),
-                                type = "",
-                                bands = List(10) { 0f }
-                            ),
-                            isSelected = isNoneSelected,
-                            onClick = {
-                                HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
-                                onProfileSelected(AutoEQProfile("None", "", "", List(10) { 0f }))
-                            }
-                        )
-                    }
-
-                    if (filteredProfiles.isEmpty()) {
-                        item {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(200.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Column(
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = MaterialSymbolIcon("headset_mic", filled = true),
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f),
-                                        modifier = Modifier.size(32.dp)
-                                    )
-                                    Text(
-                                        text = stringResource(R.string.deviceconfigurationbottomsheet_no_matching_profiles_found),
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                            }
-                        }
-                    } else {
-                        items(filteredProfiles, key = { it.name }) { profile ->
-                            EQProfileCard(
-                                profile = profile,
-                                isSelected = device.autoEQProfileName == profile.name,
-                                onClick = {
-                                    HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
-                                    onProfileSelected(profile)
-                                }
-                            )
-                        }
-                    }
-                }
-            }
-        },
-        confirmButton = {},
-        dismissButton = {
-            OutlinedButton(onClick = onDismiss) {
-                Icon(RhythmIcons.Close, null, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(6.dp))
-                Text(stringResource(R.string.ui_cancel))
-            }
-        },
-        shape = RoundedCornerShape(24.dp)
-    )
-}
-
-@Composable
-private fun EQProfileCard(
-    profile: AutoEQProfile,
-    isSelected: Boolean,
-    onClick: () -> Unit
-) {
-    Card(
-        onClick = onClick,
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(20.dp)),
-        colors = CardDefaults.cardColors(
-            containerColor = if (isSelected)
-                MaterialTheme.colorScheme.primaryContainer
-            else
-                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
-        ),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = if (isSelected) 0.dp else 0.dp
-        ),
-        shape = RoundedCornerShape(20.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(14.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.weight(1f)
-            ) {
-                Icon(
-                    imageVector = MaterialSymbolIcon("headset_mic", filled = true),
-                    contentDescription = null,
-                    tint = if (isSelected)
-                        MaterialTheme.colorScheme.onPrimaryContainer
-                    else
-                        MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(if (isSelected) 30.dp else 26.dp)
-                )
-                
-                // Info
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = profile.name,
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
-                        color = if (isSelected)
-                            MaterialTheme.colorScheme.onPrimaryContainer
-                        else
-                            MaterialTheme.colorScheme.onSurface,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.padding(top = 4.dp)
-                    ) {
-                        if (profile.brand.isNotEmpty()) {
-                            Text(
-                                text = profile.brand,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = if (isSelected)
-                                    MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
-                                else
-                                    MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        if (profile.brand.isNotEmpty() && profile.type.isNotEmpty()) {
-                            Text(
-                                text = "•",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        if (profile.type.isNotEmpty()) {
-                            Text(
-                                text = profile.type,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = if (isSelected)
-                                    MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
-                                else
-                                    MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-                }
-            }
-            
-            // Selection Indicator
-            if (isSelected) {
-                Box(
-                    modifier = Modifier
-                        .size(24.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primary),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = RhythmIcons.Check,
-                        contentDescription = stringResource(R.string.streaming_selected),
-                        tint = MaterialTheme.colorScheme.onPrimary,
-                        modifier = Modifier.size(14.dp)
-                    )
-                }
-            }
-        }
-    }
-}
-
-private fun getDeviceIcon(type: UserAudioDevice.DeviceType): MaterialSymbolIcon {
-    return when (type) {
-        UserAudioDevice.DeviceType.HEADPHONES -> RhythmIcons.Headphones
-        UserAudioDevice.DeviceType.EARBUDS -> MaterialSymbolIcon("headset_mic")
-        UserAudioDevice.DeviceType.IEM -> MaterialSymbolIcon("headset_mic")
-        UserAudioDevice.DeviceType.SPEAKERS -> RhythmIcons.Speaker
-        UserAudioDevice.DeviceType.BLUETOOTH_SPEAKER -> RhythmIcons.BluetoothFilled
-        UserAudioDevice.DeviceType.CAR_AUDIO -> MaterialSymbolIcon("directions_car")
-        UserAudioDevice.DeviceType.STUDIO_MONITORS -> MaterialSymbolIcon("speaker_group")
-        UserAudioDevice.DeviceType.OTHER -> RhythmIcons.Headphones
-    }
 }

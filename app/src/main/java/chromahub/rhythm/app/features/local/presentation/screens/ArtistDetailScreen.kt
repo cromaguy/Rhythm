@@ -9,6 +9,7 @@ package chromahub.rhythm.app.features.local.presentation.screens
 
 import chromahub.rhythm.app.shared.presentation.components.icons.RhythmIcons
 import chromahub.rhythm.app.shared.presentation.components.icons.Icon
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -25,6 +26,8 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -137,6 +140,7 @@ fun ArtistDetailScreen(
 ) {
     val context = LocalContext.current
     val haptics = LocalHapticFeedback.current
+    BackHandler { onBack() }
     val isTablet = windowScreenWidthDp() >= 600
     val isLandscapeTablet = isTablet && windowScreenWidthDp() > windowScreenHeightDp()
 
@@ -299,6 +303,10 @@ fun ArtistDetailScreen(
     val artistArtworkSource by appSettings.artistArtworkSource.collectAsState()
     val displayArtworkUri = if (artistArtworkSource == ArtistArtworkSource.DISABLED) null else (currentArtworkUri ?: rawArtistSongs.firstNotNullOfOrNull { it.artworkUri })
     val backgroundColor = MaterialTheme.colorScheme.background
+    val artistArtShape = rememberExpressiveShapeFor(
+        target = ExpressiveShapeTarget.ARTIST_ART,
+        fallbackShape = CircleShape
+    )
 
     if (isLandscapeTablet) {
         // Animated infinite transition for backdrop orbs (matching AlbumDetailScreen)
@@ -435,7 +443,8 @@ fun ArtistDetailScreen(
                             Column(
                                 modifier = Modifier
                                     .fillMaxSize()
-                                    .padding(32.dp),
+                                    .padding(32.dp)
+                                    .verticalScroll(rememberScrollState()),
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 verticalArrangement = Arrangement.Center
                             ) {
@@ -450,7 +459,7 @@ fun ArtistDetailScreen(
                                                 HapticUtils.performHapticFeedback(context, haptics, HapticType.LIGHT)
                                                 showCustomizeImageDialog = true
                                             },
-                                        shape = RoundedCornerShape(32.dp),
+                                        shape = artistArtShape,
                                         shadowElevation = 12.dp
                                     ) {
                                         AsyncImage(
@@ -522,6 +531,34 @@ fun ArtistDetailScreen(
                                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.85f),
                                     textAlign = TextAlign.Center
                                 )
+
+                                if (!isArtistContentLoading && artistSongs.isNotEmpty()) {
+                                    Spacer(modifier = Modifier.height(20.dp))
+                                    ArtistActionButtons(
+                                        artistSongs = artistSongs,
+                                        onPlayAll = {
+                                            if (artistSongs.isNotEmpty()) {
+                                                onPlayAll(artistSongs)
+                                                onPlayerClick()
+                                            }
+                                        },
+                                        onShufflePlay = {
+                                            if (artistSongs.isNotEmpty()) {
+                                                onShufflePlay(artistSongs)
+                                                onPlayerClick()
+                                            }
+                                        },
+                                        onAddToQueueAll = {
+                                            if (artistSongs.isNotEmpty()) {
+                                                onAddToQueueAll(artistSongs)
+                                            }
+                                        },
+                                        haptics = haptics,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(horizontal = 8.dp)
+                                    )
+                                }
                             }
                         }
                     }
@@ -543,8 +580,8 @@ fun ArtistDetailScreen(
                             ),
                             verticalArrangement = Arrangement.spacedBy(2.dp)
                         ) {
-                            item {
-                                if (isArtistContentLoading) {
+                            if (isArtistContentLoading) {
+                                item {
                                     Box(
                                         modifier = Modifier
                                             .fillMaxWidth()
@@ -553,28 +590,6 @@ fun ArtistDetailScreen(
                                     ) {
                                         M3CircularLoader(modifier = Modifier.size(48.dp), color = MaterialTheme.colorScheme.primary, strokeWidth = 4f)
                                     }
-                                } else {
-                                    ArtistActionButtons(
-                                        artistSongs = artistSongs,
-                                        onPlayAll = {
-                                            if (artistSongs.isNotEmpty()) {
-                                                onPlayAll(artistSongs)
-                                                onPlayerClick()
-                                            }
-                                        },
-                                        onShufflePlay = {
-                                            if (artistSongs.isNotEmpty()) {
-                                                onShufflePlay(artistSongs)
-                                                onPlayerClick()
-                                            }
-                                        },
-                                        onAddToQueueAll = {
-                                            if (artistSongs.isNotEmpty()) {
-                                                onAddToQueueAll(artistSongs)
-                                            }
-                                        },
-                                        haptics = haptics
-                                    )
                                 }
                             }
 
@@ -1157,7 +1172,10 @@ private fun ArtistActionButtons(
     onPlayAll: () -> Unit,
     onShufflePlay: () -> Unit,
     onAddToQueueAll: () -> Unit,
-    haptics: androidx.compose.ui.hapticfeedback.HapticFeedback
+    haptics: androidx.compose.ui.hapticfeedback.HapticFeedback,
+    modifier: Modifier = Modifier
+        .fillMaxWidth()
+        .padding(horizontal = 24.dp, vertical = 8.dp)
 ) {
     val context = LocalContext.current
     var addToQueuePressed by remember { mutableStateOf(false) }
@@ -1179,9 +1197,7 @@ private fun ArtistActionButtons(
     }
     
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 24.dp, vertical = 8.dp),
+        modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Row(

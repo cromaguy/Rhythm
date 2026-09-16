@@ -1495,6 +1495,8 @@ fun LibraryScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
+            var showLibraryTabOrderSheet by remember { mutableStateOf(false) }
+
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -1532,6 +1534,9 @@ fun LibraryScreen(
                                     tabRowState.animateScrollToItem(index)
                                 }
                             },
+                            onLongClick = {
+                                showLibraryTabOrderSheet = true
+                            },
                             modifier = Modifier.padding(all = 2.dp),
                             content = {
                                 Row(
@@ -1565,8 +1570,6 @@ fun LibraryScreen(
                     }
                     
                     item {
-                        var showLibraryTabOrderSheet by remember { mutableStateOf(false) }
-
                         TabAnimation(
                             index = tabs.size,
                             selectedIndex = -1,
@@ -1598,16 +1601,16 @@ fun LibraryScreen(
                                 }
                             }
                         )
-
-                        if (showLibraryTabOrderSheet) {
-                            LibraryTabOrderBottomSheet(
-                                onDismiss = { showLibraryTabOrderSheet = false },
-                                appSettings = appSettings,
-                                haptics = haptics
-                            )
-                        }
                     }
                 }
+            }
+
+            if (showLibraryTabOrderSheet) {
+                LibraryTabOrderBottomSheet(
+                    onDismiss = { showLibraryTabOrderSheet = false },
+                    appSettings = appSettings,
+                    haptics = haptics
+                )
             }
             
             val isBackgroundProcessing by musicViewModel.isBackgroundProcessing.collectAsState()

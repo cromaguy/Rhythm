@@ -7,6 +7,7 @@ package chromahub.rhythm.app.features.local.presentation.screens
 
 import chromahub.rhythm.app.shared.presentation.components.icons.RhythmIcons
 import chromahub.rhythm.app.shared.presentation.components.icons.Icon
+import androidx.activity.compose.BackHandler
 import android.net.Uri
 import android.widget.Toast
 import androidx.compose.animation.*
@@ -215,6 +216,7 @@ fun AlbumDetailScreen(
 ) {
     val context = LocalContext.current
     val haptics = LocalHapticFeedback.current
+    BackHandler { onBack() }
     val density = LocalDensity.current
     val isTablet = windowScreenWidthDp() >= 600
     val isLandscapeTablet = isTablet && windowScreenWidthDp() > windowScreenHeightDp()
@@ -517,7 +519,10 @@ fun AlbumDetailScreen(
                             // Artwork card — canvas used as full backdrop, not inside the card
                             Surface(
                                 modifier = Modifier.size(300.dp),
-                                shape = RoundedCornerShape(32.dp),
+                                shape = rememberExpressiveShapeFor(
+                                    ExpressiveShapeTarget.ALBUM_ART,
+                                    fallbackShape = RoundedCornerShape(32.dp)
+                                ),
                                 shadowElevation = 16.dp
                             ) {
                                 if (displayArtworkUri != null) {

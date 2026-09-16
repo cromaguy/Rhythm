@@ -14,6 +14,7 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -32,8 +33,19 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import kotlin.math.abs
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun TabAnimation(
     modifier: Modifier = Modifier,
@@ -45,6 +57,7 @@ fun TabAnimation(
     title: String,
     selectedIndex: Int,
     onClick: () -> Unit,
+    onLongClick: (() -> Unit)? = null,
     transformOrigin: TransformOrigin = TransformOrigin.Center,
     content: @Composable () -> Unit
 ) {
@@ -102,9 +115,9 @@ fun TabAnimation(
         }
     }
 
-    Tab(
+    Box(
         modifier = modifier
-            .padding(all = 5.dp)
+            .padding(all = 2.dp)
             .graphicsLayer {
                 scaleX = scale.value
                 translationX = offsetX.value
@@ -113,15 +126,32 @@ fun TabAnimation(
             .clip(CircleShape)
             .background(
                 color = backgroundColor,
-                shape = RoundedCornerShape(50)
-            ),
-        selected = isSelected,
-        text = content,
-        onClick = {
-            HapticUtils.performHapticFeedback(context, hapticFeedback, HapticType.LIGHT)
-            onClick()
-        },
-        selectedContentColor = contentColor,
-        unselectedContentColor = contentColor
-    )
+                shape = CircleShape
+            )
+            .combinedClickable(
+                onClick = {
+                    HapticUtils.performHapticFeedback(context, hapticFeedback, HapticType.LIGHT)
+                    onClick()
+                },
+                onLongClick = onLongClick?.let { action ->
+                    {
+                        HapticUtils.performHapticFeedback(context, hapticFeedback, HapticType.HEAVY)
+                        action()
+                    }
+                }
+            )
+            .semantics {
+                this.selected = isSelected
+                this.role = Role.Tab
+            }
+            .height(44.dp)
+            .padding(horizontal = 16.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        CompositionLocalProvider(
+            LocalContentColor provides contentColor
+        ) {
+            content()
+        }
+    }
 }

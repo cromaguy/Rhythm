@@ -1150,14 +1150,19 @@ private fun LocalNavigationContent(
     }
 
     val navigateBackOrToLanding: () -> Unit = {
-        val popped = navController.popBackStack()
-        if (!popped) {
-            navController.navigate(startDestination) {
-                popUpTo(navController.graph.id) {
-                    inclusive = true
+        val previousRoute = navController.previousBackStackEntry?.destination?.route
+        if (previousRoute == Screen.Player.route) {
+            navController.popBackStack(Screen.Player.route, inclusive = true)
+        } else {
+            val popped = navController.popBackStack()
+            if (!popped) {
+                navController.navigate(startDestination) {
+                    popUpTo(navController.graph.id) {
+                        inclusive = true
+                    }
+                    launchSingleTop = true
+                    restoreState = true
                 }
-                launchSingleTop = true
-                restoreState = true
             }
         }
     }

@@ -415,6 +415,15 @@ fun PlayerScreen(
             onOpenFullScreenLyrics = { showFullScreenLyrics = true },
             onShowAlbumBottomSheet = {
                 song?.let { currentSong ->
+                    val playerInStack = try {
+                        navController.getBackStackEntry(Screen.Player.route)
+                        true
+                    } catch (_: IllegalArgumentException) {
+                        false
+                    }
+                    if (playerInStack) {
+                        navController.popBackStack(Screen.Player.route, inclusive = true)
+                    }
                     val album = resolveAlbumForSong(currentSong)
                     if (album != null) {
                         if (isStreamingMode) {
@@ -424,7 +433,6 @@ fun PlayerScreen(
                         }
                     } else {
                         if (isStreamingMode) {
-                            // Build a proper legacy encoded ID so the repository can search the server
                             val serviceId = currentSong.id.substringBefore("::", "JELLYFIN")
                             val streamingFallbackId = currentSong.albumId.takeIf { it.isNotBlank() }
                                 ?: "$serviceId::album::${currentSong.artist}::${currentSong.album}"
@@ -441,9 +449,17 @@ fun PlayerScreen(
                     val artistNames = splitArtistNames(currentSong.artist)
 
                     if (artistNames.size <= 1) {
-                        currentSongArtistForSheet?.let { artist ->
-                            navController.navigate(Screen.ArtistDetail.createRoute(artist.name))
+                        val artist = currentSongArtistForSheet ?: artists.firstOrNull { it.name.trim().equals(currentSong.artist.trim(), ignoreCase = true) } ?: Artist(id = currentSong.artist.trim(), name = currentSong.artist.trim())
+                        val playerInStack = try {
+                            navController.getBackStackEntry(Screen.Player.route)
+                            true
+                        } catch (_: IllegalArgumentException) {
+                            false
                         }
+                        if (playerInStack) {
+                            navController.popBackStack(Screen.Player.route, inclusive = true)
+                        }
+                        navController.navigate(Screen.ArtistDetail.createRoute(artist.name))
                     } else {
                         val resolvedCandidates = artistNames.map { name ->
                             artists.firstOrNull { it.name.trim().equals(name.trim(), ignoreCase = true) }
@@ -489,6 +505,7 @@ fun PlayerScreen(
                     }
                 }
             },
+            onEditBottomButtons = { showExpressiveBottomButtonsSheet = true },
             onBack = onBack,
             location = location,
             appSettings = appSettings,
@@ -700,9 +717,17 @@ fun PlayerScreen(
                         val artistNames = splitArtistNames(currentSong.artist)
 
                         if (artistNames.size <= 1) {
-                            currentSongArtistForSheet?.let { artist ->
-                                navController.navigate(Screen.ArtistDetail.createRoute(artist.name))
+                            val artist = currentSongArtistForSheet ?: artists.firstOrNull { it.name.trim().equals(currentSong.artist.trim(), ignoreCase = true) } ?: Artist(id = currentSong.artist.trim(), name = currentSong.artist.trim())
+                            val playerInStack = try {
+                                navController.getBackStackEntry(Screen.Player.route)
+                                true
+                            } catch (_: IllegalArgumentException) {
+                                false
                             }
+                            if (playerInStack) {
+                                navController.popBackStack(Screen.Player.route, inclusive = true)
+                            }
+                            navController.navigate(Screen.ArtistDetail.createRoute(artist.name))
                         } else {
                             candidateArtists = artistNames.map { name ->
                                 artists.firstOrNull { it.name.trim().equals(name.trim(), ignoreCase = true) }
@@ -801,6 +826,15 @@ fun PlayerScreen(
                 onDismiss = { showArtistChooserSheet = false },
                 onArtistSelected = { artist ->
                     showArtistChooserSheet = false
+                    val playerInStack = try {
+                        navController.getBackStackEntry(Screen.Player.route)
+                        true
+                    } catch (_: IllegalArgumentException) {
+                        false
+                    }
+                    if (playerInStack) {
+                        navController.popBackStack(Screen.Player.route, inclusive = true)
+                    }
                     navController.navigate(Screen.ArtistDetail.createRoute(artist.name))
                 },
                 haptic = haptic

@@ -256,7 +256,7 @@ fun MultiSelectionBottomSheet(
                             if (onToggleLikeAll != null) {
                                 add(
                                     MultiOptionItem(
-                                        icon = if (allAreLiked) MaterialSymbolIcon("thumb_down", filled = true) else MaterialSymbolIcon("thumb_up", filled = true),
+                                        icon = if (allAreLiked) MaterialSymbolIcon("thumb_up", filled = true) else MaterialSymbolIcon("thumb_up", filled = false),
                                         text = if (allAreLiked) context.getString(R.string.action_dislike) else context.getString(R.string.action_like),
                                         containerColor = tertiaryContainer,
                                         iconColor = onTertiaryContainer,

@@ -261,6 +261,10 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
     val virtualizerEnabled = appSettings.virtualizerEnabled
     val virtualizerStrength = appSettings.virtualizerStrength
     val monoAudioEnabled = appSettings.monoAudioEnabled
+    val customEqualizerPresets = appSettings.customEqualizerPresets
+    val equalizerPresetOrder = appSettings.equalizerPresetOrder
+    val hiddenEqualizerPresets = appSettings.hiddenEqualizerPresets
+    val pinnedAutoEQProfiles = appSettings.pinnedAutoEQProfiles
     
     // Spatialization status
     private val _spatializationStatus = MutableStateFlow("Unknown")
@@ -10018,6 +10022,120 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
         }
         appSettings.setDismissedAutoEQSuggestions(dismissedList.joinToString(","))
         Log.d(TAG, "Dismissed AutoEQ suggestion for device: $deviceId")
+    }
+
+    // Custom Equalizer Presets & Reordering
+    fun saveCustomEqualizerPreset(name: String, bands: List<Float>): chromahub.rhythm.app.shared.data.model.CustomEqualizerPreset {
+        val preset = chromahub.rhythm.app.shared.data.model.CustomEqualizerPreset(
+            name = name,
+            bands = bands
+        )
+        appSettings.saveCustomEqualizerPreset(preset)
+        Log.d(TAG, "Saved custom equalizer preset: $name")
+        return preset
+    }
+
+    fun deleteCustomEqualizerPreset(id: String) {
+        val customPresets = appSettings.customEqualizerPresets.value
+        val preset = customPresets.find { it.id == id }
+        val currentPreset = appSettings.equalizerPreset.value
+        val isActive = preset != null && (currentPreset == preset.name || currentPreset == "Custom")
+
+        appSettings.deleteCustomEqualizerPreset(id)
+
+        if (isActive) {
+            val flatBands = List(10) { 0f }
+            appSettings.setEqualizerPreset("Flat")
+            appSettings.setEqualizerBandLevels(flatBands.joinToString(","))
+            applyEqualizerPreset("Flat", flatBands)
+        }
+        Log.d(TAG, "Deleted custom equalizer preset: $id")
+    }
+
+    fun deleteAutoEQProfile(name: String) {
+        // 1. Unpin from pinned profiles
+        appSettings.unpinAutoEQProfile(name)
+
+        // 2. Check if this profile was actively selected or applied
+        val currentAutoEQ = appSettings.autoEQProfile.value
+        val currentPreset = appSettings.equalizerPreset.value
+        val isCurrentAutoEQ = currentAutoEQ.equals(name, ignoreCase = true) ||
+                currentPreset == "AutoEQ: $name" ||
+                currentPreset.equals(name, ignoreCase = true)
+
+        if (isCurrentAutoEQ) {
+            appSettings.setAutoEQProfile("")
+            appSettings.setEqualizerPreset("Flat")
+            val flatBands = List(10) { 0f }
+            appSettings.setEqualizerBandLevels(flatBands.joinToString(","))
+            applyEqualizerPreset("Flat", flatBands)
+        }
+
+        // 3. Clear this AutoEQ profile from any saved user audio devices
+        val currentDevicesJson = appSettings.userAudioDevices.value
+        if (currentDevicesJson != null) {
+            val devices = chromahub.rhythm.app.shared.data.model.UserAudioDevice.fromJson(currentDevicesJson)
+            var modified = false
+            val updatedDevices = devices.map { device ->
+                if (device.autoEQProfileName.equals(name, ignoreCase = true)) {
+                    modified = true
+                    device.copy(autoEQProfileName = null)
+                } else {
+                    device
+                }
+            }
+            if (modified) {
+                appSettings.setUserAudioDevices(chromahub.rhythm.app.shared.data.model.UserAudioDevice.toJson(updatedDevices))
+            }
+        }
+
+        // 4. Remove from preset order and hidden presets
+        val key = "AutoEQ: $name"
+        val order = appSettings.equalizerPresetOrder.value.toMutableList()
+        if (order.remove(key) || order.remove(name)) {
+            appSettings.setEqualizerPresetOrder(order)
+        }
+        val hidden = appSettings.hiddenEqualizerPresets.value.toMutableSet()
+        if (hidden.remove(key) || hidden.remove(name)) {
+            appSettings.setHiddenEqualizerPresets(hidden)
+        }
+        Log.d(TAG, "Deleted AutoEQ profile and cleaned references: $name")
+    }
+
+    fun setEqualizerPresetOrder(order: List<String>) {
+        appSettings.setEqualizerPresetOrder(order)
+    }
+
+    fun resetEqualizerPresetOrder() {
+        appSettings.resetEqualizerPresetOrder()
+    }
+
+    fun setHiddenEqualizerPresets(hidden: Set<String>) {
+        appSettings.setHiddenEqualizerPresets(hidden)
+    }
+
+    fun pinAutoEQProfile(name: String) {
+        appSettings.pinAutoEQProfile(name)
+        Log.d(TAG, "Pinned AutoEQ profile: $name")
+    }
+
+    fun unpinAutoEQProfile(name: String) {
+        appSettings.unpinAutoEQProfile(name)
+        Log.d(TAG, "Unpinned AutoEQ profile: $name")
+    }
+
+    fun assignAutoEQProfileToDevice(device: chromahub.rhythm.app.shared.data.model.UserAudioDevice, profileName: String?) {
+        val updated = device.copy(autoEQProfileName = profileName)
+        saveUserAudioDevice(updated)
+        if (profileName != null) {
+            val profile = autoEQManager.findProfileByName(profileName)
+            if (profile != null) {
+                applyAutoEQProfile(profile)
+            }
+            if (profileName.isNotBlank() && !profileName.equals("None", ignoreCase = true)) {
+                pinAutoEQProfile(profileName)
+            }
+        }
     }
     
     // Clean sleep timer implementation

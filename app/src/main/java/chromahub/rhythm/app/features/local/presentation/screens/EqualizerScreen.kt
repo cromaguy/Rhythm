@@ -77,6 +77,8 @@ import chromahub.rhythm.app.util.GsonUtils
 import chromahub.rhythm.app.util.HapticUtils
 import chromahub.rhythm.app.util.HapticType
 import chromahub.rhythm.app.util.EqualizerUtils
+import chromahub.rhythm.app.util.windowScreenWidthDp
+import chromahub.rhythm.app.util.AudioDeviceManager
 import chromahub.rhythm.app.activities.MainActivity
 import coil.compose.AsyncImage
 import coil.compose.rememberAsyncImagePainter
@@ -90,6 +92,7 @@ import chromahub.rhythm.app.shared.presentation.components.bottomsheets.Standard
 import chromahub.rhythm.app.shared.presentation.components.common.StyledProgressBar
 import chromahub.rhythm.app.shared.presentation.components.common.ProgressStyle
 import chromahub.rhythm.app.shared.presentation.components.common.ThumbStyle
+import chromahub.rhythm.app.shared.presentation.components.common.CookieHorizontalSlider
 import chromahub.rhythm.app.shared.presentation.components.bottomsheets.LicensesBottomSheet
 import chromahub.rhythm.app.ui.utils.LazyListStateSaver
 import chromahub.rhythm.app.features.local.presentation.viewmodel.MusicViewModel
@@ -276,14 +279,23 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
 import chromahub.rhythm.app.shared.presentation.components.bottomsheets.AutoEQPresetPickerBottomSheet
 import chromahub.rhythm.app.shared.presentation.components.bottomsheets.DeviceConfigurationBottomSheet
+import chromahub.rhythm.app.features.local.presentation.components.dialogs.SaveCustomPresetDialog
+import chromahub.rhythm.app.features.local.presentation.components.bottomsheets.EqualizerPresetOrderBottomSheet
+import chromahub.rhythm.app.shared.presentation.components.common.rhythmMarquee
 import chromahub.rhythm.app.shared.data.model.AutoEQProfile
+import chromahub.rhythm.app.shared.data.model.CustomEqualizerPreset
+import chromahub.rhythm.app.shared.data.model.EqualizerPresetType
+import chromahub.rhythm.app.shared.data.model.UnifiedEqualizerPreset
 import androidx.compose.ui.res.stringResource
 import java.util.Locale
 
 data class EqualizerPreset(
     val name: String,
     val icon: MaterialSymbolIcon,
-    val bands: List<Float>
+    val bands: List<Float>,
+    val type: EqualizerPresetType = EqualizerPresetType.BUILT_IN,
+    val id: String = name,
+    val brand: String? = null
 )
 
 @Composable
@@ -312,6 +324,7 @@ fun EqualizerScreen(
     val context = LocalContext.current
     val haptics = LocalHapticFeedback.current
     val scope = rememberCoroutineScope()
+    val isTablet = windowScreenWidthDp() >= 600
 
     // Collect states from settings
     val equalizerEnabledState by viewModel.equalizerEnabled.collectAsState()
@@ -357,22 +370,138 @@ fun EqualizerScreen(
     var isVirtualizerEnabled by remember(virtualizerEnabledState) { mutableStateOf(virtualizerEnabledState) }
     var virtualizerStrength by remember(virtualizerStrengthState) { mutableFloatStateOf(virtualizerStrengthState.toFloat()) }
 
-    // Preset definitions - Updated to 10 bands with AutoEQ-style precision values
-    // Bands: 31Hz, 62Hz, 125Hz, 250Hz, 500Hz, 1kHz, 2kHz, 4kHz, 8kHz, 16kHz
-    val presets = listOf(
-        EqualizerPreset("Flat", MaterialSymbolIcon("linear_scale", filled = true), listOf(0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f)),
-        EqualizerPreset("Rock", RhythmIcons.MusicNote, listOf(4.5f, 3.8f, 2.5f, 0.5f, -1.5f, -0.8f, 2.2f, 3.5f, 5.5f, 4.0f)),
-        EqualizerPreset("Pop", MaterialSymbolIcon("star", filled = true), listOf(-1.5f, 0.5f, 2.8f, 4.2f, 3.5f, 2.0f, 0.5f, 1.5f, 2.5f, 1.0f)),
-        EqualizerPreset("Jazz", MaterialSymbolIcon("piano", filled = true), listOf(3.5f, 2.8f, 1.5f, 0.5f, -1.5f, -0.5f, 1.8f, 2.5f, 4.0f, 3.0f)),
-        EqualizerPreset("Classical", RhythmIcons.Library, listOf(3.0f, 1.5f, -0.5f, -1.5f, -2.0f, -1.5f, 0.5f, 2.5f, 3.5f, 2.5f)),
-        EqualizerPreset("Electronic", MaterialSymbolIcon("graphic_eq", filled = true), listOf(5.5f, 4.8f, 3.5f, 1.5f, 0.5f, 0f, 2.5f, 4.5f, 5.0f, 4.5f)),
-        EqualizerPreset("Hip Hop", MaterialSymbolIcon("graphic_eq", filled = true), listOf(6.5f, 5.5f, 3.5f, 1.5f, -0.5f, -0.8f, 1.8f, 3.5f, 4.5f, 3.5f)),
-        EqualizerPreset("Vocal", MaterialSymbolIcon("record_voice_over", filled = true), listOf(-1.0f, 0.5f, 1.5f, 2.8f, 4.5f, 5.0f, 4.0f, 2.5f, 1.5f, 0.5f)),
-        EqualizerPreset("Bass Boost", RhythmIcons.SpeakerFilled, listOf(6.0f, 5.0f, 3.5f, 1.5f, 0f, 0f, 0f, 0f, 0f, 0f)),
-        EqualizerPreset("Treble Boost", MaterialSymbolIcon("waves", filled = true), listOf(0f, 0f, 0f, 0f, 0f, 0.5f, 1.5f, 3.0f, 5.0f, 6.0f)),
-        EqualizerPreset("V-Shape", MaterialSymbolIcon("show_chart", filled = true), listOf(5.5f, 4.0f, 1.5f, -1.0f, -2.5f, -2.5f, -0.5f, 2.0f, 4.5f, 5.5f)),
-        EqualizerPreset("Harman", RhythmIcons.HeadphonesFilled, listOf(3.5f, 2.0f, 0.5f, -1.0f, 0f, 0.5f, 1.5f, 2.0f, 2.5f, 1.0f))
-    )
+    // Preset definitions & collectors
+    val customPresets by viewModel.customEqualizerPresets.collectAsState()
+    val presetOrder by viewModel.equalizerPresetOrder.collectAsState()
+    val hiddenPresets by viewModel.hiddenEqualizerPresets.collectAsState()
+    val pinnedAutoEQ by viewModel.pinnedAutoEQProfiles.collectAsState()
+    val autoEQProfiles by viewModel.autoEQProfiles.collectAsState()
+    val currentAutoEQProfile by viewModel.appSettings.autoEQProfile.collectAsState()
+    val userDevicesJson by viewModel.appSettings.userAudioDevices.collectAsState()
+    val userDevices = remember(userDevicesJson) {
+        chromahub.rhythm.app.shared.data.model.UserAudioDevice.fromJson(userDevicesJson)
+    }
+
+    LaunchedEffect(Unit) {
+        if (autoEQProfiles.isEmpty()) {
+            viewModel.loadAutoEQProfiles()
+        }
+    }
+
+    val builtInPresets = remember {
+        listOf(
+            EqualizerPreset("Flat", MaterialSymbolIcon("linear_scale", filled = true), listOf(0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f)),
+            EqualizerPreset("Rock", RhythmIcons.MusicNote, listOf(4.5f, 3.8f, 2.5f, 0.5f, -1.5f, -0.8f, 2.2f, 3.5f, 5.5f, 4.0f)),
+            EqualizerPreset("Pop", MaterialSymbolIcon("star", filled = true), listOf(-1.5f, 0.5f, 2.8f, 4.2f, 3.5f, 2.0f, 0.5f, 1.5f, 2.5f, 1.0f)),
+            EqualizerPreset("Jazz", MaterialSymbolIcon("piano", filled = true), listOf(3.5f, 2.8f, 1.5f, 0.5f, -1.5f, -0.5f, 1.8f, 2.5f, 4.0f, 3.0f)),
+            EqualizerPreset("Classical", RhythmIcons.Library, listOf(3.0f, 1.5f, -0.5f, -1.5f, -2.0f, -1.5f, 0.5f, 2.5f, 3.5f, 2.5f)),
+            EqualizerPreset("Electronic", MaterialSymbolIcon("graphic_eq", filled = true), listOf(5.5f, 4.8f, 3.5f, 1.5f, 0.5f, 0f, 2.5f, 4.5f, 5.0f, 4.5f)),
+            EqualizerPreset("Hip Hop", MaterialSymbolIcon("graphic_eq", filled = true), listOf(6.5f, 5.5f, 3.5f, 1.5f, -0.5f, -0.8f, 1.8f, 3.5f, 4.5f, 3.5f)),
+            EqualizerPreset("Vocal", MaterialSymbolIcon("record_voice_over", filled = true), listOf(-1.0f, 0.5f, 1.5f, 2.8f, 4.5f, 5.0f, 4.0f, 2.5f, 1.5f, 0.5f)),
+            EqualizerPreset("Bass Boost", RhythmIcons.SpeakerFilled, listOf(6.0f, 5.0f, 3.5f, 1.5f, 0f, 0f, 0f, 0f, 0f, 0f)),
+            EqualizerPreset("Treble Boost", MaterialSymbolIcon("waves", filled = true), listOf(0f, 0f, 0f, 0f, 0f, 0.5f, 1.5f, 3.0f, 5.0f, 6.0f)),
+            EqualizerPreset("V-Shape", MaterialSymbolIcon("show_chart", filled = true), listOf(5.5f, 4.0f, 1.5f, -1.0f, -2.5f, -2.5f, -0.5f, 2.0f, 4.5f, 5.5f)),
+            EqualizerPreset("Harman", RhythmIcons.HeadphonesFilled, listOf(3.5f, 2.0f, 0.5f, -1.0f, 0f, 0.5f, 1.5f, 2.0f, 2.5f, 1.0f))
+        )
+    }
+
+    val allAvailablePresets = remember(builtInPresets, customPresets, pinnedAutoEQ, currentAutoEQProfile, autoEQProfiles, userDevices) {
+        val list = mutableListOf<EqualizerPreset>()
+
+        // 1. AutoEQ profiles (First by default)
+        pinnedAutoEQ.forEach { pinnedName ->
+            val profile = autoEQProfiles.find { it.name.equals(pinnedName, ignoreCase = true) }
+            val bands = profile?.bands ?: List(10) { 0f }
+            list.add(
+                EqualizerPreset(
+                    name = "AutoEQ: $pinnedName",
+                    icon = RhythmIcons.HeadphonesFilled,
+                    bands = bands,
+                    type = EqualizerPresetType.AUTO_EQ,
+                    id = "AutoEQ: $pinnedName",
+                    brand = profile?.brand
+                )
+            )
+        }
+
+        if (currentAutoEQProfile.isNotBlank() && currentAutoEQProfile != "None") {
+            val activeKey = "AutoEQ: $currentAutoEQProfile"
+            if (list.none { it.name == activeKey }) {
+                val profile = autoEQProfiles.find { it.name.equals(currentAutoEQProfile, ignoreCase = true) }
+                val bands = profile?.bands ?: List(10) { 0f }
+                list.add(
+                    EqualizerPreset(
+                        name = activeKey,
+                        icon = RhythmIcons.HeadphonesFilled,
+                        bands = bands,
+                        type = EqualizerPresetType.AUTO_EQ,
+                        id = activeKey,
+                        brand = profile?.brand
+                    )
+                )
+            }
+        }
+
+        userDevices.forEach { device ->
+            val profileName = device.autoEQProfileName
+            if (!profileName.isNullOrBlank() && profileName != "None") {
+                val deviceKey = "AutoEQ: $profileName"
+                if (list.none { it.name == deviceKey }) {
+                    val profile = autoEQProfiles.find { it.name.equals(profileName, ignoreCase = true) }
+                    val bands = profile?.bands ?: List(10) { 0f }
+                    list.add(
+                        EqualizerPreset(
+                            name = deviceKey,
+                            icon = RhythmIcons.HeadphonesFilled,
+                            bands = bands,
+                            type = EqualizerPresetType.AUTO_EQ,
+                            id = deviceKey,
+                            brand = profile?.brand
+                        )
+                    )
+                }
+            }
+        }
+
+        // 2. Custom presets
+        customPresets.forEach { custom ->
+            list.add(
+                EqualizerPreset(
+                    name = custom.name,
+                    icon = MaterialSymbolIcon("tune", filled = true),
+                    bands = custom.bands,
+                    type = EqualizerPresetType.CUSTOM,
+                    id = custom.id
+                )
+            )
+        }
+
+        // 3. Built-in presets
+        list.addAll(builtInPresets)
+
+        list
+    }
+
+    val displayPresets = remember(allAvailablePresets, presetOrder, hiddenPresets, selectedPreset) {
+        val isDefaultOrder = presetOrder == viewModel.appSettings.defaultEqualizerPresetOrder || presetOrder.isEmpty()
+        val sorted = if (isDefaultOrder) {
+            allAvailablePresets
+        } else {
+            allAvailablePresets.sortedBy { preset ->
+                val idx = presetOrder.indexOf(preset.name)
+                if (idx >= 0) {
+                    idx
+                } else if (preset.type == EqualizerPresetType.AUTO_EQ) {
+                    -100 + allAvailablePresets.indexOf(preset)
+                } else {
+                    1000 + allAvailablePresets.indexOf(preset)
+                }
+            }
+        }
+        sorted.filter { preset ->
+            preset.name !in hiddenPresets || preset.name == selectedPreset
+        }
+    }
 
     val frequencyLabels = listOf("31Hz", "62Hz", "125Hz", "250Hz", "500Hz", "1kHz", "2kHz", "4kHz", "8kHz", "16kHz")
 
@@ -385,6 +514,13 @@ fun EqualizerScreen(
         // Save to settings
         viewModel.appSettings.setEqualizerPreset(preset.name)
         viewModel.appSettings.setEqualizerBandLevels(preset.bands.joinToString(","))
+
+        if (preset.type == EqualizerPresetType.AUTO_EQ) {
+            val autoEQName = preset.name.removePrefix("AutoEQ: ")
+            viewModel.appSettings.setAutoEQProfile(autoEQName)
+        } else {
+            viewModel.appSettings.setAutoEQProfile("")
+        }
 
         // Apply to service
         viewModel.applyEqualizerPreset(preset.name, preset.bands)
@@ -399,17 +535,30 @@ fun EqualizerScreen(
         // Save to settings
         viewModel.appSettings.setEqualizerBandLevels(newLevels.joinToString(","))
         viewModel.appSettings.setEqualizerPreset("Custom")
+        viewModel.appSettings.setAutoEQProfile("")
 
         // Apply to service
         val levelShort = (level * 100).toInt().toShort()
         viewModel.setEqualizerBandLevel(band.toShort(), levelShort)
     }
 
+    // Dialog and Sheet States
+    var showSavePresetDialog by remember { mutableStateOf(false) }
+    var showReorderSheet by remember { mutableStateOf(false) }
     var showAutoEQSelector by remember { mutableStateOf(false) }
-    var showDeviceConfiguration by remember { mutableStateOf(false) }
+    var showDeviceConfigSheet by remember { mutableStateOf(false) }
     var showMenu by remember { mutableStateOf(false) }
 
-    val currentAutoEQProfile by viewModel.appSettings.autoEQProfile.collectAsState()
+    val isAutoEQPresetActive = remember(selectedPreset, currentAutoEQProfile, allAvailablePresets) {
+        val activePreset = allAvailablePresets.find { it.name == selectedPreset }
+        activePreset?.type == EqualizerPresetType.AUTO_EQ ||
+        selectedPreset.startsWith("AutoEQ:", ignoreCase = true) ||
+        (currentAutoEQProfile.isNotBlank() && currentAutoEQProfile != "None" && selectedPreset == currentAutoEQProfile)
+    }
+
+    val isManualCustom = remember(selectedPreset, allAvailablePresets) {
+        selectedPreset == "Custom" || allAvailablePresets.none { it.name == selectedPreset }
+    }
 
     // Screen entrance animation
     var showContent by remember { mutableStateOf(false) }
@@ -432,157 +581,149 @@ fun EqualizerScreen(
     )
 
     CollapsibleHeaderScreen(
-        title = stringResource(R.string.player_chip_equalizer),
+        title = if (isAutoEQPresetActive) "AutoEQ" else stringResource(R.string.player_chip_equalizer),
         showBackButton = true,
         onBackClick = { navController.popBackStack() },
         actions = {
-            // More Options Button
-            FilledIconButton(
+            // More Options Button - styled symmetrically to match back button
+            IconButton(
                 onClick = {
                     HapticUtils.performHapticFeedback(context, haptics, HapticType.LIGHT)
                     showMenu = true
-                },
-                colors = IconButtonDefaults.filledIconButtonColors(
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                ),
-                modifier = Modifier.size(38.dp)
+                }
             ) {
-                Icon(
-                    imageVector = RhythmIcons.More,
-                    contentDescription = stringResource(R.string.content_desc_more_options),
-                    modifier = Modifier.size(20.dp)
-                )
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(RoundedCornerShape(50))
+                        .background(MaterialTheme.colorScheme.surfaceContainerHigh),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = RhythmIcons.More,
+                        contentDescription = stringResource(R.string.content_desc_more_options),
+                        tint = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
             }
             // Dropdown Menu
             DropdownMenu(
                 expanded = showMenu,
                 onDismissRequest = { showMenu = false },
                 modifier = Modifier
-                    .widthIn(min = 220.dp)
-                    .background(MaterialTheme.colorScheme.surfaceContainer)
-                    .padding(5.dp),
-                shape = RoundedCornerShape(18.dp)
+                    .background(MaterialTheme.colorScheme.surface)
+                    .padding(4.dp),
+                shape = RoundedCornerShape(20.dp)
             ) {
-                // AutoEQ Profiles option
-                Surface(
-                    color = MaterialTheme.colorScheme.surface,
-                    shape = RoundedCornerShape(16.dp),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 8.dp, vertical = 2.dp)
-                ) {
-                    DropdownMenuItem(
-                        text = {
-                            Text(
-                                stringResource(R.string.equalizerscreen_autoeq_profiles),
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Medium,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                        },
-                        leadingIcon = {
-                            Surface(
-                                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f),
-                                shape = CircleShape,
-                                modifier = Modifier.size(32.dp)
-                            ) {
-                                Icon(
-                                    imageVector = MaterialSymbolIcon("auto_mode", filled = true),
-                                    contentDescription = null,
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .padding(6.dp)
-                                )
-                            }
-                        },
-                        onClick = {
-                            HapticUtils.performHapticFeedback(context, haptics, HapticType.LIGHT)
-                            showMenu = false
-                            showAutoEQSelector = true
-                        }
-                    )
-                }
+                val menuItems = listOf(
+                    Triple(
+                        stringResource(R.string.eq_reorder_presets),
+                        MaterialSymbolIcon("sort", filled = true),
+                        MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.6f) to MaterialTheme.colorScheme.onSecondaryContainer
+                    ) to {
+                        HapticUtils.performHapticFeedback(context, haptics, HapticType.LIGHT)
+                        showMenu = false
+                        showReorderSheet = true
+                    },
+                    Triple(
+                        stringResource(R.string.equalizerscreen_autoeq_profiles),
+                        MaterialSymbolIcon("headphones", filled = true),
+                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f) to MaterialTheme.colorScheme.onPrimaryContainer
+                    ) to {
+                        HapticUtils.performHapticFeedback(context, haptics, HapticType.LIGHT)
+                        showMenu = false
+                        showAutoEQSelector = true
+                    },
+                    Triple(
+                        stringResource(R.string.eq_manage_all_devices),
+                        MaterialSymbolIcon("tune", filled = true),
+                        MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.6f) to MaterialTheme.colorScheme.onTertiaryContainer
+                    ) to {
+                        HapticUtils.performHapticFeedback(context, haptics, HapticType.LIGHT)
+                        showMenu = false
+                        showDeviceConfigSheet = true
+                    },
+                    Triple(
+                        stringResource(R.string.eq_system_equalizer),
+                        RhythmIcons.Equalizer,
+                        MaterialTheme.colorScheme.surfaceContainerHighest to MaterialTheme.colorScheme.onSurfaceVariant
+                    ) to {
+                        HapticUtils.performHapticFeedback(context, haptics, HapticType.LIGHT)
+                        showMenu = false
+                        val activity = context as? Activity
+                        viewModel.openSystemEqualizer(activity, MainActivity.DISPLAY_AUDIO_EFFECT_CONTROL_PANEL_REQUEST)
+                    }
+                )
 
-                // Device Configuration option
-                Surface(
-                    color = MaterialTheme.colorScheme.surface,
-                    shape = RoundedCornerShape(16.dp),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 8.dp, vertical = 2.dp)
-                ) {
-                    DropdownMenuItem(
-                        text = {
-                            Text(
-                                stringResource(R.string.eq_manage_device),
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Medium,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                        },
-                        leadingIcon = {
-                            Surface(
-                                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f),
-                                shape = CircleShape,
-                                modifier = Modifier.size(32.dp)
-                            ) {
-                                Icon(
-                                    imageVector = MaterialSymbolIcon("device_hub", filled = true),
-                                    contentDescription = null,
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .padding(6.dp)
-                                )
-                            }
-                        },
-                        onClick = {
-                            HapticUtils.performHapticFeedback(context, haptics, HapticType.LIGHT)
-                            showMenu = false
-                            showDeviceConfiguration = true
-                        }
-                    )
-                }
+                val outerRadius = 16.dp
+                val innerRadius = 4.dp
+                val itemSpacing = 3.dp
 
-                // Open System Equalizer option
-                Surface(
-                    color = MaterialTheme.colorScheme.surface,
-                    shape = RoundedCornerShape(16.dp),
+                Column(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 8.dp, vertical = 2.dp)
+                        .widthIn(min = 220.dp)
+                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                    verticalArrangement = Arrangement.spacedBy(itemSpacing)
                 ) {
-                    DropdownMenuItem(
-                        text = {
-                            Text(
-                                stringResource(R.string.eq_system_equalizer),
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Medium,
-                                color = MaterialTheme.colorScheme.onSurface
+                    menuItems.forEachIndexed { index, (itemData, onClick) ->
+                        val (title, icon, colors) = itemData
+                        val (bgColor, tintColor) = colors
+
+                        val itemShape = when {
+                            menuItems.size == 1 -> RoundedCornerShape(outerRadius)
+                            index == 0 -> RoundedCornerShape(
+                                topStart = outerRadius, topEnd = outerRadius,
+                                bottomStart = innerRadius, bottomEnd = innerRadius
                             )
-                        },
-                        leadingIcon = {
-                            Surface(
-                                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f),
-                                shape = CircleShape,
-                                modifier = Modifier.size(32.dp)
+                            index == menuItems.size - 1 -> RoundedCornerShape(
+                                topStart = innerRadius, topEnd = innerRadius,
+                                bottomStart = outerRadius, bottomEnd = outerRadius
+                            )
+                            else -> RoundedCornerShape(innerRadius)
+                        }
+
+                        Surface(
+                            onClick = onClick,
+                            shape = itemShape,
+                            color = MaterialTheme.colorScheme.surfaceContainer,
+                            contentColor = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Icon(
-                                    imageVector = RhythmIcons.Equalizer,
-                                    contentDescription = null,
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .padding(6.dp)
+                                Surface(
+                                    modifier = Modifier.size(28.dp),
+                                    shape = CircleShape,
+                                    color = bgColor
+                                ) {
+                                    Box(
+                                        contentAlignment = Alignment.Center,
+                                        modifier = Modifier.fillMaxSize()
+                                    ) {
+                                        Icon(
+                                            imageVector = icon,
+                                            contentDescription = null,
+                                            tint = tintColor,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.width(10.dp))
+
+                                Text(
+                                    text = title,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Medium,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    modifier = Modifier.weight(1f)
                                 )
                             }
-                        },
-                        onClick = {
-                            HapticUtils.performHapticFeedback(context, haptics, HapticType.LIGHT)
-                            showMenu = false
-                            val activity = context as? Activity
-                            viewModel.openSystemEqualizer(activity, MainActivity.DISPLAY_AUDIO_EFFECT_CONTROL_PANEL_REQUEST)
                         }
-                    )
+                    }
                 }
             }
         },
@@ -598,7 +739,7 @@ fun EqualizerScreen(
                 shape = RoundedCornerShape(28.dp), 
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 24.dp)
+                    .padding(horizontal = if (isTablet) 28.dp else 24.dp)
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -662,6 +803,447 @@ fun EqualizerScreen(
             androidx.compose.foundation.lazy.LazyListState()
         }
 
+        val presetRowState = rememberLazyListState()
+        var presetToScrollTo by remember { mutableStateOf<String?>(null) }
+
+        LaunchedEffect(isManualCustom) {
+            if (isManualCustom) {
+                presetRowState.animateScrollToItem(0)
+            }
+        }
+
+        LaunchedEffect(presetToScrollTo, displayPresets) {
+            val target = presetToScrollTo ?: return@LaunchedEffect
+            val targetIndex = displayPresets.indexOfFirst {
+                it.name.equals(target, ignoreCase = true) ||
+                it.name.equals("AutoEQ: $target", ignoreCase = true) ||
+                it.name.removePrefix("AutoEQ: ").equals(target, ignoreCase = true)
+            }
+            if (targetIndex >= 0) {
+                val scrollIndex = if (isManualCustom) targetIndex + 1 else targetIndex
+                presetRowState.animateScrollToItem(scrollIndex)
+                presetToScrollTo = null
+            }
+        }
+
+        val presetsContent: @Composable () -> Unit = {
+            LazyRow(
+                state = presetRowState,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                contentPadding = PaddingValues(horizontal = 8.dp)
+            ) {
+                if (isManualCustom) {
+                    item(key = "custom_preset") {
+                        SmallTabAnimation(
+                            index = -1,
+                            selectedIndex = -1,
+                            title = stringResource(R.string.eq_preset_type_custom),
+                            selectedColor = MaterialTheme.colorScheme.primaryContainer,
+                            onSelectedColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                            unselectedColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                            onUnselectedColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            onClick = {
+                                HapticUtils.performHapticFeedback(context, haptics, HapticType.LIGHT)
+                                showSavePresetDialog = true
+                            },
+                            onLongClick = { showReorderSheet = true },
+                            content = {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = MaterialSymbolIcon("tune", filled = true),
+                                        contentDescription = stringResource(R.string.eq_preset_type_custom),
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Text(
+                                        text = stringResource(R.string.eq_preset_type_custom),
+                                        style = MaterialTheme.typography.labelLarge,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+                        )
+                    }
+                }
+
+                itemsIndexed(displayPresets, key = { _, it -> "preset_${it.id}" }) { index, preset ->
+                    val isSelected = selectedPreset == preset.name
+                    val selectedIndex = displayPresets.indexOfFirst { it.name == selectedPreset }
+
+                    val displayName = when (preset.type) {
+                        EqualizerPresetType.BUILT_IN -> getLocalizedPresetName(preset.name)
+                        EqualizerPresetType.AUTO_EQ -> preset.name.removePrefix("AutoEQ: ")
+                        EqualizerPresetType.CUSTOM -> preset.name
+                    }
+
+                    SmallTabAnimation(
+                        index = index,
+                        selectedIndex = selectedIndex,
+                        title = displayName,
+                        selectedColor = MaterialTheme.colorScheme.primaryContainer,
+                        onSelectedColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        unselectedColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                        onUnselectedColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        onClick = { applyPreset(preset) },
+                        onLongClick = { showReorderSheet = true },
+                        content = {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)
+                            ) {
+                                Icon(
+                                    imageVector = preset.icon,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Text(
+                                    text = displayName,
+                                    style = MaterialTheme.typography.labelLarge,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                                )
+
+                                if (preset.type == EqualizerPresetType.CUSTOM) {
+                                    Surface(
+                                        color = if (isSelected)
+                                            MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                                        else
+                                            MaterialTheme.colorScheme.surfaceVariant,
+                                        shape = RoundedCornerShape(4.dp),
+                                        modifier = Modifier.padding(start = 2.dp)
+                                    ) {
+                                        Text(
+                                            text = stringResource(R.string.eq_preset_type_custom),
+                                            style = MaterialTheme.typography.labelSmall,
+                                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp),
+                                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    )
+                }
+
+                item(key = "reorder_presets") {
+                    SmallTabAnimation(
+                        index = -3,
+                        selectedIndex = -2,
+                        title = stringResource(R.string.eq_reorder),
+                        selectedColor = MaterialTheme.colorScheme.secondaryContainer,
+                        onSelectedColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                        unselectedColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                        onUnselectedColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        onClick = {
+                            HapticUtils.performHapticFeedback(context, haptics, HapticType.LIGHT)
+                            showReorderSheet = true
+                        },
+                        content = {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)
+                            ) {
+                                Icon(
+                                    imageVector = MaterialSymbolIcon("sort", filled = true),
+                                    contentDescription = stringResource(R.string.eq_reorder),
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Text(
+                                    text = stringResource(R.string.eq_reorder),
+                                    style = MaterialTheme.typography.labelLarge,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+                        }
+                    )
+                }
+            }
+        }
+
+        val frequencyBandsContent: @Composable () -> Unit = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Text(
+                    text = context.getString(R.string.frequency_bands),
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.padding(horizontal = 8.dp)
+                )
+
+                Surface(
+                    color = MaterialTheme.colorScheme.surfaceContainer,
+                    shape = RoundedCornerShape(24.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        val primaryColor = MaterialTheme.colorScheme.primary
+                        val secondaryColor = MaterialTheme.colorScheme.secondary
+                        val tertiaryColor = MaterialTheme.colorScheme.tertiary
+                        val outlineColor = MaterialTheme.colorScheme.outline
+
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(80.dp)
+                        ) {
+                            Canvas(modifier = Modifier.fillMaxSize()) {
+                                val width = size.width
+                                val height = size.height
+                                val bandWidth = width / bandLevels.size
+
+                                drawLine(
+                                    color = outlineColor.copy(alpha = 0.3f),
+                                    start = Offset(0f, height / 2),
+                                    end = Offset(width, height / 2),
+                                    strokeWidth = 2.dp.toPx(),
+                                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(12f, 8f))
+                                )
+
+                                val points = bandLevels.mapIndexed { index, level ->
+                                    val x = (index + 0.5f) * bandWidth
+                                    val normalizedLevel = (level + 15f) / 30f
+                                    val y = height * (1f - normalizedLevel)
+                                    Offset(x, y)
+                                }
+
+                                if (points.size > 1) {
+                                    val filledPath = Path().apply {
+                                        moveTo(0f, height / 2)
+                                        lineTo(points[0].x, points[0].y)
+                                        for (i in 1 until points.size) {
+                                            val p0 = points[i - 1]
+                                            val p1 = points[i]
+                                            val controlX = (p0.x + p1.x) / 2
+                                            quadraticTo(controlX, p0.y, p1.x, p1.y)
+                                        }
+                                        lineTo(width, height / 2)
+                                        close()
+                                    }
+
+                                    drawPath(
+                                        path = filledPath,
+                                        brush = Brush.verticalGradient(
+                                            colors = listOf(
+                                                primaryColor.copy(alpha = 0.3f),
+                                                Color.Transparent
+                                            )
+                                        )
+                                    )
+
+                                    val curvePath = Path().apply {
+                                        moveTo(points[0].x, points[0].y)
+                                        for (i in 1 until points.size) {
+                                            val p0 = points[i - 1]
+                                            val p1 = points[i]
+                                            val controlX = (p0.x + p1.x) / 2
+                                            quadraticTo(controlX, p0.y, p1.x, p1.y)
+                                        }
+                                    }
+
+                                    drawPath(
+                                        path = curvePath,
+                                        brush = Brush.horizontalGradient(
+                                            colors = listOf(secondaryColor, primaryColor, tertiaryColor)
+                                        ),
+                                        style = Stroke(width = 4.dp.toPx(), cap = StrokeCap.Round)
+                                    )
+                                }
+
+                                points.forEachIndexed { index, point ->
+                                    val pointColor = when (index) {
+                                        0, 1 -> secondaryColor
+                                        2, 3, 4, 5, 6, 7 -> primaryColor
+                                        else -> tertiaryColor
+                                    }
+                                    drawCircle(
+                                        color = pointColor,
+                                        radius = 5.dp.toPx(),
+                                        center = point
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    val secondaryColor = MaterialTheme.colorScheme.secondary
+                    val primaryColor = MaterialTheme.colorScheme.primary
+                    val tertiaryColor = MaterialTheme.colorScheme.tertiary
+
+                    bandLevels.forEachIndexed { index, level ->
+                        val bandColor = when (index) {
+                            0, 1 -> secondaryColor
+                            2, 3, 4, 5, 6, 7 -> primaryColor
+                            else -> tertiaryColor
+                        }
+                        val bandThumbColor = when (index) {
+                            0, 1 -> MaterialTheme.colorScheme.onSecondary
+                            2, 3, 4, 5, 6, 7 -> MaterialTheme.colorScheme.onPrimary
+                            else -> MaterialTheme.colorScheme.onTertiary
+                        }
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            Column(
+                                modifier = Modifier.width(48.dp),
+                                horizontalAlignment = Alignment.End
+                            ) {
+                                Text(
+                                    text = frequencyLabels[index],
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+
+                            CookieHorizontalSlider(
+                                value = level,
+                                onValueChange = { roundedLevel ->
+                                    updateBandLevel(index, roundedLevel)
+                                },
+                                valueRange = -15f..15f,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(36.dp),
+                                activeTrackColor = bandColor,
+                                inactiveTrackColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                thumbColor = bandThumbColor
+                            )
+
+                            Text(
+                                text = if (level > 0) "+${String.format(Locale.ROOT, "%.1f", level)}" else String.format(Locale.ROOT, "%.1f", level),
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = bandColor,
+                                modifier = Modifier.width(40.dp),
+                                textAlign = TextAlign.End
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
+            }
+        }
+
+        val audioEffectsContent: @Composable (Boolean) -> Unit = { stackInColumn ->
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Text(
+                    text = context.getString(R.string.audio_effects),
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.padding(start = 8.dp, end = 8.dp, bottom = 16.dp)
+                )
+
+                val bassBoostCard: @Composable (Modifier) -> Unit = { cardModifier ->
+                    ExpressiveEffectCard(
+                        title = stringResource(R.string.settings_bass_boost),
+                        icon = RhythmIcons.SpeakerFilled,
+                        value = bassBoostStrength,
+                        valueRange = 0f..1000f,
+                        isEnabled = if (isOffloadEnforced) false else (isBassBoostEnabled && isBassBoostAvailableState),
+                        isAvailable = if (isOffloadEnforced) false else isBassBoostAvailableState,
+                        activeColor = MaterialTheme.colorScheme.secondary,
+                        activeContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                        onActiveContainerColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                        onValueChange = { strength ->
+                            if (!isOffloadEnforced) {
+                                HapticUtils.performHapticFeedback(context, haptics, HapticType.LIGHT)
+                                bassBoostStrength = strength
+                                viewModel.setBassBoost(true, strength.toInt().toShort())
+                            }
+                        },
+                        onEnabledChange = { enabled ->
+                            if (!isOffloadEnforced && isBassBoostAvailableState) {
+                                HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
+                                isBassBoostEnabled = enabled
+                                viewModel.setBassBoost(enabled, bassBoostStrength.toInt().toShort())
+                            }
+                        },
+                        statusText = when {
+                            isOffloadEnforced -> "Disabled (Lite Mode)"
+                            !isBassBoostAvailableState -> stringResource(R.string.common_unavailable)
+                            isBassBoostEnabled -> stringResource(R.string.common_active)
+                            isAudioOffloadActive -> "Enhance Lows\n(will disable offload)"
+                            else -> stringResource(R.string.eq_enhance_lows)
+                        },
+                        modifier = cardModifier
+                    )
+                }
+
+                val virtualizerCard: @Composable (Modifier) -> Unit = { cardModifier ->
+                    ExpressiveEffectCard(
+                        title = stringResource(R.string.virtualizer),
+                        icon = RhythmIcons.HeadphonesFilled,
+                        value = virtualizerStrength,
+                        valueRange = 0f..1000f,
+                        isEnabled = if (isOffloadEnforced) false else (isVirtualizerEnabled && isSpatializationAvailable),
+                        isAvailable = if (isOffloadEnforced) false else isSpatializationAvailable,
+                        activeColor = MaterialTheme.colorScheme.tertiary,
+                        activeContainerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                        onActiveContainerColor = MaterialTheme.colorScheme.onTertiaryContainer,
+                        onValueChange = { strength ->
+                            if (!isOffloadEnforced) {
+                                HapticUtils.performHapticFeedback(context, haptics, HapticType.LIGHT)
+                                virtualizerStrength = strength
+                                viewModel.setVirtualizer(true, strength.toInt().toShort())
+                            }
+                        },
+                        onEnabledChange = { enabled ->
+                            if (!isOffloadEnforced && isSpatializationAvailable) {
+                                HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
+                                isVirtualizerEnabled = enabled
+                                viewModel.setVirtualizer(enabled, virtualizerStrength.toInt().toShort())
+                            }
+                        },
+                        statusText = when {
+                            isOffloadEnforced -> "Disabled (Lite Mode)"
+                            !isSpatializationAvailable -> stringResource(R.string.eq_mono_only)
+                            isVirtualizerEnabled -> stringResource(R.string.common_active)
+                            isAudioOffloadActive -> "Widen Sound\n(will disable offload)"
+                            else -> stringResource(R.string.eq_widen_sound)
+                        },
+                        modifier = cardModifier
+                    )
+                }
+
+                if (stackInColumn) {
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        bassBoostCard(Modifier.fillMaxWidth())
+                        virtualizerCard(Modifier.fillMaxWidth())
+                    }
+                } else {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(16.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        bassBoostCard(Modifier.weight(1f))
+                        virtualizerCard(Modifier.weight(1f))
+                    }
+                }
+            }
+        }
+
         LazyColumn(
             state = lazyListState,
             modifier = modifier
@@ -670,425 +1252,113 @@ fun EqualizerScreen(
                     alpha = contentAlpha
                     translationY = contentOffset
                 },
-            contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 16.dp, bottom = (LocalMiniPlayerPadding.current.calculateBottomPadding() + 24.dp).coerceAtLeast(120.dp)),
+            contentPadding = PaddingValues(
+                start = if (isTablet) 28.dp else 20.dp,
+                end = if (isTablet) 28.dp else 20.dp,
+                top = 16.dp,
+                bottom = (LocalMiniPlayerPadding.current.calculateBottomPadding() + 24.dp).coerceAtLeast(120.dp)
+            ),
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
-
-            item {
-                AnimatedVisibility(
-                    visible = isEqualizerEnabled,
-                    enter = fadeIn() + expandVertically(),
-                    exit = fadeOut() + shrinkVertically()
-                ) {
-                    Column(modifier = Modifier.fillMaxWidth()) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(start = 8.dp, end = 8.dp, bottom = 16.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text(
-                                text = stringResource(R.string.settings_presets),
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-
-                            if (selectedPreset == "Custom") {
-                                TextButton(
-                                    onClick = { applyPreset(presets[0]) },
-                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = RhythmIcons.Refresh,
-                                        contentDescription = stringResource(R.string.equalizerscreen_reset_to_flat),
-                                        modifier = Modifier.size(16.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(6.dp))
-                                    Text(stringResource(R.string.ui_reset), style = MaterialTheme.typography.labelLarge)
-                                }
-                            }
-                        }
-
-                        LazyRow(
-                            horizontalArrangement = Arrangement.spacedBy(6.dp),
-                            contentPadding = PaddingValues(horizontal = 8.dp)
-                        ) {
-                            itemsIndexed(presets, key = { _, it -> "preset_${it.name}" }) { index, preset ->
-                                val isSelected = selectedPreset == preset.name
-                                val selectedIndex = presets.indexOfFirst { it.name == selectedPreset }
-
-                                SmallTabAnimation(
-                                    index = index,
-                                    selectedIndex = selectedIndex,
-                                    title = getLocalizedPresetName(preset.name),
-                                    selectedColor = MaterialTheme.colorScheme.primaryContainer,
-                                    onSelectedColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                                    unselectedColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                                    onUnselectedColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    onClick = { applyPreset(preset) },
-                                    content = {
-                                        Row(
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.spacedBy(6.dp),
-                                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)
-                                        ) {
-                                            Icon(
-                                                imageVector = preset.icon,
-                                                contentDescription = null,
-                                                modifier = Modifier.size(18.dp)
-                                            )
-                                            Text(
-                                                text = getLocalizedPresetName(preset.name),
-                                                style = MaterialTheme.typography.labelLarge,
-                                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
-                                            )
-                                        }
-                                    }
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-
-            item {
-                AnimatedVisibility(
-                    visible = isEqualizerEnabled,
-                    enter = fadeIn() + expandVertically(),
-                    exit = fadeOut() + shrinkVertically()
-                ) {
-                    Surface(
-                        color = MaterialTheme.colorScheme.surfaceContainerLow,
-                        shape = RoundedCornerShape(32.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
+            if (isTablet) {
+                item {
+                    if (isEqualizerEnabled) {
                         Column(
-                            modifier = Modifier.padding(vertical = 24.dp)
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalArrangement = Arrangement.spacedBy(24.dp)
                         ) {
-                            Text(
-                                text = context.getString(R.string.frequency_bands),
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                modifier = Modifier.padding(horizontal = 24.dp)
-                            )
+                            presetsContent()
 
-                            Spacer(modifier = Modifier.height(24.dp))
-
-                            Surface(
-                                color = MaterialTheme.colorScheme.surfaceContainerLowest,
-                                shape = RoundedCornerShape(24.dp),
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 16.dp)
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(24.dp),
+                                verticalAlignment = Alignment.Top
                             ) {
-                                Column(modifier = Modifier.padding(16.dp)) {
-                                    val primaryColor = MaterialTheme.colorScheme.primary
-                                    val secondaryColor = MaterialTheme.colorScheme.secondary
-                                    val tertiaryColor = MaterialTheme.colorScheme.tertiary
-                                    val outlineColor = MaterialTheme.colorScheme.outline
-
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .height(80.dp)
-                                    ) {
-                                        Canvas(modifier = Modifier.fillMaxSize()) {
-                                            val width = size.width
-                                            val height = size.height
-                                            val bandWidth = width / bandLevels.size
-
-                                            drawLine(
-                                                color = outlineColor.copy(alpha = 0.3f),
-                                                start = Offset(0f, height / 2),
-                                                end = Offset(width, height / 2),
-                                                strokeWidth = 2.dp.toPx(),
-                                                pathEffect = PathEffect.dashPathEffect(floatArrayOf(12f, 8f))
-                                            )
-
-                                            val points = bandLevels.mapIndexed { index, level ->
-                                                val x = (index + 0.5f) * bandWidth
-                                                val normalizedLevel = (level + 15f) / 30f
-                                                val y = height * (1f - normalizedLevel)
-                                                Offset(x, y)
-                                            }
-
-                                            if (points.size > 1) {
-                                                val filledPath = Path().apply {
-                                                    moveTo(0f, height / 2)
-                                                    lineTo(points[0].x, points[0].y)
-                                                    for (i in 1 until points.size) {
-                                                        val p0 = points[i - 1]
-                                                        val p1 = points[i]
-                                                        val controlX = (p0.x + p1.x) / 2
-                                                        quadraticTo(controlX, p0.y, p1.x, p1.y)
-                                                    }
-                                                    lineTo(width, height / 2)
-                                                    close()
-                                                }
-
-                                                drawPath(
-                                                    path = filledPath,
-                                                    brush = Brush.verticalGradient(
-                                                        colors = listOf(
-                                                            primaryColor.copy(alpha = 0.3f),
-                                                            Color.Transparent
-                                                        )
-                                                    )
-                                                )
-
-                                                val curvePath = Path().apply {
-                                                    moveTo(points[0].x, points[0].y)
-                                                    for (i in 1 until points.size) {
-                                                        val p0 = points[i - 1]
-                                                        val p1 = points[i]
-                                                        val controlX = (p0.x + p1.x) / 2
-                                                        quadraticTo(controlX, p0.y, p1.x, p1.y)
-                                                    }
-                                                }
-
-                                                drawPath(
-                                                    path = curvePath,
-                                                    brush = Brush.horizontalGradient(
-                                                        colors = listOf(secondaryColor, primaryColor, tertiaryColor)
-                                                    ),
-                                                    style = Stroke(width = 4.dp.toPx(), cap = StrokeCap.Round)
-                                                )
-                                            }
-
-                                            points.forEachIndexed { index, point ->
-                                                val pointColor = when (index) {
-                                                    0, 1 -> secondaryColor
-                                                    2, 3, 4, 5, 6, 7 -> primaryColor
-                                                    else -> tertiaryColor
-                                                }
-                                                drawCircle(
-                                                    color = pointColor,
-                                                    radius = 5.dp.toPx(),
-                                                    center = point
-                                                )
-                                            }
-                                        }
-                                    }
+                                Column(
+                                    modifier = Modifier.weight(1f),
+                                    verticalArrangement = Arrangement.spacedBy(24.dp)
+                                ) {
+                                    audioEffectsContent(windowScreenWidthDp() < 900)
+                                }
+                                Column(
+                                    modifier = Modifier.weight(1f),
+                                    verticalArrangement = Arrangement.spacedBy(24.dp)
+                                ) {
+                                    frequencyBandsContent()
                                 }
                             }
-
-                            Spacer(modifier = Modifier.height(32.dp))
-
+                        }
+                    } else {
+                        Box(
+                            modifier = Modifier.fillMaxWidth(),
+                            contentAlignment = Alignment.TopCenter
+                        ) {
                             Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 24.dp),
-                                verticalArrangement = Arrangement.spacedBy(16.dp)
+                                modifier = Modifier.widthIn(max = 680.dp).fillMaxWidth(),
+                                verticalArrangement = Arrangement.spacedBy(24.dp)
                             ) {
-                                val secondaryColor = MaterialTheme.colorScheme.secondary
-                                val primaryColor = MaterialTheme.colorScheme.primary
-                                val tertiaryColor = MaterialTheme.colorScheme.tertiary
-
-                                bandLevels.forEachIndexed { index, level ->
-                                    val bandColor = when (index) {
-                                        0, 1 -> secondaryColor
-                                        2, 3, 4, 5, 6, 7 -> primaryColor
-                                        else -> tertiaryColor
-                                    }
-
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(16.dp)
-                                    ) {
-                                        Column(
-                                            modifier = Modifier.width(48.dp),
-                                            horizontalAlignment = Alignment.End
-                                        ) {
-                                            Text(
-                                                text = frequencyLabels[index],
-                                                style = MaterialTheme.typography.labelMedium,
-                                                fontWeight = FontWeight.Bold,
-                                                color = MaterialTheme.colorScheme.onSurface
-                                            )
-                                        }
-
-                                        Slider(
-                                            value = level,
-                                            onValueChange = { newLevel ->
-                                                val roundedLevel = (kotlin.math.round(newLevel * 10) / 10f)
-                                                HapticUtils.performHapticFeedback(context, haptics, HapticType.LIGHT)
-                                                updateBandLevel(index, roundedLevel)
-                                            },
-                                            valueRange = -15f..15f,
-                                            steps = 299,
-                                            modifier = Modifier.weight(1f),
-                                            colors = SliderDefaults.colors(
-                                                thumbColor = bandColor,
-                                                activeTrackColor = bandColor,
-                                                inactiveTrackColor = MaterialTheme.colorScheme.surfaceContainerHighest
-                                            )
-                                        )
-
-                                        Text(
-                                            text = if (level > 0) "+${String.format(Locale.ROOT, "%.1f", level)}" else String.format(Locale.ROOT, "%.1f", level),
-                                            style = MaterialTheme.typography.labelMedium,
-                                            fontWeight = FontWeight.Bold,
-                                            color = bandColor,
-                                            modifier = Modifier.width(40.dp),
-                                            textAlign = TextAlign.End
-                                        )
-                                    }
-                                }
+                                audioEffectsContent(false)
                             }
                         }
                     }
                 }
-            }
-
-            item {
-                Column(modifier = Modifier.fillMaxWidth()) {
-                    Text(
-                        text = context.getString(R.string.audio_effects),
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.padding(start = 8.dp, end = 8.dp, bottom = 16.dp)
-                    )
-
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(16.dp),
-                        modifier = Modifier.fillMaxWidth()
+            } else {
+                item {
+                    AnimatedVisibility(
+                        visible = isEqualizerEnabled,
+                        enter = fadeIn() + expandVertically(),
+                        exit = fadeOut() + shrinkVertically()
                     ) {
-                        ExpressiveEffectCard(
-                            title = stringResource(R.string.settings_bass_boost),
-                            icon = RhythmIcons.SpeakerFilled,
-                            value = bassBoostStrength,
-                            valueRange = 0f..1000f,
-                            isEnabled = if (isOffloadEnforced) false else (isBassBoostEnabled && isBassBoostAvailableState),
-                            isAvailable = if (isOffloadEnforced) false else isBassBoostAvailableState,
-                            activeColor = MaterialTheme.colorScheme.secondary,
-                            activeContainerColor = MaterialTheme.colorScheme.secondaryContainer,
-                            onActiveContainerColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                            onValueChange = { strength ->
-                                if (!isOffloadEnforced) {
-                                    HapticUtils.performHapticFeedback(context, haptics, HapticType.LIGHT)
-                                    bassBoostStrength = strength
-                                    viewModel.setBassBoost(true, strength.toInt().toShort())
-                                }
-                            },
-                            onEnabledChange = { enabled ->
-                                if (!isOffloadEnforced && isBassBoostAvailableState) {
-                                    HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
-                                    isBassBoostEnabled = enabled
-                                    viewModel.setBassBoost(enabled, bassBoostStrength.toInt().toShort())
-                                }
-                            },
-                            statusText = when {
-                                isOffloadEnforced -> "Disabled (Lite Mode)"
-                                !isBassBoostAvailableState -> stringResource(R.string.common_unavailable)
-                                isBassBoostEnabled -> stringResource(R.string.common_active)
-                                isAudioOffloadActive -> "Enhance Lows\n(will disable offload)"
-                                else -> stringResource(R.string.eq_enhance_lows)
-                            },
-                            modifier = Modifier.weight(1f)
-                        )
-
-                        ExpressiveEffectCard(
-                            title = stringResource(R.string.virtualizer),
-                            icon = RhythmIcons.HeadphonesFilled,
-                            value = virtualizerStrength,
-                            valueRange = 0f..1000f,
-                            isEnabled = if (isOffloadEnforced) false else (isVirtualizerEnabled && isSpatializationAvailable),
-                            isAvailable = if (isOffloadEnforced) false else isSpatializationAvailable,
-                            activeColor = MaterialTheme.colorScheme.tertiary,
-                            activeContainerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                            onActiveContainerColor = MaterialTheme.colorScheme.onTertiaryContainer,
-                            onValueChange = { strength ->
-                                if (!isOffloadEnforced) {
-                                    HapticUtils.performHapticFeedback(context, haptics, HapticType.LIGHT)
-                                    virtualizerStrength = strength
-                                    viewModel.setVirtualizer(true, strength.toInt().toShort())
-                                }
-                            },
-                            onEnabledChange = { enabled ->
-                                if (!isOffloadEnforced && isSpatializationAvailable) {
-                                    HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
-                                    isVirtualizerEnabled = enabled
-                                    viewModel.setVirtualizer(enabled, virtualizerStrength.toInt().toShort())
-                                }
-                            },
-                            statusText = when {
-                                isOffloadEnforced -> "Disabled (Lite Mode)"
-                                !isSpatializationAvailable -> stringResource(R.string.eq_mono_only)
-                                isVirtualizerEnabled -> stringResource(R.string.common_active)
-                                isAudioOffloadActive -> "Widen Sound\n(will disable offload)"
-                                else -> stringResource(R.string.eq_widen_sound)
-                            },
-                            modifier = Modifier.weight(1f)
-                        )
+                        presetsContent()
                     }
                 }
-            }
 
-            item {
-                AnimatedVisibility(
-                    visible = isEqualizerEnabled,
-                    enter = fadeIn() + expandVertically(),
-                    exit = fadeOut() + shrinkVertically()
-                ) {
-                    Material3SettingsGroup(
-                        title = stringResource(R.string.settings_section_advanced),
-                        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                        items = listOf(
-                            Material3SettingsItem(
-                                icon = MaterialSymbolIcon("auto_mode", filled = true),
-                                iconTint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                iconBackgroundTint = MaterialTheme.colorScheme.primaryContainer,
-                                title = {
-                                    Text(stringResource(R.string.equalizerscreen_autoeq_profiles), fontWeight = FontWeight.SemiBold)
-                                },
-                                description = {
-                                    Text(stringResource(R.string.equalizerscreen_apply_headphonespecific_equalization))
-                                },
-                                onClick = {
-                                    HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
-                                    showAutoEQSelector = true
-                                }
-                            ),
-                            Material3SettingsItem(
-                                icon = MaterialSymbolIcon("device_hub", filled = true),
-                                iconTint = MaterialTheme.colorScheme.onSecondaryContainer,
-                                iconBackgroundTint = MaterialTheme.colorScheme.secondaryContainer,
-                                title = {
-                                    Text(stringResource(R.string.autoeq_manage), fontWeight = FontWeight.SemiBold)
-                                },
-                                description = {
-                                    Text(stringResource(R.string.equalizerscreen_import_export_and_organize))
-                                },
-                                onClick = {
-                                    HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
-                                    showDeviceConfiguration = true
-                                }
-                            ),
-                            Material3SettingsItem(
-                                icon = MaterialSymbolIcon("arrow_outward", filled = true),
-                                iconTint = MaterialTheme.colorScheme.onTertiaryContainer,
-                                iconBackgroundTint = MaterialTheme.colorScheme.tertiaryContainer,
-                                title = {
-                                    Text(stringResource(R.string.system_equalizer), fontWeight = FontWeight.SemiBold)
-                                },
-                                description = {
-                                    Text(stringResource(R.string.equalizerscreen_access_androids_builtin_settings))
-                                },
-                                onClick = {
-                                    HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
-                                    val activity = context as? Activity
-                                    viewModel.openSystemEqualizer(activity, MainActivity.DISPLAY_AUDIO_EFFECT_CONTROL_PANEL_REQUEST)
-                                }
-                            )
-                        )
-                    )
+                item {
+                    AnimatedVisibility(
+                        visible = isEqualizerEnabled,
+                        enter = fadeIn() + expandVertically(),
+                        exit = fadeOut() + shrinkVertically()
+                    ) {
+                        Column(modifier = Modifier.fillMaxWidth()) {
+                            frequencyBandsContent()
+                            Spacer(modifier = Modifier.height(16.dp))
+                        }
+                    }
+                }
+
+                item {
+                    audioEffectsContent(false)
                 }
             }
+        }
+
+        if (showSavePresetDialog) {
+            SaveCustomPresetDialog(
+                onDismiss = { showSavePresetDialog = false },
+                onSave = { name ->
+                    val newPreset = viewModel.saveCustomEqualizerPreset(name, bandLevels)
+                    selectedPreset = newPreset.name
+                    viewModel.appSettings.setEqualizerPreset(newPreset.name)
+                    viewModel.appSettings.setEqualizerBandLevels(newPreset.bands.joinToString(","))
+                    viewModel.applyEqualizerPreset(newPreset.name, newPreset.bands)
+                    showSavePresetDialog = false
+                    presetToScrollTo = newPreset.name
+                    Toast.makeText(
+                        context,
+                        context.getString(R.string.eq_preset_saved_success, name),
+                        Toast.LENGTH_SHORT
+                    ).show()
+                },
+                bandLevels = bandLevels,
+                existingPresetNames = displayPresets.map { it.name }
+            )
+        }
+
+        if (showReorderSheet) {
+            EqualizerPresetOrderBottomSheet(
+                onDismiss = { showReorderSheet = false },
+                musicViewModel = viewModel
+            )
         }
 
         if (showAutoEQSelector) {
@@ -1097,15 +1367,19 @@ fun EqualizerScreen(
                 onDismissRequest = { showAutoEQSelector = false },
                 onProfileSelected = { profile: AutoEQProfile ->
                     viewModel.applyAutoEQProfile(profile)
+                    if (profile.name.isNotBlank() && !profile.name.equals("None", ignoreCase = true)) {
+                        viewModel.pinAutoEQProfile(profile.name)
+                        presetToScrollTo = "AutoEQ: ${profile.name}"
+                    }
                     showAutoEQSelector = false
                 }
             )
         }
 
-        if (showDeviceConfiguration) {
+        if (showDeviceConfigSheet) {
             DeviceConfigurationBottomSheet(
-                musicViewModel = viewModel,
-                onDismiss = { showDeviceConfiguration = false }
+                onDismiss = { showDeviceConfigSheet = false },
+                musicViewModel = viewModel
             )
         }
     }
@@ -1128,7 +1402,7 @@ private fun ExpressiveEffectCard(
     modifier: Modifier = Modifier
 ) {
     val containerColor by animateColorAsState(
-        targetValue = if (isEnabled) activeContainerColor else MaterialTheme.colorScheme.surfaceContainerLow,
+        targetValue = if (isEnabled) activeContainerColor else MaterialTheme.colorScheme.surfaceContainer,
         label = "containerColor"
     )
     val contentColor by animateColorAsState(

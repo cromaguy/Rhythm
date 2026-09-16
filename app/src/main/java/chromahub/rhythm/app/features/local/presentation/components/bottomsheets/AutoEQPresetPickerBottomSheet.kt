@@ -29,10 +29,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import chromahub.rhythm.app.util.AutoEQManager
+import chromahub.rhythm.app.util.HapticType
+import chromahub.rhythm.app.util.HapticUtils
 import chromahub.rhythm.app.shared.data.model.AutoEQProfile
 import chromahub.rhythm.app.shared.presentation.screens.settings.SettingsSearchBar
 import kotlinx.coroutines.launch
@@ -40,12 +43,19 @@ import kotlinx.coroutines.delay
 import chromahub.rhythm.app.R
 import androidx.compose.ui.res.stringResource
 import chromahub.rhythm.app.shared.presentation.components.bottomsheets.AdaptiveSheetScrollContainer
+import chromahub.rhythm.app.shared.presentation.components.common.M3CircularLoader
+import chromahub.rhythm.app.shared.data.model.UserAudioDevice
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.text.style.TextAlign
+import chromahub.rhythm.app.shared.presentation.theme.rememberExpressiveShape
+import chromahub.rhythm.app.shared.presentation.theme.ExpressiveMaterialShape
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AutoEQPresetPickerBottomSheet(
     initialProfileName: String? = null,
     currentProfileName: String? = null,
+    device: UserAudioDevice? = null,
     onDismissRequest: () -> Unit,
     onProfileSelected: (AutoEQProfile) -> Unit,
     sheetState: SheetState = rememberBottomSheetState(
@@ -54,8 +64,11 @@ fun AutoEQPresetPickerBottomSheet(
     )
 ) {
     val context = LocalContext.current
+    val haptics = LocalHapticFeedback.current
     val scope = rememberCoroutineScope()
     val listState = rememberLazyListState()
+
+    val effectiveCurrentProfileName = device?.autoEQProfileName ?: currentProfileName
 
     var profiles by remember { mutableStateOf<List<AutoEQProfile>>(emptyList()) }
     var allBrands by remember { mutableStateOf<List<String>>(emptyList()) }
@@ -65,6 +78,7 @@ fun AutoEQPresetPickerBottomSheet(
     var selectedBrand by remember { mutableStateOf<String?>(null) }
     var selectedType by remember { mutableStateOf<String?>(null) }
     var showFilters by remember { mutableStateOf(false) }
+    var initialDeviceFilterApplied by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         loading = true
@@ -83,7 +97,31 @@ fun AutoEQPresetPickerBottomSheet(
         }
     }
 
-    val filtered = remember(profiles, searchQuery, selectedBrand, selectedType) {
+    LaunchedEffect(allBrands, profiles, device) {
+        if (device != null && !initialDeviceFilterApplied && allBrands.isNotEmpty()) {
+            val inferredBrand = if (device.brand.isNotBlank()) device.brand else UserAudioDevice.inferDeviceBrand(device.name, allBrands)
+            val matchingBrand = allBrands.firstOrNull { it.equals(inferredBrand, ignoreCase = true) }
+                ?: allBrands.firstOrNull { device.name.contains(it, ignoreCase = true) }
+            if (matchingBrand != null) {
+                selectedBrand = matchingBrand
+                showFilters = true
+                val remainder = if (device.name.startsWith(matchingBrand, ignoreCase = true)) {
+                    device.name.substring(matchingBrand.length).trim()
+                } else if (inferredBrand.isNotBlank() && device.name.startsWith(inferredBrand, ignoreCase = true)) {
+                    device.name.removePrefix(inferredBrand).trim()
+                } else {
+                    val regex = Regex("""\b${Regex.escape(matchingBrand)}\b""", RegexOption.IGNORE_CASE)
+                    device.name.replace(regex, "").trim()
+                }
+                searchQuery = remainder
+            } else {
+                searchQuery = if (inferredBrand.isNotBlank()) inferredBrand else device.name
+            }
+            initialDeviceFilterApplied = true
+        }
+    }
+
+    val filtered = remember(profiles, searchQuery, selectedBrand, selectedType, effectiveCurrentProfileName) {
         var result = profiles
 
         if (searchQuery.isNotBlank()) {
@@ -101,7 +139,7 @@ fun AutoEQPresetPickerBottomSheet(
             result = result.filter { it.type.equals(selectedType, ignoreCase = true) }
         }
 
-        result.sortedWith(compareByDescending { it.name == currentProfileName })
+        result.sortedWith(compareByDescending { it.name == effectiveCurrentProfileName })
     }
 
     RhythmAdaptiveModalSheet(
@@ -117,8 +155,16 @@ fun AutoEQPresetPickerBottomSheet(
         tonalElevation = 0.dp
     ) {
         StandardBottomSheetHeader(
-            title = stringResource(R.string.autoeqpresetpickerbottomsheet_choose_autoeq_preset),
-            subtitle = if (loading) "" else "${filtered.size} presets",
+            title = if (device != null) {
+                stringResource(R.string.deviceconfigurationbottomsheet_select_autoeq_profile)
+            } else {
+                stringResource(R.string.autoeqpresetpickerbottomsheet_choose_autoeq_preset)
+            },
+            subtitle = if (loading) "" else if (device != null) {
+                stringResource(R.string.device_configuration_for_device, device.name)
+            } else {
+                "${filtered.size} presets"
+            },
             visible = true
         )
 
@@ -144,16 +190,19 @@ fun AutoEQPresetPickerBottomSheet(
                 )
 
                 FilledTonalIconButton(
-                    onClick = { showFilters = !showFilters },
+                    onClick = {
+                        HapticUtils.performHapticFeedback(context, haptics, HapticType.LIGHT)
+                        showFilters = !showFilters
+                    },
                     colors = IconButtonDefaults.filledTonalIconButtonColors(
                         containerColor = if (selectedBrand != null || selectedType != null)
                             MaterialTheme.colorScheme.primaryContainer
                         else
-                            MaterialTheme.colorScheme.secondaryContainer,
+                            MaterialTheme.colorScheme.surfaceContainerHigh,
                         contentColor = if (selectedBrand != null || selectedType != null)
                             MaterialTheme.colorScheme.onPrimaryContainer
                         else
-                            MaterialTheme.colorScheme.onSecondaryContainer
+                            MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 ) {
                     Icon(
@@ -161,6 +210,91 @@ fun AutoEQPresetPickerBottomSheet(
                         contentDescription = stringResource(R.string.autoeqpresetpickerbottomsheet_toggle_filters),
                         modifier = Modifier.size(20.dp)
                     )
+                }
+            }
+
+            AnimatedVisibility(
+                visible = !showFilters && (selectedBrand != null || selectedType != null),
+                enter = expandVertically() + fadeIn(),
+                exit = shrinkVertically() + fadeOut()
+            ) {
+                LazyRow(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    if (selectedBrand != null) {
+                        item {
+                            InputChip(
+                                selected = true,
+                                onClick = {
+                                    HapticUtils.performHapticFeedback(context, haptics, HapticType.LIGHT)
+                                    selectedBrand = null
+                                },
+                                label = { Text(selectedBrand!!) },
+                                trailingIcon = {
+                                    Icon(
+                                        imageVector = RhythmIcons.Close,
+                                        contentDescription = stringResource(R.string.ui_clear),
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                },
+                                colors = InputChipDefaults.inputChipColors(
+                                    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                    selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    selectedTrailingIconColor = MaterialTheme.colorScheme.onPrimaryContainer
+                                ),
+                                shape = RoundedCornerShape(12.dp),
+                                border = null
+                            )
+                        }
+                    }
+
+                    if (selectedType != null) {
+                        item {
+                            InputChip(
+                                selected = true,
+                                onClick = {
+                                    HapticUtils.performHapticFeedback(context, haptics, HapticType.LIGHT)
+                                    selectedType = null
+                                },
+                                label = { Text(selectedType!!) },
+                                trailingIcon = {
+                                    Icon(
+                                        imageVector = RhythmIcons.Close,
+                                        contentDescription = stringResource(R.string.ui_clear),
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                },
+                                colors = InputChipDefaults.inputChipColors(
+                                    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                    selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    selectedTrailingIconColor = MaterialTheme.colorScheme.onPrimaryContainer
+                                ),
+                                shape = RoundedCornerShape(12.dp),
+                                border = null
+                            )
+                        }
+                    }
+
+                    item {
+                        TextButton(
+                            onClick = {
+                                HapticUtils.performHapticFeedback(context, haptics, HapticType.LIGHT)
+                                selectedBrand = null
+                                selectedType = null
+                            },
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)
+                        ) {
+                            Text(
+                                text = stringResource(R.string.ui_clear_all),
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
                 }
             }
 
@@ -249,7 +383,7 @@ fun AutoEQPresetPickerBottomSheet(
                         .weight(1f),
                     contentAlignment = Alignment.Center
                 ) {
-                    CircularProgressIndicator()
+                    M3CircularLoader(modifier = Modifier.size(48.dp), strokeWidth = 4f)
                 }
             } else {
                 AdaptiveSheetScrollContainer(
@@ -270,7 +404,7 @@ fun AutoEQPresetPickerBottomSheet(
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         item {
-                            val isCurrentlyActive = currentProfileName.isNullOrBlank() || currentProfileName == "None"
+                            val isCurrentlyActive = effectiveCurrentProfileName.isNullOrBlank() || effectiveCurrentProfileName == "None"
                             Surface(
                                 onClick = {
                                     onProfileSelected(AutoEQProfile("None", "", "", List(10) { 0f }))
@@ -322,17 +456,113 @@ fun AutoEQPresetPickerBottomSheet(
 
                         if (filtered.isEmpty()) {
                             item {
+                                val animatedScale by animateFloatAsState(
+                                    targetValue = 1f,
+                                    animationSpec = spring(
+                                        dampingRatio = 0.6f,
+                                        stiffness = 100f
+                                    ),
+                                    label = "autoEQEmptyScale"
+                                )
+                                val animatedAlpha by animateFloatAsState(
+                                    targetValue = 1f,
+                                    animationSpec = tween(
+                                        durationMillis = 500,
+                                        delayMillis = 100
+                                    ),
+                                    label = "autoEQEmptyAlpha"
+                                )
+                                val cookieShape = rememberExpressiveShape(ExpressiveMaterialShape.COOKIE_12)
+
                                 Box(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(32.dp),
+                                        .padding(horizontal = 16.dp, vertical = 24.dp),
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Text(
-                                        text = stringResource(R.string.autoeqpresetpickerbottomsheet_no_presets_found),
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
+                                    Card(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .graphicsLayer {
+                                                scaleX = animatedScale
+                                                scaleY = animatedScale
+                                                alpha = animatedAlpha
+                                            },
+                                        shape = RoundedCornerShape(24.dp),
+                                        colors = CardDefaults.cardColors(
+                                            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+                                        )
+                                    ) {
+                                        Column(
+                                            horizontalAlignment = Alignment.CenterHorizontally,
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(horizontal = 24.dp, vertical = 28.dp)
+                                        ) {
+                                            Surface(
+                                                shape = cookieShape,
+                                                color = MaterialTheme.colorScheme.primaryContainer,
+                                                modifier = Modifier.size(68.dp)
+                                            ) {
+                                                Box(
+                                                    modifier = Modifier.fillMaxSize(),
+                                                    contentAlignment = Alignment.Center
+                                                ) {
+                                                    Icon(
+                                                        imageVector = RhythmIcons.Headphones,
+                                                        contentDescription = null,
+                                                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                                        modifier = Modifier.size(32.dp)
+                                                    )
+                                                }
+                                            }
+
+                                            Spacer(modifier = Modifier.height(16.dp))
+
+                                            Text(
+                                                text = stringResource(R.string.autoeqpresetpickerbottomsheet_no_presets_found),
+                                                style = MaterialTheme.typography.titleLarge,
+                                                fontWeight = FontWeight.Bold,
+                                                color = MaterialTheme.colorScheme.onSurface,
+                                                textAlign = TextAlign.Center
+                                            )
+
+                                            Spacer(modifier = Modifier.height(6.dp))
+
+                                            Text(
+                                                text = if (searchQuery.isNotBlank() || selectedBrand != null || selectedType != null) {
+                                                    "No profiles match your search criteria or active filters. Try adjusting them."
+                                                } else {
+                                                    "No AutoEQ presets available."
+                                                },
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                textAlign = TextAlign.Center,
+                                                lineHeight = MaterialTheme.typography.bodyMedium.lineHeight * 1.3
+                                            )
+
+                                            if (searchQuery.isNotBlank() || selectedBrand != null || selectedType != null) {
+                                                Spacer(modifier = Modifier.height(18.dp))
+                                                FilledTonalButton(
+                                                    onClick = {
+                                                        searchQuery = ""
+                                                        selectedBrand = null
+                                                        selectedType = null
+                                                    },
+                                                    shape = RoundedCornerShape(16.dp),
+                                                    contentPadding = PaddingValues(horizontal = 20.dp, vertical = 10.dp)
+                                                ) {
+                                                    Icon(
+                                                        imageVector = RhythmIcons.Refresh,
+                                                        contentDescription = null,
+                                                        modifier = Modifier.size(18.dp)
+                                                    )
+                                                    Spacer(modifier = Modifier.width(8.dp))
+                                                    Text(stringResource(R.string.ui_clear_all))
+                                                }
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         } else {
@@ -340,7 +570,7 @@ fun AutoEQPresetPickerBottomSheet(
                                 items = filtered,
                                 key = { _, profile -> profile.name }
                             ) { index, profile ->
-                                val isCurrentlyActive = profile.name == currentProfileName
+                                val isCurrentlyActive = profile.name == effectiveCurrentProfileName
                                 Surface(
                                     onClick = {
                                         onProfileSelected(profile)
@@ -406,6 +636,9 @@ private fun FilterSection(
     onItemSelected: (String) -> Unit,
     onClear: () -> Unit
 ) {
+    val context = LocalContext.current
+    val haptics = LocalHapticFeedback.current
+
     Column(modifier = Modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier
@@ -416,8 +649,9 @@ private fun FilterSection(
         ) {
             Text(
                 text = title,
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface
             )
 
             AnimatedVisibility(
@@ -426,13 +660,16 @@ private fun FilterSection(
                 exit = fadeOut()
             ) {
                 TextButton(
-                    onClick = onClear,
+                    onClick = {
+                        HapticUtils.performHapticFeedback(context, haptics, HapticType.LIGHT)
+                        onClear()
+                    },
                     contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp)
                 ) {
                     Text(
                         text = stringResource(R.string.ui_reset),
                         style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.tertiary
+                        color = MaterialTheme.colorScheme.primary
                     )
                 }
             }
@@ -456,7 +693,10 @@ private fun FilterSection(
 
                 FilterChip(
                     selected = isSelected,
-                    onClick = { onItemSelected(item) },
+                    onClick = {
+                        HapticUtils.performHapticFeedback(context, haptics, HapticType.LIGHT)
+                        onItemSelected(item)
+                    },
                     label = {
                         Text(
                             text = item,
@@ -474,14 +714,14 @@ private fun FilterSection(
                     } else null,
                     colors = FilterChipDefaults.filterChipColors(
                         containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                        selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
-                        selectedLabelColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                        selectedLeadingIconColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                        selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                        selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
                         labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
                         iconColor = MaterialTheme.colorScheme.onSurfaceVariant
                     ),
                     shape = RoundedCornerShape(cornerRadius),
-                    border = null // Removes the default border for a cleaner, expressive filled look
+                    border = null
                 )
             }
         }

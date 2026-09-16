@@ -122,10 +122,9 @@ fun RhythmSongMenuContent(
             add(
                 SongMenuItem(
                     title = if (fav) context.getString(R.string.action_dislike) else context.getString(R.string.action_like),
-                    icon = if (fav) MaterialSymbolIcon("thumb_down", filled = true) else MaterialSymbolIcon("thumb_up", filled = true),
-                    iconBgColor = if (fav) MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.6f)
-                        else MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.6f),
-                    iconTint = if (fav) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onTertiaryContainer,
+                    icon = if (fav) MaterialSymbolIcon("thumb_up", filled = true) else MaterialSymbolIcon("thumb_up", filled = false),
+                    iconBgColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.6f),
+                    iconTint = MaterialTheme.colorScheme.onTertiaryContainer,
                     onClick = action
                 )
             )
@@ -135,10 +134,9 @@ fun RhythmSongMenuContent(
             add(
                 SongMenuItem(
                     title = if (liked) "Unlike" else "Like",
-                    icon = if (liked) MaterialSymbolIcon("thumb_down", filled = true) else MaterialSymbolIcon("thumb_up", filled = true),
-                    iconBgColor = if (liked) MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.6f)
-                        else MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.6f),
-                    iconTint = if (liked) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onTertiaryContainer,
+                    icon = if (liked) MaterialSymbolIcon("thumb_up", filled = true) else MaterialSymbolIcon("thumb_up", filled = false),
+                    iconBgColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.6f),
+                    iconTint = MaterialTheme.colorScheme.onTertiaryContainer,
                     onClick = action
                 )
             )

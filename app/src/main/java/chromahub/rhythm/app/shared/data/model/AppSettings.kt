@@ -235,6 +235,10 @@ class AppSettings private constructor(context: Context) {
         private const val KEY_VIRTUALIZER_ENABLED = "virtualizer_enabled"
         private const val KEY_VIRTUALIZER_STRENGTH = "virtualizer_strength"
         private const val KEY_MONO_AUDIO_ENABLED = "mono_audio_enabled"
+        private const val KEY_CUSTOM_EQUALIZER_PRESETS = "custom_equalizer_presets"
+        private const val KEY_EQUALIZER_PRESET_ORDER = "equalizer_preset_order"
+        private const val KEY_HIDDEN_EQUALIZER_PRESETS = "hidden_equalizer_presets"
+        private const val KEY_PINNED_AUTOEQ_PROFILES = "pinned_autoeq_profiles"
         
         // Cache Settings
         private const val KEY_MAX_CACHE_SIZE = "max_cache_size"
@@ -1142,6 +1146,42 @@ class AppSettings private constructor(context: Context) {
     
     private val _monoAudioEnabled = MutableStateFlow(prefs.getBoolean(KEY_MONO_AUDIO_ENABLED, false))
     val monoAudioEnabled: StateFlow<Boolean> = _monoAudioEnabled.asStateFlow()
+    
+    val defaultEqualizerPresetOrder = listOf(
+        "Flat", "Rock", "Pop", "Jazz", "Classical", "Electronic",
+        "Hip Hop", "Vocal", "Bass Boost", "Treble Boost", "V-Shape", "Harman"
+    )
+
+    private val _customEqualizerPresets = MutableStateFlow(
+        CustomEqualizerPreset.fromJson(prefs.getString(KEY_CUSTOM_EQUALIZER_PRESETS, null))
+    )
+    val customEqualizerPresets: StateFlow<List<CustomEqualizerPreset>> = _customEqualizerPresets.asStateFlow()
+
+    private val _equalizerPresetOrder = MutableStateFlow(
+        prefs.getString(KEY_EQUALIZER_PRESET_ORDER, null)
+            ?.split(",")
+            ?.filter { it.isNotBlank() }
+            ?.takeIf { it.isNotEmpty() }
+            ?: defaultEqualizerPresetOrder
+    )
+    val equalizerPresetOrder: StateFlow<List<String>> = _equalizerPresetOrder.asStateFlow()
+
+    private val _hiddenEqualizerPresets = MutableStateFlow(
+        prefs.getString(KEY_HIDDEN_EQUALIZER_PRESETS, null)
+            ?.split(",")
+            ?.filter { it.isNotBlank() }
+            ?.toSet()
+            ?: emptySet()
+    )
+    val hiddenEqualizerPresets: StateFlow<Set<String>> = _hiddenEqualizerPresets.asStateFlow()
+
+    private val _pinnedAutoEQProfiles = MutableStateFlow(
+        prefs.getString(KEY_PINNED_AUTOEQ_PROFILES, null)
+            ?.split(";;")
+            ?.filter { it.isNotBlank() }
+            ?: emptyList()
+    )
+    val pinnedAutoEQProfiles: StateFlow<List<String>> = _pinnedAutoEQProfiles.asStateFlow()
     
     // Sleep Timer
     private val _sleepTimerActive = MutableStateFlow(prefs.getBoolean(KEY_SLEEP_TIMER_ACTIVE, false))
@@ -2859,6 +2899,110 @@ private val _autoCheckForUpdates = MutableStateFlow(prefs.getBoolean(KEY_AUTO_CH
     fun setMonoAudioEnabled(enable: Boolean) {
         prefs.edit { putBoolean(KEY_MONO_AUDIO_ENABLED, enable) }
         _monoAudioEnabled.value = enable
+    }
+
+    fun saveCustomEqualizerPreset(preset: CustomEqualizerPreset) {
+        val current = _customEqualizerPresets.value.toMutableList()
+        val index = current.indexOfFirst { it.id == preset.id || it.name.equals(preset.name, ignoreCase = true) }
+        if (index >= 0) {
+            current[index] = preset
+        } else {
+            current.add(preset)
+        }
+        val json = CustomEqualizerPreset.toJson(current)
+        prefs.edit { putString(KEY_CUSTOM_EQUALIZER_PRESETS, json) }
+        _customEqualizerPresets.value = current
+
+        // Also ensure preset is in the preset order
+        val order = _equalizerPresetOrder.value.toMutableList()
+        if (preset.name !in order) {
+            val firstBuiltInIndex = order.indexOfFirst { it in defaultEqualizerPresetOrder }
+            if (firstBuiltInIndex >= 0) {
+                order.add(firstBuiltInIndex, preset.name)
+            } else {
+                order.add(preset.name)
+            }
+            setEqualizerPresetOrder(order)
+        }
+    }
+
+    fun deleteCustomEqualizerPreset(id: String) {
+        val current = _customEqualizerPresets.value.toMutableList()
+        val preset = current.find { it.id == id }
+        current.removeAll { it.id == id }
+        val json = CustomEqualizerPreset.toJson(current)
+        prefs.edit { putString(KEY_CUSTOM_EQUALIZER_PRESETS, json) }
+        _customEqualizerPresets.value = current
+
+        if (preset != null) {
+            val order = _equalizerPresetOrder.value.toMutableList()
+            order.remove(preset.name)
+            setEqualizerPresetOrder(order)
+            val hidden = _hiddenEqualizerPresets.value.toMutableSet()
+            hidden.remove(preset.name)
+            setHiddenEqualizerPresets(hidden)
+
+            if (_equalizerPreset.value == preset.name) {
+                setEqualizerPreset("Flat")
+                setEqualizerBandLevels(List(10) { 0f }.joinToString(","))
+            }
+        }
+    }
+
+    fun setEqualizerPresetOrder(order: List<String>) {
+        val orderStr = order.joinToString(",")
+        prefs.edit { putString(KEY_EQUALIZER_PRESET_ORDER, orderStr) }
+        _equalizerPresetOrder.value = order
+    }
+
+    fun resetEqualizerPresetOrder() {
+        val customNames = _customEqualizerPresets.value.map { it.name }
+        val pinnedNames = _pinnedAutoEQProfiles.value.map { "AutoEQ: $it" }
+        val resetOrder = pinnedNames + customNames + defaultEqualizerPresetOrder
+        prefs.edit { remove(KEY_EQUALIZER_PRESET_ORDER) }
+        _equalizerPresetOrder.value = resetOrder
+        setHiddenEqualizerPresets(emptySet())
+    }
+
+    fun setHiddenEqualizerPresets(hidden: Set<String>) {
+        val hiddenStr = hidden.joinToString(",")
+        prefs.edit { putString(KEY_HIDDEN_EQUALIZER_PRESETS, hiddenStr) }
+        _hiddenEqualizerPresets.value = hidden
+    }
+
+    fun pinAutoEQProfile(name: String) {
+        val current = _pinnedAutoEQProfiles.value.toMutableList()
+        if (!current.contains(name)) {
+            current.add(name)
+            val str = current.joinToString(";;")
+            prefs.edit { putString(KEY_PINNED_AUTOEQ_PROFILES, str) }
+            _pinnedAutoEQProfiles.value = current
+
+            val order = _equalizerPresetOrder.value.toMutableList()
+            val presetKey = "AutoEQ: $name"
+            if (presetKey !in order) {
+                val lastAutoEQIndex = order.indexOfLast { it.startsWith("AutoEQ: ") }
+                val insertIndex = if (lastAutoEQIndex >= 0) lastAutoEQIndex + 1 else 0
+                order.add(insertIndex, presetKey)
+                setEqualizerPresetOrder(order)
+            }
+        }
+    }
+
+    fun unpinAutoEQProfile(name: String) {
+        val current = _pinnedAutoEQProfiles.value.toMutableList()
+        current.remove(name)
+        val str = current.joinToString(";;")
+        prefs.edit { putString(KEY_PINNED_AUTOEQ_PROFILES, str) }
+        _pinnedAutoEQProfiles.value = current
+
+        val order = _equalizerPresetOrder.value.toMutableList()
+        val presetKey = "AutoEQ: $name"
+        order.remove(presetKey)
+        setEqualizerPresetOrder(order)
+        val hidden = _hiddenEqualizerPresets.value.toMutableSet()
+        hidden.remove(presetKey)
+        setHiddenEqualizerPresets(hidden)
     }
     
     // Sleep Timer Methods

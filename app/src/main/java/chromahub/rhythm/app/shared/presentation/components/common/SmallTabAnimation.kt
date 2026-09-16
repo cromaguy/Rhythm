@@ -42,6 +42,10 @@ import androidx.compose.ui.semantics.Role
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
+
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun SmallTabAnimation(
     modifier: Modifier = Modifier,
@@ -53,6 +57,7 @@ fun SmallTabAnimation(
     title: String,
     selectedIndex: Int,
     onClick: () -> Unit,
+    onLongClick: (() -> Unit)? = null,
     transformOrigin: TransformOrigin = TransformOrigin.Center,
     content: @Composable () -> Unit
 ) {
@@ -117,10 +122,16 @@ fun SmallTabAnimation(
                 color = backgroundColor,
                 shape = RoundedCornerShape(50)
             )
-            .clickable(
+            .combinedClickable(
                 onClick = {
                     HapticUtils.performHapticFeedback(context, hapticFeedback, HapticType.LIGHT)
                     onClick()
+                },
+                onLongClick = onLongClick?.let { action ->
+                    {
+                        HapticUtils.performHapticFeedback(context, hapticFeedback, HapticType.HEAVY)
+                        action()
+                    }
                 }
             )
             .semantics {

@@ -33,6 +33,13 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.LocalIndication
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 
 enum class RhythmButtonSize {
     Small, Medium, Large, ExtraLarge
@@ -437,6 +444,7 @@ fun RowScope.RhythmButtonWeighted(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun RowScope.RhythmDetailActionButton(
     onClick: () -> Unit,
@@ -459,6 +467,7 @@ fun RowScope.RhythmDetailActionButton(
     textStyle: TextStyle = MaterialTheme.typography.titleMedium,
     gradientEdgeColor: Color? = null,
     respectMarqueeGlobalSetting: Boolean = true,
+    onLongClick: (() -> Unit)? = null,
     // Optional composable slot for custom/animated text content. When set, it replaces the `text` rendering.
     textContent: (@Composable () -> Unit)? = null
 ) {
@@ -518,24 +527,7 @@ fun RowScope.RhythmDetailActionButton(
         )
     }
 
-    Button(
-        onClick = {
-            scope.launch {
-                isTapped = true
-                delay(100)
-                isTapped = false
-            }
-            onClick()
-        },
-        modifier = modifier
-            .weight(animWeight)
-            .height(height),
-        shape = shape,
-        colors = colors,
-        contentPadding = contentPadding,
-        enabled = enabled,
-        interactionSource = interactionSource
-    ) {
+    val buttonContent: @Composable RowScope.() -> Unit = {
         if (isLoading) {
             ActionProgressLoader(
                 size = iconSize,
@@ -572,6 +564,64 @@ fun RowScope.RhythmDetailActionButton(
                 }
             }
         }
+    }
+
+    if (onLongClick != null) {
+        Surface(
+            modifier = modifier
+                .weight(animWeight)
+                .height(height)
+                .clip(shape)
+                .combinedClickable(
+                    interactionSource = interactionSource,
+                    indication = LocalIndication.current,
+                    enabled = enabled,
+                    onClick = {
+                        scope.launch {
+                            isTapped = true
+                            delay(100)
+                            isTapped = false
+                        }
+                        onClick()
+                    },
+                    onLongClick = onLongClick
+                )
+                .semantics { role = Role.Button },
+            shape = shape,
+            color = resolvedContainer,
+            contentColor = resolvedContent
+        ) {
+            ProvideTextStyle(value = MaterialTheme.typography.labelLarge) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(contentPadding),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically,
+                    content = buttonContent
+                )
+            }
+        }
+    } else {
+        Button(
+            onClick = {
+                scope.launch {
+                    isTapped = true
+                    delay(100)
+                    isTapped = false
+                }
+                onClick()
+            },
+            modifier = modifier
+                .weight(animWeight)
+                .height(height),
+            shape = shape,
+            colors = colors,
+            contentPadding = contentPadding,
+            enabled = enabled,
+            interactionSource = interactionSource,
+            content = buttonContent
+        )
     }
 }
 

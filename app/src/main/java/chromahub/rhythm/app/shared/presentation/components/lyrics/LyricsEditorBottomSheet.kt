@@ -93,8 +93,8 @@ import chromahub.rhythm.app.shared.data.model.LyricsData
 import chromahub.rhythm.app.shared.data.model.Song
 import chromahub.rhythm.app.shared.data.model.AppSettings
 import androidx.compose.runtime.collectAsState
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
+import chromahub.rhythm.app.shared.presentation.components.common.ExpressiveAssistChip
+import chromahub.rhythm.app.shared.presentation.components.common.ExpressiveStatusBadge
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.TextButton
@@ -673,137 +673,56 @@ fun LyricsEditorBottomSheet(
                 val currentPref = songLyricsPreferences[songId]
                 val customLrc = songCustomLrcFiles[songId]
                 
-                var dropdownExpanded by remember { mutableStateOf(false) }
-                
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 24.dp)
-                        .background(MaterialTheme.colorScheme.surfaceContainerHigh, RoundedCornerShape(16.dp))
-                        .padding(16.dp)
                 ) {
-                    Row(
+                    Text(
+                        text = stringResource(R.string.lyrics_source_preference),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    RhythmToggleButtonGroup(
+                        options = listOf(
+                            RhythmToggleOption(text = stringResource(R.string.settings_default)),
+                            RhythmToggleOption(text = "Online"),
+                            RhythmToggleOption(text = "Embedded"),
+                            RhythmToggleOption(text = "LRC")
+                        ),
+                        selectedIndices = setOf(
+                            when (currentPref) {
+                                "online" -> 1
+                                "embedded" -> 2
+                                "lrc" -> 3
+                                else -> 0
+                            }
+                        ),
+                        onToggle = { index ->
+                            HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
+                            val newPref = when (index) {
+                                1 -> "online"
+                                2 -> "embedded"
+                                3 -> "lrc"
+                                else -> null
+                            }
+                            appSettings.setSongLyricsPreference(songId, newPref)
+                            onRefresh()
+                        },
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = stringResource(R.string.lyrics_source_preference),
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Text(
-                                text = when (currentPref) {
-                                    "online" -> "Online first"
-                                    "embedded" -> "Embedded first"
-                                    "lrc" -> "Local LRC file first"
-                                    else -> "Default (App settings)"
-                                },
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        Box {
-                            FilledTonalButton(
-                                onClick = { dropdownExpanded = true },
-                                shape = RoundedCornerShape(12.dp)
-                            ) {
-                                Text(stringResource(R.string.lyrics_change))
-                                Icon(
-                                    imageVector = MaterialSymbolIcon("arrow_drop_down", filled = true),
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            }
-                            DropdownMenu(
-                                expanded = dropdownExpanded,
-                                onDismissRequest = { dropdownExpanded = false },
-                                modifier = Modifier
-                                    .widthIn(min = 220.dp)
-                                    .background(MaterialTheme.colorScheme.surface)
-                                    .padding(4.dp),
-                                shape = RoundedCornerShape(20.dp)
-                            ) {
-                                val options = listOf(
-                                    Triple(null, "Default (App settings)", "settings"),
-                                    Triple("online", "Online first", "cloud"),
-                                    Triple("embedded", "Embedded first", "music_note"),
-                                    Triple("lrc", "Local LRC file first", "storage")
-                                )
-                                
-                                val outerRadius = 16.dp
-                                val innerRadius = 4.dp
-                                val itemSpacing = 3.dp
-
-                                Column(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(horizontal = 8.dp, vertical = 4.dp),
-                                    verticalArrangement = Arrangement.spacedBy(itemSpacing)
-                                ) {
-                                    options.forEachIndexed { index, (prefValue, label, iconName) ->
-                                        val itemShape = when {
-                                            options.size == 1 -> RoundedCornerShape(outerRadius)
-                                            index == 0 -> RoundedCornerShape(
-                                                topStart = outerRadius, topEnd = outerRadius,
-                                                bottomStart = innerRadius, bottomEnd = innerRadius
-                                            )
-                                            index == options.size - 1 -> RoundedCornerShape(
-                                                topStart = innerRadius, topEnd = innerRadius,
-                                                bottomStart = outerRadius, bottomEnd = outerRadius
-                                            )
-                                            else -> RoundedCornerShape(innerRadius)
-                                        }
-
-                                        Surface(
-                                            onClick = {
-                                                HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
-                                                appSettings.setSongLyricsPreference(songId, prefValue)
-                                                dropdownExpanded = false
-                                                onRefresh()
-                                            },
-                                            shape = itemShape,
-                                            color = MaterialTheme.colorScheme.surfaceContainer,
-                                            contentColor = MaterialTheme.colorScheme.onSurface,
-                                            modifier = Modifier.fillMaxWidth()
-                                        ) {
-                                            Row(
-                                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
-                                                verticalAlignment = Alignment.CenterVertically
-                                            ) {
-                                                Icon(
-                                                    imageVector = MaterialSymbolIcon(iconName, filled = true),
-                                                    contentDescription = null,
-                                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                    modifier = Modifier.size(20.dp)
-                                                )
-
-                                                Spacer(modifier = Modifier.width(10.dp))
-
-                                                Text(
-                                                    text = label,
-                                                    style = MaterialTheme.typography.bodyMedium,
-                                                    fontWeight = FontWeight.Medium,
-                                                    color = MaterialTheme.colorScheme.onSurface,
-                                                    modifier = Modifier.weight(1f)
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
+                        size = RhythmButtonSize.Medium,
+                        isShowingCheck = false
+                    )
                     
                     if (customLrc != null) {
                         Spacer(modifier = Modifier.height(12.dp))
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .background(MaterialTheme.colorScheme.surfaceContainerLowest, RoundedCornerShape(8.dp))
-                                .padding(horizontal = 12.dp, vertical = 8.dp),
+                                .background(MaterialTheme.colorScheme.surfaceContainerHigh, RoundedCornerShape(12.dp))
+                                .padding(horizontal = 14.dp, vertical = 10.dp),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
@@ -916,52 +835,46 @@ fun LyricsEditorBottomSheet(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = MaterialSymbolIcon("sync", filled = true),
-                                contentDescription = null,
-                                modifier = Modifier.size(20.dp),
-                                tint = if (hasSyncedLyrics) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = context.getString(R.string.sync_adjustment),
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.SemiBold,
-                                color = if (hasSyncedLyrics) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
+                        Text(
+                            text = context.getString(R.string.sync_adjustment),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = if (hasSyncedLyrics) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                         
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             if (hasSyncedLyrics) {
-                                Text(
-                                    text = "${if (timeOffset >= 0) "+" else ""}${timeOffset}ms",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    fontWeight = FontWeight.Medium,
-                                    color = MaterialTheme.colorScheme.primary
+                                ExpressiveStatusBadge(
+                                    label = "${if (timeOffset >= 0) "+" else ""}${timeOffset}ms",
+                                    color = if (timeOffset != 0) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh,
+                                    textColor = if (timeOffset != 0) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                             
-                            // Reset/Refresh button
-                            FilledTonalButton(
+                            ExpressiveAssistChip(
                                 onClick = {
                                     HapticUtils.performHapticFeedback(context, haptic, HapticType.HEAVY)
                                     timeOffset = 0
                                     onRefresh()
                                 },
-                                modifier = Modifier.height(36.dp),
-                                shape = RoundedCornerShape(12.dp),
-                                colors = ButtonDefaults.filledTonalButtonColors(
-                                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                                ),
-                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp)
-                            ) {
-                                Text(context.getString(R.string.bottomsheet_reset), style = MaterialTheme.typography.labelMedium)
-                            }
+                                enabled = hasSyncedLyrics,
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = MaterialSymbolIcon("restart_alt", filled = true),
+                                        contentDescription = null,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                },
+                                label = {
+                                    Text(
+                                        text = context.getString(R.string.bottomsheet_reset),
+                                        style = MaterialTheme.typography.labelMedium
+                                    )
+                                }
+                            )
                         }
                     }
                     

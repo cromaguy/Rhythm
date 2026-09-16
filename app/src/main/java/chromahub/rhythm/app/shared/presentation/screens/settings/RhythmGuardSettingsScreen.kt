@@ -112,6 +112,7 @@ import chromahub.rhythm.app.shared.presentation.components.common.ButtonGroupSty
 import chromahub.rhythm.app.shared.presentation.components.common.ExpressiveScrollBar
 import chromahub.rhythm.app.shared.presentation.components.common.ExpressiveButtonGroup
 import chromahub.rhythm.app.shared.presentation.components.common.ExpressiveGroupButton
+import chromahub.rhythm.app.shared.presentation.components.common.M3CircularLoader
 import chromahub.rhythm.app.shared.presentation.components.bottomsheets.StandardBottomSheetHeader
 import chromahub.rhythm.app.shared.presentation.components.common.StyledProgressBar
 import chromahub.rhythm.app.shared.presentation.components.common.ProgressStyle
@@ -1761,9 +1762,9 @@ fun BackupRestoreSectionPickerBottomSheet(
                     isEnd = true
                 ) {
                     if (isProcessing) {
-                        CircularProgressIndicator(
+                        M3CircularLoader(
                             modifier = Modifier.size(18.dp),
-                            strokeWidth = 2.dp,
+                            strokeWidth = 2.5f,
                             color = MaterialTheme.colorScheme.onPrimary
                         )
                     } else {

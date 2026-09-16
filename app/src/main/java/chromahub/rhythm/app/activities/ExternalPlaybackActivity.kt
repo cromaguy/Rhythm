@@ -47,6 +47,7 @@ import androidx.compose.ui.draw.blur
 import androidx.compose.ui.graphics.Color
 import chromahub.rhythm.app.shared.presentation.components.common.AutoScrollingTextOnDemand
 import chromahub.rhythm.app.shared.presentation.components.common.WaveSlider
+import chromahub.rhythm.app.shared.presentation.components.common.M3CircularLoader
 import chromahub.rhythm.app.ui.theme.RhythmTheme
 import chromahub.rhythm.app.util.MediaUtils
 import chromahub.rhythm.app.features.local.presentation.viewmodel.MusicViewModel
@@ -409,7 +410,7 @@ fun ExternalPlaybackBottomSheet(
                             .padding(32.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        CircularProgressIndicator()
+                        M3CircularLoader(modifier = Modifier.size(48.dp), strokeWidth = 4f)
                     }
                 } else {
                     // Album Art and Song Info Row with enhanced styling
@@ -605,10 +606,10 @@ fun ExternalPlaybackBottomSheet(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 if (isBuffering) {
-                                    CircularProgressIndicator(
+                                    M3CircularLoader(
                                         modifier = Modifier.size(30.dp),
                                         color = MaterialTheme.colorScheme.onPrimary,
-                                        strokeWidth = 2.5.dp
+                                        strokeWidth = 2.5f
                                     )
                                 } else {
                                     Icon(

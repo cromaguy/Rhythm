@@ -255,7 +255,7 @@ fun CollapsibleHeaderScreen(
                     actions = {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(end = 10.dp) // Match left-side padding
+                            modifier = Modifier.padding(end = 12.dp) // Match left-side padding (12.dp)
                         ) {
                             filterDropdown() // Place the filter dropdown here
                             actions()
@@ -414,9 +414,9 @@ fun ArtistCollapsibleHeaderScreen(
                                 .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.18f)),
                             contentAlignment = Alignment.Center
                         ) {
-                            CircularProgressIndicator(
+                            M3CircularLoader(
                                 modifier = Modifier.size(28.dp),
-                                strokeWidth = 2.5.dp
+                                strokeWidth = 2.5f
                             )
                         }
                     }
@@ -577,7 +577,7 @@ fun ArtistCollapsibleHeaderScreen(
                         actions = {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.padding(end = 10.dp)
+                                modifier = Modifier.padding(end = 12.dp)
                             ) {
                                 filterDropdown()
                                 actions()
@@ -708,7 +708,7 @@ fun FixedHeaderScreen(
                     actions = {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(end = 10.dp)
+                            modifier = Modifier.padding(end = 12.dp)
                         ) {
                             actions()
                         }
