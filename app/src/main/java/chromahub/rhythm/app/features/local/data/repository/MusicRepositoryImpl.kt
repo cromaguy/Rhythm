@@ -6211,6 +6211,57 @@ class MusicRepository(context: Context) {
             Log.e(TAG, "Error clearing lyrics cache", e)
         }
     }
+
+    /**
+     * Clears cached lyrics for a specific song (both in-memory and on-disk)
+     */
+    fun clearLyricsCacheForSong(artist: String, title: String, songId: String?) {
+        try {
+            val keysToRemove = mutableListOf<String>()
+            if (songId != null) {
+                keysToRemove.add("$songId:$artist:$title".lowercase())
+            }
+            keysToRemove.add("$artist:$title".lowercase())
+
+            synchronized(lyricsCache) {
+                for (key in keysToRemove) {
+                    lyricsCache.remove(key)
+                }
+                Log.d(TAG, "===== REMOVED SONG FROM IN-MEMORY LYRICS CACHE ($artist - $title) =====")
+            }
+
+            try {
+                val fileName = "${artist}_${title}.json".replace(Regex("[^a-zA-Z0-9._-]"), "_")
+                val lyricsDir = File(context.filesDir, "lyrics")
+                val file = File(lyricsDir, fileName)
+                if (file.exists()) {
+                    val deleted = file.delete()
+                    Log.d(TAG, "===== DELETED SAVED LYRICS FILE ($fileName): $deleted =====")
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "Error deleting saved lyrics file for $artist - $title: ${e.message}")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error clearing lyrics cache for song $artist - $title", e)
+        }
+    }
+
+    /**
+     * Updates the in-memory lyrics cache for a specific song
+     */
+    fun updateLyricsCache(artist: String, title: String, songId: String?, lyrics: LyricsData) {
+        try {
+            synchronized(lyricsCache) {
+                if (songId != null) {
+                    lyricsCache["$songId:$artist:$title".lowercase()] = lyrics
+                }
+                lyricsCache["$artist:$title".lowercase()] = lyrics
+                Log.d(TAG, "===== UPDATED IN-MEMORY LYRICS CACHE FOR: $artist - $title =====")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error updating in-memory lyrics cache for $artist - $title", e)
+        }
+    }
     
     /**
      * Performs cache maintenance - removes expired entries and optimizes memory usage

@@ -568,7 +568,7 @@ fun CacheManagementSettingsScreen(onBackClick: () -> Unit) {
                                     scope.launch {
                                         try {
                                             isClearingCache = true
-                                            musicViewModel.clearLyricsCacheAndRefetch()
+                                            musicViewModel.clearAllLyricsCache()
                                             refreshCacheStats()
                                             Toast.makeText(context, context.getString(R.string.settings_lyrics_cache_cleared), Toast.LENGTH_SHORT).show()
                                         } catch (e: Exception) {
