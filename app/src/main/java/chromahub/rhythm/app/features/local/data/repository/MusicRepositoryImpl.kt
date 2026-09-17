@@ -85,6 +85,7 @@ import chromahub.rhythm.app.shared.data.model.LyricsApiPriority
 import chromahub.rhythm.app.shared.data.model.findAlbumForSong
 import chromahub.rhythm.app.core.domain.model.PlayableItem
 import chromahub.rhythm.app.core.domain.model.SourceType
+import chromahub.rhythm.app.infrastructure.provider.RhythmAlbumArtProvider
 import java.lang.ref.WeakReference
 import chromahub.rhythm.app.util.AudioFormatDetector
 import chromahub.rhythm.app.util.LyricsParser
@@ -482,13 +483,6 @@ class MusicRepository(context: Context) {
                 }
             }
 
-            // Quick single-syscall directory list for fast in-memory lossless reconciliation (0 per-song disk I/O)
-            val embeddedDir = File(context.filesDir, "embedded_artwork")
-            val embeddedFileNames: Set<String> = if (embeddedDir.exists()) {
-                embeddedDir.list()?.toSet() ?: emptySet()
-            } else {
-                emptySet()
-            }
 
             val songs = entities.mapNotNull { entity ->
                 try {
@@ -506,27 +500,19 @@ class MusicRepository(context: Context) {
 
                     var entityArtUri = entity.artworkUri?.let { it.toUri() }
 
-                    // Reconcile lossless vs lossy cached artwork variant in memory
-                    if (entityArtUri != null && isEmbeddedArtworkCacheUri(entityArtUri) && embeddedFileNames.isNotEmpty()) {
-                        val currentFileName = entityArtUri.path?.substringAfterLast('/') ?: ""
-                        val isLosslessFile = currentFileName.startsWith("embedded_art_lossless_")
-                        if (isLosslessFile != losslessArtwork) {
-                            val baseKey = currentFileName
-                                .removePrefix("embedded_art_lossless_")
-                                .removePrefix("embedded_art_")
-                                .substringBefore('.')
-                            val targetPrefix = if (losslessArtwork) "embedded_art_lossless_$baseKey" else "embedded_art_$baseKey"
-                            val matchingFile = embeddedFileNames.firstOrNull { it.startsWith("$targetPrefix.") }
-                            if (matchingFile != null) {
-                                entityArtUri = Uri.fromFile(File(embeddedDir, matchingFile))
-                            }
-                        }
-                    }
-
                     val effectiveArtUri = if (useEmbeddedArt) {
-                        entityArtUri ?: fallbackAlbumArt
+                        if (entityArtUri != null && !isEmbeddedArtworkCacheUri(entityArtUri) && !entityArtUri.toString().contains("albumart")) {
+                            entityArtUri
+                        } else {
+                            RhythmAlbumArtProvider.buildSongUri(
+                                id = entity.id,
+                                path = entity.path,
+                                albumId = entity.albumId,
+                                lossless = losslessArtwork
+                            )
+                        }
                     } else {
-                        if (isEmbeddedArtworkCacheUri(entityArtUri)) fallbackAlbumArt else (entityArtUri ?: fallbackAlbumArt)
+                        fallbackAlbumArt
                     }
 
                     val resolvedArtworkUri = when {
@@ -1509,11 +1495,12 @@ class MusicRepository(context: Context) {
             val useEmbeddedArt = appSettings.preferSongArtwork.value
             val effectiveArtUri = if (useEmbeddedArt) {
                 val lossless = appSettings.isLosslessArtworkActive.value
-                chromahub.rhythm.app.util.MediaUtils.getCachedEmbeddedAlbumArtUri(
-                    cacheDir = context.cacheDir,
-                    songUri = contentUri,
+                RhythmAlbumArtProvider.buildSongUri(
+                    id = id.toString(),
+                    path = filePath,
+                    albumId = albumId.toString(),
                     lossless = lossless
-                ) ?: albumArtUri // Fallback; background task will extract later
+                )
             } else {
                 albumArtUri
             }
@@ -2032,7 +2019,7 @@ class MusicRepository(context: Context) {
                     artist = smartArtist,
                     artworkUri = albumSongs.mapNotNull { it.artworkUri }.firstOrNull { uri ->
                         val s = uri.toString()
-                        s.contains("embedded_art_") || s.startsWith("file://")
+                        s.contains(".albumart") || s.contains("embedded_art_") || s.startsWith("file://")
                     } ?: albumSongs.firstOrNull()?.artworkUri,
                     year = year,
                     songs = sortedSongs,
@@ -5572,54 +5559,17 @@ class MusicRepository(context: Context) {
         onBatchUpdated: ((List<Song>) -> Unit)? = null
     ): List<Song> = withContext(Dispatchers.IO) {
         if (songs.isEmpty()) return@withContext emptyList()
-        val updatedSongs = songs.toMutableList()
-        val songsToProcess = songs.mapIndexed { index, song -> index to song }.filter { (_, song) ->
-            val uri = song.artworkUri ?: return@filter true
-            if (isEmbeddedArtworkCacheUri(uri)) {
-                val path = uri.path ?: return@filter true
-                val fileName = File(path).name
-                val isLosslessFile = fileName.startsWith("embedded_art_lossless_")
-                !(File(path).exists() && isLosslessFile == lossless)
-            } else true
+        val updatedSongs = songs.map { song ->
+            val onDemandUri = RhythmAlbumArtProvider.buildSongUri(
+                id = song.id,
+                path = song.path,
+                albumId = song.albumId,
+                lossless = lossless
+            )
+            song.copy(artworkUri = onDemandUri)
         }
-
-        if (songsToProcess.isEmpty()) return@withContext songs
-
-        val batchSize = 25
-        songsToProcess.chunked(batchSize).forEach { batch ->
-            val changedEntities = mutableListOf<SongEntity>()
-            val batchChangedSongs = mutableListOf<Song>()
-
-            val results = batch.map { (index, song) ->
-                async(Dispatchers.IO) {
-                    try {
-                        val embeddedUri = chromahub.rhythm.app.util.MediaUtils.extractEmbeddedAlbumArt(
-                            context, song.uri, context.filesDir, lossless, song.path
-                        )
-                        if (embeddedUri != null && embeddedUri != song.artworkUri) {
-                            val updatedSong = song.copy(artworkUri = embeddedUri)
-                            index to updatedSong
-                        } else null
-                    } catch (e: Exception) {
-                        null
-                    }
-                }
-            }.awaitAll().filterNotNull()
-
-            if (results.isNotEmpty()) {
-                results.forEach { (index, updatedSong) ->
-                    updatedSongs[index] = updatedSong
-                    batchChangedSongs.add(updatedSong)
-                    changedEntities.add(updatedSong.toEntity())
-                }
-                roomDb.songDao().upsertAll(changedEntities)
-                cachedSongs = updatedSongs
-                onBatchUpdated?.invoke(batchChangedSongs)
-            }
-            yield()
-        }
-
         cachedSongs = updatedSongs
+        onBatchUpdated?.invoke(updatedSongs)
         updatedSongs
     }
 
@@ -6121,6 +6071,10 @@ class MusicRepository(context: Context) {
 
     fun hasArtworkMatchingLossless(song: Song, lossless: Boolean): Boolean {
         val uri = song.artworkUri ?: return false
+        if (uri.authority?.endsWith(".albumart") == true || uri.authority == RhythmAlbumArtProvider.PROVIDER_AUTHORITY) {
+            val uriLossless = uri.getQueryParameter("lossless")?.toBoolean() ?: false
+            return uriLossless == lossless
+        }
         if (!isEmbeddedArtworkCacheUri(uri)) return false
         val path = uri.path ?: return false
         val fileName = File(path).name
@@ -6130,18 +6084,25 @@ class MusicRepository(context: Context) {
 
     private fun clearEmbeddedArtworkFileCaches() {
         try {
-            val artworkCacheDir = File(context.cacheDir, "embedded_artwork")
-            if (artworkCacheDir.exists()) {
-                artworkCacheDir.deleteRecursively()
+            val dirsToClear = listOf(
+                File(context.cacheDir, "embedded_artwork"),
+                File(context.filesDir, "embedded_artwork")
+            )
+            for (dir in dirsToClear) {
+                if (dir.exists()) {
+                    dir.deleteRecursively()
+                }
             }
 
-            // Remove legacy cache files used by older versions.
-            context.cacheDir.listFiles()?.forEach { file ->
-                if (
-                    file.isFile &&
-                    (file.name.startsWith("embedded_art_") || file.name.startsWith("embedded_art_lossless_"))
-                ) {
-                    file.delete()
+            // Remove legacy cache files used by older versions across both cache and files dirs.
+            listOf(context.cacheDir, context.filesDir).forEach { baseDir ->
+                baseDir.listFiles()?.forEach { file ->
+                    if (
+                        file.isFile &&
+                        (file.name.startsWith("embedded_art_") || file.name.startsWith("embedded_art_lossless_"))
+                    ) {
+                        file.delete()
+                    }
                 }
             }
         } catch (e: Exception) {

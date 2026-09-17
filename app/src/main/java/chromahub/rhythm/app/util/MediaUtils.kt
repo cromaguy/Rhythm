@@ -2854,64 +2854,8 @@ object MediaUtils {
     }
 
     private fun maybePruneArtworkCache(cacheDir: File) {
-        val now = System.currentTimeMillis()
-        val shouldPrune = synchronized(this) {
-            if (now - lastEmbeddedArtworkCleanupMs < EMBEDDED_ART_CACHE_CLEANUP_INTERVAL_MS) {
-                false
-            } else {
-                lastEmbeddedArtworkCleanupMs = now
-                true
-            }
-        }
-
-        if (!shouldPrune) return
-
-        val artworkCacheDir = File(cacheDir, EMBEDDED_ARTWORK_CACHE_DIR)
-        val currentArtworkFiles = artworkCacheDir
-            .listFiles { file -> file.isFile }
-            ?.toMutableList()
-            ?: mutableListOf()
-
-        val legacyArtworkFiles = cacheDir
-            .listFiles { file ->
-                file.isFile &&
-                    (file.name.startsWith("embedded_art_") || file.name.startsWith("embedded_art_lossless_"))
-            }
-            ?.toList()
-            .orEmpty()
-
-        val allArtworkFiles = mutableListOf<File>().apply {
-            addAll(currentArtworkFiles)
-            addAll(legacyArtworkFiles)
-        }
-
-        if (allArtworkFiles.isEmpty()) return
-
-        var totalSize = allArtworkFiles.sumOf { it.length() }
-        var fileCount = allArtworkFiles.size
-
-        if (totalSize <= EMBEDDED_ART_CACHE_MAX_BYTES && fileCount <= EMBEDDED_ART_CACHE_MAX_FILES) {
-            return
-        }
-
-        allArtworkFiles.sortBy { it.lastModified() }
-
-        for (file in allArtworkFiles) {
-            if (totalSize <= EMBEDDED_ART_CACHE_MAX_BYTES && fileCount <= EMBEDDED_ART_CACHE_MAX_FILES) {
-                break
-            }
-
-            val fileSize = file.length()
-            if (file.delete()) {
-                totalSize -= fileSize
-                fileCount--
-            }
-        }
-
-        Log.d(
-            TAG,
-            "Pruned artwork cache to ${totalSize / (1024 * 1024)}MB across $fileCount files"
-        )
+        // No-op: On-demand decoding handles artwork via Coil and RhythmAlbumArtProvider.
+        // Files are no longer pruned arbitrarily by size to prevent breaking active URIs.
     }
 
     /*
@@ -2932,22 +2876,31 @@ object MediaUtils {
             val legacySecondaryPrefix = "embedded_art_$legacyHash"
 
             val prefixes = listOf(primaryPrefix, secondaryPrefix, legacyPrimaryPrefix, legacySecondaryPrefix)
-            val artworkCacheDir = File(cacheDir, EMBEDDED_ARTWORK_CACHE_DIR)
             
-            if (artworkCacheDir.exists() && artworkCacheDir.isDirectory) {
-                artworkCacheDir.listFiles()?.forEach { file ->
-                    if (prefixes.any { file.name.startsWith(it) }) {
-                        if (file.delete()) {
-                            Log.d(TAG, "Deleted cached embedded artwork: ${file.name}")
+            // Search both cacheDir and its sibling filesDir (or vice versa)
+            val dirsToCheck = mutableListOf(cacheDir)
+            cacheDir.parentFile?.let { parent ->
+                val altName = if (cacheDir.name == "cache") "files" else "cache"
+                dirsToCheck.add(File(parent, altName))
+            }
+
+            for (dir in dirsToCheck) {
+                val artworkCacheDir = File(dir, EMBEDDED_ARTWORK_CACHE_DIR)
+                if (artworkCacheDir.exists() && artworkCacheDir.isDirectory) {
+                    artworkCacheDir.listFiles()?.forEach { file ->
+                        if (prefixes.any { file.name.startsWith(it) }) {
+                            if (file.delete()) {
+                                Log.d(TAG, "Deleted cached embedded artwork: ${file.name}")
+                            }
                         }
                     }
                 }
-            }
 
-            cacheDir.listFiles()?.forEach { file ->
-                if (prefixes.any { file.name.startsWith(it) }) {
-                    if (file.delete()) {
-                        Log.d(TAG, "Deleted legacy cached embedded artwork: ${file.name}")
+                dir.listFiles()?.forEach { file ->
+                    if (prefixes.any { file.name.startsWith(it) }) {
+                        if (file.delete()) {
+                            Log.d(TAG, "Deleted legacy cached embedded artwork: ${file.name}")
+                        }
                     }
                 }
             }

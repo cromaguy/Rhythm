@@ -244,14 +244,15 @@ object CacheManager {
             }
             
             // Clear Coil image cache
-            imageLoader?.let { loader ->
+            val loader = imageLoader ?: runCatching { coil.Coil.imageLoader(context) }.getOrNull()
+            loader?.let { resolvedLoader ->
                 try {
                     // Clear memory cache
-                    loader.memoryCache?.clear()
+                    resolvedLoader.memoryCache?.clear()
                     Log.d(TAG, "Cleared Coil memory cache")
                     
                     // Clear disk cache
-                    loader.diskCache?.clear()
+                    resolvedLoader.diskCache?.clear()
                     Log.d(TAG, "Cleared Coil disk cache")
                 } catch (e: Exception) {
                     Log.e(TAG, "Error clearing Coil cache", e)

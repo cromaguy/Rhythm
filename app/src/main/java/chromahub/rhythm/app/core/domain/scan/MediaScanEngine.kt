@@ -29,6 +29,7 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import androidx.core.net.toUri
 import androidx.core.content.edit
+import chromahub.rhythm.app.infrastructure.provider.RhythmAlbumArtProvider
 
 /**
  * Centralized, High-Performance Media Scanning Engine for Rhythm.
@@ -203,21 +204,19 @@ class MediaScanEngine(
                     val existing = existingDbSongs[id]
 
                     if (existing != null && existing.dateModified == dateModified && existing.dateAdded >= 100_000_000_000L) {
+                        val defaultArt = Uri.withAppendedPath(
+                            ("content://media/external/audio/albumart").toUri(),
+                            existing.albumId
+                        ).toString()
                         val existingArt = if (preferSongArtwork) {
-                            chromahub.rhythm.app.util.MediaUtils.getCachedEmbeddedAlbumArtUri(
-                                cacheDir = context.filesDir,
-                                songUri = (existing.uri).toUri(),
-                                lossless = losslessArtwork,
-                                exactMatchOnly = false
-                            )?.toString() ?: (existing.artworkUri ?: Uri.withAppendedPath(
-                                ("content://media/external/audio/albumart").toUri(),
-                                existing.albumId
-                            ).toString())
-                        } else {
-                            existing.artworkUri ?: Uri.withAppendedPath(
-                                ("content://media/external/audio/albumart").toUri(),
-                                existing.albumId
+                            RhythmAlbumArtProvider.buildSongUri(
+                                id = id,
+                                path = existing.path,
+                                albumId = existing.albumId,
+                                lossless = losslessArtwork
                             ).toString()
+                        } else {
+                            defaultArt
                         }
                         scannedSongs.add(existing.copy(artworkUri = existingArt))
                         seenIds.add(id)
@@ -331,12 +330,12 @@ class MediaScanEngine(
                         ).toString()
 
                         val initialArtworkUri = if (preferSongArtwork) {
-                            chromahub.rhythm.app.util.MediaUtils.getCachedEmbeddedAlbumArtUri(
-                                cacheDir = context.filesDir,
-                                songUri = (contentUri).toUri(),
-                                lossless = losslessArtwork,
-                                exactMatchOnly = false
-                            )?.toString() ?: defaultArtworkUri
+                            RhythmAlbumArtProvider.buildSongUri(
+                                id = id,
+                                path = path,
+                                albumId = albumId,
+                                lossless = losslessArtwork
+                            ).toString()
                         } else {
                             defaultArtworkUri
                         }

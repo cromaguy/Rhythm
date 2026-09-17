@@ -291,6 +291,13 @@
                 <action android:name="android.service.quicksettings.action.QS_TILE" />
             </intent-filter>
         </service>
+
+        <!-- On-demand album and song artwork provider -->
+        <provider
+            android:name=".infrastructure.provider.RhythmAlbumArtProvider"
+            android:authorities="${applicationId}.albumart"
+            android:exported="true"
+            android:grantUriPermissions="true" />
     </application>
 
 </manifest>

@@ -2666,23 +2666,15 @@ private val _autoCheckForUpdates = MutableStateFlow(prefs.getBoolean(KEY_AUTO_CH
         val changed = _preferSongArtwork.value != enabled
         val disableLossless = !enabled && _losslessArtwork.value
         prefs.edit {
-    putBoolean(KEY_PREFER_SONG_ARTWORK, enabled)
-    putBoolean(KEY_IGNORE_MEDIASTORE_COVERS, enabled)
-    putBoolean(KEY_LOSSLESS_ARTWORK, if (disableLossless) false else _losslessArtwork.value)
-}
+            putBoolean(KEY_PREFER_SONG_ARTWORK, enabled)
+            putBoolean(KEY_IGNORE_MEDIASTORE_COVERS, enabled)
+            putBoolean(KEY_LOSSLESS_ARTWORK, if (disableLossless) false else _losslessArtwork.value)
+        }
         _preferSongArtwork.value = enabled
         if (disableLossless) {
             _losslessArtwork.value = false
         }
-
-        if (changed || disableLossless) {
-            val reason = when {
-                enabled -> "prefer_song_artwork_enabled"
-                disableLossless -> "prefer_song_artwork_disabled_and_lossless_reset"
-                else -> "prefer_song_artwork_disabled"
-            }
-            requestFullMediaRescanOnNextLaunch(reason = reason)
-        }
+        updateDerivedSettings()
     }
 
     @Deprecated("Use setPreferSongArtwork")
@@ -2699,13 +2691,6 @@ private val _autoCheckForUpdates = MutableStateFlow(prefs.getBoolean(KEY_AUTO_CH
         // Lossless artwork requires per-song artwork mode to take effect.
         if (enabled && !_preferSongArtwork.value) {
             setPreferSongArtwork(true)
-        } else if (changed) {
-            val reason = if (enabled) {
-                "lossless_artwork_enabled"
-            } else {
-                "lossless_artwork_disabled"
-            }
-            requestFullMediaRescanOnNextLaunch(reason = reason)
         }
     }
 

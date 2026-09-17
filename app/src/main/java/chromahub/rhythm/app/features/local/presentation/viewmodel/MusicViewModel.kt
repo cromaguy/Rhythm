@@ -1240,60 +1240,85 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                     return@collect
                 }
                 
-                val preferSongArtworkChanged = newState.first != previousState.first
-                val losslessChanged = newState.second != previousState.second
                 previousState = newState
+                val preferSongArtwork = newState.first
+                val losslessArtwork = newState.second
 
-                Log.d(TAG, "Artwork settings changed dynamically: preferSongArtwork=${newState.first}, losslessArtwork=${newState.second}")
+                Log.d(TAG, "Artwork settings changed dynamically: preferSongArtwork=$preferSongArtwork, losslessArtwork=$losslessArtwork")
                 
                 try {
-                    // Reset extraction completed flag to allow background extraction for the new format
-                    if (preferSongArtworkChanged || (newState.first && losslessChanged)) {
-                        appSettings.setEmbeddedArtworkExtractionCompleted(false)
-                    }
+                    // Evict Coil's in-memory bitmap cache so views request fresh artwork
+                    coil.Coil.imageLoader(getApplication<Application>()).memoryCache?.clear()
 
                     // Invalidate caches and reload
                     withContext(Dispatchers.IO) {
                         repository.clearInMemoryCaches()
                         val freshSongs = repository.loadSongs()
-                        withContext(Dispatchers.Main) {
-                            _songs.value = freshSongs
-                        }
                         val freshAlbums = repository.loadAlbums()
                         val freshArtists = repository.loadArtists()
+                        val freshSongMap = freshSongs.associateBy { it.id }
+
                         withContext(Dispatchers.Main) {
+                            _songs.value = freshSongs
                             _albums.value = freshAlbums
                             _artists.value = freshArtists
-                        }
-                    }
 
-                    // Trigger background extraction if preferSongArtwork is enabled
-                    val preferSongArtwork = newState.first
-                    val losslessArtwork = newState.second
-                    if (preferSongArtwork) {
-                        launch(Dispatchers.IO) {
-                            try {
-                                val currentSongs = _songs.value
-                                val songsNeedingExtraction = currentSongs.count { song ->
-                                    song.artworkUri == null ||
-                                    !repository.isEmbeddedArtworkCacheUri(song.artworkUri) ||
-                                    !repository.hasArtworkMatchingLossless(song, losslessArtwork)
+                            // Update current queue songs
+                            val currentQueue = _currentQueue.value
+                            if (currentQueue.songs.isNotEmpty()) {
+                                val updatedQueueSongs = currentQueue.songs.map { queueSong ->
+                                    freshSongMap[queueSong.id] ?: queueSong
                                 }
-                                if (songsNeedingExtraction > 0) {
-                                    Log.d(TAG, "Starting dynamic background embedded artwork extraction for $songsNeedingExtraction songs")
-                                    val updated = repository.extractEmbeddedArtworkForSongs(currentSongs, losslessArtwork)
-                                    withContext(Dispatchers.Main) {
-                                        _songs.value = updated
-                                    }
-                                    repository.updateAndPersistSongs(updated)
+                                _currentQueue.value = currentQueue.copy(songs = updatedQueueSongs)
+                            }
+
+                            // Update current playing song
+                            val currentId = _currentSong.value?.id
+                            if (currentId != null) {
+                                freshSongMap[currentId]?.let { updatedSong ->
+                                    _currentSong.value = updatedSong
                                 }
-                                appSettings.setEmbeddedArtworkExtractionLosslessStatus(losslessArtwork)
-                                appSettings.setEmbeddedArtworkExtractionCompleted(true)
-                            } catch (e: Exception) {
-                                Log.e(TAG, "Error in dynamic background embedded artwork extraction", e)
                             }
                         }
                     }
+
+                    // Update media controller metadata if currently playing
+                    _currentSong.value?.let { currentSong ->
+                        mediaController?.let { controller ->
+                            try {
+                                val currentIndex = controller.currentMediaItemIndex
+                                if (currentIndex != C.INDEX_UNSET &&
+                                    currentIndex in 0 until controller.mediaItemCount
+                                ) {
+                                    val currentItem = controller.getMediaItemAt(currentIndex)
+                                    if (currentItem.mediaId == currentSong.id) {
+                                        val updatedMetadata = currentItem.mediaMetadata.buildUpon()
+                                            .setArtworkUri(currentSong.artworkUri)
+                                            .build()
+                                        val updatedItem = currentItem.buildUpon()
+                                            .setMediaMetadata(updatedMetadata)
+                                            .build()
+                                        controller.replaceMediaItem(currentIndex, updatedItem)
+                                    }
+                                }
+                            } catch (e: Exception) {
+                                Log.w(TAG, "Failed to update current media item artwork on settings change", e)
+                            }
+                        }
+
+                        val isFav = _favoriteSongs.value.contains(currentSong.id)
+                        WidgetUpdater.updateWidget(
+                            getApplication(),
+                            currentSong,
+                            _isPlaying.value,
+                            mediaController?.hasPreviousMediaItem() ?: false,
+                            mediaController?.hasNextMediaItem() ?: false,
+                            isFav
+                        )
+                    }
+
+                    appSettings.setEmbeddedArtworkExtractionLosslessStatus(losslessArtwork)
+                    appSettings.setEmbeddedArtworkExtractionCompleted(true)
                 } catch (e: Exception) {
                     Log.e(TAG, "Error updating library artwork on settings change", e)
                 }

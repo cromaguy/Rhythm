@@ -182,11 +182,6 @@ fun LibrarySettingsScreen(onBackClick: () -> Unit) {
 
     var showLibraryTabOrderBottomSheet by remember { mutableStateOf(false) }
     var showArtistArtworkSourceBottomSheet by remember { mutableStateOf(false) }
-    var showRestartDialog by remember { mutableStateOf(false) }
-    var restartRequiresArtworkRescan by remember { mutableStateOf(false) }
-    var restartDialogMessage by remember {
-        mutableStateOf(context.getString(R.string.settings_song_artwork_restart_required))
-    }
 
     val artistArtworkSourceSubtitle = when (artistArtworkSource) {
         ArtistArtworkSource.PREFER_LOCAL_THEN_API -> stringResource(R.string.settings_artist_artwork_source_prefer_local)
@@ -237,9 +232,6 @@ fun LibrarySettingsScreen(onBackClick: () -> Unit) {
                         onToggleChange = {
                             if (it != preferSongArtwork) {
                                 appSettings.setPreferSongArtwork(it)
-                                restartRequiresArtworkRescan = true
-                                restartDialogMessage = context.getString(R.string.settings_song_artwork_restart_required)
-                                showRestartDialog = true
                             }
                         }
                     ),
@@ -248,12 +240,10 @@ fun LibrarySettingsScreen(onBackClick: () -> Unit) {
                         context.getString(R.string.settings_lossless_artwork),
                         context.getString(R.string.settings_lossless_artwork_desc),
                         toggleState = losslessArtwork,
+                        enabled = preferSongArtwork,
                         onToggleChange = {
                             if (it != losslessArtwork) {
                                 appSettings.setLosslessArtwork(it)
-                                restartRequiresArtworkRescan = true
-                                restartDialogMessage = context.getString(R.string.settings_song_artwork_restart_required)
-                                showRestartDialog = true
                             }
                         }
                     ),
@@ -324,36 +314,6 @@ fun LibrarySettingsScreen(onBackClick: () -> Unit) {
         ArtistArtworkSourceBottomSheet(
             onDismiss = { showArtistArtworkSourceBottomSheet = false },
             appSettings = appSettings
-        )
-    }
-
-    if (showRestartDialog) {
-        AppRestartDialog(
-            onDismiss = {
-                showRestartDialog = false
-                restartRequiresArtworkRescan = false
-            },
-            onRestart = {
-                val shouldRefreshLibrary = restartRequiresArtworkRescan
-                showRestartDialog = false
-                restartRequiresArtworkRescan = false
-                scope.launch {
-                    if (shouldRefreshLibrary) {
-                        try {
-                            chromahub.rhythm.app.util.CacheManager.clearAllCache(context, null)
-                            appSettings.requestFullMediaRescanOnNextLaunch(reason = "library_artwork_settings_restart")
-                        } catch (e: Exception) {
-                            Log.e("CacheManagement", "Error clearing cache before artwork settings restart", e)
-                        }
-                    }
-                    chromahub.rhythm.app.util.AppRestarter.restartApp(context)
-                }
-            },
-            onContinue = {
-                showRestartDialog = false
-                restartRequiresArtworkRescan = false
-            },
-            message = restartDialogMessage
         )
     }
 }
