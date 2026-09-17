@@ -66,6 +66,8 @@ jobs:
       - name: Setup Android-SDK
         if: steps.check_version.outputs.should_run == 'true'
         uses: android-actions/setup-android@v4
+        with:
+          packages: ''
 
       - name: Create files for signing
         if: steps.check_version.outputs.should_run == 'true'

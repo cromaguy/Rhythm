@@ -3034,8 +3034,6 @@
     <string name="replay_gain_offload_warning">Mengaktifkan opsi ini akan menonaktifkan Audio Offload perangkat keras</string>
     <string name="settings_search_suggestions_desc">Tampilkan saran kontekstual di bagian atas</string>
     <string name="performancesettingsscreen_performance_desc">Optimalkan haptik, decoding, dan marquee untuk konsumsi daya</string>
-    <string name="settings_use_exact_artwork_colors">Gunakan Warna Sampul yang Tepat</string>
-    <string name="settings_use_exact_artwork_colors_desc">Gunakan warna latar belakang dan teks yang tepat dari sampul</string>
     <string name="settings_player_thumb_style_desc">Pilih bentuk tombol penggeser seek bar (lingkaran, persegi, pil, berlian, bunga, hati…)</string>
     <string name="settings_gesture_disable_unused_desc">Nonaktifkan gestur yang tidak pernah Anda gunakan</string>
     <string name="settings_queue_context_preference_desc">Pilih cara pengurutan lagu antrean otomatis</string>
