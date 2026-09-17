@@ -239,6 +239,8 @@ class AppSettings private constructor(context: Context) {
         private const val KEY_EQUALIZER_PRESET_ORDER = "equalizer_preset_order"
         private const val KEY_HIDDEN_EQUALIZER_PRESETS = "hidden_equalizer_presets"
         private const val KEY_PINNED_AUTOEQ_PROFILES = "pinned_autoeq_profiles"
+        private const val KEY_CUSTOM_AUTOEQ_PROFILES = "custom_autoeq_profiles"
+        private const val KEY_SPEAKER_AUTOEQ_BYPASS = "speaker_autoeq_bypass"
         
         // Cache Settings
         private const val KEY_MAX_CACHE_SIZE = "max_cache_size"
@@ -1182,6 +1184,14 @@ class AppSettings private constructor(context: Context) {
             ?: emptyList()
     )
     val pinnedAutoEQProfiles: StateFlow<List<String>> = _pinnedAutoEQProfiles.asStateFlow()
+    
+    private val _customAutoEQProfiles = MutableStateFlow(
+        AutoEQProfile.listFromJson(prefs.getString(KEY_CUSTOM_AUTOEQ_PROFILES, null))
+    )
+    val customAutoEQProfiles: StateFlow<List<AutoEQProfile>> = _customAutoEQProfiles.asStateFlow()
+
+    private val _speakerAutoEQBypass = MutableStateFlow(prefs.getBoolean(KEY_SPEAKER_AUTOEQ_BYPASS, true))
+    val speakerAutoEQBypass: StateFlow<Boolean> = _speakerAutoEQBypass.asStateFlow()
     
     // Sleep Timer
     private val _sleepTimerActive = MutableStateFlow(prefs.getBoolean(KEY_SLEEP_TIMER_ACTIVE, false))
@@ -3003,6 +3013,51 @@ private val _autoCheckForUpdates = MutableStateFlow(prefs.getBoolean(KEY_AUTO_CH
         val hidden = _hiddenEqualizerPresets.value.toMutableSet()
         hidden.remove(presetKey)
         setHiddenEqualizerPresets(hidden)
+    }
+
+    fun saveCustomAutoEQProfile(profile: AutoEQProfile) {
+        val current = _customAutoEQProfiles.value.toMutableList()
+        val index = current.indexOfFirst { it.name.equals(profile.name, ignoreCase = true) }
+        if (index >= 0) {
+            current[index] = profile
+        } else {
+            current.add(profile)
+        }
+        val json = AutoEQProfile.listToJson(current)
+        prefs.edit { putString(KEY_CUSTOM_AUTOEQ_PROFILES, json) }
+        _customAutoEQProfiles.value = current
+    }
+
+    fun saveCustomAutoEQProfiles(profiles: List<AutoEQProfile>) {
+        val current = _customAutoEQProfiles.value.toMutableList()
+        for (profile in profiles) {
+            val index = current.indexOfFirst { it.name.equals(profile.name, ignoreCase = true) }
+            if (index >= 0) {
+                current[index] = profile
+            } else {
+                current.add(profile)
+            }
+        }
+        val json = AutoEQProfile.listToJson(current)
+        prefs.edit { putString(KEY_CUSTOM_AUTOEQ_PROFILES, json) }
+        _customAutoEQProfiles.value = current
+    }
+
+    fun deleteCustomAutoEQProfile(name: String) {
+        val current = _customAutoEQProfiles.value.toMutableList()
+        current.removeAll { it.name.equals(name, ignoreCase = true) }
+        val json = AutoEQProfile.listToJson(current)
+        prefs.edit { putString(KEY_CUSTOM_AUTOEQ_PROFILES, json) }
+        _customAutoEQProfiles.value = current
+        unpinAutoEQProfile(name)
+        if (_autoEQProfile.value.equals(name, ignoreCase = true)) {
+            setAutoEQProfile("")
+        }
+    }
+
+    fun setSpeakerAutoEQBypass(bypass: Boolean) {
+        prefs.edit { putBoolean(KEY_SPEAKER_AUTOEQ_BYPASS, bypass) }
+        _speakerAutoEQBypass.value = bypass
     }
     
     // Sleep Timer Methods

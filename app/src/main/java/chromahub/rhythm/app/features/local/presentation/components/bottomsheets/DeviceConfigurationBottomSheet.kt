@@ -733,6 +733,7 @@ fun DeviceConfigurationBottomSheet(
                             val parsedProfiles = AutoEQImportExport.autoDetectAndParse(importText, context.getString(R.string.device_configuration_imported_profile))
                             
                             if (parsedProfiles.isNotEmpty()) {
+                                musicViewModel.saveCustomAutoEQProfiles(parsedProfiles)
                                 val profile = parsedProfiles.first()
                                 musicViewModel.applyAutoEQProfile(profile)
                                 scope.launch {

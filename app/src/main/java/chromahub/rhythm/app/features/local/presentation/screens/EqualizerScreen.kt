@@ -1008,7 +1008,7 @@ fun EqualizerScreen(
 
                                 val points = bandLevels.mapIndexed { index, level ->
                                     val x = (index + 0.5f) * bandWidth
-                                    val normalizedLevel = (level + 15f) / 30f
+                                    val normalizedLevel = ((level + 15f) / 30f).coerceIn(0.05f, 0.95f)
                                     val y = height * (1f - normalizedLevel)
                                     Offset(x, y)
                                 }
@@ -1485,7 +1485,7 @@ private fun ExpressiveEffectCard(
 }
 
 @Composable
-private fun getLocalizedPresetName(name: String): String {
+internal fun getLocalizedPresetName(name: String): String {
     return when (name) {
         "Flat" -> stringResource(R.string.eq_preset_flat)
         "Rock" -> stringResource(R.string.eq_preset_rock)

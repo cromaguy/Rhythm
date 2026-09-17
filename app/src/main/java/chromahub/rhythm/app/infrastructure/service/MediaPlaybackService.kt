@@ -124,6 +124,8 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
     private var pendingAudioEffectsSessionId: Int = 0
     @Volatile
     private var currentAudioEffectsSessionId: Int = 0
+    @Volatile
+    private var pendingEqualizerLevels: FloatArray? = null
     
     // Player listener reference for proper cleanup
     private var playerListener: Player.Listener? = null
@@ -1758,10 +1760,6 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
             ACTION_SET_EQUALIZER_BAND -> {
                 val band = intent.getShortExtra("band", 0)
                 val level = intent.getShortExtra("level", 0)
-                if (equalizer == null) {
-                    Log.e(TAG, "Cannot set band level: equalizer is null")
-                    return START_NOT_STICKY
-                }
                 setEqualizerBandLevel(band, level)
             }
             ACTION_SET_BASS_BOOST -> {
@@ -1775,7 +1773,9 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
                 }
                 
                 setBassBoostEnabled(enabled)
-                if (enabled) setBassBoostStrength(strength)
+                if (enabled && strength > 0) {
+                    setBassBoostStrength(strength)
+                }
             }
             ACTION_SET_VIRTUALIZER -> {
                 val enabled = intent.getBooleanExtra("enabled", false)
@@ -1788,7 +1788,9 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
                 }
                 
                 setVirtualizerEnabled(enabled)
-                if (enabled) setVirtualizerStrength(strength)
+                if (enabled && strength > 0) {
+                    setVirtualizerStrength(strength)
+                }
             }
             ACTION_SET_MONO_AUDIO -> {
                 val enabled = intent.getBooleanExtra("enabled", false)
@@ -1805,24 +1807,8 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
                 val preset = intent.getStringExtra("preset") ?: ""
                 val levels = intent.getFloatArrayExtra("levels")
                 if (levels != null) {
-                    if (equalizer == null) {
-                        Log.e(TAG, "Cannot apply preset: equalizer is null")
-                        // Try to initialize if session ID is available
-                        if (getPlayerAudioSessionId() != 0) {
-                            Log.d(TAG, "Attempting to initialize equalizer before applying preset")
-                            initializeAudioEffects()
-                            // Try applying again after initialization
-                            if (equalizer != null) {
-                                applyEqualizerPreset(levels)
-                                Log.d(TAG, "Applied equalizer preset after initialization: $preset with ${levels.size} bands")
-                            } else {
-                                Log.e(TAG, "Failed to initialize equalizer, cannot apply preset")
-                            }
-                        }
-                    } else {
-                        applyEqualizerPreset(levels)
-                        Log.d(TAG, "Applied equalizer preset: $preset with ${levels.size} bands")
-                    }
+                    applyEqualizerPreset(levels)
+                    Log.d(TAG, "Applied equalizer preset intent: $preset with ${levels.size} bands")
                 }
             }
             ACTION_GET_EQUALIZER_DIAGNOSTICS -> {
@@ -3021,42 +3007,29 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
             val shouldEnableEqualizer = appSettings.equalizerEnabled.value
             Log.d(TAG, "Initializing audio effects with session ID: $audioSessionId (current: $currentAudioEffectsSessionId, EQ enabled: $shouldEnableEqualizer)")
 
-            if (!shouldEnableEqualizer) {
-                if (equalizer != null) {
-                    try {
-                        equalizer?.release()
-                        Log.d(TAG, "Released unused equalizer effect")
-                    } catch (e: Exception) {
-                        Log.w(TAG, "Error releasing unused equalizer: ${e.message}")
+            if (equalizer == null || currentAudioEffectsSessionId != audioSessionId) {
+                try {
+                    equalizer?.release()
+                    equalizer = null
+                    currentAudioEffectsSessionId = 0
+                    delay(50)
+                } catch (e: Exception) {
+                    Log.w(TAG, "Error releasing existing equalizer: ${e.message}")
+                }
+
+                try {
+                    equalizer = android.media.audiofx.Equalizer(0, audioSessionId).apply {
+                        enabled = true
                     }
+                    currentAudioEffectsSessionId = audioSessionId
+                    Log.d(TAG, "Equalizer initialized with ${equalizer?.numberOfBands} bands for session $audioSessionId")
+                } catch (e: Exception) {
+                    Log.w(TAG, "Equalizer is not available on this device: ${e.message}")
                     equalizer = null
                     currentAudioEffectsSessionId = 0
                 }
             } else {
-                if (equalizer == null || currentAudioEffectsSessionId != audioSessionId) {
-                    try {
-                        equalizer?.release()
-                        equalizer = null
-                        currentAudioEffectsSessionId = 0
-                        delay(50)
-                    } catch (e: Exception) {
-                        Log.w(TAG, "Error releasing existing equalizer: ${e.message}")
-                    }
-
-                    try {
-                        equalizer = android.media.audiofx.Equalizer(0, audioSessionId).apply {
-                            enabled = true
-                        }
-                        currentAudioEffectsSessionId = audioSessionId
-                        Log.d(TAG, "Equalizer initialized with ${equalizer?.numberOfBands} bands for session $audioSessionId")
-                    } catch (e: Exception) {
-                        Log.w(TAG, "Equalizer is not available on this device: ${e.message}")
-                        equalizer = null
-                        currentAudioEffectsSessionId = 0
-                    }
-                } else {
-                    Log.d(TAG, "Equalizer already active for session $audioSessionId, skipping recreation")
-                }
+                Log.d(TAG, "Equalizer already active for session $audioSessionId, skipping recreation")
             }
 
             loadSavedAudioEffects()
@@ -3079,17 +3052,21 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
                 Log.d(TAG, "Loading saved effects - EQ should be enabled: $shouldBeEnabled")
                 
                 if (shouldBeEnabled) {
-                    // Load band levels (supports both 5-band legacy and 10-band)
-                    val bandLevelsString = appSettings.equalizerBandLevels.value
-                    val bandLevels = bandLevelsString.split(",").mapNotNull { it.toFloatOrNull() }
-                    if (bandLevels.isNotEmpty()) {
-                        // Apply band levels first, then enable
-                        // Use the same interpolation logic as applyEqualizerPreset
-                        applyEqualizerPreset(bandLevels.toFloatArray())
+                    val pending = pendingEqualizerLevels
+                    if (pending != null) {
+                        pendingEqualizerLevels = null
+                        applyEqualizerPreset(pending)
+                    } else {
+                        val bandLevelsString = appSettings.equalizerBandLevels.value
+                        val bandLevels = bandLevelsString.split(",").mapNotNull { it.toFloatOrNull() }
+                        if (bandLevels.isNotEmpty()) {
+                            applyEqualizerPreset(bandLevels.toFloatArray())
+                        }
                     }
                     // Enable equalizer AFTER applying levels to avoid audio glitches
                     setEqualizerEnabledSafe(true)
                 } else {
+                    pendingEqualizerLevels = null
                     // Zero all bands — don't disable hardware EQ to avoid AudioFlinger DSP burst
                     withEqualizerSafe("set flat bands on load", Unit) { eq ->
                         val numberOfBands = eq.numberOfBands.toInt()
@@ -3182,19 +3159,21 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
     
     fun setEqualizerBandLevel(band: Short, level: Short) {
         try {
-            // When a single band is changed in a 10-band UI but we only have 5 hardware bands,
-            // we need to reload and re-interpolate all bands from saved settings
             val bandLevelsString = appSettings.equalizerBandLevels.value
             val bandLevels = bandLevelsString.split(",").mapNotNull { it.toFloatOrNull() }
             
-            if (bandLevels.size == 10 && (equalizer?.numberOfBands?.toInt() ?: 0) < 10) {
-                // Re-apply all bands with interpolation
+            if (bandLevels.isNotEmpty()) {
                 applyEqualizerPreset(bandLevels.toFloatArray())
-                Log.d(TAG, "Re-applied 10-band EQ with interpolation after band $band change")
+                Log.d(TAG, "Re-applied equalizer preset with headroom after band $band change")
             } else {
-                // Direct band setting when counts match
-                equalizer?.setBandLevel(band, level)
-                Log.d(TAG, "Set equalizer band $band to level $level")
+                equalizer?.let { eq ->
+                    val range = eq.bandLevelRange
+                    val clamped = level.coerceIn(range[0], range[1])
+                    withEqualizerSafe("setBandLevel", Unit) {
+                        it.setBandLevel(band, clamped)
+                    }
+                    Log.d(TAG, "Set equalizer band $band to level $clamped")
+                }
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error setting equalizer band level", e)
@@ -3269,42 +3248,35 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
     fun applyEqualizerPreset(levels: FloatArray) {
         try {
             if (equalizer == null) {
-                Log.w(TAG, "Cannot apply preset: equalizer is null")
+                Log.w(TAG, "Equalizer is null when applying preset, queuing pending levels and ensuring init")
+                pendingEqualizerLevels = levels.copyOf()
+                if (getPlayerAudioSessionId() != 0) {
+                    initializeAudioEffects()
+                }
                 return
             }
             
             equalizer?.let { eq ->
                 val numberOfBands = eq.numberOfBands.toInt()
                 val inputBands = levels.size
+                val bandRange = eq.bandLevelRange
                 
-                if (inputBands == numberOfBands) {
-                    val bandRange = eq.bandLevelRange
-                    // Direct mapping if bands match
-                    for (i in 0 until numberOfBands) {
-                        val rawLevel = (levels[i] * 100).toInt().toShort()
-                        val level = rawLevel.coerceIn(bandRange[0], bandRange[1])
-                        eq.setBandLevel(i.toShort(), level)
-                    }
-                } else if (inputBands > numberOfBands) {
-                    val bandRange = eq.bandLevelRange
-                    // Map 10 UI bands to available hardware bands using interpolation
-                    // This handles the case where UI has 10 bands but hardware has 5
-                    val mappedLevels = interpolateBands(levels, numberOfBands)
-                    for (i in 0 until numberOfBands) {
-                        val rawLevel = (mappedLevels[i] * 100).toInt().toShort()
-                        val level = rawLevel.coerceIn(bandRange[0], bandRange[1])
-                        eq.setBandLevel(i.toShort(), level)
-                    }
+                val interpolatedLevels = if (inputBands == numberOfBands) {
+                    levels.copyOf()
                 } else {
-                    val bandRange = eq.bandLevelRange
-                    // If hardware has more bands than UI, apply what we have
-                    for (i in 0 until inputBands) {
-                        val rawLevel = (levels[i] * 100).toInt().toShort()
-                        val level = rawLevel.coerceIn(bandRange[0], bandRange[1])
-                        eq.setBandLevel(i.toShort(), level)
-                    }
+                    interpolateBands(levels, numberOfBands, eq)
                 }
-                Log.d(TAG, "Applied equalizer preset: ${levels.size} UI bands -> $numberOfBands hardware bands")
+
+                val maxGain = interpolatedLevels.maxOrNull() ?: 0f
+                val headroom = if (maxGain > 0f) maxGain else 0f
+
+                for (i in 0 until numberOfBands) {
+                    val effectiveLevelDb = interpolatedLevels[i] - headroom
+                    val rawLevel = (effectiveLevelDb * 100).toInt().toShort()
+                    val level = rawLevel.coerceIn(bandRange[0], bandRange[1])
+                    eq.setBandLevel(i.toShort(), level)
+                }
+                Log.d(TAG, "Applied equalizer preset: ${levels.size} UI bands -> $numberOfBands hardware bands (headroom: -${headroom}dB)")
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error applying equalizer preset", e)
@@ -3313,31 +3285,55 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
     
     /**
      * Interpolates 10-band EQ settings to the available hardware bands.
-     * Uses weighted averaging based on frequency proximity.
+     * Uses logarithmic frequency mapping based on actual hardware center frequencies when available.
      * 
      * Standard 10-band frequencies: 31Hz, 62Hz, 125Hz, 250Hz, 500Hz, 1kHz, 2kHz, 4kHz, 8kHz, 16kHz
-     * Standard 5-band frequencies: ~60Hz, 230Hz, 910Hz, 3.6kHz, 14kHz (varies by device)
      */
-    private fun interpolateBands(inputLevels: FloatArray, outputBands: Int): FloatArray {
-        if (outputBands <= 0 || inputLevels.isEmpty()) return FloatArray(outputBands)
+    private fun interpolateBands(inputLevels: FloatArray, outputBands: Int, eq: android.media.audiofx.Equalizer? = null): FloatArray {
+        if (outputBands <= 0 || inputLevels.isEmpty()) return FloatArray(outputBands.coerceAtLeast(0))
+        if (outputBands == 1) {
+            return FloatArray(1) { inputLevels.average().toFloat() }
+        }
         
         val result = FloatArray(outputBands)
         val inputBands = inputLevels.size
-        
-        // Define the mapping of 10-band to 5-band (approximate frequency groupings)
-        // Band 0 (60Hz): avg of 31Hz, 62Hz, 125Hz
-        // Band 1 (230Hz): avg of 250Hz, 500Hz
-        // Band 2 (910Hz): avg of 1kHz, 2kHz
-        // Band 3 (3.6kHz): avg of 4kHz, 8kHz
-        // Band 4 (14kHz): 16kHz
+        val standard10Freqs = floatArrayOf(31f, 62f, 125f, 250f, 500f, 1000f, 2000f, 4000f, 8000f, 16000f)
+
+        if (inputBands == 10 && eq != null) {
+            try {
+                val hwFreqs = FloatArray(outputBands) { b ->
+                    (eq.getCenterFreq(b.toShort()) / 1000f).coerceAtLeast(20f)
+                }
+                for (i in 0 until outputBands) {
+                    val targetFreq = hwFreqs[i]
+                    val logTarget = kotlin.math.ln(targetFreq.toDouble())
+                    if (targetFreq <= standard10Freqs.first()) {
+                        result[i] = inputLevels.first()
+                    } else if (targetFreq >= standard10Freqs.last()) {
+                        result[i] = inputLevels.last()
+                    } else {
+                        var idx = 0
+                        while (idx < standard10Freqs.size - 1 && standard10Freqs[idx + 1] < targetFreq) {
+                            idx++
+                        }
+                        val logLow = kotlin.math.ln(standard10Freqs[idx].toDouble())
+                        val logHigh = kotlin.math.ln(standard10Freqs[idx + 1].toDouble())
+                        val fraction = ((logTarget - logLow) / (logHigh - logLow)).toFloat().coerceIn(0f, 1f)
+                        result[i] = inputLevels[idx] * (1f - fraction) + inputLevels[idx + 1] * fraction
+                    }
+                }
+                return result
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to query hardware center frequencies, falling back to heuristic interpolation", e)
+            }
+        }
         
         if (outputBands == 5 && inputBands == 10) {
-            // Optimized mapping for the common 10->5 case
-            result[0] = (inputLevels[0] * 0.3f + inputLevels[1] * 0.4f + inputLevels[2] * 0.3f)
+            result[0] = (inputLevels[0] * 0.25f + inputLevels[1] * 0.5f + inputLevels[2] * 0.25f)
             result[1] = (inputLevels[3] * 0.5f + inputLevels[4] * 0.5f)
             result[2] = (inputLevels[5] * 0.5f + inputLevels[6] * 0.5f)
             result[3] = (inputLevels[7] * 0.5f + inputLevels[8] * 0.5f)
-            result[4] = inputLevels[9]
+            result[4] = (inputLevels[8] * 0.25f + inputLevels[9] * 0.75f)
         } else {
             // General linear interpolation for other cases
             val ratio = (inputBands - 1).toFloat() / (outputBands - 1).toFloat()

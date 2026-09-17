@@ -32,6 +32,22 @@ data class AutoEQProfile(
             16000  // Air
         )
         
+        private val gson = com.google.gson.Gson()
+
+        fun listToJson(profiles: List<AutoEQProfile>): String {
+            return gson.toJson(profiles)
+        }
+
+        fun listFromJson(json: String?): List<AutoEQProfile> {
+            if (json.isNullOrBlank()) return emptyList()
+            return try {
+                val type = object : com.google.gson.reflect.TypeToken<List<AutoEQProfile>>() {}.type
+                gson.fromJson(json, type) ?: emptyList()
+            } catch (_: Exception) {
+                emptyList()
+            }
+        }
+
         fun getFrequencyLabel(bandIndex: Int): String {
             return when {
                 bandIndex < 0 || bandIndex >= BAND_FREQUENCIES.size -> "?"

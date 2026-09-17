@@ -8,8 +8,9 @@ package chromahub.rhythm.app.util
 import android.content.Context
 import android.net.Uri
 import chromahub.rhythm.app.shared.data.model.AutoEQProfile
-import org.json.JSONArray
-import org.json.JSONObject
+import com.google.gson.Gson
+import com.google.gson.JsonObject
+import com.google.gson.JsonParser
 import java.io.BufferedReader
 import java.io.InputStreamReader
 
@@ -22,6 +23,8 @@ import java.io.InputStreamReader
  */
 object AutoEQImportExport {
     
+    private val gson = Gson()
+    
     // Standard 10-band frequencies in Hz
     private val BAND_FREQUENCIES = listOf(31, 62, 125, 250, 500, 1000, 2000, 4000, 8000, 16000)
     
@@ -30,33 +33,53 @@ object AutoEQImportExport {
      * Format:
      * Preamp: -5.8 dB
      * Filter 1: ON PK Fc 31 Hz Gain -4.3 dB Q 1.41
-     * Filter 2: ON PK Fc 62 Hz Gain -1.8 dB Q 1.41
+     * Filter 2: ON PK Fc 62 Hz Gain +1.8 dB Q 1.41
      * ...
      */
     fun parseFixedBandEQ(text: String, name: String = "Imported Profile"): AutoEQProfile? {
         return try {
             val bands = MutableList(10) { 0f }
             val lines = text.lines()
+            var matchedFilterCount = 0
             
             for (line in lines) {
-                // Match pattern: Filter N: ON PK Fc XXX Hz Gain YYY dB Q ZZZ
-                val filterMatch = Regex("""Filter\s+(\d+).*Gain\s+([-\d.]+)\s*dB""").find(line)
+                val trimmedLine = line.trim()
+                if (trimmedLine.startsWith("#") || trimmedLine.contains(": OFF", ignoreCase = true)) {
+                    continue
+                }
+                
+                // Match pattern: Filter N: ON PK Fc XXX Hz Gain YYY dB Q ZZZ (or similar variations)
+                val filterMatch = Regex("""Filter\s+(\d+).*?Gain\s+([+-]?[\d.]+)\s*dB""", RegexOption.IGNORE_CASE).find(trimmedLine)
                 if (filterMatch != null) {
                     val filterNum = filterMatch.groupValues[1].toIntOrNull() ?: continue
                     val gain = filterMatch.groupValues[2].toFloatOrNull() ?: continue
-                    if (filterNum in 1..10) {
-                        bands[filterNum - 1] = gain
+                    
+                    val fcMatch = Regex("""Fc\s+(\d+)\s*Hz""", RegexOption.IGNORE_CASE).find(trimmedLine)
+                    val explicitFreq = fcMatch?.groupValues?.get(1)?.toIntOrNull()
+                    
+                    val bandIndex = if (explicitFreq != null) {
+                        val exactIndex = BAND_FREQUENCIES.indexOf(explicitFreq)
+                        if (exactIndex >= 0) exactIndex else findNearestBandIndex(explicitFreq)
+                    } else if (filterNum in 1..10) {
+                        filterNum - 1
+                    } else {
+                        -1
+                    }
+                    
+                    if (bandIndex in 0..9) {
+                        bands[bandIndex] = gain.coerceIn(-15f, 15f)
+                        matchedFilterCount++
                     }
                 }
             }
             
             // Check if we got any valid data
-            if (bands.any { it != 0f }) {
+            if (matchedFilterCount > 0 && bands.any { it != 0f }) {
                 AutoEQProfile(
                     name = name,
                     brand = extractBrandFromName(name),
                     type = "Unknown",
-                    bands = bands
+                    bands = bands.map { it.round(1) }
                 )
             } else {
                 null
@@ -68,45 +91,67 @@ object AutoEQImportExport {
     
     /**
      * Parse a parametric EQ text format
+     * Supports PK (peaking), LSC/LOW_SHELF (low shelf), and HSC/HIGH_SHELF (high shelf) filters.
+     * Cascaded filters in series are additive in decibels.
      * Format:
      * Filter N: ON PK Fc XXXX Hz Gain YY.Y dB Q Z.ZZ
      */
     fun parseParametricEQ(text: String, name: String = "Imported Profile"): AutoEQProfile? {
         return try {
-            val bandSums = FloatArray(10) 
-            val bandCounts = IntArray(10) 
+            val bandSums = FloatArray(10)
             val lines = text.lines()
+            var filterFound = false
             
             for (line in lines) {
-                // Match any parametric filter and map to nearest fixed band
-                val filterMatch = Regex("""Fc\s+(\d+)\s*Hz.*Gain\s+([-\d.]+)\s*dB""").find(line)
+                val trimmedLine = line.trim()
+                if (trimmedLine.startsWith("#") || trimmedLine.contains(": OFF", ignoreCase = true)) {
+                    continue
+                }
+                
+                // Match parametric filter frequency and gain
+                val filterMatch = Regex("""(?:Filter\s+\d+:\s*(?:ON\s+)?)?([A-Z_]+)?.*?Fc\s+(\d+)\s*Hz.*?Gain\s+([+-]?[\d.]+)\s*dB""", RegexOption.IGNORE_CASE).find(trimmedLine)
                 if (filterMatch != null) {
-                    val freq = filterMatch.groupValues[1].toIntOrNull() ?: continue
-                    val gain = filterMatch.groupValues[2].toFloatOrNull() ?: continue
+                    val filterType = filterMatch.groupValues[1].uppercase()
+                    val freq = filterMatch.groupValues[2].toIntOrNull() ?: continue
+                    val gain = filterMatch.groupValues[3].toFloatOrNull() ?: continue
+                    filterFound = true
                     
-                    // Find nearest band frequency
-                    val bandIndex = findNearestBandIndex(freq)
-                    if (bandIndex >= 0) {
-                        bandSums[bandIndex] += gain
-                        bandCounts[bandIndex] += 1
+                    val isLowShelf = filterType == "LSC" || filterType.contains("LOW_SHELF")
+                    val isHighShelf = filterType == "HSC" || filterType.contains("HIGH_SHELF")
+                    
+                    if (isLowShelf) {
+                        for (i in BAND_FREQUENCIES.indices) {
+                            val f = BAND_FREQUENCIES[i]
+                            if (f <= freq * 0.7f) {
+                                bandSums[i] += gain
+                            } else if (f <= freq * 1.4f) {
+                                bandSums[i] += gain * 0.5f
+                            }
+                        }
+                    } else if (isHighShelf) {
+                        for (i in BAND_FREQUENCIES.indices) {
+                            val f = BAND_FREQUENCIES[i]
+                            if (f >= freq * 1.4f) {
+                                bandSums[i] += gain
+                            } else if (f >= freq * 0.7f) {
+                                bandSums[i] += gain * 0.5f
+                            }
+                        }
+                    } else {
+                        val bandIndex = findNearestBandIndex(freq)
+                        if (bandIndex in 0..9) {
+                            bandSums[bandIndex] += gain
+                        }
                     }
                 }
             }
             
-            val bands = List(10) { i ->
-                if (bandCounts[i] > 0) {
-                    bandSums[i] / bandCounts[i]
-                } else {
-                    0f
-                }
-            }
-            
-            if (bands.any { it != 0f }) {
+            if (filterFound && bandSums.any { it != 0f }) {
                 AutoEQProfile(
                     name = name,
                     brand = extractBrandFromName(name),
                     type = "Unknown",
-                    bands = bands.map { it.round(1) }
+                    bands = bandSums.map { it.coerceIn(-15f, 15f).round(1) }
                 )
             } else {
                 null
@@ -124,28 +169,26 @@ object AutoEQImportExport {
         return try {
             val trimmedText = text.trim()
             val profiles = mutableListOf<AutoEQProfile>()
+            val jsonElement = JsonParser.parseString(trimmedText)
             
-            when {
-                trimmedText.startsWith("[") -> {
-                    // Array of profiles
-                    val jsonArray = JSONArray(trimmedText)
-                    for (i in 0 until jsonArray.length()) {
-                        parseJSONObject(jsonArray.getJSONObject(i))?.let { profiles.add(it) }
+            if (jsonElement.isJsonArray) {
+                val array = jsonElement.asJsonArray
+                for (elem in array) {
+                    if (elem.isJsonObject) {
+                        parseJsonObject(elem.asJsonObject)?.let { profiles.add(it) }
                     }
                 }
-                trimmedText.startsWith("{") -> {
-                    val jsonObject = JSONObject(trimmedText)
-                    
-                    // Check if it's a container with "profiles" array
-                    if (jsonObject.has("profiles")) {
-                        val jsonArray = jsonObject.getJSONArray("profiles")
-                        for (i in 0 until jsonArray.length()) {
-                            parseJSONObject(jsonArray.getJSONObject(i))?.let { profiles.add(it) }
+            } else if (jsonElement.isJsonObject) {
+                val obj = jsonElement.asJsonObject
+                if (obj.has("profiles") && obj.get("profiles").isJsonArray) {
+                    val array = obj.getAsJsonArray("profiles")
+                    for (elem in array) {
+                        if (elem.isJsonObject) {
+                            parseJsonObject(elem.asJsonObject)?.let { profiles.add(it) }
                         }
-                    } else {
-                        // Single profile
-                        parseJSONObject(jsonObject)?.let { profiles.add(it) }
                     }
+                } else {
+                    parseJsonObject(obj)?.let { profiles.add(it) }
                 }
             }
             
@@ -155,19 +198,19 @@ object AutoEQImportExport {
         }
     }
     
-    private fun parseJSONObject(json: JSONObject): AutoEQProfile? {
+    private fun parseJsonObject(obj: JsonObject): AutoEQProfile? {
         return try {
-            val name = json.optString("name", "Imported Profile")
-            val brand = json.optString("brand", extractBrandFromName(name))
-            val type = json.optString("type", "Unknown")
+            val name = if (obj.has("name") && !obj.get("name").isJsonNull) obj.get("name").asString else "Imported Profile"
+            val brand = if (obj.has("brand") && !obj.get("brand").isJsonNull) obj.get("brand").asString else extractBrandFromName(name)
+            val type = if (obj.has("type") && !obj.get("type").isJsonNull) obj.get("type").asString else "Unknown"
             
-            val bandsArray = json.optJSONArray("bands")
-            val bands = if (bandsArray != null) {
-                List(minOf(bandsArray.length(), 10)) { i ->
-                    bandsArray.optDouble(i, 0.0).toFloat()
-                }.let { list ->
-                    if (list.size < 10) list + List(10 - list.size) { 0f } else list
+            val bandsElem = obj.get("bands")
+            val bands = if (bandsElem != null && bandsElem.isJsonArray) {
+                val array = bandsElem.asJsonArray
+                val list = (0 until minOf(array.size(), 10)).map { i ->
+                    array[i].asFloat
                 }
+                if (list.size < 10) list + List(10 - list.size) { 0f } else list
             } else {
                 List(10) { 0f }
             }
@@ -203,35 +246,19 @@ object AutoEQImportExport {
      * Export profile to JSON format
      */
     fun exportToJSON(profile: AutoEQProfile): String {
-        val json = JSONObject().apply {
-            put("name", profile.name)
-            put("brand", profile.brand)
-            put("type", profile.type)
-            put("bands", JSONArray(profile.bands.map { it.round(1) }))
-        }
-        return json.toString(2)
+        return gson.toJson(profile)
     }
     
     /**
      * Export multiple profiles to JSON format
      */
     fun exportToJSON(profiles: List<AutoEQProfile>): String {
-        val container = JSONObject().apply {
-            put("version", 1)
-            put("source", "Rhythm App Export")
-            put("bandFrequencies", JSONArray(BAND_FREQUENCIES))
-            put("profiles", JSONArray().apply {
-                profiles.forEach { profile ->
-                    put(JSONObject().apply {
-                        put("name", profile.name)
-                        put("brand", profile.brand)
-                        put("type", profile.type)
-                        put("bands", JSONArray(profile.bands.map { it.round(1) }))
-                    })
-                }
-            })
-        }
-        return container.toString(2)
+        return gson.toJson(mapOf(
+            "version" to 1,
+            "source" to "Rhythm App Export",
+            "bandFrequencies" to BAND_FREQUENCIES,
+            "profiles" to profiles
+        ))
     }
     
     /**
@@ -246,8 +273,11 @@ object AutoEQImportExport {
                 parseJSON(trimmedText)
             }
             // FixedBandEQ or Parametric EQ format
-            trimmedText.contains("Filter") && trimmedText.contains("Gain") -> {
+            trimmedText.contains("Filter", ignoreCase = true) && trimmedText.contains("Gain", ignoreCase = true) -> {
                 listOfNotNull(parseFixedBandEQ(trimmedText, name) ?: parseParametricEQ(trimmedText, name))
+            }
+            trimmedText.contains("Fc", ignoreCase = true) && trimmedText.contains("Gain", ignoreCase = true) -> {
+                listOfNotNull(parseParametricEQ(trimmedText, name) ?: parseFixedBandEQ(trimmedText, name))
             }
             // Comma-separated values (simple format: name,brand,type,b1,b2,b3,...,b10)
             trimmedText.contains(",") && !trimmedText.contains("{") -> {

@@ -265,6 +265,9 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
     val equalizerPresetOrder = appSettings.equalizerPresetOrder
     val hiddenEqualizerPresets = appSettings.hiddenEqualizerPresets
     val pinnedAutoEQProfiles = appSettings.pinnedAutoEQProfiles
+    val customAutoEQProfiles = appSettings.customAutoEQProfiles
+    val speakerAutoEQBypass = appSettings.speakerAutoEQBypass
+    private var lastHeadphoneAutoEQProfile: String? = null
     
     // Spatialization status
     private val _spatializationStatus = MutableStateFlow("Unknown")
@@ -1402,6 +1405,50 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                         startProgressUpdates()
                     }
                 }
+            }
+        }
+
+        autoEQManager.setCustomProfiles(appSettings.customAutoEQProfiles.value)
+        viewModelScope.launch {
+            appSettings.customAutoEQProfiles.collect { profiles ->
+                autoEQManager.setCustomProfiles(profiles)
+            }
+        }
+
+        viewModelScope.launch {
+            var previousDevice: PlaybackLocation? = null
+            audioDeviceManager.currentDevice.collect { device ->
+                if (device == null) return@collect
+                val isSpeaker = device.id == AudioDeviceManager.DEVICE_SPEAKER
+                val wasExternal = previousDevice != null && previousDevice?.id != AudioDeviceManager.DEVICE_SPEAKER
+
+                if (isSpeaker && wasExternal && appSettings.speakerAutoEQBypass.value) {
+                    val activeAutoEQ = appSettings.autoEQProfile.value
+                    if (activeAutoEQ.isNotBlank()) {
+                        Log.d(TAG, "Audio routed to speaker: bypassing AutoEQ profile ($activeAutoEQ)")
+                        lastHeadphoneAutoEQProfile = activeAutoEQ
+                        applyEqualizerPreset("Flat", List(10) { 0f })
+                        appSettings.setAutoEQProfile("")
+                    }
+                } else if (!isSpeaker && previousDevice?.id == AudioDeviceManager.DEVICE_SPEAKER) {
+                    val matchedDevice = findMatchingUserDevice(device.name)
+                    if (matchedDevice?.autoEQProfileName != null) {
+                        val profile = autoEQManager.findProfileByName(matchedDevice.autoEQProfileName)
+                        if (profile != null) {
+                            Log.d(TAG, "Reconnected to configured device: applying ${profile.name}")
+                            applyAutoEQProfile(profile)
+                            lastHeadphoneAutoEQProfile = null
+                        }
+                    } else if (lastHeadphoneAutoEQProfile != null) {
+                        val profile = autoEQManager.findProfileByName(lastHeadphoneAutoEQProfile!!)
+                        if (profile != null) {
+                            Log.d(TAG, "Restoring previous headphone AutoEQ profile: ${profile.name}")
+                            applyAutoEQProfile(profile)
+                        }
+                        lastHeadphoneAutoEQProfile = null
+                    }
+                }
+                previousDevice = device
             }
         }
 
@@ -9875,10 +9922,16 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
         Log.d(TAG, "Applying AutoEQ profile: ${profile.name}")
         
         // Ensure we have 10 bands
-        val levels = profile.bands.take(10)
-        if (levels.size != 10) {
-            Log.w(TAG, "AutoEQ profile has ${levels.size} bands, expected 10")
-            return
+        val levels = when {
+            profile.bands.size == 10 -> profile.bands
+            profile.bands.size > 10 -> profile.bands.take(10)
+            else -> {
+                val padded = profile.bands.toMutableList()
+                while (padded.size < 10) {
+                    padded.add(0f)
+                }
+                padded
+            }
         }
         
         // Save profile name to settings
@@ -10052,11 +10105,27 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
         Log.d(TAG, "Deleted custom equalizer preset: $id")
     }
 
+    fun saveCustomAutoEQProfile(profile: chromahub.rhythm.app.shared.data.model.AutoEQProfile) {
+        appSettings.saveCustomAutoEQProfile(profile)
+        autoEQManager.setCustomProfiles(appSettings.customAutoEQProfiles.value)
+        Log.d(TAG, "Saved custom AutoEQ profile: ${profile.name}")
+    }
+
+    fun saveCustomAutoEQProfiles(profiles: List<chromahub.rhythm.app.shared.data.model.AutoEQProfile>) {
+        appSettings.saveCustomAutoEQProfiles(profiles)
+        autoEQManager.setCustomProfiles(appSettings.customAutoEQProfiles.value)
+        Log.d(TAG, "Saved ${profiles.size} custom AutoEQ profiles")
+    }
+
     fun deleteAutoEQProfile(name: String) {
-        // 1. Unpin from pinned profiles
+        // 1. Delete from custom profiles if present
+        appSettings.deleteCustomAutoEQProfile(name)
+        autoEQManager.setCustomProfiles(appSettings.customAutoEQProfiles.value)
+
+        // 2. Unpin from pinned profiles
         appSettings.unpinAutoEQProfile(name)
 
-        // 2. Check if this profile was actively selected or applied
+        // 3. Check if this profile was actively selected or applied
         val currentAutoEQ = appSettings.autoEQProfile.value
         val currentPreset = appSettings.equalizerPreset.value
         val isCurrentAutoEQ = currentAutoEQ.equals(name, ignoreCase = true) ||
@@ -10071,7 +10140,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
             applyEqualizerPreset("Flat", flatBands)
         }
 
-        // 3. Clear this AutoEQ profile from any saved user audio devices
+        // 4. Clear this AutoEQ profile from any saved user audio devices
         val currentDevicesJson = appSettings.userAudioDevices.value
         if (currentDevicesJson != null) {
             val devices = chromahub.rhythm.app.shared.data.model.UserAudioDevice.fromJson(currentDevicesJson)
@@ -10089,7 +10158,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
             }
         }
 
-        // 4. Remove from preset order and hidden presets
+        // 5. Remove from preset order and hidden presets
         val key = "AutoEQ: $name"
         val order = appSettings.equalizerPresetOrder.value.toMutableList()
         if (order.remove(key) || order.remove(name)) {

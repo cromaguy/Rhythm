@@ -347,6 +347,27 @@ fun ExpressivePlayerScreen(
 
     val context = LocalContext.current
 
+    var showAutoEQSuggestion by remember { mutableStateOf(false) }
+    var detectedDevice by remember { mutableStateOf<chromahub.rhythm.app.shared.data.model.UserAudioDevice?>(null) }
+    var showDeviceConfig by remember { mutableStateOf(false) }
+
+    LaunchedEffect(location) {
+        if (location != null && location.id != "speaker" && musicViewModel != null) {
+            val matchedDevice = musicViewModel.findMatchingUserDevice(location.name)
+            val activeDevice = musicViewModel.getActiveAudioDevice()
+            
+            if (matchedDevice != null && musicViewModel.shouldShowAutoEQSuggestion(matchedDevice.id)) {
+                val isAlreadyActive = activeDevice?.id == matchedDevice.id && 
+                                     matchedDevice.autoEQProfileName != null
+                
+                if (!isAlreadyActive) {
+                    detectedDevice = matchedDevice
+                    showAutoEQSuggestion = true
+                }
+            }
+        }
+    }
+
     // Write permission launcher for Android 11+ metadata editing (e.g. auto-fetched artwork embedding)
     val writePermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartIntentSenderForResult()
@@ -2379,6 +2400,50 @@ fun ExpressivePlayerScreen(
                 }
             }
         }
+    }
+
+    if (showAutoEQSuggestion && detectedDevice != null && musicViewModel != null) {
+        val equalizerEnabled by appSettings.equalizerEnabled.collectAsState()
+        val autoEQProfiles by musicViewModel.autoEQProfiles.collectAsState()
+        
+        chromahub.rhythm.app.shared.presentation.components.dialogs.AutoEQSuggestionDialog(
+            deviceName = location?.name ?: detectedDevice!!.name,
+            savedDevice = detectedDevice!!,
+            equalizerEnabled = equalizerEnabled,
+            onApplyProfile = {
+                val profile = autoEQProfiles
+                    .find { it.name == detectedDevice!!.autoEQProfileName }
+                
+                if (profile != null) {
+                    musicViewModel.applyAutoEQProfile(profile)
+                    musicViewModel.setActiveAudioDevice(detectedDevice!!)
+                    Toast.makeText(
+                        context,
+                        "Applied ${profile.name} profile",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+                showAutoEQSuggestion = false
+            },
+            onDismiss = {
+                showAutoEQSuggestion = false
+            },
+            onDontAskAgain = {
+                musicViewModel.dismissAutoEQSuggestion(detectedDevice!!.id)
+                showAutoEQSuggestion = false
+            },
+            onConfigureDevice = {
+                showAutoEQSuggestion = false
+                showDeviceConfig = true
+            }
+        )
+    }
+    
+    if (showDeviceConfig && musicViewModel != null) {
+        chromahub.rhythm.app.shared.presentation.components.bottomsheets.DeviceConfigurationBottomSheet(
+            musicViewModel = musicViewModel,
+            onDismiss = { showDeviceConfig = false }
+        )
     }
 }
 

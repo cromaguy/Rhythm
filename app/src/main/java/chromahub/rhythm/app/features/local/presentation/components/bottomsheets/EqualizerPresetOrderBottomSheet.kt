@@ -303,8 +303,13 @@ fun EqualizerPresetOrderBottomSheet(
                                 )
 
                                 Column(modifier = Modifier.weight(1f)) {
+                                    val displayName = if (info.type == EqualizerPresetType.BUILT_IN) {
+                                        chromahub.rhythm.app.features.local.presentation.screens.getLocalizedPresetName(info.name)
+                                    } else {
+                                        info.name
+                                    }
                                     Text(
-                                        text = info.name,
+                                        text = displayName,
                                         style = MaterialTheme.typography.titleMedium,
                                         fontWeight = FontWeight.SemiBold,
                                         color = MaterialTheme.colorScheme.onSurface,

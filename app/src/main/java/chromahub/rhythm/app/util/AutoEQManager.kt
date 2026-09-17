@@ -20,21 +20,32 @@ class AutoEQManager(private val context: Context) {
     
     private var database: AutoEQDatabase? = null
     private val gson = Gson()
+    private var customProfiles: List<AutoEQProfile> = emptyList()
+
+    fun setCustomProfiles(profiles: List<AutoEQProfile>) {
+        this.customProfiles = profiles
+    }
     
     /**
      * Load AutoEQ profiles from assets
      */
     suspend fun loadProfiles(): Result<AutoEQDatabase> = withContext(Dispatchers.IO) {
         try {
-            if (database != null) {
-                return@withContext Result.success(database!!)
+            cachedDatabase?.let {
+                database = it
+                return@withContext Result.success(it)
             }
             
-            val jsonString = context.assets.open("autoeq_profiles.json").use { inputStream ->
-                inputStream.bufferedReader().use { it.readText() }
+            val loadedDatabase = synchronized(lock) {
+                cachedDatabase ?: run {
+                    val jsonString = context.assets.open("autoeq_profiles.json").use { inputStream ->
+                        inputStream.bufferedReader().use { it.readText() }
+                    }
+                    gson.fromJson(jsonString, AutoEQDatabase::class.java).also {
+                        cachedDatabase = it
+                    }
+                }
             }
-            
-            val loadedDatabase = gson.fromJson(jsonString, AutoEQDatabase::class.java)
             database = loadedDatabase
             Result.success(loadedDatabase)
             
@@ -44,54 +55,68 @@ class AutoEQManager(private val context: Context) {
             Result.failure(e)
         }
     }
+
+    private fun getCombinedProfiles(): List<AutoEQProfile> {
+        val base = database?.profiles ?: emptyList()
+        if (customProfiles.isEmpty()) return base
+        val customNames = customProfiles.map { it.name.lowercase() }.toSet()
+        return customProfiles + base.filter { it.name.lowercase() !in customNames }
+    }
     
     /**
      * Get all available profiles
      */
     fun getAllProfiles(): List<AutoEQProfile> {
-        return database?.profiles ?: emptyList()
+        return getCombinedProfiles()
     }
     
     /**
      * Search profiles by name or brand
      */
     fun searchProfiles(query: String): List<AutoEQProfile> {
-        return database?.searchProfiles(query) ?: emptyList()
+        val combined = getCombinedProfiles()
+        if (query.isBlank()) return combined
+        val lowerQuery = query.lowercase()
+        return combined.filter { profile ->
+            profile.name.lowercase().contains(lowerQuery) ||
+            profile.brand.lowercase().contains(lowerQuery) ||
+            profile.type.lowercase().contains(lowerQuery)
+        }
     }
     
     /**
      * Get profiles by brand
      */
     fun getProfilesByBrand(brand: String): List<AutoEQProfile> {
-        return database?.getProfilesByBrand(brand) ?: emptyList()
+        return getCombinedProfiles().filter { it.brand.equals(brand, ignoreCase = true) }
     }
     
     /**
      * Get profiles by type (Over-Ear, In-Ear, On-Ear)
      */
     fun getProfilesByType(type: String): List<AutoEQProfile> {
-        return database?.getProfilesByType(type) ?: emptyList()
+        return getCombinedProfiles().filter { it.type.equals(type, ignoreCase = true) }
     }
     
     /**
      * Get all available brands
      */
     fun getAllBrands(): List<String> {
-        return database?.getAllBrands() ?: emptyList()
+        return getCombinedProfiles().map { it.brand }.distinct().sorted()
     }
     
     /**
      * Get all available types
      */
     fun getAllTypes(): List<String> {
-        return database?.getAllTypes() ?: emptyList()
+        return getCombinedProfiles().map { it.type }.distinct().sorted()
     }
     
     /**
      * Find a profile by exact name match
      */
     fun findProfileByName(name: String): AutoEQProfile? {
-        return database?.profiles?.find { it.name.equals(name, ignoreCase = true) }
+        return getCombinedProfiles().find { it.name.equals(name, ignoreCase = true) }
     }
     
     /**
@@ -106,6 +131,18 @@ class AutoEQManager(private val context: Context) {
             "Samsung Galaxy Buds Pro"
         )
         
-        return database?.profiles?.filter { it.name in recommended } ?: emptyList()
+        return getCombinedProfiles().filter { it.name in recommended }
+    }
+
+    companion object {
+        @Volatile
+        private var cachedDatabase: AutoEQDatabase? = null
+        private val lock = Any()
+
+        fun clearCache() {
+            synchronized(lock) {
+                cachedDatabase = null
+            }
+        }
     }
 }
