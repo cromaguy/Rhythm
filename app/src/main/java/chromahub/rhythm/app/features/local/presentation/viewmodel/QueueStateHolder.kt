@@ -5,6 +5,7 @@
 
 package chromahub.rhythm.app.features.local.presentation.viewmodel
 
+import chromahub.rhythm.app.shared.data.model.AppSettings
 import chromahub.rhythm.app.shared.data.model.Song
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -14,7 +15,7 @@ import kotlinx.coroutines.flow.asStateFlow
  * Manages the state of the playback queue, including original order preservation
  * for shuffle operations.
  */
-class QueueStateHolder {
+class QueueStateHolder(private val appSettings: AppSettings? = null) {
 
     /**
      * The original queue order before shuffling.
@@ -42,6 +43,7 @@ class QueueStateHolder {
      */
     fun setOriginalQueueOrder(songs: List<Song>) {
         _originalQueueOrder.value = songs.toList()
+        appSettings?.setSavedOriginalQueue(songs.map { it.id })
     }
 
     /**
@@ -49,6 +51,15 @@ class QueueStateHolder {
      */
     fun saveOriginalQueueState(songs: List<Song>, sourceName: String?) {
         setOriginalQueueOrder(songs)
+        _currentQueueSourceName.value = sourceName
+        appSettings?.setSavedOriginalQueueSource(sourceName)
+    }
+
+    /**
+     * Restores the original queue state (e.g. on application restart).
+     */
+    fun restoreOriginalQueueState(songs: List<Song>, sourceName: String?) {
+        _originalQueueOrder.value = songs.toList()
         _currentQueueSourceName.value = sourceName
     }
 
@@ -59,6 +70,7 @@ class QueueStateHolder {
     fun clearOriginalQueue() {
         _originalQueueOrder.value = emptyList()
         _currentQueueSourceName.value = null
+        appSettings?.clearSavedOriginalQueue()
     }
 
     /**

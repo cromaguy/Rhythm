@@ -1063,8 +1063,12 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
                     val currentIndex = player.currentMediaItemIndex
                     if (currentIndex != androidx.media3.common.C.INDEX_UNSET) {
                         appSettings.setSavedQueueIndex(currentIndex)
-                        appSettings.setSavedPlaybackPosition(0L) // Reset position for new track
-                        Log.d(TAG, "Persisted queue index $currentIndex on track transition")
+                        // Reset position to 0L only when transitioning automatically to the next track.
+                        // Do NOT wipe saved position on playlist change or seek (e.g. queue restoration).
+                        if (reason == Player.MEDIA_ITEM_TRANSITION_REASON_AUTO) {
+                            appSettings.setSavedPlaybackPosition(0L)
+                        }
+                        Log.d(TAG, "Persisted queue index $currentIndex on track transition (reason=$reason)")
                     }
                 }
                 

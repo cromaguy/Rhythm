@@ -218,7 +218,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
     private val autoEQManager = AutoEQManager(application)
     
     // Queue state manager
-    private val queueStateHolder = QueueStateHolder()
+    private val queueStateHolder = QueueStateHolder(appSettings)
     
     // Playback command serializer for deterministic queue operations
     private val commandSerializer = PlaybackCommandSerializer()
@@ -320,6 +320,8 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
     private var lastAppliedBluetoothLyricSongId: String? = null
     private var lastAppliedBluetoothLyricLine: String? = null
     private var pendingQueueRestore: Pair<List<String>, Int>? = null
+    @Volatile
+    private var isRestoringQueue: Boolean = false
     
     // Scan job for cancellation support
     private var scanJob: Job? = null
@@ -1722,14 +1724,30 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                 
                 // Map saved song IDs to actual song objects
                 val allSongs = _songs.value
+                val songsById = allSongs.associateBy { it.id }
                 val restoredSongs = songIds.mapNotNull { songId ->
-                    allSongs.find { it.id == songId }
+                    songsById[songId]
                 }
                 
                 // Remove songs that no longer exist from the queue
                 if (restoredSongs.size != songIds.size) {
                     val missingCount = songIds.size - restoredSongs.size
                     Log.w(TAG, "Queue restoration: $missingCount song(s) no longer available and were removed from queue")
+                }
+
+                // Rehydrate original queue in queueStateHolder if saved and not already set
+                val savedOriginalIds = appSettings.savedOriginalQueue.value
+                if (savedOriginalIds.isNotEmpty() && !queueStateHolder.hasOriginalQueue()) {
+                    val restoredOriginalSongs = savedOriginalIds.mapNotNull { origId ->
+                        songsById[origId]
+                    }
+                    if (restoredOriginalSongs.isNotEmpty()) {
+                        queueStateHolder.restoreOriginalQueueState(
+                            restoredOriginalSongs,
+                            appSettings.savedOriginalQueueSource.value
+                        )
+                        Log.d(TAG, "Rehydrated original queue state with ${restoredOriginalSongs.size} songs")
+                    }
                 }
                 
                 if (restoredSongs.isNotEmpty()) {
@@ -1744,37 +1762,32 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                     withContext(Dispatchers.Main) {
                         mediaController?.let { controller ->
                             pendingQueueRestore = null
+                            isRestoringQueue = true
+                            try {
+                                _currentQueue.value = Queue(restoredSongs, validIndex)
+                                val currentSong = restoredSongs.getOrNull(validIndex)
+                                _currentSong.value = currentSong
+                                _isFavorite.value = currentSong?.let { song -> 
+                                    _favoriteSongs.value.contains(song.id) 
+                                } ?: false
 
-                            // Clear existing queue
-                            controller.clearMediaItems()
-                            
-                            // Add all restored songs to MediaController
-                            val mediaItems = restoredSongs.map { song -> song.toMediaItem() }
-                            controller.addMediaItems(mediaItems)
-                            
-                            // Prepare the player first
-                            controller.prepare()
-                            
-                            // Set the queue in view model
-                            _currentQueue.value = Queue(restoredSongs, validIndex)
-                            
-                            // Seek to the saved position in the queue
-                            controller.seekTo(validIndex, savedPosition)
-                            
-                            // Update current song and UI state
-                            val currentSong = restoredSongs.getOrNull(validIndex)
-                            _currentSong.value = currentSong
-                            _isFavorite.value = currentSong?.let { song -> 
-                                _favoriteSongs.value.contains(song.id) 
-                            } ?: false
-                            
-                            // Update progress immediately to reflect restored position
-                            val playbackDuration = resolvePlaybackDuration(controller)
-                            if (playbackDuration > 0) {
-                                _progress.value = savedPosition.toFloat() / playbackDuration.toFloat()
+                                if (controller.shuffleModeEnabled) {
+                                    controller.shuffleModeEnabled = false
+                                }
+
+                                val mediaItems = restoredSongs.map { song -> song.toMediaItem() }
+                                controller.setMediaItems(mediaItems, validIndex, savedPosition)
+                                controller.prepare()
+                                
+                                val playbackDuration = resolvePlaybackDuration(controller)
+                                if (playbackDuration > 0) {
+                                    _progress.value = (savedPosition.toFloat() / playbackDuration.toFloat()).coerceIn(0f, 1f)
+                                }
+                                
+                                Log.d(TAG, "Queue restored successfully, ready to continue playback from ${savedPosition}ms")
+                            } finally {
+                                isRestoringQueue = false
                             }
-                            
-                            Log.d(TAG, "Queue restored successfully, ready to continue playback from ${savedPosition}ms")
                         } ?: run {
                             Log.w(TAG, "MediaController not available yet, queue will be restored when controller is ready")
                             // Store for later restoration when controller becomes available.
@@ -1841,32 +1854,16 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
      */
     private fun saveQueueToPersistence() {
         try {
-            // Check if queue persistence is enabled
-            if (!appSettings.queuePersistenceEnabled.value) {
+            // Check if queue persistence is enabled or if queue is actively being restored
+            if (!appSettings.queuePersistenceEnabled.value || isRestoringQueue) {
                 return
             }
             
             val currentQueue = _currentQueue.value
             if (currentQueue.songs.isNotEmpty()) {
                 val controller = mediaController
-                val useExoPlayerShuffle = appSettings.shuffleUsesExoplayer.value
-                val isNativeShuffleActive = controller != null && controller.shuffleModeEnabled && useExoPlayerShuffle
-
-                val songIds = if (isNativeShuffleActive) {
-                    // Save original unshuffled timeline order to prevent double-shuffling on restore
-                    (0 until controller.mediaItemCount).mapNotNull { index ->
-                        controller.getMediaItemAt(index).mediaId
-                    }
-                } else {
-                    currentQueue.songs.map { it.id }
-                }
-
-                val savedIndex = if (isNativeShuffleActive) {
-                    // Save index in the unshuffled timeline
-                    controller.currentMediaItemIndex
-                } else {
-                    currentQueue.currentIndex
-                }
+                val songIds = currentQueue.songs.map { it.id }
+                val savedIndex = currentQueue.currentIndex
 
                 appSettings.setSavedQueue(songIds)
                 appSettings.setSavedQueueIndex(savedIndex)
@@ -1875,7 +1872,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                 val currentPosition = controller?.currentPosition ?: 0L
                 appSettings.setSavedPlaybackPosition(currentPosition)
                 
-                Log.d(TAG, "Saved queue: ${songIds.size} songs, index: $savedIndex (nativeShuffleActive=$isNativeShuffleActive), position: ${currentPosition}ms")
+                Log.d(TAG, "Saved queue: ${songIds.size} songs, index: $savedIndex, position: ${currentPosition}ms")
             } else {
                 // Clear saved queue if current queue is empty
                 appSettings.clearSavedQueue()
@@ -3945,7 +3942,11 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                             if (appSettings.shuffleUsesExoplayer.value) {
                                 _isShuffleEnabled.value = controller.shuffleModeEnabled
                             } else {
-                                _isShuffleEnabled.value = appSettings.savedShuffleState.value
+                                _isShuffleEnabled.value = if (appSettings.shuffleModePersistence.value) {
+                                    appSettings.savedShuffleState.value
+                                } else {
+                                    false
+                                }
                             }
                             val controllerRepeatMode = controller.repeatMode
                             _repeatMode.value = controllerRepeatMode
@@ -4262,6 +4263,11 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
 
         override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
             Log.d(TAG, "Media item transition: ${mediaItem?.mediaId}, reason: $reason")
+
+            if (isRestoringQueue) {
+                Log.d(TAG, "Ignoring media item transition during queue restoration: ${mediaItem?.mediaId}")
+                return
+            }
 
             if (mediaItem?.mediaId != null && mediaItem.mediaId == _currentSong.value?.id) {
                 Log.d(TAG, "Ignoring media item transition for same song: ${mediaItem.mediaId}")
@@ -6368,6 +6374,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                             controller.shuffleModeEnabled = false
                             updateQueueState(shuffledQueue)
                             _isShuffleEnabled.value = true
+                            saveQueueToPersistence()
 
                             if (wasPlaying && !controller.isPlaying) {
                                 if (!canStartPlayback("toggleShuffle.restoreManual")) return@withContext

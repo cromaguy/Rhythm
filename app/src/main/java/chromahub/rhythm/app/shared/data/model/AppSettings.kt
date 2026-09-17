@@ -484,6 +484,8 @@ class AppSettings private constructor(context: Context) {
         private const val KEY_SAVED_QUEUE = "saved_queue" // Queue persistence - list of song IDs
         private const val KEY_SAVED_QUEUE_INDEX = "saved_queue_index" // Current position in queue
         private const val KEY_SAVED_PLAYBACK_POSITION = "saved_playback_position" // Current playback position in ms
+        private const val KEY_SAVED_ORIGINAL_QUEUE = "saved_original_queue" // Original un-shuffled queue
+        private const val KEY_SAVED_ORIGINAL_QUEUE_SOURCE = "saved_original_queue_source" // Queue source name
         private const val KEY_HIDE_PLAYED_QUEUE_SONGS = "hide_played_queue_songs" // Hide already-played songs in queue
         
         // Widget Settings
@@ -1314,6 +1316,23 @@ class AppSettings private constructor(context: Context) {
     
     private val _savedPlaybackPosition = MutableStateFlow(prefs.getLong(KEY_SAVED_PLAYBACK_POSITION, 0L))
     val savedPlaybackPosition: StateFlow<Long> = _savedPlaybackPosition.asStateFlow()
+
+    private val _savedOriginalQueue = MutableStateFlow<List<String>>(
+        try {
+            val json = prefs.getString(KEY_SAVED_ORIGINAL_QUEUE, null)
+            if (json != null) {
+                Gson().fromJson(json, object : TypeToken<List<String>>() {}.type)
+            } else {
+                emptyList()
+            }
+        } catch (e: Exception) {
+            emptyList()
+        }
+    )
+    val savedOriginalQueue: StateFlow<List<String>> = _savedOriginalQueue.asStateFlow()
+
+    private val _savedOriginalQueueSource = MutableStateFlow<String?>(prefs.getString(KEY_SAVED_ORIGINAL_QUEUE_SOURCE, null))
+    val savedOriginalQueueSource: StateFlow<String?> = _savedOriginalQueueSource.asStateFlow()
     
     // Cache Settings
     private val _maxCacheSize = MutableStateFlow(safeLong(KEY_MAX_CACHE_SIZE, 300L * 1024L * 1024L)) // 300MB default
@@ -3215,11 +3234,34 @@ private val _autoCheckForUpdates = MutableStateFlow(prefs.getBoolean(KEY_AUTO_CH
         prefs.edit { putLong(KEY_SAVED_PLAYBACK_POSITION, position) }
         _savedPlaybackPosition.value = position
     }
+
+    fun setSavedOriginalQueue(songIds: List<String>) {
+        val json = Gson().toJson(songIds)
+        prefs.edit { putString(KEY_SAVED_ORIGINAL_QUEUE, json) }
+        _savedOriginalQueue.value = songIds
+    }
+
+    fun setSavedOriginalQueueSource(sourceName: String?) {
+        if (sourceName == null) {
+            prefs.edit { remove(KEY_SAVED_ORIGINAL_QUEUE_SOURCE) }
+        } else {
+            prefs.edit { putString(KEY_SAVED_ORIGINAL_QUEUE_SOURCE, sourceName) }
+        }
+        _savedOriginalQueueSource.value = sourceName
+    }
+
+    fun clearSavedOriginalQueue() {
+        prefs.edit { remove(KEY_SAVED_ORIGINAL_QUEUE) }
+        prefs.edit { remove(KEY_SAVED_ORIGINAL_QUEUE_SOURCE) }
+        _savedOriginalQueue.value = emptyList()
+        _savedOriginalQueueSource.value = null
+    }
     
     fun clearSavedQueue() {
         prefs.edit { remove(KEY_SAVED_QUEUE) }
         prefs.edit { remove(KEY_SAVED_QUEUE_INDEX) }
         prefs.edit { remove(KEY_SAVED_PLAYBACK_POSITION) }
+        clearSavedOriginalQueue()
         _savedQueue.value = emptyList()
         _savedQueueIndex.value = -1
         _savedPlaybackPosition.value = 0L

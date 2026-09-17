@@ -362,46 +362,19 @@ fun QueueBottomSheet(
                         currentQueueIndex
                     }
                 }.coerceIn(0, displayQueue.lastIndex.coerceAtLeast(0))
-                val isRepeatAll = repeatMode == Player.REPEAT_MODE_ALL
-                val shouldHidePlayedSongs = !showAlreadyPlayedSongsInQueue && !isShuffleEnabled
+                val shouldHidePlayedSongs = !showAlreadyPlayedSongsInQueue
                 // Build visible queue according to current playback behavior.
-                val visibleQueue = if (isShuffleEnabled) {
-                    val upcomingInCurrentCycle =
-                        ((currentSongIndexInQueue + 1)..displayQueue.lastIndex).map { index ->
-                            index to displayQueue[index]
-                        }
-                    val wrappedForRepeatAll =
-                        if (isRepeatAll && currentSongIndexInQueue > 0) {
-                            (0 until currentSongIndexInQueue).map { index ->
-                                index to displayQueue[index]
-                            }
-                        } else {
-                            emptyList()
-                        }
-                    upcomingInCurrentCycle + wrappedForRepeatAll
-                } else {
-                    displayQueue.mapIndexedNotNull { index, song ->
-                        if (shouldHidePlayedSongs && index < currentSongIndexInQueue) return@mapIndexedNotNull null
-                        if (index == currentSongIndexInQueue) null else index to song
-                    }
+                val visibleQueue = displayQueue.mapIndexedNotNull { index, song ->
+                    if (shouldHidePlayedSongs && index < currentSongIndexInQueue) return@mapIndexedNotNull null
+                    if (index == currentSongIndexInQueue) null else index to song
                 }
 
-                val queueListRows = if (isShuffleEnabled) {
-                    visibleQueue.mapIndexed { index, queueItem ->
-                        QueueListRow.Song(
-                            QueueSongRow(
-                                position = queueItem.first,
-                                displayNumber = index + 1,
-                                song = queueItem.second,
-                                isPlayed = false,
-                                corners = groupedQueueItemCorners(index, visibleQueue.size),
-                                stableKey = queueEntryKey(displayQueue, queueItem.first)
-                            )
-                        )
-                    }
-                } else {
-                    buildQueueListRows(visibleQueue, displayQueue, currentSongIndexInQueue, showAlreadyPlayedSongsInQueue)
-                }
+                val queueListRows = buildQueueListRows(
+                    visibleQueue,
+                    displayQueue,
+                    currentSongIndexInQueue,
+                    showAlreadyPlayedSongsInQueue
+                )
                 val hasPlayedSection = queueListRows.any {
                     it is QueueListRow.Section && it.label == QueueSectionLabel.PLAYED
                 }
