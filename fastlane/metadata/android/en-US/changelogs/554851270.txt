@@ -1,0 +1,11 @@
+Rhythm v5.5 - Stable Update
+
+• Persistent playback queue & shuffle memory across restarts
+• Headroom protection (-maxGain) & speaker bypass for AutoEQ
+• Custom AutoEQ profile import & hardware band interpolation
+• Multi-voice & duet synchronized lyrics support
+• Theme intensity controls & Android 15 edge-to-edge support
+• Private Android Photo Picker for artwork (no media permissions)
+• Instant song details loading & background service stability
+
+Thanks for using Rhythm ;)

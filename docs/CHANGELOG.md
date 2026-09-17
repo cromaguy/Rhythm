@@ -10,6 +10,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - 
 
+## [5.5.485.1270] - 2026-09-17
+
+### Added
+- Persistent playback queue and shuffle memory: automatically restores your playlist, exact track position, and shuffle state across app restarts (#595)
+- AutoEQ headroom protection: automatic preamp attenuation (-maxGain) prevents audio distortion and digital clipping when boosting EQ bands
+- AutoEQ speaker bypass: automatically turns off AutoEQ when playing through device speakers and restores it when headphones or external audio connect
+- Custom AutoEQ profile management: import, save, and reorder custom equalizer profiles across sessions
+- Multi-voice and duet lyrics display with synchronized part highlighting across LRC, TTML, and syllable renderers (#587)
+- Theme Intensity customization (Standard, Medium, Vivid) and Expressive Color Set options for dynamic Material 3 palettes (#590)
+- Android Photo Picker integration for selecting custom album and playlist artwork without requiring media storage permissions
+- On-demand lossless album artwork streaming directly from embedded audio tags with instant visual updates
+
+### Changed
+- Equalizer preset frequency mapping now logarithmically interpolates 10-band presets to match device hardware bands accurately
+- Dynamic color extraction from album artwork refined to preserve natural hues and color vibrancy
+- Adopted Android 15 edge-to-edge layout design and modernized Material 3 Slider interactions
+- Updated translations from Weblate
+
+### Fixed
+- Fixed playback queue being wiped or re-shuffled when reopening the app or restarting playback (#595)
+- Fixed lyric fetching for explicit songs and downloaded audio files, and resolved LRCLIB HTTP 520 connection errors (#587, #583)
+- Fixed lyrics cache invalidation and eliminated fetch cancellation thrashing during rapid song skips (#585)
+- Hardened background media service startup flow to prevent service crashes and notification failures
+- Equalizer curve rendering clamped within display bounds to eliminate visual clipping artifacts
+
+### Performance
+- Zero-latency song details sheet: offloaded file path resolution and MediaStore queries to background threads to eliminate UI thread blocking (#589)
+- Efficient on-demand artwork streaming eliminating redundant disk caching and memory overhead
+
 ## [5.5.480.1260] - 2026-09-06
 
 ### Added
