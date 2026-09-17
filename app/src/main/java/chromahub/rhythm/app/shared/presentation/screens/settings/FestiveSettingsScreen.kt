@@ -204,12 +204,18 @@ fun FestiveSettingsScreen(
                             
                             Spacer(modifier = Modifier.height(12.dp))
                             
+                            val festiveSliderState = remember(festiveIntensity) {
+                                SliderState(
+                                    value = festiveIntensity,
+                                    trackRange = 0.1f..1f
+                                )
+                            }
+                            festiveSliderState.value = festiveIntensity
                             Slider(
-                                value = festiveIntensity,
+                                state = festiveSliderState,
                                 onValueChange = { 
                                     appSettings.setFestiveThemeIntensity(it) 
                                 },
-                                valueRange = 0.1f..1f,
                                 modifier = Modifier.fillMaxWidth(),
                                 onValueChangeFinished = {
                                     HapticUtils.performHapticFeedback(context, hapticFeedback, HapticType.LIGHT)

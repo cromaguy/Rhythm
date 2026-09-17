@@ -64,6 +64,7 @@ import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderState
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.*
 import androidx.compose.ui.unit.dp
@@ -710,15 +711,21 @@ fun PlayerCustomizationSettingsScreen(onBackClick: () -> Unit) {
                     .padding(horizontal = 24.dp)
                     .padding(bottom = 24.dp)
             ) {
+                val radiusSliderState = remember(tempRadius) {
+                    SliderState(
+                        value = tempRadius.toFloat(),
+                        steps = 39,
+                        trackRange = 0f..40f
+                    )
+                }
+                radiusSliderState.value = tempRadius.toFloat()
                 Slider(
-                    value = tempRadius.toFloat(),
+                    state = radiusSliderState,
                     onValueChange = { tempRadius = it.toInt() },
                     onValueChangeFinished = {
                         HapticUtils.performHapticFeedback(context, haptics, HapticType.LIGHT)
                         appSettings.setPlayerArtworkCornerRadius(tempRadius)
                     },
-                    valueRange = 0f..40f,
-                    steps = 39,
                     colors = SliderDefaults.colors(
                         thumbColor = MaterialTheme.colorScheme.primary,
                         activeTrackColor = MaterialTheme.colorScheme.primary
@@ -787,15 +794,21 @@ fun PlayerCustomizationSettingsScreen(onBackClick: () -> Unit) {
                     .padding(horizontal = 24.dp)
                     .padding(bottom = 24.dp)
             ) {
+                val intensitySliderState = remember(tempIntensity) {
+                    SliderState(
+                        value = tempIntensity,
+                        steps = 39,
+                        trackRange = 0.0f..1.0f
+                    )
+                }
+                intensitySliderState.value = tempIntensity
                 Slider(
-                    value = tempIntensity,
+                    state = intensitySliderState,
                     onValueChange = { tempIntensity = it },
                     onValueChangeFinished = {
                         HapticUtils.performHapticFeedback(context, haptics, HapticType.LIGHT)
                         appSettings.setPlayerAmbientBackdropIntensity(tempIntensity)
                     },
-                    valueRange = 0.0f..1.0f,
-                    steps = 39,
                     colors = SliderDefaults.colors(
                         thumbColor = MaterialTheme.colorScheme.primary,
                         activeTrackColor = MaterialTheme.colorScheme.primary

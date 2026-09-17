@@ -58,6 +58,7 @@ import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderState
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.*
 import androidx.compose.ui.unit.dp
@@ -256,8 +257,17 @@ fun CacheSizeDialog(
 
                     Spacer(modifier = Modifier.height(8.dp))
 
+                    val cacheSliderSteps = ((2048 - 64) / 64) - 1
+                    val cacheSliderState = remember(cacheSliderSteps) {
+                        SliderState(
+                            value = selectedSizeMB,
+                            steps = cacheSliderSteps,
+                            trackRange = 64f..2048f
+                        )
+                    }
+                    cacheSliderState.value = selectedSizeMB
                     Slider(
-                        value = selectedSizeMB,
+                        state = cacheSliderState,
                         onValueChange = { newValue ->
                             // Snap to 64MB increments
                             val snappedValue =
@@ -269,8 +279,6 @@ fun CacheSizeDialog(
                                 HapticType.LIGHT
                             )
                         },
-                        valueRange = 64f..2048f,
-                        steps = ((2048 - 64) / 64) - 1, // Number of steps between min and max
                         colors = androidx.compose.material3.SliderDefaults.colors(
                             thumbColor = MaterialTheme.colorScheme.primary,
                             activeTrackColor = MaterialTheme.colorScheme.primary,

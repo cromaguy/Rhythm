@@ -66,6 +66,7 @@ import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderState
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.*
 import androidx.compose.ui.unit.dp
@@ -1390,8 +1391,16 @@ fun MediaScanSettingsScreen(onBackClick: () -> Unit) {
                                         .padding(horizontal = 20.dp, vertical = 20.dp),
                                     horizontalAlignment = Alignment.CenterHorizontally
                                 ) {
+                                    val mediaScanSliderState = remember {
+                                        SliderState(
+                                            value = currentSeconds,
+                                            steps = 59,
+                                            trackRange = 0f..300f
+                                        )
+                                    }
+                                    mediaScanSliderState.value = currentSeconds
                                     Slider(
-                                        value = currentSeconds,
+                                        state = mediaScanSliderState,
                                         onValueChange = { value ->
                                             val stepped = kotlin.math.round(value / 5f) * 5f
                                             if (stepped != currentSeconds) {
@@ -1399,8 +1408,6 @@ fun MediaScanSettingsScreen(onBackClick: () -> Unit) {
                                                 HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
                                             }
                                         },
-                                        valueRange = 0f..300f,
-                                        steps = 59, // 0 to 300 in steps of 5
                                         modifier = Modifier.fillMaxWidth()
                                     )
 

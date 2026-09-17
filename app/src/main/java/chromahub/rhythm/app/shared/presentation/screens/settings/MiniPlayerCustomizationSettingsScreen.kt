@@ -61,6 +61,7 @@ import androidx.compose.material3.*
 import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderState
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.*
 import androidx.compose.ui.unit.dp
@@ -551,15 +552,21 @@ fun MiniPlayerArtworkSizeSheet(
                 .padding(horizontal = 24.dp)
                 .padding(bottom = 24.dp)
         ) {
+            val sizeSliderState = remember(tempSize) {
+                SliderState(
+                    value = tempSize.toFloat(),
+                    steps = 31,
+                    trackRange = 40f..72f
+                )
+            }
+            sizeSliderState.value = tempSize.toFloat()
             Slider(
-                value = tempSize.toFloat(),
+                state = sizeSliderState,
                 onValueChange = { tempSize = it.toInt() },
                 onValueChangeFinished = {
                     HapticUtils.performHapticFeedback(context, haptics, HapticType.LIGHT)
                     onSizeSelected(tempSize)
                 },
-                valueRange = 40f..72f,
-                steps = 31,
                 colors = SliderDefaults.colors(
                     thumbColor = MaterialTheme.colorScheme.primary,
                     activeTrackColor = MaterialTheme.colorScheme.primary
@@ -608,15 +615,21 @@ fun MiniPlayerCornerRadiusSheet(
                 .padding(horizontal = 24.dp)
                 .padding(bottom = 24.dp)
         ) {
+            val radiusSliderState = remember(tempRadius) {
+                SliderState(
+                    value = tempRadius.toFloat(),
+                    steps = 27,
+                    trackRange = 0f..28f
+                )
+            }
+            radiusSliderState.value = tempRadius.toFloat()
             Slider(
-                value = tempRadius.toFloat(),
+                state = radiusSliderState,
                 onValueChange = { tempRadius = it.toInt() },
                 onValueChangeFinished = {
                     HapticUtils.performHapticFeedback(context, haptics, HapticType.LIGHT)
                     onRadiusSelected(tempRadius)
                 },
-                valueRange = 0f..28f,
-                steps = 27,
                 colors = SliderDefaults.colors(
                     thumbColor = MaterialTheme.colorScheme.primary,
                     activeTrackColor = MaterialTheme.colorScheme.primary

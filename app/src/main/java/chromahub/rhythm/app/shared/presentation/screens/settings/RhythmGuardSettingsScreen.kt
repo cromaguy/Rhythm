@@ -62,6 +62,7 @@ import androidx.compose.material3.*
 import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderState
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.*
 import androidx.compose.ui.unit.dp
@@ -530,14 +531,20 @@ fun RhythmGuardSettingsScreen(onBackClick: () -> Unit) {
                                 }
                             }
                             Spacer(modifier = Modifier.height(12.dp))
+                            val auraAgeSliderState = remember(auraAge) {
+                                SliderState(
+                                    value = auraAge.toFloat(),
+                                    steps = 71,
+                                    trackRange = 8f..80f
+                                )
+                            }
+                            auraAgeSliderState.value = auraAge.toFloat()
                             Slider(
-                                value = auraAge.toFloat(),
+                                state = auraAgeSliderState,
                                 onValueChange = {
                                     HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
                                     appSettings.setRhythmGuardAge(it.toInt())
-                                },
-                                valueRange = 8f..80f,
-                                steps = 71
+                                }
                             )
                         }
                     }
@@ -657,16 +664,22 @@ fun RhythmGuardSettingsScreen(onBackClick: () -> Unit) {
                                             )
                                         }
                                     }
+                                    val alertThresholdSliderState = remember(alertThresholdMinutes) {
+                                        SliderState(
+                                            value = maxOf(alertThresholdMinutes, 15).toFloat(),
+                                            steps = 344,
+                                            trackRange = 15f..360f
+                                        )
+                                    }
+                                    alertThresholdSliderState.value = maxOf(alertThresholdMinutes, 15).toFloat()
                                     Slider(
-                                        value = maxOf(alertThresholdMinutes, 15).toFloat(),
+                                        state = alertThresholdSliderState,
                                         onValueChange = {
                                             HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
                                             appSettings.setRhythmGuardAlertThresholdMinutes(
                                                 it.toInt()
                                             )
-                                        },
-                                        valueRange = 15f..360f,
-                                        steps = 344
+                                        }
                                     )
                                 }
 
@@ -718,16 +731,22 @@ fun RhythmGuardSettingsScreen(onBackClick: () -> Unit) {
                                             )
                                         }
                                     }
+                                    val warningTimeoutSliderState = remember(warningTimeoutMinutes) {
+                                        SliderState(
+                                            value = warningTimeoutMinutes.toFloat(),
+                                            steps = 28,
+                                            trackRange = 1f..30f
+                                        )
+                                    }
+                                    warningTimeoutSliderState.value = warningTimeoutMinutes.toFloat()
                                     Slider(
-                                        value = warningTimeoutMinutes.toFloat(),
+                                        state = warningTimeoutSliderState,
                                         onValueChange = {
                                             HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
                                             appSettings.setRhythmGuardWarningTimeoutMinutes(
                                                 it.toInt()
                                             )
-                                        },
-                                        valueRange = 1f..30f,
-                                        steps = 28
+                                        }
                                     )
                                 }
 
@@ -779,16 +798,22 @@ fun RhythmGuardSettingsScreen(onBackClick: () -> Unit) {
                                             )
                                         }
                                     }
+                                    val postTimeoutCooldownSliderState = remember(postTimeoutCooldownMinutes) {
+                                        SliderState(
+                                            value = postTimeoutCooldownMinutes.toFloat(),
+                                            steps = 28,
+                                            trackRange = 1f..30f
+                                        )
+                                    }
+                                    postTimeoutCooldownSliderState.value = postTimeoutCooldownMinutes.toFloat()
                                     Slider(
-                                        value = postTimeoutCooldownMinutes.toFloat(),
+                                        state = postTimeoutCooldownSliderState,
                                         onValueChange = {
                                             HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
                                             appSettings.setRhythmGuardPostTimeoutCooldownMinutes(
                                                 it.toInt()
                                             )
-                                        },
-                                        valueRange = 1f..30f,
-                                        steps = 28
+                                        }
                                     )
                                 }
 
@@ -840,16 +865,22 @@ fun RhythmGuardSettingsScreen(onBackClick: () -> Unit) {
                                             )
                                         }
                                     }
+                                    val breakResumeSliderState = remember(breakResumeMinutes) {
+                                        SliderState(
+                                            value = breakResumeMinutes.toFloat(),
+                                            steps = 118,
+                                            trackRange = 1f..120f
+                                        )
+                                    }
+                                    breakResumeSliderState.value = breakResumeMinutes.toFloat()
                                     Slider(
-                                        value = breakResumeMinutes.toFloat(),
+                                        state = breakResumeSliderState,
                                         onValueChange = {
                                             HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
                                             appSettings.setRhythmGuardBreakResumeMinutes(
                                                 it.toInt()
                                             )
-                                        },
-                                        valueRange = 1f..120f,
-                                        steps = 118
+                                        }
                                     )
                                 }
 
@@ -1036,14 +1067,20 @@ fun RhythmGuardSettingsScreen(onBackClick: () -> Unit) {
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                     Spacer(modifier = Modifier.height(10.dp))
+                                    val manualVolumeThresholdSliderState = remember(manualVolumeThreshold) {
+                                        SliderState(
+                                            value = manualVolumeThreshold,
+                                            trackRange = 0.40f..0.95f
+                                        )
+                                    }
+                                    manualVolumeThresholdSliderState.value = manualVolumeThreshold
                                     Slider(
-                                        value = manualVolumeThreshold,
+                                        state = manualVolumeThresholdSliderState,
                                         onValueChange = {
                                             appSettings.setRhythmGuardManualVolumeThreshold(
                                                 it
                                             )
                                         },
-                                        valueRange = 0.40f..0.95f,
                                         onValueChangeFinished = {
                                             HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
                                         }

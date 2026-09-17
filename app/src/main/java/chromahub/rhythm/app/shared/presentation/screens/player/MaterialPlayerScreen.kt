@@ -110,6 +110,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
+import androidx.compose.material3.SliderState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -2625,8 +2626,11 @@ fun MaterialPlayerScreen(
                                         }
                                         
                                         // Invisible slider for seeking - overlays the progress bar
+                                        val currentSeekProgress = if (isScrubbing && enhancedSeekingEnabled) scrubProgress else progress()
+                                        val seekSliderState = remember { SliderState(value = currentSeekProgress) }
+                                        seekSliderState.value = currentSeekProgress
                                         androidx.compose.material3.Slider(
-                                            value = if (isScrubbing && enhancedSeekingEnabled) scrubProgress else progress(),
+                                            state = seekSliderState,
                                             onValueChange = { newValue ->
                                                 if (canSeek && enhancedSeekingEnabled) {
                                                     isScrubbing = true

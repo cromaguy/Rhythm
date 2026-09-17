@@ -58,6 +58,7 @@ import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderState
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.*
 import androidx.compose.ui.unit.dp
@@ -408,14 +409,20 @@ fun HomeScreenCustomizationSettingsScreen(onBackClick: () -> Unit) {
                                             style = MaterialTheme.typography.bodyMedium,
                                             color = MaterialTheme.colorScheme.primary
                                         )
+                                        val recentlyPlayedSliderState = remember(recentlyPlayedCount) {
+                                            SliderState(
+                                                value = recentlyPlayedCount.toFloat(),
+                                                steps = 8,
+                                                trackRange = 3f..12f
+                                            )
+                                        }
+                                        recentlyPlayedSliderState.value = recentlyPlayedCount.toFloat()
                                         Slider(
-                                            value = recentlyPlayedCount.toFloat(),
+                                            state = recentlyPlayedSliderState,
                                             onValueChange = {
                                                 HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
                                                 appSettings.setHomeRecentlyPlayedCount(it.toInt())
                                             },
-                                            valueRange = 3f..12f,
-                                            steps = 8,
                                             modifier = Modifier.fillMaxWidth()
                                         )
                                     }
@@ -446,14 +453,20 @@ fun HomeScreenCustomizationSettingsScreen(onBackClick: () -> Unit) {
                                             style = MaterialTheme.typography.bodyMedium,
                                             color = MaterialTheme.colorScheme.primary
                                         )
+                                        val artistsSliderState = remember(artistsCount) {
+                                            SliderState(
+                                                value = artistsCount.toFloat(),
+                                                steps = 15,
+                                                trackRange = 4f..20f
+                                            )
+                                        }
+                                        artistsSliderState.value = artistsCount.toFloat()
                                         Slider(
-                                            value = artistsCount.toFloat(),
+                                            state = artistsSliderState,
                                             onValueChange = {
                                                 HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
                                                 appSettings.setHomeArtistsCount(it.toInt())
                                             },
-                                            valueRange = 4f..20f,
-                                            steps = 15,
                                             modifier = Modifier.fillMaxWidth()
                                         )
                                     }
@@ -484,14 +497,20 @@ fun HomeScreenCustomizationSettingsScreen(onBackClick: () -> Unit) {
                                             style = MaterialTheme.typography.bodyMedium,
                                             color = MaterialTheme.colorScheme.primary
                                         )
+                                        val newReleasesSliderState = remember(newReleasesCount) {
+                                            SliderState(
+                                                value = newReleasesCount.toFloat(),
+                                                steps = 15,
+                                                trackRange = 4f..20f
+                                            )
+                                        }
+                                        newReleasesSliderState.value = newReleasesCount.toFloat()
                                         Slider(
-                                            value = newReleasesCount.toFloat(),
+                                            state = newReleasesSliderState,
                                             onValueChange = {
                                                 HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
                                                 appSettings.setHomeNewReleasesCount(it.toInt())
                                             },
-                                            valueRange = 4f..20f,
-                                            steps = 15,
                                             modifier = Modifier.fillMaxWidth()
                                         )
                                     }
@@ -522,14 +541,20 @@ fun HomeScreenCustomizationSettingsScreen(onBackClick: () -> Unit) {
                                             style = MaterialTheme.typography.bodyMedium,
                                             color = MaterialTheme.colorScheme.primary
                                         )
+                                        val recentlyAddedSliderState = remember(recentlyAddedCount) {
+                                            SliderState(
+                                                value = recentlyAddedCount.toFloat(),
+                                                steps = 15,
+                                                trackRange = 4f..20f
+                                            )
+                                        }
+                                        recentlyAddedSliderState.value = recentlyAddedCount.toFloat()
                                         Slider(
-                                            value = recentlyAddedCount.toFloat(),
+                                            state = recentlyAddedSliderState,
                                             onValueChange = {
                                                 HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
                                                 appSettings.setHomeRecentlyAddedCount(it.toInt())
                                             },
-                                            valueRange = 4f..20f,
-                                            steps = 15,
                                             modifier = Modifier.fillMaxWidth()
                                         )
                                     }
@@ -560,14 +585,20 @@ fun HomeScreenCustomizationSettingsScreen(onBackClick: () -> Unit) {
                                             style = MaterialTheme.typography.bodyMedium,
                                             color = MaterialTheme.colorScheme.primary
                                         )
+                                        val recommendedSliderState = remember(recommendedCount) {
+                                            SliderState(
+                                                value = recommendedCount.toFloat(),
+                                                steps = 5,
+                                                trackRange = 2f..8f
+                                            )
+                                        }
+                                        recommendedSliderState.value = recommendedCount.toFloat()
                                         Slider(
-                                            value = recommendedCount.toFloat(),
+                                            state = recommendedSliderState,
                                             onValueChange = {
                                                 HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
                                                 appSettings.setHomeRecommendedCount(it.toInt())
                                             },
-                                            valueRange = 2f..8f,
-                                            steps = 5,
                                             modifier = Modifier.fillMaxWidth()
                                         )
                                     }
@@ -700,14 +731,20 @@ fun HomeScreenCustomizationSettingsScreen(onBackClick: () -> Unit) {
                                                 style = MaterialTheme.typography.bodyMedium,
                                                 color = MaterialTheme.colorScheme.primary
                                             )
+                                            val discoverSliderState = remember(discoverItemCount) {
+                                                SliderState(
+                                                    value = discoverItemCount.toFloat(),
+                                                    steps = 8,
+                                                    trackRange = 3f..12f
+                                                )
+                                            }
+                                            discoverSliderState.value = discoverItemCount.toFloat()
                                             Slider(
-                                                value = discoverItemCount.toFloat(),
+                                                state = discoverSliderState,
                                                 onValueChange = {
                                                     HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
                                                     appSettings.setHomeDiscoverItemCount(it.toInt())
                                                 },
-                                                valueRange = 3f..12f,
-                                                steps = 8,
                                                 modifier = Modifier.fillMaxWidth()
                                             )
                                         }
@@ -990,14 +1027,21 @@ fun HomeSettingsSliderCard(
 
             Spacer(modifier = Modifier.height(12.dp))
 
+            val sliderState = remember(valueRange, steps) {
+                SliderState(
+                    value = value,
+                    steps = steps,
+                    trackRange = valueRange
+                )
+            }
+            sliderState.value = value
+
             Slider(
-                value = value,
+                state = sliderState,
                 onValueChange = {
                     HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
                     onValueChange(it)
                 },
-                valueRange = valueRange,
-                steps = steps,
                 colors = SliderDefaults.colors(
                     thumbColor = MaterialTheme.colorScheme.primary,
                     activeTrackColor = MaterialTheme.colorScheme.primary,
@@ -1073,14 +1117,21 @@ fun HomeSettingsSliderRow(
 
         Spacer(modifier = Modifier.height(8.dp))
 
+        val sliderState = remember(valueRange, steps) {
+            SliderState(
+                value = value,
+                steps = steps,
+                trackRange = valueRange
+            )
+        }
+        sliderState.value = value
+
         Slider(
-            value = value,
+            state = sliderState,
             onValueChange = {
                 HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
                 onValueChange(it)
             },
-            valueRange = valueRange,
-            steps = steps,
             colors = SliderDefaults.colors(
                 thumbColor = MaterialTheme.colorScheme.primary,
                 activeTrackColor = MaterialTheme.colorScheme.primary,

@@ -8,6 +8,7 @@ package chromahub.rhythm.app.ui.theme.festive
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
+import androidx.compose.material3.SliderState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -147,10 +148,16 @@ fun ExampleInteractiveIntensity() {
             
             Spacer(modifier = Modifier.height(16.dp))
             
+            val intensitySliderState = remember(intensity) {
+                SliderState(
+                    value = intensity,
+                    trackRange = 0.1f..1f
+                )
+            }
+            intensitySliderState.value = intensity
             Slider(
-                value = intensity,
+                state = intensitySliderState,
                 onValueChange = { intensity = it },
-                valueRange = 0.1f..1f,
                 modifier = Modifier.fillMaxWidth(0.8f)
             )
             

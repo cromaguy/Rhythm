@@ -68,6 +68,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
+import androidx.compose.material3.SliderState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
@@ -968,14 +969,20 @@ private fun PlaybackQuickSettingsCard(
                                 color = MaterialTheme.colorScheme.primary
                             )
                             Spacer(modifier = Modifier.height(8.dp))
+                            val crossfadeSliderState = remember(crossfadeDuration) {
+                                SliderState(
+                                    value = crossfadeDuration,
+                                    steps = 8,
+                                    trackRange = 1f..10f
+                                )
+                            }
+                            crossfadeSliderState.value = crossfadeDuration
                             Slider(
-                                value = crossfadeDuration,
+                                state = crossfadeSliderState,
                                 onValueChange = {
                                     HapticUtils.performHapticFeedback(context, haptics, HapticType.LIGHT)
                                     onCrossfadeDurationChange(it)
                                 },
-                                valueRange = 1f..10f,
-                                steps = 8,
                                 colors = SliderDefaults.colors(
                                     thumbColor = MaterialTheme.colorScheme.primary,
                                     activeTrackColor = MaterialTheme.colorScheme.primary,
@@ -1217,8 +1224,16 @@ private fun PlaybackPitchCard(
                 
                 Spacer(modifier = Modifier.height(8.dp))
                 
+                val pitchSliderState = remember(selectedPitch) {
+                    SliderState(
+                        value = selectedPitch,
+                        steps = 54,
+                        trackRange = 0.25f..3.0f
+                    )
+                }
+                pitchSliderState.value = selectedPitch
                 Slider(
-                    value = selectedPitch,
+                    state = pitchSliderState,
                     onValueChange = { newValue ->
                         selectedPitch = newValue
                         HapticUtils.performHapticFeedback(context, haptics, HapticType.LIGHT)
@@ -1226,8 +1241,6 @@ private fun PlaybackPitchCard(
                     onValueChangeFinished = {
                         onPitchChange(selectedPitch)
                     },
-                    valueRange = 0.25f..3.0f,
-                    steps = 54,
                     colors = SliderDefaults.colors(
                         thumbColor = MaterialTheme.colorScheme.primary,
                         activeTrackColor = MaterialTheme.colorScheme.primary,
@@ -1388,10 +1401,16 @@ private fun AudioEffectsCard(
                                 fontWeight = FontWeight.SemiBold,
                                 color = MaterialTheme.colorScheme.primary
                             )
+                            val bassBoostSliderState = remember(bassBoostStrength) {
+                                SliderState(
+                                    value = bassBoostStrength.toFloat(),
+                                    trackRange = 0f..1000f
+                                )
+                            }
+                            bassBoostSliderState.value = bassBoostStrength.toFloat()
                             Slider(
-                                value = bassBoostStrength.toFloat(),
+                                state = bassBoostSliderState,
                                 onValueChange = { onBassBoostStrengthChange(it.toInt()) },
-                                valueRange = 0f..1000f,
                                 modifier = Modifier.fillMaxWidth(),
                                 colors = SliderDefaults.colors(
                                     thumbColor = MaterialTheme.colorScheme.primary,
@@ -1446,10 +1465,16 @@ private fun AudioEffectsCard(
                                 fontWeight = FontWeight.SemiBold,
                                 color = MaterialTheme.colorScheme.primary
                             )
+                            val virtualizerSliderState = remember(virtualizerStrength) {
+                                SliderState(
+                                    value = virtualizerStrength.toFloat(),
+                                    trackRange = 0f..1000f
+                                )
+                            }
+                            virtualizerSliderState.value = virtualizerStrength.toFloat()
                             Slider(
-                                value = virtualizerStrength.toFloat(),
+                                state = virtualizerSliderState,
                                 onValueChange = { onVirtualizerStrengthChange(it.toInt()) },
-                                valueRange = 0f..1000f,
                                 modifier = Modifier.fillMaxWidth(),
                                 colors = SliderDefaults.colors(
                                     thumbColor = MaterialTheme.colorScheme.primary,

@@ -209,14 +209,20 @@ fun ReplayGainSettingsScreen(
                                 Column(modifier = Modifier.fillMaxWidth()) {
                                     Text(stringResource(R.string.replay_gain_preamp_tagged_desc))
                                     Spacer(modifier = Modifier.height(8.dp))
+                                    val preampSliderState = remember(replayGainPreamp) {
+                                        SliderState(
+                                            value = replayGainPreamp,
+                                            steps = 30,
+                                            trackRange = -15f..15f
+                                        )
+                                    }
+                                    preampSliderState.value = replayGainPreamp
                                     Slider(
-                                        value = replayGainPreamp,
+                                        state = preampSliderState,
                                         onValueChange = {
                                             HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
                                             appSettings.setReplayGainPreamp(it)
                                         },
-                                        valueRange = -15f..15f,
-                                        steps = 30,
                                         modifier = Modifier.fillMaxWidth()
                                     )
                                 }
@@ -241,14 +247,20 @@ fun ReplayGainSettingsScreen(
                                 Column(modifier = Modifier.fillMaxWidth()) {
                                     Text(stringResource(R.string.replay_gain_preamp_untagged_desc))
                                     Spacer(modifier = Modifier.height(8.dp))
+                                    val untaggedPreampSliderState = remember(replayGainPreampUntagged) {
+                                        SliderState(
+                                            value = replayGainPreampUntagged,
+                                            steps = 30,
+                                            trackRange = -15f..15f
+                                        )
+                                    }
+                                    untaggedPreampSliderState.value = replayGainPreampUntagged
                                     Slider(
-                                        value = replayGainPreampUntagged,
+                                        state = untaggedPreampSliderState,
                                         onValueChange = {
                                             HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
                                             appSettings.setReplayGainPreampUntagged(it)
                                         },
-                                        valueRange = -15f..15f,
-                                        steps = 30,
                                         modifier = Modifier.fillMaxWidth()
                                     )
                                 }

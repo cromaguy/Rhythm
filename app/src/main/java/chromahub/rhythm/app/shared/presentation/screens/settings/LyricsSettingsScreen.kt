@@ -59,6 +59,7 @@ import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderState
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.*
 import androidx.compose.ui.unit.dp
@@ -515,14 +516,21 @@ fun LyricsSettingsScreen(onBackClick: () -> Unit) {
                                             style = MaterialTheme.typography.bodyMedium,
                                             color = MaterialTheme.colorScheme.primary
                                         )
-                                        Slider(
-                                            value = playerLyricsTextSize,
-                                            onValueChange = { appSettings.setPlayerLyricsTextSize(it) },                                                valueRange = 0.5f..2.0f,
-                                                modifier = Modifier.fillMaxWidth(),
-                                                onValueChangeFinished = {
-                                                    HapticUtils.performHapticFeedback(context, hapticFeedback, HapticType.LIGHT)
-                                                }
+                                        val lyricsSizeSliderState = remember(playerLyricsTextSize) {
+                                            SliderState(
+                                                value = playerLyricsTextSize,
+                                                trackRange = 0.5f..2.0f
                                             )
+                                        }
+                                        lyricsSizeSliderState.value = playerLyricsTextSize
+                                        Slider(
+                                            state = lyricsSizeSliderState,
+                                            onValueChange = { appSettings.setPlayerLyricsTextSize(it) },
+                                            modifier = Modifier.fillMaxWidth(),
+                                            onValueChangeFinished = {
+                                                HapticUtils.performHapticFeedback(context, hapticFeedback, HapticType.LIGHT)
+                                            }
+                                        )
                                         Row(
                                             modifier = Modifier.fillMaxWidth(),
                                             horizontalArrangement = Arrangement.SpaceBetween

@@ -53,6 +53,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
+import androidx.compose.material3.SliderState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.darkColorScheme
@@ -1522,7 +1523,9 @@ fun ExpressivePlayerScreen(
                                                         progressColor = primaryColor, trackColor = onSurfaceColor.copy(alpha = 0.2f),
                                                         height = when (ps) { ProgressStyle.THIN -> 2.dp; ProgressStyle.THICK -> 12.dp; else -> 8.dp },
                                                         isPlaying = isPlaying, showThumb = ts != ThumbStyle.NONE, thumbStyle = ts, thumbSize = 14.dp, rotateThumbWhenPlaying = playerProgressThumbRotate, waveAmplitudeWhenPlaying = 3.dp, waveLength = 60.dp)
-                                                    Slider(value = progressValue, onValueChange = { onSeek(it) }, modifier = Modifier.fillMaxWidth(), enabled = canSeek,
+                                                    val progressSliderState = remember { SliderState(value = progressValue) }
+                                                    progressSliderState.value = progressValue
+                                                    Slider(state = progressSliderState, onValueChange = { onSeek(it) }, modifier = Modifier.fillMaxWidth(), enabled = canSeek,
                                                         onValueChangeFinished = { HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT) },
                                                         colors = SliderDefaults.colors(thumbColor = Color.Transparent, activeTrackColor = Color.Transparent, inactiveTrackColor = Color.Transparent))
                                                 }

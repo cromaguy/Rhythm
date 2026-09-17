@@ -64,6 +64,7 @@ import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderState
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.*
 import androidx.compose.ui.unit.dp
@@ -1006,10 +1007,16 @@ fun ThemeCustomizationSettingsScreen(onBackClick: () -> Unit) {
 
                             Spacer(modifier = Modifier.height(8.dp))
 
+                            val festiveThemeIntensitySliderState = remember(festiveThemeIntensity) {
+                                SliderState(
+                                    value = festiveThemeIntensity,
+                                    trackRange = 0.1f..1f
+                                )
+                            }
+                            festiveThemeIntensitySliderState.value = festiveThemeIntensity
                             Slider(
-                                value = festiveThemeIntensity,
+                                state = festiveThemeIntensitySliderState,
                                 onValueChange = { appSettings.setFestiveThemeIntensity(it) },
-                                valueRange = 0.1f..1f,
                                 modifier = Modifier.fillMaxWidth(),
                                 onValueChangeFinished = {
                                     HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
@@ -1037,10 +1044,16 @@ fun ThemeCustomizationSettingsScreen(onBackClick: () -> Unit) {
 
                             Spacer(modifier = Modifier.height(8.dp))
 
+                            val festiveSnowflakeSizeSliderState = remember(festiveSnowflakeSize) {
+                                SliderState(
+                                    value = festiveSnowflakeSize,
+                                    trackRange = 0.5f..2.0f
+                                )
+                            }
+                            festiveSnowflakeSizeSliderState.value = festiveSnowflakeSize
                             Slider(
-                                value = festiveSnowflakeSize,
+                                state = festiveSnowflakeSizeSliderState,
                                 onValueChange = { appSettings.setFestiveSnowflakeSize(it) },
-                                valueRange = 0.5f..2.0f,
                                 modifier = Modifier.fillMaxWidth(),
                                 onValueChangeFinished = {
                                     HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)

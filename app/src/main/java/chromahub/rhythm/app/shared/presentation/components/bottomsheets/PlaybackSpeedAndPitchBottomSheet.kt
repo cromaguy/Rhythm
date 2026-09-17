@@ -246,14 +246,20 @@ fun PlaybackSpeedAndPitchBottomSheet(
                                         modifier = Modifier.size(18.dp)
                                     )
                                 }
+                                val speedSliderState = remember(minVal, maxVal) {
+                                    SliderState(
+                                        value = selectedSpeed,
+                                        trackRange = minVal..maxVal
+                                    )
+                                }
+                                speedSliderState.value = selectedSpeed
                                 Slider(
-                                    value = selectedSpeed,
+                                    state = speedSliderState,
                                     onValueChange = { v ->
                                         val r = (Math.round(v * 1000.0) / 1000.0).toFloat()
                                         selectedSpeed = r
                                         if (syncEnabled) selectedPitch = r
                                     },
-                                    valueRange = minVal..maxVal,
                                     modifier = Modifier
                                         .weight(1f)
                                         .padding(horizontal = 8.dp),
@@ -380,14 +386,20 @@ fun PlaybackSpeedAndPitchBottomSheet(
                                         modifier = Modifier.size(18.dp)
                                     )
                                 }
+                                val pitchSliderState = remember(minVal, maxVal) {
+                                    SliderState(
+                                        value = selectedPitch,
+                                        trackRange = minVal..maxVal
+                                    )
+                                }
+                                pitchSliderState.value = selectedPitch
                                 Slider(
-                                    value = selectedPitch,
+                                    state = pitchSliderState,
                                     onValueChange = { v ->
                                         val r = (Math.round(v * 1000.0) / 1000.0).toFloat()
                                         selectedPitch = r
                                         if (syncEnabled) selectedSpeed = r
                                     },
-                                    valueRange = minVal..maxVal,
                                     modifier = Modifier
                                         .weight(1f)
                                         .padding(horizontal = 8.dp),

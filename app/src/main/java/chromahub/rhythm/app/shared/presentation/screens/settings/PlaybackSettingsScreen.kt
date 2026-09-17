@@ -27,6 +27,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderState
 import androidx.compose.runtime.*
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.Alignment
@@ -310,16 +311,22 @@ fun PlaybackSettingsScreen(
                                         )
                                     }
                                     Spacer(modifier = Modifier.height(8.dp))
-                                    Slider(
-                                        value = crossfadeDuration,
-                                        onValueChange = {
-                                            HapticUtils.performHapticFeedback(context, hapticFeedback, HapticType.LIGHT)
-                                            appSettings.setCrossfadeDuration(it)
-                                        },
-                                        valueRange = 0.5f..12f,
-                                        steps = 22,
-                                        modifier = Modifier.fillMaxWidth()
-                                    )
+                                     val crossfadeSliderState = remember(crossfadeDuration) {
+                                         SliderState(
+                                             value = crossfadeDuration,
+                                             steps = 22,
+                                             trackRange = 0.5f..12f
+                                         )
+                                     }
+                                     crossfadeSliderState.value = crossfadeDuration
+                                     Slider(
+                                         state = crossfadeSliderState,
+                                         onValueChange = {
+                                             HapticUtils.performHapticFeedback(context, hapticFeedback, HapticType.LIGHT)
+                                             appSettings.setCrossfadeDuration(it)
+                                         },
+                                         modifier = Modifier.fillMaxWidth()
+                                     )
                                     Row(
                                         modifier = Modifier.fillMaxWidth(),
                                         horizontalArrangement = Arrangement.SpaceBetween

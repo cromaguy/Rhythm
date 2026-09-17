@@ -37,6 +37,7 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.ui.graphics.graphicsLayer
 import kotlinx.coroutines.delay
 import androidx.compose.material3.*
+import androidx.compose.material3.SliderState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -725,16 +726,22 @@ fun WidgetCornerRadiusSheet(
                 .padding(horizontal = 24.dp)
                 .padding(bottom = 24.dp)
         ) {
+            val tempRadiusSliderState = remember(tempRadius) {
+                SliderState(
+                    value = tempRadius.toFloat(),
+                    steps = 59,
+                    trackRange = 0f..60f
+                )
+            }
+            tempRadiusSliderState.value = tempRadius.toFloat()
             Slider(
-                value = tempRadius.toFloat(),
+                state = tempRadiusSliderState,
                 onValueChange = { tempRadius = it.toInt() },
                 onValueChangeFinished = {
                     HapticUtils.performHapticFeedback(context, hapticFeedback, HapticType.LIGHT)
                     appSettings.setWidgetCornerRadius(tempRadius)
                     updateAllWidgets(context)
                 },
-                valueRange = 0f..60f,
-                steps = 59,
                 colors = SliderDefaults.colors(
                     thumbColor = MaterialTheme.colorScheme.primary,
                     activeTrackColor = MaterialTheme.colorScheme.primary
