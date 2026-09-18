@@ -1,0 +1,7 @@
+Rhythm v5.5 - Stable Update
+
+• fix(player): bypass ExoPlayer cache for local media and sanitize OGG metadata writes
+• fix(player): harden audio offload gating and migrate to PlayerTransferState
+• perf(artwork): implement two-tier artwork cache with zero-copy descriptor serving
+
+Thanks for using Rhythm ;)

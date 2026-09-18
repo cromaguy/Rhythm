@@ -10,6 +10,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - 
 
+## [5.5.487.1274] - 2026-09-18
+
+### Fixed
+- fix(player): bypass ExoPlayer cache for local media and sanitize OGG metadata writes
+- fix(player): harden audio offload gating and migrate to PlayerTransferState
+- perf(artwork): implement two-tier artwork cache with zero-copy descriptor serving
+
 ## [5.5.485.1270] - 2026-09-17
 
 ### Added

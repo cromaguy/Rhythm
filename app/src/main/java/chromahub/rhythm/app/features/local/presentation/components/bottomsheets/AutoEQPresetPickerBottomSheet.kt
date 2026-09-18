@@ -104,7 +104,6 @@ fun AutoEQPresetPickerBottomSheet(
                 ?: allBrands.firstOrNull { device.name.contains(it, ignoreCase = true) }
             if (matchingBrand != null) {
                 selectedBrand = matchingBrand
-                showFilters = true
                 val remainder = if (device.name.startsWith(matchingBrand, ignoreCase = true)) {
                     device.name.substring(matchingBrand.length).trim()
                 } else if (inferredBrand.isNotBlank() && device.name.startsWith(inferredBrand, ignoreCase = true)) {
