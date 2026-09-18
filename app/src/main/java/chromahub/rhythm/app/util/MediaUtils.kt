@@ -1271,8 +1271,6 @@ object MediaUtils {
                     Log.d(TAG, "writeTempFileToContentUri: Wrote $expectedSize bytes using mode '$mode'")
                     return true
                 }
-            } catch (e: android.app.RecoverableSecurityException) {
-                throw e
             } catch (e: SecurityException) {
                 throw e
             } catch (e: Exception) {
@@ -1321,8 +1319,6 @@ object MediaUtils {
                     Log.d(TAG, "writeTempFileToContentUri: Wrote $expectedSize bytes using openOutputStream with mode '$mode'")
                     return true
                 }
-            } catch (e: android.app.RecoverableSecurityException) {
-                throw e
             } catch (e: SecurityException) {
                 throw e
             } catch (e: Exception) {
