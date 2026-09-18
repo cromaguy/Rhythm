@@ -134,6 +134,8 @@ class RhythmAlbumArtProvider : ContentProvider() {
         signal: CancellationSignal?
     ): AssetFileDescriptor? {
         val appContext = context?.applicationContext ?: return null
+        signal?.throwIfCanceled()
+
         val pathSegments = uri.pathSegments
         if (pathSegments.isEmpty()) {
             throw FileNotFoundException("Invalid artwork URI with empty path: $uri")
@@ -152,11 +154,29 @@ class RhythmAlbumArtProvider : ContentProvider() {
             Uri.EMPTY
         }
 
-        // Extract raw embedded artwork bytes on demand
-        val bytes = MediaUtils.extractRawEmbeddedArtworkBytes(appContext, songUri, songFilePath)
+        val resolvedFilePath = if (!songFilePath.isNullOrBlank()) {
+            songFilePath
+        } else {
+            MediaUtils.resolveFilePathFromUri(appContext, songUri)
+        }
+
+        if (!resolvedFilePath.isNullOrBlank()) {
+            MediaUtils.openArtworkDiskCacheDescriptor(appContext.cacheDir, resolvedFilePath)?.let { afd ->
+                return afd
+            }
+        }
+
+        signal?.throwIfCanceled()
+
+        val bytes = MediaUtils.extractRawEmbeddedArtworkBytes(appContext, songUri, resolvedFilePath)
 
         if (bytes != null && bytes.isNotEmpty()) {
             signal?.throwIfCanceled()
+            if (!resolvedFilePath.isNullOrBlank()) {
+                MediaUtils.openArtworkDiskCacheDescriptor(appContext.cacheDir, resolvedFilePath)?.let { afd ->
+                    return afd
+                }
+            }
             return createAssetFileDescriptorFromBytes(bytes)
         }
 
@@ -185,7 +205,6 @@ class RhythmAlbumArtProvider : ContentProvider() {
     private fun createAssetFileDescriptorFromBytes(bytes: ByteArray): AssetFileDescriptor {
         val appContext = context?.applicationContext
 
-        // Attempt fast Ashmem (MemoryFile) creation first
         try {
             val memoryFile = MemoryFile("${appContext?.packageName ?: "rhythm"}.albumart", bytes.size)
             val pfd = try {
@@ -196,12 +215,11 @@ class RhythmAlbumArtProvider : ContentProvider() {
             } finally {
                 memoryFile.close()
             }
-            return AssetFileDescriptor(pfd, 0, AssetFileDescriptor.UNKNOWN_LENGTH)
+            return AssetFileDescriptor(pfd, 0, bytes.size.toLong())
         } catch (e: Exception) {
             Log.w(TAG, "Ashmem MemoryFile creation failed, falling back to pipe", e)
         }
 
-        // Fallback: asynchronous pipe
         val pipe = ParcelFileDescriptor.createPipe()
         CoroutineScope(Dispatchers.IO).launch {
             try {
@@ -213,7 +231,7 @@ class RhythmAlbumArtProvider : ContentProvider() {
                 Log.w(TAG, "Pipe streaming failed", e)
             }
         }
-        return AssetFileDescriptor(pipe[0], 0, AssetFileDescriptor.UNKNOWN_LENGTH)
+        return AssetFileDescriptor(pipe[0], 0, bytes.size.toLong())
     }
 
     override fun query(

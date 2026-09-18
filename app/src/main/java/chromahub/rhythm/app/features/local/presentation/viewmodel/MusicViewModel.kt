@@ -1251,6 +1251,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                 try {
                     // Evict Coil's in-memory bitmap cache so views request fresh artwork
                     coil.Coil.imageLoader(getApplication<Application>()).memoryCache?.clear()
+                    MediaUtils.clearRawArtworkCache()
 
                     // Invalidate caches and reload
                     withContext(Dispatchers.IO) {

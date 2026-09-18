@@ -23,6 +23,7 @@ import chromahub.rhythm.app.shared.data.model.AppSettings
 import chromahub.rhythm.app.util.ANRWatchdog
 import chromahub.rhythm.app.util.CacheManager
 import chromahub.rhythm.app.util.CrashReporter
+import chromahub.rhythm.app.util.MediaUtils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -226,6 +227,7 @@ class RhythmApplication : Application(), ImageLoaderFactory {
                 } catch (e: Exception) {
                     Log.w(TAG, "Error clearing Coil memory cache", e)
                 }
+                MediaUtils.clearRawArtworkCache()
                 GlanceShapeBitmaps.clearCache()
                 RhythmMusicWidget.clearArtCache()
                 RhythmCookieWidget.clearArtCache()

@@ -243,6 +243,8 @@ object CacheManager {
                 clearCacheDirectory(externalCache)
             }
             
+            MediaUtils.clearRawArtworkCache()
+            
             // Clear Coil image cache
             val loader = imageLoader ?: runCatching { coil.Coil.imageLoader(context) }.getOrNull()
             loader?.let { resolvedLoader ->
@@ -445,6 +447,9 @@ object CacheManager {
     suspend fun clearImageCache(context: Context, imageLoader: ImageLoader? = null) = withContext(Dispatchers.IO) {
         try {
             Log.d(TAG, "Clearing image cache...")
+            
+            MediaUtils.clearRawArtworkCache()
+            MediaUtils.clearArtworkDiskCache(context.cacheDir)
             
             // Clear Coil image cache
             imageLoader?.let { loader ->
