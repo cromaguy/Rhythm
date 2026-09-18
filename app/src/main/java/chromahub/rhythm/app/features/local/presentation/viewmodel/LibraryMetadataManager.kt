@@ -35,7 +35,9 @@ class LibraryMetadataManager(
     private val scope: CoroutineScope,
     private val getCurrentSong: () -> Song?,
     private val updateCurrentSongMetadata: (Song) -> Unit,
-    private val bulkUpdateSongs: (Map<String, Song>) -> Unit
+    private val bulkUpdateSongs: (Map<String, Song>) -> Unit,
+    private val pausePlaybackForWrite: ((String) -> Pair<Long, Boolean>?)? = null,
+    private val resumePlaybackAfterWrite: ((String, Pair<Long, Boolean>?) -> Unit)? = null
 ) {
 
     companion object {
@@ -74,6 +76,7 @@ class LibraryMetadataManager(
         onPermissionRequired: ((PendingWriteRequest) -> Unit)? = null
     ) {
         scope.launch {
+            var playbackState: Pair<Long, Boolean>? = null
             try {
                 val appContext = context.applicationContext
 
@@ -120,6 +123,10 @@ class LibraryMetadataManager(
                     artist
                 } else {
                     song.albumArtist
+                }
+
+                playbackState = withContext(Dispatchers.Main) {
+                    pausePlaybackForWrite?.invoke(song.id)
                 }
 
                 val success = withContext(Dispatchers.IO) {
@@ -187,6 +194,7 @@ class LibraryMetadataManager(
                 }
                 
                 withContext(Dispatchers.Main) {
+                    resumePlaybackAfterWrite?.invoke(song.id, playbackState)
                     if (success) {
                         Log.d(TAG, "Successfully updated file metadata for: $title by $artist")
                         onSuccess(true)
@@ -231,6 +239,9 @@ class LibraryMetadataManager(
             } catch (e: RecoverableSecurityExceptionWrapper) {
                 // Android 11+ scoped storage restriction - file not owned by app
                 Log.w(TAG, "RecoverableSecurityException - attempting createWriteRequest approach")
+                withContext(Dispatchers.Main) {
+                    resumePlaybackAfterWrite?.invoke(song.id, playbackState)
+                }
                 
                 val appContext = context.applicationContext
                 val finalAlbumArtist = if (!albumArtist.isNullOrBlank()) {
@@ -309,6 +320,7 @@ class LibraryMetadataManager(
             } catch (e: Exception) {
                 Log.e(TAG, "Error saving metadata", e)
                 withContext(Dispatchers.Main) {
+                    resumePlaybackAfterWrite?.invoke(song.id, playbackState)
                     onError("Failed to save metadata: ${e.message ?: "Unknown error"}")
                 }
             }
@@ -330,7 +342,11 @@ class LibraryMetadataManager(
             return
         }
         
+        val songId = pendingRequest.song.id
         scope.launch {
+            val playbackState = withContext(Dispatchers.Main) {
+                pausePlaybackForWrite?.invoke(songId)
+            }
             try {
                 val appContext = context.applicationContext
                 val success = withContext(Dispatchers.IO) {
@@ -383,11 +399,13 @@ class LibraryMetadataManager(
                     updateCurrentSongMetadata(updatedSong)
                     
                     withContext(Dispatchers.Main) {
+                        resumePlaybackAfterWrite?.invoke(songId, playbackState)
                         Log.d(TAG, "Successfully completed metadata write after permission granted")
                         onSuccess()
                     }
                 } else {
                     withContext(Dispatchers.Main) {
+                        resumePlaybackAfterWrite?.invoke(songId, playbackState)
                         onError("Failed to write metadata even after permission was granted")
                     }
                 }
@@ -395,6 +413,7 @@ class LibraryMetadataManager(
                 Log.e(TAG, "Error completing metadata write after permission", e)
                 _pendingWriteRequest.value = null
                 withContext(Dispatchers.Main) {
+                    resumePlaybackAfterWrite?.invoke(songId, playbackState)
                     onError("Error: ${e.message}")
                 }
             }
@@ -845,12 +864,16 @@ class LibraryMetadataManager(
         onPermissionRequired: ((PendingLyricsWriteRequest) -> Unit)? = null
     ) {
         scope.launch(Dispatchers.IO) {
+            val song = getCurrentSong()
+            if (song == null) {
+                Log.w(TAG, "Cannot embed lyrics - no current song")
+                return@launch
+            }
+            val songId = song.id
+            val playbackState = withContext(Dispatchers.Main) {
+                pausePlaybackForWrite?.invoke(songId)
+            }
             try {
-                val song = getCurrentSong()
-                if (song == null) {
-                    Log.w(TAG, "Cannot embed lyrics - no current song")
-                    return@launch
-                }
                 val appContext = context
 
                 // Early format check — OGG Opus and other unsupported codecs cannot be tag-edited
@@ -864,6 +887,7 @@ class LibraryMetadataManager(
                 }
                 if (fileExtension.isNotEmpty() && !MediaUtils.isSupportedByJaudiotagger(fileExtension)) {
                     withContext(Dispatchers.Main) {
+                        resumePlaybackAfterWrite?.invoke(songId, playbackState)
                         val msg = appContext.getString(R.string.lyrics_embed_failed) +
                             " — .$fileExtension files are not supported. Try MP3, FLAC, OGG, WAV, or M4A."
                         Toast.makeText(appContext, msg, Toast.LENGTH_LONG).show()
@@ -874,6 +898,7 @@ class LibraryMetadataManager(
 
                 val success = MediaUtils.embedLyricsInFile(appContext, song, lyrics)
                 withContext(Dispatchers.Main) {
+                    resumePlaybackAfterWrite?.invoke(songId, playbackState)
                     if (success) {
                         Toast.makeText(
                             appContext,
@@ -914,7 +939,9 @@ class LibraryMetadataManager(
             } catch (e: RecoverableSecurityExceptionWrapper) {
                 Log.w(TAG, "RecoverableSecurityException for lyrics - attempting createWriteRequest")
                 val appContext = context
-                val song = getCurrentSong() ?: return@launch
+                withContext(Dispatchers.Main) {
+                    resumePlaybackAfterWrite?.invoke(songId, playbackState)
+                }
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                     val pendingRequest = MediaUtils.createWriteRequestForLyrics(appContext, song, lyrics)
                     withContext(Dispatchers.Main) {
@@ -934,6 +961,7 @@ class LibraryMetadataManager(
             } catch (e: Exception) {
                 Log.e(TAG, "Error embedding lyrics in file", e)
                 withContext(Dispatchers.Main) {
+                    resumePlaybackAfterWrite?.invoke(songId, playbackState)
                     Toast.makeText(
                         context,
                         context.getString(R.string.lyrics_embed_failed),
@@ -957,7 +985,11 @@ class LibraryMetadataManager(
             onError("No pending lyrics write request")
             return
         }
+        val songId = pendingRequest.song.id
         scope.launch {
+            val playbackState = withContext(Dispatchers.Main) {
+                pausePlaybackForWrite?.invoke(songId)
+            }
             try {
                 val appContext = context.applicationContext
                 val success = withContext(Dispatchers.IO) {
@@ -965,6 +997,7 @@ class LibraryMetadataManager(
                 }
                 _pendingLyricsWriteRequest.value = null
                 withContext(Dispatchers.Main) {
+                    resumePlaybackAfterWrite?.invoke(songId, playbackState)
                     if (success) {
                         Toast.makeText(
                             appContext,
@@ -980,6 +1013,7 @@ class LibraryMetadataManager(
                 Log.e(TAG, "Error completing lyrics write after permission", e)
                 _pendingLyricsWriteRequest.value = null
                 withContext(Dispatchers.Main) {
+                    resumePlaybackAfterWrite?.invoke(songId, playbackState)
                     onError("Error: ${e.message}")
                 }
             }

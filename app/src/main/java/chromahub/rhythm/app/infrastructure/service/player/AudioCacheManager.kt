@@ -32,4 +32,17 @@ object AudioCacheManager {
         }
         return simpleCache!!
     }
+
+    @Synchronized
+    fun evict(key: String) {
+        try {
+            simpleCache?.removeResource(key)
+        } catch (e: Exception) {
+        }
+    }
+
+    @Synchronized
+    fun evict(uri: android.net.Uri) {
+        evict(uri.toString())
+    }
 }

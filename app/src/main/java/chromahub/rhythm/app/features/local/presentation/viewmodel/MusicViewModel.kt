@@ -196,6 +196,26 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                 _albums.value = repository.loadAlbums()
                 _artists.value = repository.loadArtists()
             }
+        },
+        pausePlaybackForWrite = { songId ->
+            val controller = mediaController
+            val isCurrent = _currentSong.value?.id == songId || controller?.currentMediaItem?.mediaId == songId
+            if (isCurrent && controller != null) {
+                val wasPlaying = controller.isPlaying
+                val pos = controller.currentPosition
+                if (wasPlaying) {
+                    controller.pause()
+                }
+                Pair(pos, wasPlaying)
+            } else {
+                null
+            }
+        },
+        resumePlaybackAfterWrite = { songId, playbackState ->
+            if (playbackState != null) {
+                val (seekPos, shouldPlay) = playbackState
+                refreshPlayingMediaItem(seekPos, shouldPlay)
+            }
         }
     )
     private var mediaScanNotificationSequence: Long = 0L
@@ -7933,6 +7953,37 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     /**
+     * Refreshes the currently playing media item in the player by replacing
+     * and re-preparing it, restoring seek position and playback state.
+     */
+    fun refreshPlayingMediaItem(seekPositionMs: Long = -1L, shouldPlay: Boolean = false) {
+        val controller = mediaController ?: return
+        val currentIndex = controller.currentMediaItemIndex
+        if (currentIndex == C.INDEX_UNSET || currentIndex !in 0 until controller.mediaItemCount) {
+            return
+        }
+        val currentItem = controller.getMediaItemAt(currentIndex)
+        val targetPos = if (seekPositionMs >= 0) seekPositionMs else controller.currentPosition
+
+        try {
+            val updatedMetadata = currentItem.mediaMetadata.buildUpon()
+                .setFolderType(currentItem.mediaMetadata.folderType)
+                .build()
+            val updatedItem = currentItem.buildUpon()
+                .setMediaMetadata(updatedMetadata)
+                .build()
+            controller.replaceMediaItem(currentIndex, updatedItem)
+            controller.seekTo(currentIndex, targetPos)
+            controller.prepare()
+            if (shouldPlay) {
+                controller.play()
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to refresh playing media item", e)
+        }
+    }
+
+    /**
      * Embed lyrics into the current song's audio file metadata
      */
     fun embedLyricsInFile(
@@ -7943,7 +7994,10 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
     ) {
         metadataManagerHelper.embedLyricsInFile(
             lyrics = lyrics,
-            onSuccess = onSuccess,
+            onSuccess = {
+                clearLyricsCacheAndRefetch()
+                onSuccess?.invoke()
+            },
             onError = onError,
             onPermissionRequired = onPermissionRequired
         )
@@ -7956,7 +8010,13 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
         onSuccess: () -> Unit,
         onError: (String) -> Unit
     ) {
-        metadataManagerHelper.completeLyricsWriteAfterPermission(onSuccess, onError)
+        metadataManagerHelper.completeLyricsWriteAfterPermission(
+            onSuccess = {
+                clearLyricsCacheAndRefetch()
+                onSuccess()
+            },
+            onError = onError
+        )
     }
 
     /**

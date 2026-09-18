@@ -341,14 +341,16 @@ class RhythmPlayerEngine(
             .setUsage(C.USAGE_MEDIA)
             .build()
 
-        val baseDataSourceFactory = DefaultDataSource.Factory(context, DefaultHttpDataSource.Factory())
+        val httpDataSourceFactory = DefaultHttpDataSource.Factory()
         val cacheDataSourceFactory = CacheDataSource.Factory()
             .setCache(AudioCacheManager.getCache(context))
-            .setUpstreamDataSourceFactory(baseDataSourceFactory)
+            .setUpstreamDataSourceFactory(httpDataSourceFactory)
             .setFlags(CacheDataSource.FLAG_IGNORE_CACHE_ON_ERROR)
 
+        val baseDataSourceFactory = DefaultDataSource.Factory(context, cacheDataSourceFactory)
+
         val resolvingDataSourceFactory = ResolvingDataSource.Factory(
-            cacheDataSourceFactory,
+            baseDataSourceFactory,
             object : ResolvingDataSource.Resolver {
                 override fun resolveDataSpec(dataSpec: DataSpec): DataSpec {
                     if (dataSpec.uri.scheme == "streaming") {

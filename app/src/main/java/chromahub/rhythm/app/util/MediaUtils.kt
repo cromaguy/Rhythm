@@ -28,6 +28,7 @@ import chromahub.rhythm.app.shared.data.model.Song
 import chromahub.rhythm.app.shared.presentation.components.bottomsheets.ExtendedSongInfo
 import java.io.File
 import java.io.FileOutputStream
+import java.io.RandomAccessFile
 import java.security.MessageDigest
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CountDownLatch
@@ -37,6 +38,7 @@ import com.kyant.taglib.Picture
 import com.kyant.taglib.TagLib
 import android.content.res.AssetFileDescriptor
 import android.os.ParcelFileDescriptor
+import chromahub.rhythm.app.infrastructure.service.player.AudioCacheManager
 
 
 /**
@@ -1154,6 +1156,184 @@ object MediaUtils {
     }
 
     /**
+     * Inspects an OGG/Opus container file, walks all Ogg pages, detects the end of valid
+     * Ogg pages (including last End-Of-Stream page), and truncates any trailing junk bytes.
+     * Prevents MediaCodecAudioRenderer errors caused by un-truncated ghost pages.
+     *
+     * @param file The file to check and sanitize
+     * @return true if trailing junk bytes were truncated, false otherwise
+     */
+    fun sanitizeOggFile(file: File): Boolean {
+        if (!file.exists() || !file.canWrite() || file.length() < 27) return false
+        try {
+            RandomAccessFile(file, "rw").use { raf ->
+                val fileLength = raf.length()
+                var offset = 0L
+                var lastValidOffset = 0L
+                val headerBuf = ByteArray(27)
+
+                while (offset + 27 <= fileLength) {
+                    raf.seek(offset)
+                    raf.readFully(headerBuf)
+                    if (headerBuf[0] != 0x4F.toByte() || headerBuf[1] != 0x67.toByte() ||
+                        headerBuf[2] != 0x67.toByte() || headerBuf[3] != 0x53.toByte()
+                    ) {
+                        break
+                    }
+                    val segCount = headerBuf[26].toInt() and 0xFF
+                    if (offset + 27 + segCount > fileLength) {
+                        break
+                    }
+                    val segTable = ByteArray(segCount)
+                    raf.readFully(segTable)
+                    var bodySize = 0L
+                    for (b in segTable) {
+                        bodySize += (b.toInt() and 0xFF)
+                    }
+                    val pageSize = 27L + segCount + bodySize
+                    if (offset + pageSize > fileLength) {
+                        break
+                    }
+                    offset += pageSize
+                    lastValidOffset = offset
+                }
+
+                if (lastValidOffset > 0 && lastValidOffset < fileLength) {
+                    val junkBytes = fileLength - lastValidOffset
+                    Log.w(
+                        TAG,
+                        "sanitizeOggFile: Truncating $junkBytes trailing junk bytes from ${file.name} (valid: $lastValidOffset, original: $fileLength)"
+                    )
+                    raf.setLength(lastValidOffset)
+                    raf.fd.sync()
+                    return true
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error sanitizing Ogg file: ${file.name}", e)
+        }
+        return false
+    }
+
+    /**
+     * Writes the contents of a temp file to a ContentResolver URI ensuring complete truncation
+     * and flushing of the destination file descriptor to avoid corrupted trailing bytes.
+     *
+     * @throws android.app.RecoverableSecurityException if permission is required on Android 10/11+
+     * @throws SecurityException if write permission is denied
+     * @return true if write succeeded, false otherwise
+     */
+    fun writeTempFileToContentUri(
+        contentResolver: ContentResolver,
+        targetUri: Uri,
+        tempFile: File
+    ): Boolean {
+        if (!tempFile.exists() || tempFile.length() == 0L) {
+            Log.e(TAG, "writeTempFileToContentUri: Temp file is invalid: ${tempFile.absolutePath}")
+            return false
+        }
+
+        val expectedSize = tempFile.length()
+
+        for (mode in arrayOf("rwt", "wt", "w")) {
+            var pfd: ParcelFileDescriptor? = null
+            try {
+                pfd = contentResolver.openFileDescriptor(targetUri, mode)
+                if (pfd != null) {
+                    FileOutputStream(pfd.fileDescriptor).use { fos ->
+                        val channel = fos.channel
+                        try {
+                            channel.position(0)
+                        } catch (e: Exception) {
+                            Log.w(TAG, "Channel position(0) warning: ${e.message}")
+                        }
+                        tempFile.inputStream().use { fis ->
+                            fis.copyTo(fos)
+                        }
+                        try {
+                            channel.truncate(expectedSize)
+                        } catch (e: Exception) {
+                            Log.w(TAG, "Channel truncate warning: ${e.message}")
+                        }
+                        fos.flush()
+                        try {
+                            pfd.fileDescriptor.sync()
+                        } catch (e: Exception) {
+                            Log.w(TAG, "FileDescriptor sync warning: ${e.message}")
+                        }
+                    }
+                    try {
+                        pfd.close()
+                    } catch (e: Exception) {
+                    }
+                    pfd = null
+                    AudioCacheManager.evict(targetUri)
+                    Log.d(TAG, "writeTempFileToContentUri: Wrote $expectedSize bytes using mode '$mode'")
+                    return true
+                }
+            } catch (e: android.app.RecoverableSecurityException) {
+                throw e
+            } catch (e: SecurityException) {
+                throw e
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed writing temp file via openFileDescriptor with mode '$mode': ${e.message}")
+            } finally {
+                try {
+                    pfd?.close()
+                } catch (e: Exception) {
+                    Log.w(TAG, "Error closing pfd: ${e.message}")
+                }
+            }
+        }
+
+        for (mode in arrayOf("wt", "w")) {
+            try {
+                val outputStream = contentResolver.openOutputStream(targetUri, mode)
+                if (outputStream != null) {
+                    outputStream.use { os ->
+                        if (os is FileOutputStream) {
+                            val channel = os.channel
+                            try {
+                                channel.position(0)
+                            } catch (e: Exception) {
+                            }
+                            tempFile.inputStream().use { fis ->
+                                fis.copyTo(os)
+                            }
+                            try {
+                                channel.truncate(expectedSize)
+                            } catch (e: Exception) {
+                                Log.w(TAG, "Channel truncate warning on openOutputStream: ${e.message}")
+                            }
+                            os.flush()
+                            try {
+                                os.fd.sync()
+                            } catch (e: Exception) {
+                            }
+                        } else {
+                            tempFile.inputStream().use { fis ->
+                                fis.copyTo(os)
+                            }
+                            os.flush()
+                        }
+                    }
+                    AudioCacheManager.evict(targetUri)
+                    Log.d(TAG, "writeTempFileToContentUri: Wrote $expectedSize bytes using openOutputStream with mode '$mode'")
+                    return true
+                }
+            } catch (e: android.app.RecoverableSecurityException) {
+                throw e
+            } catch (e: SecurityException) {
+                throw e
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed writing temp file via openOutputStream with mode '$mode': ${e.message}")
+            }
+        }
+
+        return false
+    }
+
+    /**
      * Embeds lyrics into the audio file's metadata tags using jaudiotagger.
      * Supports synced (LRC) and unsynced (plain) lyrics via FieldKey.LYRICS.
      * @param context The application context
@@ -1220,11 +1400,7 @@ object MediaUtils {
                             throw Exception("Failed to embed lyrics in temp file")
                         }
                         // Write temp back via ContentResolver (WRITE_EXTERNAL_STORAGE covers API 29)
-                        val outputStream = contentResolver.openOutputStream(song.uri, "wt")
-                        if (outputStream != null) {
-                            outputStream.use { out ->
-                                tempFile.inputStream().use { input -> input.copyTo(out) }
-                            }
+                        if (writeTempFileToContentUri(contentResolver, song.uri, tempFile)) {
                             fileWriteSucceeded = true
                         } else {
                             // Fallback: write directly via file path
@@ -1414,14 +1590,9 @@ object MediaUtils {
                 tempFile = File(retryPath)
             }
 
-            val outputStream = contentResolver.openOutputStream(pendingRequest.song.uri, "w")
-            if (outputStream == null) {
-                Log.e(TAG, "Cannot open output stream after permission granted for lyrics")
+            if (!writeTempFileToContentUri(contentResolver, pendingRequest.song.uri, tempFile)) {
+                Log.e(TAG, "Cannot write temp file to URI after permission granted for lyrics")
                 return false
-            }
-
-            outputStream.use { outStream ->
-                tempFile.inputStream().use { input -> input.copyTo(outStream) }
             }
 
             // Trigger media scanner
@@ -1714,13 +1885,13 @@ object MediaUtils {
                             AudioFileIO.write(audioFileObj)
                         }
                         Log.d(TAG, "Metadata written to temp file successfully")
+                        sanitizeOggFile(tempFile)
 
                         // Step 3: Copy modified temp file back to original location
                         Log.d(TAG, "Step 3: Copying modified file back to original location...")
 
-                        // Try to open output stream - this is where it might fail on Android 10+
-                        val outputStream = try {
-                            contentResolver.openOutputStream(song.uri, "w")
+                        val writeSuccess = try {
+                            writeTempFileToContentUri(contentResolver, song.uri, tempFile)
                         } catch (e: android.app.RecoverableSecurityException) {
                             // Android 11+ requires user permission via createWriteRequest
                             Log.e(
@@ -1747,41 +1918,22 @@ object MediaUtils {
                         } catch (e: SecurityException) {
                             Log.e(
                                 TAG,
-                                "SecurityException opening output stream - app may not have write permission for this file",
+                                "SecurityException writing temp file to URI - app may not have write permission for this file",
                                 e
                             )
-                            null
+                            false
                         } catch (e: Exception) {
                             Log.e(
                                 TAG,
-                                "Exception opening output stream: ${e.javaClass.simpleName} - ${e.message}",
+                                "Exception writing temp file to URI: ${e.javaClass.simpleName} - ${e.message}",
                                 e
                             )
-                            null
+                            false
                         }
 
-                        if (outputStream == null) {
-                            Log.e(
-                                TAG,
-                                "Failed to open output stream for writing. This typically means:"
-                            )
-                            Log.e(
-                                TAG,
-                                "1. File is on external SD card (requires special permissions)"
-                            )
-                            Log.e(TAG, "2. File is in a protected directory")
-                            Log.e(
-                                TAG,
-                                "3. App doesn't own this file (Android 11+ scoped storage restriction)"
-                            )
-                            throw Exception("Cannot open output stream for URI: ${song.uri}")
-                        }
-
-                        outputStream.use { outStream ->
-                            tempFile.inputStream().use { inputStream ->
-                                val bytesCopied = inputStream.copyTo(outStream)
-                                Log.d(TAG, "Copied $bytesCopied bytes back to original location")
-                            }
+                        if (!writeSuccess) {
+                            Log.e(TAG, "Failed to write temp file to URI: ${song.uri}")
+                            throw Exception("Cannot write temp file to URI: ${song.uri}")
                         }
 
                         fileWriteSucceeded = true
@@ -2169,6 +2321,7 @@ object MediaUtils {
                 AudioFileIO.write(audioFileObj)
             }
 
+            sanitizeOggFile(tempFile)
             Log.d(TAG, "Temp file with modified metadata created: ${tempFile.absolutePath}")
             tempFile.absolutePath
 
@@ -2224,17 +2377,9 @@ object MediaUtils {
             Log.d(TAG, "Completing write operation after permission granted for: ${pendingRequest.song.title}")
 
             // Now we have permission, copy the temp file back to original location
-            val outputStream = contentResolver.openOutputStream(pendingRequest.song.uri, "w")
-            if (outputStream == null) {
-                Log.e(TAG, "Failed to open output stream even after permission granted")
+            if (!writeTempFileToContentUri(contentResolver, pendingRequest.song.uri, tempFile)) {
+                Log.e(TAG, "Failed to write temp file to URI even after permission granted")
                 return false
-            }
-
-            outputStream.use { outStream ->
-                tempFile.inputStream().use { inputStream ->
-                    val bytesCopied = inputStream.copyTo(outStream)
-                    Log.d(TAG, "Copied $bytesCopied bytes back to original location")
-                }
             }
 
             // Update MediaStore as well
@@ -3518,7 +3663,7 @@ object MediaUtils {
     }
 
     private fun embedLyricsInAudioFile(audioFile: File, lyrics: String): Boolean {
-        return try {
+        val success = try {
             val audioFileObj = AudioFileIO.read(audioFile)
             val tag: Tag = audioFileObj.tag ?: audioFileObj.createDefaultTag()
             tag.setField(FieldKey.LYRICS, lyrics)
@@ -3529,6 +3674,10 @@ object MediaUtils {
             Log.w(TAG, "JAudioTagger failed for lyrics embed, falling back to TagLib", e)
             embedLyricsWithTagLib(audioFile, lyrics)
         }
+        if (success) {
+            sanitizeOggFile(audioFile)
+        }
+        return success
     }
 
     fun readLyricsViaTagLib(filePath: String): String? {
