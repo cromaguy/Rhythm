@@ -2,8 +2,8 @@
 <resources>
     <string name="app_name">Rhythm</string>
     <!-- Common Labels -->
-    <string name="home">家</string>
-    <string name="library">図書館</string>
+    <string name="home">ホーム</string>
+    <string name="library">ライブラリー</string>
     <string name="search">検索</string>
     <!-- Media3 notification configuration -->
     <string name="media3_notification_channel_name">Rhythm 再生中</string>
@@ -21,7 +21,7 @@
     <string name="widget_appearance">外観</string>
     <string name="widget_tip_controls">ウィジェットをタップしてアプリを開き、ボタンで再生を制御します</string>
     <!-- Content Descriptions -->
-    <string name="cd_navigate">ナビゲート</string>
+    <string name="cd_navigate">案内</string>
     <!-- Settings - Notifications -->
     <string name="settings_notifications">お知らせ</string>
     <string name="settings_notifications_updates_group">アプリのアップデート</string>
@@ -30,7 +30,7 @@
     <string name="settings_update_notifications_merged_desc">新しいバージョンとバックグラウンド更新チェック結果の通知を受け取る</string>
     <string name="settings_rhythm_guard_alert_notifications">安全上の注意通知</string>
     <string name="settings_rhythm_guard_alert_notifications_desc">Rhythm Guard が危険な音量または音響暴露を検出したときに通知を表示します</string>
-    <string name="settings_rhythm_guard_timer_notifications">休憩通知タイマー</string>
+    <string name="settings_rhythm_guard_timer_notifications">休憩のお知らせ</string>
     <string name="settings_rhythm_guard_timer_notifications_desc">休憩通知とアクティブなタイマーの通知を表示します</string>
     <string name="settings_rhythm_pulse_notifications">Rhythmのヒント通知</string>
     <string name="settings_rhythm_pulse_notifications_desc">個人向けのリマインダーとリスニング設定のヒントを受け取ります</string>
@@ -52,8 +52,8 @@
     <string name="settings_auto_queue_desc">再生開始時に関連した曲をキューに入れます</string>
     <string name="settings_context_queue_preference">コンテキストキューの設定</string>
     <string name="settings_context_queue_preference_desc">コンテキスト キューが最初に優先するメタデータを選択します。</string>
-    <string name="settings_context_pref_artist_first">アーティストファースト</string>
-    <string name="settings_context_pref_genre_first">ジャンル第一</string>
+    <string name="settings_context_pref_artist_first">アーティスト</string>
+    <string name="settings_context_pref_genre_first">ジャンル</string>
     <string name="settings_context_queue_persistence">コンテキストキューの永続化</string>
     <string name="settings_context_queue_persistence_desc">再生終了後もコンテキスト キューを利用可能なままにするかどうかを選択します。</string>
     <string name="settings_context_persistence_persistent">永続的</string>
@@ -2716,4 +2716,12 @@
     <string name="settings_queue_display">再生キューを表示</string>
     <string name="settings_respect_album_on_play">アルバムとアーティストを再生する</string>
     <string name="settings_respect_album_on_play_desc">アルバムやアーティスト内の曲をタップすると、その続きが再生されます</string>
+    <string name="widget_tip_resize_settings">ウィジェットを長押しすると、サイズの変更や設定を開くことができます</string>
+    <string name="device_speaker">端末のスピーカー</string>
+    <string name="eq_preset_type_autoeq">オートイコライザー</string>
+    <string name="eq_save_preset">プリセットを保存</string>
+    <string name="eq_save_custom_preset">カスタムプリセットを保存</string>
+    <string name="eq_preset_delete_title">プリセットを削除</string>
+    <string name="eq_preset_delete_confirm">%1$s を本当に削除しますか？</string>
+    <string name="eq_preset_deleted">プリセットは削除されました</string>
 </resources>
