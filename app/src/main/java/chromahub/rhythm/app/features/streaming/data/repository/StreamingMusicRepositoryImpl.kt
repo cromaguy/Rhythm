@@ -98,7 +98,9 @@ class StreamingMusicRepositoryImpl(
     private val followedPlaylistIds = linkedSetOf<String>()
 
     private val songCache = LinkedHashMap<String, StreamingSong>()
-    private val artistArtworkCache = LinkedHashMap<String, String>()
+    // Read from Default/IO dispatchers (catalog grouping, Deezer enrichment) and written from
+    // several coroutines, so it must be thread-safe.
+    private val artistArtworkCache = java.util.concurrent.ConcurrentHashMap<String, String>()
     private val providerAlbumCache = LinkedHashMap<String, StreamingAlbum>()
 
     private val downloadDirectory by lazy {
@@ -1042,7 +1044,7 @@ class StreamingMusicRepositoryImpl(
             else -> Result.success(emptyList())
         }.getOrElse { emptyList() }
 
-                return providerArtists.map { mapProviderArtist(serviceId, it) }
+                return mapProviderArtists(serviceId, providerArtists)
     }
 
     override suspend fun downloadSong(song: StreamingSong): Boolean {
@@ -1384,7 +1386,7 @@ class StreamingMusicRepositoryImpl(
         }.getOrElse { emptyList() }
 
         if (providerArtists.isNotEmpty()) {
-            return providerArtists.map { mapProviderArtist(serviceId, it) }
+            return mapProviderArtists(serviceId, providerArtists)
         }
 
         val songs = searchSongs(query).filterIsInstance<StreamingSong>()
@@ -1447,7 +1449,7 @@ class StreamingMusicRepositoryImpl(
             else -> Result.success(emptyList())
         }.getOrElse { emptyList() }
 
-        val mappedSongs = providerSongs.map { mapProviderSong(serviceId, it) }
+        val mappedSongs = mapProviderSongs(serviceId, providerSongs)
         syncLikedSongIdsFromProviderSongs(serviceId, providerSongs)
         replaceCatalog(mappedSongs)
         
@@ -1616,6 +1618,14 @@ class StreamingMusicRepositoryImpl(
 
     private suspend fun replaceCatalog(songs: List<StreamingSong>) {
         val serviceId = activeServiceId()
+        // Only populate albumsFlow with derived albums if no provider albums are cached
+        val deriveAlbums = providerAlbumCache.isEmpty()
+        // Grouping thousands of songs into albums/artists is CPU work; keep it off the caller's
+        // (main) dispatcher. Shared caches are still mutated on the caller's thread below.
+        val (derivedAlbums, rawArtists) = withContext(Dispatchers.Default) {
+            (if (deriveAlbums) buildAlbumItems(serviceId, songs) else null) to
+                buildArtistItems(serviceId, songs)
+        }
 
         songCache.clear()
         songs.forEach { song ->
@@ -1623,11 +1633,11 @@ class StreamingMusicRepositoryImpl(
         }
 
         songsFlow.value = songs
-        // Only populate albumsFlow with derived albums if no provider albums are cached
-        if (providerAlbumCache.isEmpty()) {
-            albumsFlow.value = buildAlbumItems(serviceId, songs)
+        // Re-check after the suspension: provider albums may have been cached meanwhile, and
+        // derived albums must not overwrite them.
+        if (derivedAlbums != null && providerAlbumCache.isEmpty()) {
+            albumsFlow.value = derivedAlbums
         }
-        val rawArtists = buildArtistItems(serviceId, songs)
         if (artistsFlow.value.isEmpty() || rawArtists.size >= artistsFlow.value.size) {
             artistsFlow.value = rawArtists
         }
@@ -1668,15 +1678,24 @@ class StreamingMusicRepositoryImpl(
         }
         trimSongCache()
 
-        val mergedSongs = (songsFlow.value.filterIsInstance<StreamingSong>() + songs)
-            .distinctBy { it.id }
+        val currentSongs = songsFlow.value
+        // Merging a search result into a catalog of thousands of songs re-groups every album and
+        // artist; do that off the caller's (main) dispatcher, as replaceCatalog() does.
+        val deriveAlbums = providerAlbumCache.isEmpty()
+        val (mergedSongs, derivedAlbums, rawArtists) = withContext(Dispatchers.Default) {
+            val merged = (currentSongs.filterIsInstance<StreamingSong>() + songs).distinctBy { it.id }
+            Triple(
+                merged,
+                if (deriveAlbums) buildAlbumItems(serviceId, merged) else null,
+                buildArtistItems(serviceId, merged)
+            )
+        }
 
         songsFlow.value = mergedSongs
         // Only populate albumsFlow with derived albums if no provider albums are cached
-        if (providerAlbumCache.isEmpty()) {
-            albumsFlow.value = buildAlbumItems(serviceId, mergedSongs)
+        if (derivedAlbums != null && providerAlbumCache.isEmpty()) {
+            albumsFlow.value = derivedAlbums
         }
-        val rawArtists = buildArtistItems(serviceId, mergedSongs)
         artistsFlow.value = rawArtists
         playlistsFlow.value = emptyList()
 
@@ -1727,6 +1746,22 @@ class StreamingMusicRepositoryImpl(
         }
     }
 
+    /**
+     * Maps a batch of provider songs on [Dispatchers.Default]. Each song builds a signed stream
+     * URL (salt + MD5 + URL parse), so a full catalog sync of thousands of songs must not run on
+     * the caller's dispatcher: callers are ViewModel coroutines on the main thread, and doing it
+     * there blocked input for 20+ seconds ("Input dispatching timed out" ANR).
+     */
+    private suspend fun mapProviderSongs(
+        serviceId: String,
+        providerSongs: List<ProviderSong>
+    ): List<StreamingSong> {
+        if (providerSongs.isEmpty()) return emptyList()
+        return withContext(Dispatchers.Default) {
+            providerSongs.map { mapProviderSong(serviceId, it) }
+        }
+    }
+
     private fun mapProviderSong(serviceId: String, providerSong: ProviderSong): StreamingSong {
         val encodedId = encodeSongId(serviceId, providerSong.providerId)
         val sourceType = serviceToSourceType(serviceId)
@@ -1771,8 +1806,7 @@ class StreamingMusicRepositoryImpl(
             else -> Result.success(emptyList())
         }
 
-        return result.getOrElse { emptyList() }
-            .map { mapProviderSong(serviceId, it) }
+        return mapProviderSongs(serviceId, result.getOrElse { emptyList() })
     }
 
     private fun mapProviderPlaylist(
@@ -1910,10 +1944,44 @@ class StreamingMusicRepositoryImpl(
         return enrichArtistsWithDeezerImages(buildArtistItems(serviceId, songs))
     }
 
-    private fun mapProviderArtist(serviceId: String, providerArtist: ProviderArtist): StreamingArtist {
-        val cachedArtistSongs = cachedSongsForArtist(providerArtist.name)
-        val cachedArtist = buildArtistItems(serviceId, cachedArtistSongs)
-            .firstOrNull { it.name.equals(providerArtist.name, ignoreCase = true) }
+    /**
+     * Maps a provider artist list on [Dispatchers.Default], resolving cached songs through an
+     * [ArtistSongIndex] built once for the batch. Scanning the song cache per artist on the
+     * caller's (main) dispatcher cost ~2 s per sync and caused "Input dispatching timed out" ANRs
+     * from syncArtists()/searchArtists() on large libraries.
+     */
+    private suspend fun mapProviderArtists(
+        serviceId: String,
+        providerArtists: List<ProviderArtist>
+    ): List<StreamingArtist> {
+        if (providerArtists.isEmpty()) return emptyList()
+        // Snapshot the shared caches on the caller's thread; they are not thread-safe.
+        val candidateSongs = songsFlow.value.filterIsInstance<StreamingSong>() +
+            songCache.values.toList() + downloadedSongsMap.values.toList()
+        val separatorEnabled = appSettings.artistSeparatorEnabled.value
+        val separatorDelimiters = appSettings.artistSeparatorDelimiters.value
+            .ifBlank { AppSettings.DEFAULT_ARTIST_SEPARATOR_DELIMITERS }
+        return withContext(Dispatchers.Default) {
+            val index = ArtistSongIndex(candidateSongs) { artist ->
+                ArtistSeparator.splitArtistNames(artist, delimiters = separatorDelimiters, enabled = separatorEnabled)
+            }
+            providerArtists.map { mapProviderArtist(serviceId, it, index) }
+        }
+    }
+
+    private fun mapProviderArtist(
+        serviceId: String,
+        providerArtist: ProviderArtist,
+        artistSongIndex: ArtistSongIndex? = null
+    ): StreamingArtist {
+        // Only needed when the provider omitted artwork or counts.
+        val cachedArtistSongs by lazy {
+            artistSongIndex?.songsFor(providerArtist.name) ?: cachedSongsForArtist(providerArtist.name)
+        }
+        val cachedArtist by lazy {
+            buildArtistItems(serviceId, cachedArtistSongs)
+                .firstOrNull { it.name.equals(providerArtist.name, ignoreCase = true) }
+        }
 
         return StreamingArtist(
             id = buildArtistId(serviceId, providerArtist.name),
@@ -2095,7 +2163,7 @@ class StreamingMusicRepositoryImpl(
     }
 
     private fun normalizeKey(value: String): String {
-        return value.trim().lowercase().replace("\\s+".toRegex(), "_")
+        return value.trim().lowercase().replace(WHITESPACE_REGEX, "_")
     }
 
     private fun trimSongCache() {
@@ -2308,10 +2376,14 @@ class StreamingMusicRepositoryImpl(
         if (!isServiceConnected(serviceId)) return emptyList()
 
         return try {
-            val providerArtists = when (serviceId) {
-                StreamingServiceId.SUBSONIC -> subsonicClient.getArtists().getOrNull()
-                StreamingServiceId.JELLYFIN -> jellyfinClient.getArtists().getOrNull()
-                else -> null
+            // The provider clients parse the response (and sign a cover-art URL per artist) in
+            // the calling coroutine, so fetch on IO rather than the caller's main dispatcher.
+            val providerArtists = withContext(Dispatchers.IO) {
+                when (serviceId) {
+                    StreamingServiceId.SUBSONIC -> subsonicClient.getArtists().getOrNull()
+                    StreamingServiceId.JELLYFIN -> jellyfinClient.getArtists().getOrNull()
+                    else -> null
+                }
             }
             providerArtists?.forEach { artist ->
                 if (!artist.artworkUrl.isNullOrBlank()) {
@@ -2319,7 +2391,7 @@ class StreamingMusicRepositoryImpl(
                 }
             }
             if (!providerArtists.isNullOrEmpty()) {
-                val directArtists = providerArtists.map { mapProviderArtist(serviceId, it) }
+                val directArtists = mapProviderArtists(serviceId, providerArtists)
                 artistsFlow.value = directArtists
                 updateFollowedArtistsFlow()
                 Log.d("StreamingMusicRepo", "Synced ${directArtists.size} artists directly from provider")
@@ -2340,5 +2412,8 @@ class StreamingMusicRepositoryImpl(
     private companion object {
         private const val SEARCH_LIMIT = 100
         private const val MAX_CACHE_SIZE = 4000
+
+        /** Compiled once; normalizeKey() runs per artist during catalog mapping. */
+        private val WHITESPACE_REGEX = "\\s+".toRegex()
     }
 }

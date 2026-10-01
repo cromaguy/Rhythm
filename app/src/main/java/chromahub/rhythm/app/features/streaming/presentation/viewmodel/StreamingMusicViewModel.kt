@@ -24,6 +24,7 @@ import chromahub.rhythm.app.features.streaming.domain.model.StreamingServiceId
 import chromahub.rhythm.app.features.streaming.domain.model.StreamingServiceRules
 import chromahub.rhythm.app.features.streaming.domain.model.StreamingSong
 import chromahub.rhythm.app.features.streaming.infrastructure.notification.StreamingNotificationManager
+import chromahub.rhythm.app.features.streaming.infrastructure.notification.SyncProgressThrottle
 import chromahub.rhythm.app.shared.data.model.AppSettings
 import chromahub.rhythm.app.util.ArtistSeparator
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -809,6 +810,9 @@ class StreamingMusicViewModel(application: Application) : AndroidViewModel(appli
                 }
 
                 // 2. Pull the provider catalog with live progress callbacks
+                // Progress arrives once per album; the system drops notification updates above
+                // ~5/s, so only post the notification at a bounded rate.
+                val notificationThrottle = SyncProgressThrottle()
                 try {
                     repository.syncCatalog(limit = 5_000) { current, total, songCount ->
                         _syncProgress.value = StreamingSyncProgress(
@@ -818,6 +822,7 @@ class StreamingMusicViewModel(application: Application) : AndroidViewModel(appli
                             songsCount = songCount,
                             stage = StreamingSyncStage.Syncing
                         )
+                        if (!notificationThrottle.tryAcquire()) return@syncCatalog
                         notificationManager.updateSyncProgress(
                             songCount = songCount,
                             albumCount = current,
