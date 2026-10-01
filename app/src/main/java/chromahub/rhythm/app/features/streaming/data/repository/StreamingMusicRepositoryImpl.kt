@@ -291,6 +291,11 @@ class StreamingMusicRepositoryImpl(
         return java.io.File(context.filesDir, "streaming_catalog_${serviceId}.json")
     }
 
+    /** Progress of an interrupted full library fetch (see [ResumableLibraryFetch]). */
+    private fun getLibraryFetchCheckpointDir(serviceId: String): java.io.File {
+        return java.io.File(context.filesDir, "streaming_catalog_${serviceId}.partial")
+    }
+
     private fun loadCatalogCacheForActiveService(targetServiceId: String? = null) {
         try {
             val serviceId = targetServiceId ?: activeServiceId()
@@ -419,6 +424,8 @@ class StreamingMusicRepositoryImpl(
         }
 
         val connection = result.getOrElse { throw it }
+        // A new login may be another account or server: never resume its predecessor's fetch.
+        ResumableLibraryFetch.discard(getLibraryFetchCheckpointDir(normalizedService))
         return ServiceConnectionInfo(
             displayName = connection.displayName,
             serverUrl = connection.serverUrl
@@ -435,6 +442,7 @@ class StreamingMusicRepositoryImpl(
         try {
             catalogCacheWriter.delete(getCatalogCacheFile(normalized))
             catalogSaveFilter.remember(null)
+            ResumableLibraryFetch.discard(getLibraryFetchCheckpointDir(normalized))
         } catch (e: Exception) {
             Log.e("StreamingMusicRepo", "Error deleting catalog cache on disconnect", e)
         }
@@ -1543,7 +1551,7 @@ class StreamingMusicRepositoryImpl(
 
         val fetchComplete = java.util.concurrent.atomic.AtomicBoolean(true)
         val providerSongs = when (serviceId) {
-            StreamingServiceId.SUBSONIC -> subsonicClient.fetchLibrarySongs(limit, onProgress) { fetchComplete.set(false) }
+            StreamingServiceId.SUBSONIC -> fetchSubsonicLibraryResumable(limit, onProgress) { fetchComplete.set(false) }
             StreamingServiceId.JELLYFIN -> jellyfinClient.fetchLibrarySongs(limit, onProgress)
             else -> Result.success(emptyList())
         }.getOrElse { emptyList() }
@@ -1580,6 +1588,22 @@ class StreamingMusicRepositoryImpl(
         starred.forEach { starredSongCache[it.id] = it }
         updateLikedSongsFlow()
         Log.d("StreamingMusicRepo", "Liked songs: ${starred.size} starred, ${starred.count { songCache.containsKey(it.id) }} in the synced catalog")
+    }
+
+    /**
+     * Full Subsonic fetch that checkpoints its progress after every album page, so a sync cut
+     * short (app killed, screen left) continues where it stopped on the next sync instead of
+     * starting over, as long as the server library is unchanged.
+     */
+    private suspend fun fetchSubsonicLibraryResumable(
+        limit: Int,
+        onProgress: ((current: Int, total: Int, songsCount: Int) -> Unit)?,
+        onIncomplete: (() -> Unit)? = null
+    ): Result<List<ProviderSong>> {
+        val fetch = ResumableLibraryFetch(getLibraryFetchCheckpointDir(StreamingServiceId.SUBSONIC), catalogCacheWriter, gson)
+        return fetch.fetch(subsonicClient.getLibraryLastModified(), limit, onProgress) { startAlbumOffset, pageLimit, progress, onPage ->
+            subsonicClient.fetchLibrarySongs(pageLimit, progress, onIncomplete, startAlbumOffset, onPage)
+        }
     }
 
     private fun syncLikedSongIdsFromProviderSongs(serviceId: String, providerSongs: List<ProviderSong>) {

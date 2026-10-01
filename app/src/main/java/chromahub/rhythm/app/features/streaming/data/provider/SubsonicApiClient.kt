@@ -259,11 +259,16 @@ class SubsonicApiClient internal constructor(
     /**
      * @param onIncomplete called (possibly from several coroutines) when an album page or an
      *        album could not be fetched and was skipped, i.e. the result is not the full library.
+     * @param startAlbumOffset getAlbumList2 offset to start from, to continue an interrupted fetch.
+     * @param onPageFetched called after each album page with the songs it added and the offset
+     *        of the next page, so the caller can checkpoint progress.
      */
     suspend fun fetchLibrarySongs(
         limit: Int = 5_000,
         onProgress: ((current: Int, total: Int, songsCount: Int) -> Unit)? = null,
-        onIncomplete: (() -> Unit)? = null
+        onIncomplete: (() -> Unit)? = null,
+        startAlbumOffset: Int = 0,
+        onPageFetched: (suspend (pageSongs: List<ProviderSong>, nextAlbumOffset: Int) -> Unit)? = null
     ): Result<List<ProviderSong>> {
         if (!isConnected()) {
             return Result.failure(IllegalStateException("Subsonic service is not connected"))
@@ -272,11 +277,11 @@ class SubsonicApiClient internal constructor(
         return withContext(Dispatchers.IO) {
             try {
                 val albumBatchSize = 100
-                var albumOffset = 0
+                var albumOffset = startAlbumOffset
                 val songs = LinkedHashMap<String, ProviderSong>()
                 val semaphore = Semaphore(LIBRARY_FETCH_CONCURRENCY)
                 val skippedAlbums = AtomicInteger(0)
-                var totalAlbumsProcessed = 0
+                var totalAlbumsProcessed = startAlbumOffset
 
                 while (songs.size < limit) {
                     val albumResult = requestAndParseWithRetry(
@@ -293,6 +298,7 @@ class SubsonicApiClient internal constructor(
                     val albums = parseAlbumListCompat(albumList?.opt("album"))
                     if (albums.isEmpty()) break
 
+                    val pageSongs = ArrayList<ProviderSong>()
                     coroutineScope {
                         val albumTasks = albums.map { album ->
                             async {
@@ -321,7 +327,7 @@ class SubsonicApiClient internal constructor(
                         for (task in albumTasks) {
                             val albumSongs = task.await()
                             for (song in albumSongs) {
-                                songs.putIfAbsent(song.providerId, song)
+                                if (songs.putIfAbsent(song.providerId, song) == null) pageSongs.add(song)
                                 if (songs.size >= limit) break
                             }
                             totalAlbumsProcessed++
@@ -331,6 +337,7 @@ class SubsonicApiClient internal constructor(
                     }
 
                     albumOffset += albums.size
+                    onPageFetched?.invoke(pageSongs, albumOffset)
                     if (albums.size < albumBatchSize) break
                 }
 
@@ -404,6 +411,21 @@ class SubsonicApiClient internal constructor(
         val material = "${cred.serverUrl}\n${cred.username}\n$usePasswordAuth"
         val digest = MessageDigest.getInstance("SHA-256").digest(material.toByteArray(Charsets.UTF_8))
         return digest.joinToString(separator = "") { "%02x".format(it) }
+    }
+
+    /**
+     * The server's `getIndexes` `lastModified` (Navidrome: start time of the last scan), or null
+     * if it is unknown. A far-future `ifModifiedSince` makes the server omit the artist index,
+     * so this stays a tiny request even for huge libraries.
+     */
+    suspend fun getLibraryLastModified(): Long? {
+        if (!isConnected()) return null
+        val farFuture = System.currentTimeMillis() + 365L * 24 * 60 * 60 * 1000
+        return requestAndParse("getIndexes", mapOf("ifModifiedSince" to farFuture.toString()))
+            .getOrNull()
+            ?.optJSONObject("indexes")
+            ?.optLong("lastModified", 0L)
+            ?.takeIf { it > 0L }
     }
 
     suspend fun getPlaylists(limit: Int = 100): Result<List<ProviderPlaylist>> {
