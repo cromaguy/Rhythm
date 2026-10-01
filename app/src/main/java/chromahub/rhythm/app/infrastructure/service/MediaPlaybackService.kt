@@ -23,6 +23,7 @@ import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.PlaybackException
+import androidx.media3.common.Timeline
 import androidx.media3.common.Player
 import androidx.media3.common.ForwardingPlayer
 import chromahub.rhythm.app.shared.data.model.TransitionSettings
@@ -31,6 +32,7 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.ExoPlaybackException
 import androidx.media3.session.CommandButton
 import androidx.media3.session.MediaController
 import androidx.media3.session.MediaLibraryService
@@ -45,6 +47,7 @@ import chromahub.rhythm.app.infrastructure.service.player.RhythmPlayerEngine
 import chromahub.rhythm.app.infrastructure.service.player.TransitionController
 import chromahub.rhythm.app.infrastructure.service.player.PreloadController
 import chromahub.rhythm.app.infrastructure.service.player.replaygain.ReplayGainCache
+import chromahub.rhythm.app.infrastructure.service.player.MissingLocalMediaClassifier
 import chromahub.rhythm.app.infrastructure.service.util.RhythmBitmapLoader
 import chromahub.rhythm.app.infrastructure.widget.WidgetUpdater
 import com.google.common.collect.ImmutableList
@@ -1327,6 +1330,8 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
     }
     
     private fun handlePlaybackError(error: PlaybackException) {
+        if (skipMissingLocalItem(error)) return
+
         val message = when (error.errorCode) {
             PlaybackException.ERROR_CODE_DECODER_INIT_FAILED ->
                 "Audio codec not supported on this device"
@@ -1350,6 +1355,51 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
                 Log.e(TAG, "Failed to pause player on error", e)
             }
         }
+    }
+
+    /**
+     * A local item whose file/MediaStore entry no longer exists (deleted or re-scanned
+     * under a new id) can never play. Remove it from the queue and continue with the
+     * next item instead of leaving the player stopped in the error state.
+     *
+     * @return true if the error was handled by skipping the item.
+     */
+    private fun skipMissingLocalItem(error: PlaybackException): Boolean {
+        val currentPlayer = player
+        val index = resolveErrorItemIndex(currentPlayer, error)
+        if (index == C.INDEX_UNSET || index !in 0 until currentPlayer.mediaItemCount) return false
+
+        val item = currentPlayer.getMediaItemAt(index)
+        val uri = item.localConfiguration?.uri ?: return false
+        if (!MissingLocalMediaClassifier.isMissingLocalItem(error.errorCode, error.cause, uri.scheme)) {
+            return false
+        }
+
+        Log.w(TAG, "Skipping missing local item ${item.mediaId} ($uri) and removing it from the queue: ${error.errorCodeName}")
+        return try {
+            currentPlayer.removeMediaItem(index)
+            if (currentPlayer.mediaItemCount > 0) {
+                // Clears the error state; playWhenReady is preserved, so playback continues.
+                currentPlayer.prepare()
+            }
+            true
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to skip missing local item ${item.mediaId}", e)
+            false
+        }
+    }
+
+    /** Index of the item that caused [error]: its media period if known, else the current item. */
+    private fun resolveErrorItemIndex(currentPlayer: Player, error: PlaybackException): Int {
+        val periodUid = (error as? ExoPlaybackException)?.mediaPeriodId?.periodUid
+        if (periodUid != null) {
+            val timeline = currentPlayer.currentTimeline
+            val periodIndex = timeline.getIndexOfPeriod(periodUid)
+            if (periodIndex != C.INDEX_UNSET) {
+                return timeline.getPeriod(periodIndex, Timeline.Period()).windowIndex
+            }
+        }
+        return currentPlayer.currentMediaItemIndex
     }
 
     private fun createController() {
