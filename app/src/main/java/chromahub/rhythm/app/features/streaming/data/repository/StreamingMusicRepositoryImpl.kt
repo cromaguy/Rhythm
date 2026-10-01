@@ -50,6 +50,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.flow.drop
 
 /**
  * Data model for persisting the streaming catalog to disk.
@@ -63,6 +64,18 @@ data class StreamingCatalogCache(
     val likedSongIds: List<String> = emptyList(),
     val lastSyncTimestamp: Long = 0L
 )
+
+/**
+ * Catalog cache file I/O. The JSON is streamed: a large library's cache is tens of MB (about
+ * 1 KB per song), too much to build or parse as one String on a phone heap.
+ */
+internal fun com.google.gson.Gson.writeCatalogCache(file: java.io.File, cache: StreamingCatalogCache) {
+    file.bufferedWriter().use { toJson(cache, it) }
+}
+
+internal fun com.google.gson.Gson.readCatalogCache(file: java.io.File): StreamingCatalogCache? {
+    return file.bufferedReader().use { fromJson(it, StreamingCatalogCache::class.java) }
+}
 
 /**
  * Provider-backed implementation used by Rhythm GO mode.
@@ -134,15 +147,23 @@ class StreamingMusicRepositoryImpl(
      */
     private val catalogSaveCoalescer = SaveCoalescer(repositoryScope, delayMs = 3_000L)
 
+    /** The catalog cache is loaded on IO, never where the repository is created (main thread). */
+    private val initialCatalogLoad: BackgroundLoad
+
     init {
         loadDownloadedSongsIndex()
-        loadCatalogCacheForActiveService()
+        // Started here, once the fields the load uses are initialized.
+        initialCatalogLoad = BackgroundLoad(repositoryScope) { loadCatalogCacheForActiveService() }
         repositoryScope.launch {
-            appSettings.streamingService.collect { serviceId ->
+            initialCatalogLoad.await()
+            // The current service was just loaded; reload only when it changes.
+            appSettings.streamingService.drop(1).collect { serviceId ->
                 loadCatalogCacheForActiveService(normalizeServiceId(serviceId))
             }
         }
     }
+
+    override suspend fun awaitCatalogCacheLoaded() = initialCatalogLoad.await()
 
     private fun loadDownloadedSongsIndex() {
         try {
@@ -255,8 +276,7 @@ class StreamingMusicRepositoryImpl(
             val cacheFile = getCatalogCacheFile(serviceId)
             if (!cacheFile.exists()) return
 
-            val json = cacheFile.readText()
-            val cache = gson.fromJson(json, StreamingCatalogCache::class.java) ?: return
+            val cache = gson.readCatalogCache(cacheFile) ?: return
             if (cache.serviceId != serviceId) return
 
             if (cache.songs.isNotEmpty()) {
@@ -1442,6 +1462,8 @@ class StreamingMusicRepositoryImpl(
         limit: Int,
         onProgress: ((current: Int, total: Int, songsCount: Int) -> Unit)?
     ): List<StreamingSong> {
+        // Never let the cache load finish after (and overwrite) a newly synced catalog.
+        initialCatalogLoad.await()
         if (appSettings.offlineMode.value) {
             val downloadedList = downloadedSongsMap.values.toList()
             replaceCatalog(downloadedList)

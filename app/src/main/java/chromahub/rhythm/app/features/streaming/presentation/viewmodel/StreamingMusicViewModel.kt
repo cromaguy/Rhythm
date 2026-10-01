@@ -23,6 +23,7 @@ import chromahub.rhythm.app.features.streaming.domain.model.StreamingPlaylist
 import chromahub.rhythm.app.features.streaming.domain.model.StreamingServiceId
 import chromahub.rhythm.app.features.streaming.domain.model.StreamingServiceRules
 import chromahub.rhythm.app.features.streaming.domain.model.StreamingSong
+import chromahub.rhythm.app.features.streaming.domain.repository.StreamingMusicRepository
 import chromahub.rhythm.app.features.streaming.infrastructure.notification.StreamingNotificationManager
 import chromahub.rhythm.app.features.streaming.infrastructure.notification.SyncProgressThrottle
 import chromahub.rhythm.app.shared.data.model.AppSettings
@@ -738,6 +739,9 @@ class StreamingMusicViewModel(application: Application) : AndroidViewModel(appli
             _isLoading.value = true
             val serviceName = getSourceTypeName(_currentService.value)
 
+            // The cache loads in the background at start-up; wait for it (showing the loading state).
+            repository.awaitCatalogCacheLoaded()
+
             // Fast path: if not forced and cache exists, load immediately from disk without network sync or notifications
             if (!forceSync && repository.hasCachedCatalog()) {
                 try {
@@ -814,7 +818,7 @@ class StreamingMusicViewModel(application: Application) : AndroidViewModel(appli
                 // ~5/s, so only post the notification at a bounded rate.
                 val notificationThrottle = SyncProgressThrottle()
                 try {
-                    repository.syncCatalog(limit = 5_000) { current, total, songCount ->
+                    repository.syncCatalog(limit = StreamingMusicRepository.MAX_LIBRARY_SONGS) { current, total, songCount ->
                         _syncProgress.value = StreamingSyncProgress(
                             isSyncing = true,
                             current = current,

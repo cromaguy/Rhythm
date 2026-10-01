@@ -20,6 +20,15 @@ import kotlinx.coroutines.flow.Flow
  * Extends the base MusicRepository with streaming-specific operations.
  */
 interface StreamingMusicRepository : MusicRepository {
+
+    companion object {
+        /**
+         * Most songs a library sync keeps. The catalog is held in memory and cached on disk at
+         * roughly 1 KB per song, so this bounds both. A larger library is cut off in album-list
+         * order, which is alphabetical by artist.
+         */
+        const val MAX_LIBRARY_SONGS = 50_000
+    }
     
     /**
      * Get the current streaming service source type.
@@ -71,7 +80,7 @@ interface StreamingMusicRepository : MusicRepository {
      * Sync the provider library catalog so songs, albums, and artists are derived from real track data.
      */
     suspend fun syncCatalog(
-        limit: Int = 5_000,
+        limit: Int = MAX_LIBRARY_SONGS,
         onProgress: ((current: Int, total: Int, songsCount: Int) -> Unit)? = null
     ): List<StreamingSong>
     
@@ -276,4 +285,9 @@ interface StreamingMusicRepository : MusicRepository {
      * Checks if there is a cached catalog available on disk or in memory for the given service.
      */
     fun hasCachedCatalog(serviceId: String? = null): Boolean
+
+    /**
+     * Suspends until the catalog cache has been loaded from disk (in the background) at start-up.
+     */
+    suspend fun awaitCatalogCacheLoaded()
 }
