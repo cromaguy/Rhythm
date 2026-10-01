@@ -485,13 +485,10 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                     // Sync the Liked playlist with the favorite IDs
                     // This is needed because the service can't add songs to the playlist (only has IDs, not Song objects)
                     syncLikedPlaylistWithFavorites(newFavorites)
-                    
-                    // Also refresh playlists from AppSettings to sync the Liked playlist
-                    refreshPlaylistsFromSettings()
                 } else {
                     _favoriteSongs.value = emptySet()
                     _isFavorite.value = false
-                    refreshPlaylistsFromSettings()
+                    syncLikedPlaylistWithFavorites(emptySet())
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to refresh favorite songs", e)
@@ -544,8 +541,8 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                 }
             }
             
-            // Save updated playlists to appSettings
-            savePlaylists()
+            // Save updated playlists to persistent storage immediately
+            savePlaylists(immediate = true)
             
             Log.d(TAG, "Liked playlist synced successfully")
         } catch (e: Exception) {
@@ -1713,9 +1710,24 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
         }
         
         try {
-            syncLikedPlaylistWithFavorites(_favoriteSongs.value)
-            populateRecentlyAddedPlaylist()
-            populateMostPlayedPlaylist()
+            if (appSettings.showLikedInPlaylists.value) {
+                syncLikedPlaylistWithFavorites(_favoriteSongs.value)
+            }
+            if (appSettings.smartPlaylistRecentlyAdded.value) {
+                populateRecentlyAddedPlaylist()
+            }
+            if (appSettings.smartPlaylistMostPlayed.value) {
+                populateMostPlayedPlaylist()
+            }
+            if (appSettings.smartPlaylistOnRepeat.value) {
+                populateOnRepeatPlaylist()
+            }
+            if (appSettings.smartPlaylistForgottenFavorites.value) {
+                populateForgottenFavoritesPlaylist()
+            }
+            if (appSettings.smartPlaylistRecentlyPlayed.value) {
+                populateRecentlyPlayedPlaylist()
+            }
         } catch (e: Exception) {
             Log.e(TAG, "Error populating default playlists", e)
         }
@@ -2324,8 +2336,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
 
             if (appSettings.defaultPlaylistsEnabled.value) {
                 try {
-                    populateRecentlyAddedPlaylist()
-                    populateMostPlayedPlaylist()
+                    populateDefaultPlaylistsSafely()
                 } catch (e: Exception) {
                     Log.w(TAG, "Error updating default playlists after MediaStore refresh", e)
                 }
@@ -2508,22 +2519,12 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
 
                 // Re-populate dynamic playlists (if enabled)
                 if (appSettings.defaultPlaylistsEnabled.value) {
-                    populateRecentlyAddedPlaylist()
-                    populateMostPlayedPlaylist()
+                    populateDefaultPlaylistsSafely()
                 }
                 
-                // When the scanned library drops sharply (for example removable storage unmounted),
-                // keep unresolved playlist entries temporarily so ordering survives remount.
-                val preserveMissingSongs =
-                    previousSongCount > 0 && freshSongs.size < (previousSongCount * 0.7f).toInt()
-                if (preserveMissingSongs) {
-                    Log.d(
-                        TAG,
-                        "Detected large library drop ($previousSongCount -> ${freshSongs.size}); preserving unresolved playlist entries"
-                    )
-                }
-
-                refreshPlaylists(preserveMissingSongs = preserveMissingSongs)
+                // Always preserve unresolved/missing playlist entries during library refreshes so that
+                // adding new songs to music folders or asynchronous filter updates never prunes playlist tracks.
+                refreshPlaylists(preserveMissingSongs = true)
 
                 // Re-fetch artwork from internet for newly added/updated items (but don't block completion)
                 launch { 
@@ -3004,6 +3005,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
             
             // Persist the updated songs list so metadata/artwork edits survive restarts.
             repository.updateAndPersistSongs(updatedSongs)
+            savePlaylists()
             
             Log.d(TAG, "Updated song metadata: ${updatedSong.title} by ${updatedSong.artist}")
         }
@@ -3056,6 +3058,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                     currentPlaylist
                 }
             }
+            savePlaylists(immediate = true)
             onComplete()
         }
     }
@@ -3333,29 +3336,86 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                 Log.d(TAG, "Setting default playlists enabled: $enabled")
                 appSettings.setDefaultPlaylistsEnabled(enabled)
                 val playlistDao = repository.playlistDao
-                if (enabled) {
-                    val currentDb = playlistDao.getAllPlaylists()
-                    if (currentDb.none { it.id == "1" }) {
-                        playlistDao.insertPlaylist(PlaylistEntity("1", "Liked", System.currentTimeMillis(), System.currentTimeMillis(), null))
+                if (!enabled) {
+                    // Instantly clean up in-memory state on main thread so UI updates immediately
+                    withContext(Dispatchers.Main) {
+                        _playlists.value = _playlists.value.filter { it.id !in Playlist.DEFAULT_PLAYLIST_IDS }
                     }
-                    if (currentDb.none { it.id == "2" }) {
-                        playlistDao.insertPlaylist(PlaylistEntity("2", "Recently Added", System.currentTimeMillis(), System.currentTimeMillis(), null))
-                    }
-                    if (currentDb.none { it.id == "3" }) {
-                        playlistDao.insertPlaylist(PlaylistEntity("3", "Most Played", System.currentTimeMillis(), System.currentTimeMillis(), null))
+                    // Clean up in Room
+                    Playlist.DEFAULT_PLAYLIST_IDS.forEach { id ->
+                        playlistDao.deletePlaylistById(id)
+                        playlistDao.deleteSongsFromPlaylist(id)
                     }
                 } else {
-                    playlistDao.deletePlaylistById("2")
-                    playlistDao.deleteSongsFromPlaylist("2")
-                    playlistDao.deletePlaylistById("3")
-                    playlistDao.deleteSongsFromPlaylist("3")
-                }
-                loadSavedPlaylists()
-                if (enabled) {
+                    loadSavedPlaylistsInternal()
                     populateDefaultPlaylistsSafely()
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Error toggling default playlists", e)
+            }
+        }
+    }
+
+    fun setShowLikedInPlaylists(enabled: Boolean) {
+        viewModelScope.launch(Dispatchers.IO) {
+            appSettings.setShowLikedInPlaylists(enabled)
+            val playlistDao = repository.playlistDao
+            if (!enabled) {
+                withContext(Dispatchers.Main) {
+                    _playlists.value = _playlists.value.filter { it.id != "1" }
+                }
+                playlistDao.deletePlaylistById("1")
+                playlistDao.deleteSongsFromPlaylist("1")
+            } else {
+                if (playlistDao.getAllPlaylists().none { it.id == "1" }) {
+                    playlistDao.insertPlaylist(PlaylistEntity("1", "Liked", System.currentTimeMillis(), System.currentTimeMillis(), null))
+                }
+                loadSavedPlaylistsInternal()
+                syncLikedPlaylistWithFavorites(_favoriteSongs.value)
+            }
+        }
+    }
+
+    fun setSmartPlaylistRecentlyAdded(enabled: Boolean) {
+        appSettings.setSmartPlaylistRecentlyAdded(enabled)
+        toggleSingleSmartPlaylist("2", "Recently Added", enabled) { populateRecentlyAddedPlaylist() }
+    }
+
+    fun setSmartPlaylistMostPlayed(enabled: Boolean) {
+        appSettings.setSmartPlaylistMostPlayed(enabled)
+        toggleSingleSmartPlaylist("3", "Most Played", enabled) { populateMostPlayedPlaylist() }
+    }
+
+    fun setSmartPlaylistOnRepeat(enabled: Boolean) {
+        appSettings.setSmartPlaylistOnRepeat(enabled)
+        toggleSingleSmartPlaylist("4", "On Repeat", enabled) { populateOnRepeatPlaylist() }
+    }
+
+    fun setSmartPlaylistForgottenFavorites(enabled: Boolean) {
+        appSettings.setSmartPlaylistForgottenFavorites(enabled)
+        toggleSingleSmartPlaylist("5", "Forgotten Favorites", enabled) { populateForgottenFavoritesPlaylist() }
+    }
+
+    fun setSmartPlaylistRecentlyPlayed(enabled: Boolean) {
+        appSettings.setSmartPlaylistRecentlyPlayed(enabled)
+        toggleSingleSmartPlaylist("6", "Recently Played", enabled) { populateRecentlyPlayedPlaylist() }
+    }
+
+    private fun toggleSingleSmartPlaylist(id: String, name: String, enabled: Boolean, populate: suspend () -> Unit) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val playlistDao = repository.playlistDao
+            if (!enabled) {
+                withContext(Dispatchers.Main) {
+                    _playlists.value = _playlists.value.filter { it.id != id }
+                }
+                playlistDao.deletePlaylistById(id)
+                playlistDao.deleteSongsFromPlaylist(id)
+            } else {
+                if (playlistDao.getAllPlaylists().none { it.id == id }) {
+                    playlistDao.insertPlaylist(PlaylistEntity(id, name, System.currentTimeMillis(), System.currentTimeMillis(), null))
+                }
+                loadSavedPlaylistsInternal()
+                populate()
             }
         }
     }
@@ -3394,106 +3454,8 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                 val defaultPlaylistsEnabled = appSettings.defaultPlaylistsEnabled.value
                 var dbPlaylists = playlistDao.getAllPlaylists()
                 
-                // Ensure default playlists exist if enabled
-                val currentIds = dbPlaylists.map { it.id }.toSet()
-                var needsReload = false
-                if (!currentIds.contains("1")) {
-                    playlistDao.insertPlaylist(PlaylistEntity("1", "Liked", System.currentTimeMillis(), System.currentTimeMillis(), null))
-                    needsReload = true
-                }
-                if (defaultPlaylistsEnabled) {
-                    if (!currentIds.contains("2")) {
-                        playlistDao.insertPlaylist(PlaylistEntity("2", "Recently Added", System.currentTimeMillis(), System.currentTimeMillis(), null))
-                        needsReload = true
-                    }
-                    if (!currentIds.contains("3")) {
-                        playlistDao.insertPlaylist(PlaylistEntity("3", "Most Played", System.currentTimeMillis(), System.currentTimeMillis(), null))
-                        needsReload = true
-                    }
-                }
-                if (needsReload) {
-                    dbPlaylists = playlistDao.getAllPlaylists()
-                }
-                
-                val playlists = if (dbPlaylists.isNotEmpty()) {
-                    val songMap = _songs.value.associateBy { it.id }
-                    val songStableKeyMap = lazy(LazyThreadSafetyMode.NONE) { _songs.value.associateBy { playlistSongStableKey(it) } }
-                    val songStableKeyMedMap = lazy(LazyThreadSafetyMode.NONE) { _songs.value.associateBy { playlistSongStableKeyMed(it) } }
-                    val songStableKeyLightMap = lazy(LazyThreadSafetyMode.NONE) { _songs.value.associateBy { playlistSongStableKeyLight(it) } }
-                    val songStableKeyBasicMap = lazy(LazyThreadSafetyMode.NONE) { _songs.value.associateBy { playlistSongStableKeyBasic(it) } }
-                    dbPlaylists.map { entity ->
-                        val songIds = playlistDao.getSongIdsForPlaylist(entity.id)
-                        val playlistSongs = songIds.map { songId ->
-                            songMap[songId] ?: run {
-                                val songEntity = repository.songDao.getSongById(songId)
-                                if (songEntity != null) {
-                                    val dbSong = Song(
-                                        id = songEntity.id,
-                                        title = songEntity.title,
-                                        artist = songEntity.artist,
-                                        album = songEntity.album,
-                                        albumId = songEntity.albumId,
-                                        duration = songEntity.duration,
-                                        uri = (songEntity.uri).toUri(),
-                                        artworkUri = songEntity.artworkUri?.let { (it).toUri() },
-                                        trackNumber = songEntity.trackNumber,
-                                        year = songEntity.year,
-                                        genre = songEntity.genre,
-                                        dateAdded = songEntity.dateAdded,
-                                        dateModified = songEntity.dateModified.takeIf { it > 0L } ?: songEntity.dateAdded,
-                                        albumArtist = songEntity.albumArtist,
-                                        bitrate = songEntity.bitrate,
-                                        sampleRate = songEntity.sampleRate,
-                                        channels = songEntity.channels,
-                                        codec = songEntity.codec,
-                                        discNumber = songEntity.discNumber,
-                                        path = songEntity.path
-                                    )
-                                    // Try to match the DB song (e.g. restored from backup) to a local scanned song by stable key
-                                    resolveSongByStableKeys(
-                                        dbSong,
-                                        songStableKeyMap,
-                                        songStableKeyMedMap,
-                                        songStableKeyLightMap,
-                                        songStableKeyBasicMap
-                                    ) ?: dbSong
-                                } else {
-                                    // Stub song to preserve unresolved entries temporarily (e.g. unmounted SD card)
-                                    Song(
-                                        id = songId,
-                                        title = getApplication<Application>().getString(R.string.unresolved_song),
-                                        artist = getApplication<Application>().getString(R.string.unknown_artist_name),
-                                        album = getApplication<Application>().getString(R.string.unknown_album_name),
-                                        albumId = "",
-                                        duration = 0L,
-                                        uri = Uri.EMPTY,
-                                        artworkUri = null,
-                                        trackNumber = 0,
-                                        year = 0,
-                                        genre = null,
-                                        dateAdded = System.currentTimeMillis(),
-                                        dateModified = System.currentTimeMillis(),
-                                        albumArtist = null,
-                                        bitrate = null,
-                                        sampleRate = null,
-                                        channels = null,
-                                        codec = null,
-                                        discNumber = 1,
-                                        path = null
-                                    )
-                                }
-                            }
-                        }
-                        Playlist(
-                            id = entity.id,
-                            name = entity.name,
-                            songs = playlistSongs,
-                            dateCreated = entity.dateCreated,
-                            dateModified = entity.dateModified,
-                            artworkUri = entity.artworkUri?.let { (it).toUri() }
-                        )
-                    }
-                } else {
+                // Check for legacy playlists in SharedPreferences FIRST before inserting default playlists into an empty Room DB
+                if (dbPlaylists.isEmpty()) {
                     val playlistsJson = appSettings.playlists.value
                     if (!playlistsJson.isNullOrBlank()) {
                         Log.i(TAG, "Legacy playlists found in SharedPreferences; starting migration to Room")
@@ -3519,107 +3481,157 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                             
                             appSettings.setPlaylists(null)
                             Log.i(TAG, "Successfully migrated ${legacyPlaylists.size} legacy playlists to Room database")
-                            
                             dbPlaylists = playlistDao.getAllPlaylists()
-                            val migrationSongMap = _songs.value.associateBy { it.id }
-                            dbPlaylists.map { entity ->
-                                val songIds = playlistDao.getSongIdsForPlaylist(entity.id)
-                                val playlistSongs = songIds.map { songId ->
-                                    migrationSongMap[songId] ?: run {
-                                        val songEntity = repository.songDao.getSongById(songId)
-                                        if (songEntity != null) {
-                                            Song(
-                                                id = songEntity.id,
-                                                title = songEntity.title,
-                                                artist = songEntity.artist,
-                                                album = songEntity.album,
-                                                albumId = songEntity.albumId,
-                                                duration = songEntity.duration,
-                                                uri = (songEntity.uri).toUri(),
-                                                artworkUri = songEntity.artworkUri?.let { (it).toUri() },
-                                                trackNumber = songEntity.trackNumber,
-                                                year = songEntity.year,
-                                                genre = songEntity.genre,
-                                                dateAdded = songEntity.dateAdded,
-                                                dateModified = songEntity.dateModified.takeIf { it > 0L } ?: songEntity.dateAdded,
-                                                albumArtist = songEntity.albumArtist,
-                                                bitrate = songEntity.bitrate,
-                                                sampleRate = songEntity.sampleRate,
-                                                channels = songEntity.channels,
-                                                codec = songEntity.codec,
-                                                discNumber = songEntity.discNumber,
-                                                path = songEntity.path
-                                            )
-                                        } else {
-                                            Song(
-                                                id = songId,
-                                                title = getApplication<Application>().getString(R.string.unresolved_song),
-                                                artist = getApplication<Application>().getString(R.string.unknown_artist_name),
-                                                album = getApplication<Application>().getString(R.string.unknown_album_name),
-                                                albumId = "",
-                                                duration = 0L,
-                                                uri = Uri.EMPTY,
-                                                artworkUri = null,
-                                                trackNumber = 0,
-                                                year = 0,
-                                                genre = null,
-                                                dateAdded = System.currentTimeMillis(),
-                                                dateModified = System.currentTimeMillis(),
-                                                albumArtist = null,
-                                                bitrate = null,
-                                                sampleRate = null,
-                                                channels = null,
-                                                codec = null,
-                                                discNumber = 1,
-                                                path = null
-                                            )
-                                        }
-                                    }
-                                }
-                                Playlist(
-                                    id = entity.id,
-                                    name = entity.name,
-                                    songs = playlistSongs,
-                                    dateCreated = entity.dateCreated,
-                                    dateModified = entity.dateModified,
-                                    artworkUri = entity.artworkUri?.let { (it).toUri() }
-                                )
-                            }
                         } catch (migrationError: Exception) {
                             Log.e(TAG, "Error migrating legacy playlists to Room", migrationError)
-                            emptyList()
                         }
-                    } else {
-                        val defaultPlaylistsEnabled = appSettings.defaultPlaylistsEnabled.value
-                        val initialPlaylists = if (defaultPlaylistsEnabled) {
-                            listOf(
-                                Playlist("1", "Liked"),
-                                Playlist("2", "Recently Added"),
-                                Playlist("3", "Most Played")
-                            )
-                        } else {
-                            listOf(
-                                Playlist("1", "Liked")
-                            )
-                        }
-                        
-                        initialPlaylists.forEach { playlist ->
-                            playlistDao.insertPlaylist(
-                                PlaylistEntity(
-                                    id = playlist.id,
-                                    name = playlist.name,
-                                    dateCreated = playlist.dateCreated,
-                                    dateModified = playlist.dateModified,
-                                    artworkUri = playlist.artworkUri?.toString()
-                                )
-                            )
-                        }
-                        initialPlaylists
                     }
                 }
+
+                // Ensure default playlists exist if enabled
+                val currentIds = dbPlaylists.map { it.id }.toSet()
+                var needsReload = false
+                val showLikedInPlaylists = appSettings.showLikedInPlaylists.value
+                val smartPlaylistRecentlyAdded = appSettings.smartPlaylistRecentlyAdded.value
+                val smartPlaylistMostPlayed = appSettings.smartPlaylistMostPlayed.value
+                val smartPlaylistOnRepeat = appSettings.smartPlaylistOnRepeat.value
+                val smartPlaylistForgottenFavorites = appSettings.smartPlaylistForgottenFavorites.value
+                val smartPlaylistRecentlyPlayed = appSettings.smartPlaylistRecentlyPlayed.value
+
+                if (showLikedInPlaylists && !currentIds.contains("1")) {
+                    playlistDao.insertPlaylist(PlaylistEntity("1", "Liked", System.currentTimeMillis(), System.currentTimeMillis(), null))
+                    needsReload = true
+                }
+                if (defaultPlaylistsEnabled) {
+                    if (smartPlaylistRecentlyAdded && !currentIds.contains("2")) {
+                        playlistDao.insertPlaylist(PlaylistEntity("2", "Recently Added", System.currentTimeMillis(), System.currentTimeMillis(), null))
+                        needsReload = true
+                    }
+                    if (smartPlaylistMostPlayed && !currentIds.contains("3")) {
+                        playlistDao.insertPlaylist(PlaylistEntity("3", "Most Played", System.currentTimeMillis(), System.currentTimeMillis(), null))
+                        needsReload = true
+                    }
+                    if (smartPlaylistOnRepeat && !currentIds.contains("4")) {
+                        playlistDao.insertPlaylist(PlaylistEntity("4", "On Repeat", System.currentTimeMillis(), System.currentTimeMillis(), null))
+                        needsReload = true
+                    }
+                    if (smartPlaylistForgottenFavorites && !currentIds.contains("5")) {
+                        playlistDao.insertPlaylist(PlaylistEntity("5", "Forgotten Favorites", System.currentTimeMillis(), System.currentTimeMillis(), null))
+                        needsReload = true
+                    }
+                    if (smartPlaylistRecentlyPlayed && !currentIds.contains("6")) {
+                        playlistDao.insertPlaylist(PlaylistEntity("6", "Recently Played", System.currentTimeMillis(), System.currentTimeMillis(), null))
+                        needsReload = true
+                    }
+                }
+                if (needsReload) {
+                    dbPlaylists = playlistDao.getAllPlaylists()
+                }
+
+                val activeDefaultIds = mutableSetOf<String>()
+                if (showLikedInPlaylists) activeDefaultIds.add("1")
+                if (defaultPlaylistsEnabled) {
+                    if (smartPlaylistRecentlyAdded) activeDefaultIds.add("2")
+                    if (smartPlaylistMostPlayed) activeDefaultIds.add("3")
+                    if (smartPlaylistOnRepeat) activeDefaultIds.add("4")
+                    if (smartPlaylistForgottenFavorites) activeDefaultIds.add("5")
+                    if (smartPlaylistRecentlyPlayed) activeDefaultIds.add("6")
+                }
+                val filteredDbPlaylists = dbPlaylists.filter { entity ->
+                    entity.id !in Playlist.DEFAULT_PLAYLIST_IDS || activeDefaultIds.contains(entity.id)
+                }
                 
+                val songMap = _songs.value.associateBy { it.id }
+                val songStableKeyMap = lazy(LazyThreadSafetyMode.NONE) { _songs.value.associateBy { playlistSongStableKey(it) } }
+                val songStableKeyMedMap = lazy(LazyThreadSafetyMode.NONE) { _songs.value.associateBy { playlistSongStableKeyMed(it) } }
+                val songStableKeyLightMap = lazy(LazyThreadSafetyMode.NONE) { _songs.value.associateBy { playlistSongStableKeyLight(it) } }
+                val songStableKeyBasicMap = lazy(LazyThreadSafetyMode.NONE) { _songs.value.associateBy { playlistSongStableKeyBasic(it) } }
+                val playlists = filteredDbPlaylists.map { entity ->
+                    val songIds = playlistDao.getSongIdsForPlaylist(entity.id)
+                    val playlistSongs = songIds.map { songId ->
+                        songMap[songId] ?: run {
+                            val songEntity = repository.songDao.getSongById(songId)
+                            if (songEntity != null) {
+                                val dbSong = Song(
+                                    id = songEntity.id,
+                                    title = songEntity.title,
+                                    artist = songEntity.artist,
+                                    album = songEntity.album,
+                                    albumId = songEntity.albumId,
+                                    duration = songEntity.duration,
+                                    uri = (songEntity.uri).toUri(),
+                                    artworkUri = songEntity.artworkUri?.let { (it).toUri() },
+                                    trackNumber = songEntity.trackNumber,
+                                    year = songEntity.year,
+                                    genre = songEntity.genre,
+                                    dateAdded = songEntity.dateAdded,
+                                    dateModified = songEntity.dateModified.takeIf { it > 0L } ?: songEntity.dateAdded,
+                                    albumArtist = songEntity.albumArtist,
+                                    bitrate = songEntity.bitrate,
+                                    sampleRate = songEntity.sampleRate,
+                                    channels = songEntity.channels,
+                                    codec = songEntity.codec,
+                                    discNumber = songEntity.discNumber,
+                                    path = songEntity.path
+                                )
+                                // Try to match the DB song (e.g. restored from backup) to a local scanned song by stable key
+                                resolveSongByStableKeys(
+                                    dbSong,
+                                    songStableKeyMap,
+                                    songStableKeyMedMap,
+                                    songStableKeyLightMap,
+                                    songStableKeyBasicMap
+                                ) ?: dbSong
+                            } else {
+                                // Stub song to preserve unresolved entries temporarily (e.g. unmounted SD card)
+                                Song(
+                                    id = songId,
+                                    title = getApplication<Application>().getString(R.string.unresolved_song),
+                                    artist = getApplication<Application>().getString(R.string.unknown_artist_name),
+                                    album = getApplication<Application>().getString(R.string.unknown_album_name),
+                                    albumId = "",
+                                    duration = 0L,
+                                    uri = Uri.EMPTY,
+                                    artworkUri = null,
+                                    trackNumber = 0,
+                                    year = 0,
+                                    genre = null,
+                                    dateAdded = System.currentTimeMillis(),
+                                    dateModified = System.currentTimeMillis(),
+                                    albumArtist = null,
+                                    bitrate = null,
+                                    sampleRate = null,
+                                    channels = null,
+                                    codec = null,
+                                    discNumber = 1,
+                                    path = null
+                                )
+                            }
+                        }
+                    }
+                    Playlist(
+                        id = entity.id,
+                        name = entity.name,
+                        songs = playlistSongs,
+                        dateCreated = entity.dateCreated,
+                        dateModified = entity.dateModified,
+                        artworkUri = entity.artworkUri?.let { (it).toUri() }
+                    )
+                }
+                
+                var hasUnpersistedInMemoryPlaylists = false
                 withContext(Dispatchers.Main) {
-                    _playlists.value = playlists
+                    val inMemoryUserPlaylists = _playlists.value.filter { p ->
+                        p.id !in Playlist.DEFAULT_PLAYLIST_IDS && playlists.none { it.id == p.id }
+                    }
+                    val finalPlaylists = if (inMemoryUserPlaylists.isNotEmpty()) {
+                        Log.i(TAG, "Preserving ${inMemoryUserPlaylists.size} in-memory playlists not yet in Room")
+                        hasUnpersistedInMemoryPlaylists = true
+                        playlists + inMemoryUserPlaylists
+                    } else {
+                        playlists
+                    }
+                    _playlists.value = finalPlaylists
                     isPlaylistsLoaded = true
                     
                     val favoriteSongsJson = appSettings.favoriteSongs.value
@@ -3627,7 +3639,10 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                         val type = object : TypeToken<Set<String>>() {}.type
                         _favoriteSongs.value = GsonUtils.gson.fromJson(favoriteSongsJson, type)
                     }
-                    
+                }
+
+                if (hasUnpersistedInMemoryPlaylists) {
+                    savePlaylists(immediate = true)
                 }
                 
                 refreshPlaylistSongsMetadata()
@@ -3649,8 +3664,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                             )
                         }
                     }
-                    isPlaylistsLoaded = true
-                    _favoriteSongs.value = emptySet()
+                    // Do not set isPlaylistsLoaded = true on failure so Room DB is not wiped by subsequent saves
                 }
             }
         }
@@ -3710,11 +3724,17 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
 
     private var savePlaylistsJob: Job? = null
 
-    private fun savePlaylists() {
+    private fun savePlaylists(immediate: Boolean = false) {
         savePlaylistsJob?.cancel()
-        savePlaylistsJob = viewModelScope.launch(Dispatchers.IO) {
-            delay(200) // Debounce rapid consecutive mutations
-            savePlaylistsToRoom(_playlists.value)
+        if (immediate) {
+            savePlaylistsJob = viewModelScope.launch(Dispatchers.IO) {
+                savePlaylistsToRoom(_playlists.value)
+            }
+        } else {
+            savePlaylistsJob = viewModelScope.launch(Dispatchers.IO) {
+                delay(200) // Debounce rapid consecutive mutations
+                savePlaylistsToRoom(_playlists.value)
+            }
         }
     }
 
@@ -3736,11 +3756,22 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                     val dbPlaylists = playlistDao.getAllPlaylists()
                     val currentPlaylistIds = currentPlaylists.map { it.id }.toSet()
                     
+                    val userPlaylistsInDb = dbPlaylists.filter { it.id !in Playlist.DEFAULT_PLAYLIST_IDS }
+                    val userPlaylistsInCurrent = currentPlaylists.filter { it.id !in Playlist.DEFAULT_PLAYLIST_IDS }
+                    
+                    // Safety guard: if Room has user playlists but currentPlaylists has NONE,
+                    // do not wipe them from Room. This prevents destructive clobbering.
+                    val allowUserPlaylistDeletion = !(userPlaylistsInDb.isNotEmpty() && userPlaylistsInCurrent.isEmpty())
+                    
                     dbPlaylists.forEach { dbPlaylist ->
                         if (!currentPlaylistIds.contains(dbPlaylist.id)) {
-                            playlistDao.deletePlaylistById(dbPlaylist.id)
-                            playlistDao.deleteSongsFromPlaylist(dbPlaylist.id)
-                            Log.d(TAG, "Deleted playlist ID ${dbPlaylist.id} from Room")
+                            if (dbPlaylist.id in Playlist.DEFAULT_PLAYLIST_IDS || allowUserPlaylistDeletion) {
+                                playlistDao.deletePlaylistById(dbPlaylist.id)
+                                playlistDao.deleteSongsFromPlaylist(dbPlaylist.id)
+                                Log.d(TAG, "Deleted playlist ID ${dbPlaylist.id} from Room")
+                            } else {
+                                Log.w(TAG, "Safeguard prevented deletion of user playlist ${dbPlaylist.name} (id=${dbPlaylist.id}) from Room")
+                            }
                         }
                     }
                     
@@ -5542,6 +5573,23 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                         song = song,
                         durationMs = actualDuration
                     )
+                    if (appSettings.defaultPlaylistsEnabled.value) {
+                        viewModelScope.launch(Dispatchers.IO) {
+                            try {
+                                if (appSettings.smartPlaylistRecentlyPlayed.value) {
+                                    populateRecentlyPlayedPlaylist()
+                                }
+                                if (appSettings.smartPlaylistOnRepeat.value) {
+                                    populateOnRepeatPlaylist()
+                                }
+                                if (appSettings.smartPlaylistMostPlayed.value) {
+                                    populateMostPlayedPlaylist()
+                                }
+                            } catch (e: Exception) {
+                                Log.w(TAG, "Failed to update dynamic playlists on playback finalized", e)
+                            }
+                        }
+                    }
                 } else {
                     Log.d(TAG, "Song not found for finalization: $songId")
                 }
@@ -6724,7 +6772,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                     playlist
                 }
             }
-            savePlaylists()
+            savePlaylists(immediate = true)
         } else {
             Log.d(TAG, "Adding song to favorites: ${song.title}")
             currentFavorites.add(songId)
@@ -6742,7 +6790,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                     playlist
                 }
             }
-            savePlaylists()
+            savePlaylists(immediate = true)
         }
         
         _favoriteSongs.value = currentFavorites
@@ -6937,6 +6985,100 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
         Log.d(TAG, "Populated Most Played playlist with ${topSongs.size} songs.")
     }
 
+    /**
+     * Populates the "On Repeat" playlist based on high playback frequency and duration in the last 14 days.
+     */
+    private suspend fun populateOnRepeatPlaylist() {
+        if (!isPlaylistsLoaded) {
+            Log.w(TAG, "Skipping populateOnRepeatPlaylist — playlists not loaded yet")
+            return
+        }
+        val onRepeatPlaylist = _playlists.value.find { it.id == "4" }
+        if (onRepeatPlaylist == null) {
+            Log.e(TAG, "On Repeat playlist not found, cannot populate.")
+            return
+        }
+
+        val onRepeatIds = playbackStatsRepository.getOnRepeatSongIds(daysBack = 14, limit = 50)
+        val availableSongs = if (filteredSongs.value.isNotEmpty()) filteredSongs.value else _songs.value
+        val songMap = availableSongs.associateBy { it.id }
+        val topSongs = onRepeatIds.mapNotNull { songMap[it] }
+
+        _playlists.value = _playlists.value.map { playlist ->
+            if (playlist.id == "4") {
+                playlist.copy(songs = topSongs, dateModified = System.currentTimeMillis())
+            } else {
+                playlist
+            }
+        }
+        savePlaylists()
+        Log.d(TAG, "Populated On Repeat playlist with ${topSongs.size} songs.")
+    }
+
+    /**
+     * Populates the "Forgotten Favorites" playlist based on historically played songs not played in the last 30 days.
+     */
+    private suspend fun populateForgottenFavoritesPlaylist() {
+        if (!isPlaylistsLoaded) {
+            Log.w(TAG, "Skipping populateForgottenFavoritesPlaylist — playlists not loaded yet")
+            return
+        }
+        val forgottenPlaylist = _playlists.value.find { it.id == "5" }
+        if (forgottenPlaylist == null) {
+            Log.e(TAG, "Forgotten Favorites playlist not found, cannot populate.")
+            return
+        }
+
+        val forgottenIds = playbackStatsRepository.getForgottenFavoritesSongIds(
+            allTimePlayCounts = _songPlayCounts.value,
+            daysNotPlayed = 30,
+            limit = 50
+        )
+        val availableSongs = if (filteredSongs.value.isNotEmpty()) filteredSongs.value else _songs.value
+        val songMap = availableSongs.associateBy { it.id }
+        val topSongs = forgottenIds.mapNotNull { songMap[it] }
+
+        _playlists.value = _playlists.value.map { playlist ->
+            if (playlist.id == "5") {
+                playlist.copy(songs = topSongs, dateModified = System.currentTimeMillis())
+            } else {
+                playlist
+            }
+        }
+        savePlaylists()
+        Log.d(TAG, "Populated Forgotten Favorites playlist with ${topSongs.size} songs.")
+    }
+
+    /**
+     * Populates the "Recently Played" playlist based on playback event history.
+     */
+    private suspend fun populateRecentlyPlayedPlaylist() {
+        if (!isPlaylistsLoaded) {
+            Log.w(TAG, "Skipping populateRecentlyPlayedPlaylist — playlists not loaded yet")
+            return
+        }
+        val recentlyPlayedPlaylist = _playlists.value.find { it.id == "6" }
+        if (recentlyPlayedPlaylist == null) {
+            Log.e(TAG, "Recently Played playlist not found, cannot populate.")
+            return
+        }
+
+        val recentIds = playbackStatsRepository.getRecentlyPlayedSongIds(limit = 50)
+        val availableSongs = if (filteredSongs.value.isNotEmpty()) filteredSongs.value else _songs.value
+        val songMap = availableSongs.associateBy { it.id }
+        val topSongs = recentIds.mapNotNull { songMap[it] }
+
+        _playlists.value = _playlists.value.map { playlist ->
+            if (playlist.id == "6") {
+                playlist.copy(songs = topSongs, dateModified = System.currentTimeMillis())
+            } else {
+                playlist
+            }
+        }
+        savePlaylists()
+        Log.d(TAG, "Populated Recently Played playlist with ${topSongs.size} songs.")
+    }
+
     // New functions for playlist management
     fun createPlaylist(name: String, songs: List<Song> = emptyList(), showSnackbar: ((String) -> Unit)? = null) {
         viewModelScope.launch {
@@ -6960,7 +7102,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                 }
             }
             _playlists.value = _playlists.value + updatedPlaylist
-            savePlaylists()
+            savePlaylists(immediate = true)
             Log.d(TAG, "Created new playlist: ${updatedPlaylist.name} with ${updatedPlaylist.songs.size} songs")
             if (showSnackbar != null) {
                 if (songs.isNotEmpty()) {
@@ -7004,7 +7146,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                 playlist
             }
         }
-        savePlaylists()
+        savePlaylists(immediate = true)
         if (success) {
             if (playlistId == "1") {
                 val currentFavorites = _favoriteSongs.value.toMutableSet()
@@ -7062,7 +7204,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
         }
         
         if (successCount > 0) {
-            savePlaylists()
+            savePlaylists(immediate = true)
             if (playlistId == "1") {
                 val currentFavorites = _favoriteSongs.value.toMutableSet()
                 val targetPlaylist = _playlists.value.find { it.id == "1" }
@@ -7101,7 +7243,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                 playlist
             }
         }
-        savePlaylists()
+        savePlaylists(immediate = true)
         if (success) {
             if (playlistId == "1") {
                 val currentFavorites = _favoriteSongs.value.toMutableSet()
@@ -7140,7 +7282,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                 playlist
             }
         }
-        savePlaylists()
+        savePlaylists(immediate = true)
         Log.d(TAG, "Reordered song in playlist from $fromIndex to $toIndex")
     }
 
@@ -7158,7 +7300,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                 playlist
             }
         }
-        savePlaylists()
+        savePlaylists(immediate = true)
         if (playlistId == "1") {
             val newFavoriteIds = newSongList.map { it.id }.toSet()
             _favoriteSongs.value = newFavoriteIds
@@ -7173,13 +7315,21 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
 
     fun deletePlaylist(playlistId: String) {
         // Prevent deleting default playlists
-        if (playlistId == "1" || playlistId == "2" || playlistId == "3") {
+        if (playlistId in Playlist.DEFAULT_PLAYLIST_IDS) {
             Log.d(TAG, "Cannot delete default playlist: $playlistId")
             return
         }
         
         _playlists.value = _playlists.value.filter { it.id != playlistId }
-        savePlaylists()
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                repository.playlistDao.deletePlaylistById(playlistId)
+                repository.playlistDao.deleteSongsFromPlaylist(playlistId)
+            } catch (e: Exception) {
+                Log.e(TAG, "Error directly deleting playlist $playlistId from Room", e)
+            }
+        }
+        savePlaylists(immediate = true)
         Log.d(TAG, "Deleted playlist: $playlistId")
     }
 
@@ -7195,7 +7345,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
             }
         }
         Log.d(TAG, "Renamed playlist to: $newName")
-        savePlaylists()
+        savePlaylists(immediate = true)
     }
 
     fun setSelectedSongForPlaylist(song: Song) {
@@ -7512,7 +7662,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                         
                         // Add the imported playlist to our list
                         _playlists.value = _playlists.value + finalPlaylist
-                        savePlaylists()
+                        savePlaylists(immediate = true)
                         
                         val matchedCount = finalPlaylist.songs.size
                         Log.d(TAG, "Successfully imported playlist: ${finalPlaylist.name} with $matchedCount songs")
@@ -7569,7 +7719,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                             }
 
                             _playlists.value = _playlists.value + dedupedPlaylists
-                            savePlaylists()
+                            savePlaylists(immediate = true)
 
                             val playlistCount = dedupedPlaylists.size
                             val totalSongs = dedupedPlaylists.sumOf { it.songs.size }
@@ -7708,10 +7858,13 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                 compareBy<Playlist> { 
                     // Put default playlists first
                     when (it.id) {
-                        "1" -> 0 // Favorites
+                        "1" -> 0 // Liked
                         "2" -> 1 // Recently Added
                         "3" -> 2 // Most Played
-                        else -> 3 // User-created playlists
+                        "4" -> 3 // On Repeat
+                        "5" -> 4 // Forgotten Favorites
+                        "6" -> 5 // Recently Played
+                        else -> 6 // User-created playlists
                     }
                 }.thenBy { 
                     // Then sort by name according to current sort order
@@ -7771,10 +7924,13 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                     compareBy<Playlist> { 
                         // Put default playlists first
                         when (it.id) {
-                            "1" -> 0 // Favorites
+                            "1" -> 0 // Liked
                             "2" -> 1 // Recently Added
                             "3" -> 2 // Most Played
-                            else -> 3 // User-created playlists
+                            "4" -> 3 // On Repeat
+                            "5" -> 4 // Forgotten Favorites
+                            "6" -> 5 // Recently Played
+                            else -> 6 // User-created playlists
                         }
                     }.thenBy { 
                         // Then sort by name according to current sort order
@@ -10399,6 +10555,9 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
     override fun onCleared() {
 
         Log.d(TAG, "ViewModel clearing, cleaning up resources")
+        
+        // Ensure pending playlist changes and favorites are flushed to Room before scope cancellation
+        ensurePlaylistsSaved()
         
         // Unregister broadcast receiver
         try {

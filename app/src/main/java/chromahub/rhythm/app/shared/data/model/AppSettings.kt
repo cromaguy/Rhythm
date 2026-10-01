@@ -254,6 +254,12 @@ class AppSettings private constructor(context: Context) {
         private const val KEY_PLAYLISTS = "playlists"
         private const val KEY_FAVORITE_SONGS = "favorite_songs"
         private const val KEY_DEFAULT_PLAYLISTS_ENABLED = "default_playlists_enabled"
+        private const val KEY_SHOW_LIKED_IN_PLAYLISTS = "show_liked_in_playlists"
+        private const val KEY_SMART_PLAYLIST_RECENTLY_ADDED = "smart_playlist_recently_added"
+        private const val KEY_SMART_PLAYLIST_MOST_PLAYED = "smart_playlist_most_played"
+        private const val KEY_SMART_PLAYLIST_ON_REPEAT = "smart_playlist_on_repeat"
+        private const val KEY_SMART_PLAYLIST_FORGOTTEN_FAVORITES = "smart_playlist_forgotten_favorites"
+        private const val KEY_SMART_PLAYLIST_RECENTLY_PLAYED = "smart_playlist_recently_played"
         
         // User Statistics
         private const val KEY_LISTENING_TIME = "listening_time"
@@ -1389,6 +1395,24 @@ class AppSettings private constructor(context: Context) {
     
     private val _defaultPlaylistsEnabled = MutableStateFlow(prefs.getBoolean(KEY_DEFAULT_PLAYLISTS_ENABLED, true))
     val defaultPlaylistsEnabled: StateFlow<Boolean> = _defaultPlaylistsEnabled.asStateFlow()
+
+    private val _showLikedInPlaylists = MutableStateFlow(prefs.getBoolean(KEY_SHOW_LIKED_IN_PLAYLISTS, false))
+    val showLikedInPlaylists: StateFlow<Boolean> = _showLikedInPlaylists.asStateFlow()
+
+    private val _smartPlaylistRecentlyAdded = MutableStateFlow(prefs.getBoolean(KEY_SMART_PLAYLIST_RECENTLY_ADDED, true))
+    val smartPlaylistRecentlyAdded: StateFlow<Boolean> = _smartPlaylistRecentlyAdded.asStateFlow()
+
+    private val _smartPlaylistMostPlayed = MutableStateFlow(prefs.getBoolean(KEY_SMART_PLAYLIST_MOST_PLAYED, true))
+    val smartPlaylistMostPlayed: StateFlow<Boolean> = _smartPlaylistMostPlayed.asStateFlow()
+
+    private val _smartPlaylistOnRepeat = MutableStateFlow(prefs.getBoolean(KEY_SMART_PLAYLIST_ON_REPEAT, true))
+    val smartPlaylistOnRepeat: StateFlow<Boolean> = _smartPlaylistOnRepeat.asStateFlow()
+
+    private val _smartPlaylistForgottenFavorites = MutableStateFlow(prefs.getBoolean(KEY_SMART_PLAYLIST_FORGOTTEN_FAVORITES, true))
+    val smartPlaylistForgottenFavorites: StateFlow<Boolean> = _smartPlaylistForgottenFavorites.asStateFlow()
+
+    private val _smartPlaylistRecentlyPlayed = MutableStateFlow(prefs.getBoolean(KEY_SMART_PLAYLIST_RECENTLY_PLAYED, true))
+    val smartPlaylistRecentlyPlayed: StateFlow<Boolean> = _smartPlaylistRecentlyPlayed.asStateFlow()
     
     // User Statistics
     private val _listeningTime = MutableStateFlow(safeLong(KEY_LISTENING_TIME, 0L))
@@ -3331,6 +3355,36 @@ private val _autoCheckForUpdates = MutableStateFlow(prefs.getBoolean(KEY_AUTO_CH
     fun setDefaultPlaylistsEnabled(enabled: Boolean) {
         prefs.edit { putBoolean(KEY_DEFAULT_PLAYLISTS_ENABLED, enabled) }
         _defaultPlaylistsEnabled.value = enabled
+    }
+
+    fun setShowLikedInPlaylists(enabled: Boolean) {
+        prefs.edit { putBoolean(KEY_SHOW_LIKED_IN_PLAYLISTS, enabled) }
+        _showLikedInPlaylists.value = enabled
+    }
+
+    fun setSmartPlaylistRecentlyAdded(enabled: Boolean) {
+        prefs.edit { putBoolean(KEY_SMART_PLAYLIST_RECENTLY_ADDED, enabled) }
+        _smartPlaylistRecentlyAdded.value = enabled
+    }
+
+    fun setSmartPlaylistMostPlayed(enabled: Boolean) {
+        prefs.edit { putBoolean(KEY_SMART_PLAYLIST_MOST_PLAYED, enabled) }
+        _smartPlaylistMostPlayed.value = enabled
+    }
+
+    fun setSmartPlaylistOnRepeat(enabled: Boolean) {
+        prefs.edit { putBoolean(KEY_SMART_PLAYLIST_ON_REPEAT, enabled) }
+        _smartPlaylistOnRepeat.value = enabled
+    }
+
+    fun setSmartPlaylistForgottenFavorites(enabled: Boolean) {
+        prefs.edit { putBoolean(KEY_SMART_PLAYLIST_FORGOTTEN_FAVORITES, enabled) }
+        _smartPlaylistForgottenFavorites.value = enabled
+    }
+
+    fun setSmartPlaylistRecentlyPlayed(enabled: Boolean) {
+        prefs.edit { putBoolean(KEY_SMART_PLAYLIST_RECENTLY_PLAYED, enabled) }
+        _smartPlaylistRecentlyPlayed.value = enabled
     }
     
     // User Statistics Methods

@@ -165,9 +165,11 @@ import chromahub.rhythm.app.shared.presentation.screens.settings.SettingItem
 import chromahub.rhythm.app.shared.presentation.screens.settings.SettingGroup
 
 
-// ✅ FULLY MERGED Playlists Screen (simplified playlist management)
 @Composable
-fun PlaylistsSettingsScreen(onBackClick: () -> Unit) {
+fun PlaylistsSettingsScreen(
+    onBackClick: () -> Unit,
+    onNavigateTo: (String) -> Unit = {}
+) {
     val context = LocalContext.current
     val haptic = LocalHapticFeedback.current
     val appSettings = AppSettings.getInstance(context)
@@ -240,53 +242,56 @@ fun PlaylistsSettingsScreen(onBackClick: () -> Unit) {
             items = listOf(
                 SettingItem(
                     RhythmIcons.Library,
-                    context.getString(R.string.settings_enable_default_playlists),
-                    context.getString(R.string.settings_enable_default_playlists_desc),
-                    onClick = null,
-                    toggleState = defaultPlaylistsEnabled,
-                    onToggleChange = { enabled ->
-                        musicViewModel.setDefaultPlaylistsEnabled(enabled)
+                    context.getString(R.string.settings_default_playlists),
+                    if (defaultPlaylistsEnabled) {
+                        "${defaultPlaylists.size} active"
+                    } else {
+                        context.getString(R.string.status_disabled)
+                    },
+                    onClick = {
+                        HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
+                        onNavigateTo(SettingsRoutes.DEFAULT_PLAYLISTS)
                     }
                 )
-            ) + if (defaultPlaylists.isNotEmpty()) {
+            ) + (if (defaultPlaylists.isNotEmpty()) {
                 defaultPlaylists.map { playlist ->
                     SettingItem(
-                        RhythmIcons.MusicNote,
-                        playlist.name,
-                        "${playlist.songs.size} songs",
-                        onClick = null, // No action for default playlists
+                        icon = null,
+                        title = playlist.name,
+                        description = "${playlist.songs.size} songs",
+                        onClick = null,
                         data = playlist.id
                     )
                 }
             } else {
                 listOf(
                     SettingItem(
-                        RhythmIcons.Info,
-                        context.getString(R.string.settings_no_default_playlists),
-                        context.getString(R.string.settings_no_default_playlists_desc),
+                        icon = null,
+                        title = context.getString(R.string.settings_no_default_playlists),
+                        description = context.getString(R.string.settings_no_default_playlists_desc),
                         onClick = null
                     )
                 )
-            }
+            })
         ),
         SettingGroup(
             title = context.getString(R.string.settings_my_playlists),
             items = if (userPlaylists.isNotEmpty()) {
                 userPlaylists.map { playlist ->
                     SettingItem(
-                        RhythmIcons.Queue,
-                        playlist.name,
-                        "${playlist.songs.size} songs",
-                        onClick = null, // No navigation
-                        data = playlist.id // Store playlist ID for deletion
+                        icon = null,
+                        title = playlist.name,
+                        description = "${playlist.songs.size} songs",
+                        onClick = null,
+                        data = playlist.id
                     )
                 }
             } else {
                 listOf(
                     SettingItem(
-                        RhythmIcons.Add,
-                        context.getString(R.string.settings_no_custom_playlists),
-                        context.getString(R.string.settings_no_custom_playlists_desc),
+                        icon = null,
+                        title = context.getString(R.string.settings_no_custom_playlists),
+                        description = context.getString(R.string.settings_no_custom_playlists_desc),
                         onClick = {
                             HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
                             showCreatePlaylistDialog = true

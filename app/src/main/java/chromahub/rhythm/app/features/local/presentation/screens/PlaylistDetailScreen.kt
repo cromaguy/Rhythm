@@ -705,7 +705,7 @@ fun PlaylistDetailScreen(
         },
         actions = {
             // Sort button (only show if sorting is available)
-            val isDefault = playlist.id == "1" || playlist.id == "2" || playlist.id == "3"
+            val isDefault = playlist.isDefault
             if (isDefault || (onUpdatePlaylistSongs != null && playlist.songs.size > 1)) {
                 val sortButtonScale by animateFloatAsState(
                     targetValue = if (showSortMenu) 0.95f else 1f,

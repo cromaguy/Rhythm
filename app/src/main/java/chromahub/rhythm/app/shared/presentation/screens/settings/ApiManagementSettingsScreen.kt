@@ -217,7 +217,7 @@ fun ApiManagementSettingsScreen(onBackClick: () -> Unit) {
                                 context = context,
                                 hapticFeedback = hapticFeedback,
                                 item = SettingItem(
-                                    icon = RhythmIcons.Public,
+                                    icon = null,
                                     title = stringResource(R.string.onboarding_integration_deezer),
                                     description = context.getString(R.string.api_deezer_desc),
                                     toggleState = deezerApiEnabled,
@@ -233,7 +233,7 @@ fun ApiManagementSettingsScreen(onBackClick: () -> Unit) {
                                 context = context,
                                 hapticFeedback = hapticFeedback,
                                 item = SettingItem(
-                                    icon = RhythmIcons.Queue,
+                                    icon = null,
                                     title = stringResource(R.string.onboarding_integration_lrclib),
                                     description = context.getString(R.string.api_lrclib_desc),
                                     toggleState = lrclibApiEnabled,
@@ -249,7 +249,7 @@ fun ApiManagementSettingsScreen(onBackClick: () -> Unit) {
                                 context = context,
                                 hapticFeedback = hapticFeedback,
                                 item = SettingItem(
-                                    icon = RhythmIcons.Queue,
+                                    icon = null,
                                     title = stringResource(R.string.onboarding_integration_betterlyrics),
                                     description = context.getString(R.string.api_betterlyrics_desc),
                                     toggleState = betterLyricsApiEnabled,
@@ -265,7 +265,7 @@ fun ApiManagementSettingsScreen(onBackClick: () -> Unit) {
                                 context = context,
                                 hapticFeedback = hapticFeedback,
                                 item = SettingItem(
-                                    icon = MaterialSymbolIcon("music_note"),
+                                    icon = null,
                                     title = stringResource(R.string.apimanagementsettingsscreen_lyrically),
                                     description = context.getString(R.string.api_lyrically_desc),
                                     toggleState = lyricallyApiEnabled,
@@ -280,7 +280,7 @@ fun ApiManagementSettingsScreen(onBackClick: () -> Unit) {
                             context = context,
                             hapticFeedback = hapticFeedback,
                             item = SettingItem(
-                                icon = MaterialSymbolIcon("movie"),
+                                icon = null,
                                 title = context.getString(R.string.api_apple_motion_canvas),
                                 description = context.getString(
                                     R.string.api_apple_motion_canvas_desc,
@@ -307,7 +307,7 @@ fun ApiManagementSettingsScreen(onBackClick: () -> Unit) {
                                 context = context,
                                 hapticFeedback = hapticFeedback,
                                 item = SettingItem(
-                                    icon = RhythmIcons.Album,
+                                    icon = null,
                                     title = stringResource(R.string.onboarding_integration_ytmusic),
                                     description = context.getString(R.string.api_ytmusic_desc),
                                     toggleState = ytMusicApiEnabled,
@@ -323,7 +323,7 @@ fun ApiManagementSettingsScreen(onBackClick: () -> Unit) {
                                 context = context,
                                 hapticFeedback = hapticFeedback,
                                 item = SettingItem(
-                                    icon = RhythmIcons.Info,
+                                    icon = null,
                                     title = stringResource(R.string.onboarding_integration_wikipedia),
                                     description = stringResource(R.string.onboarding_integration_wikipedia_desc),
                                     toggleState = wikipediaApiEnabled,
@@ -336,7 +336,7 @@ fun ApiManagementSettingsScreen(onBackClick: () -> Unit) {
 
                     add(
                         Material3SettingsItem(
-                            icon = RhythmIcons.Download,
+                            icon = null,
                             title = { Text(stringResource(R.string.apimanagementsettingsscreen_github)) },
                             description = { Text(stringResource(R.string.apimanagementsettingsscreen_app_updates_and_release)) }
                         )

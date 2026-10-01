@@ -225,26 +225,28 @@ fun TunerSettingRow(item: SettingItem) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         // Icon container with expressive design
-        Surface(
-            modifier = Modifier.size(40.dp),
-            shape = RoundedCornerShape(34.dp),
-            color = iconBackgroundColor,
-            tonalElevation = if (item.toggleState == true) 2.dp else 0.dp
-        ) {
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier.fillMaxSize()
+        item.icon?.let { icon ->
+            Surface(
+                modifier = Modifier.size(40.dp),
+                shape = RoundedCornerShape(34.dp),
+                color = iconBackgroundColor,
+                tonalElevation = if (item.toggleState == true) 2.dp else 0.dp
             ) {
-                Icon(
-                    imageVector = item.icon,
-                    contentDescription = item.title,
-                    modifier = Modifier.size(24.dp),
-                    tint = iconTintColor
-                )
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = item.title,
+                        modifier = Modifier.size(24.dp),
+                        tint = iconTintColor
+                    )
+                }
             }
+            
+            Spacer(modifier = Modifier.width(16.dp))
         }
-        
-        Spacer(modifier = Modifier.width(16.dp))
         Column(
             modifier = Modifier.weight(1f)
         ) {

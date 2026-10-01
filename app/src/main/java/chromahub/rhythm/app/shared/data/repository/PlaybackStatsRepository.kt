@@ -641,6 +641,69 @@ class PlaybackStatsRepository private constructor(private val context: Context) 
             playCount = playCount
         )
     }
+
+    /**
+     * Retrieves recent playback history as distinct song IDs ordered by last played timestamp descending.
+     */
+    fun getRecentlyPlayedSongIds(limit: Int = 50): List<String> {
+        val events = readEvents()
+        return events
+            .asSequence()
+            .filter { it.songId.isNotBlank() }
+            .sortedByDescending { it.endMillis() }
+            .map { it.songId }
+            .distinct()
+            .take(limit)
+            .toList()
+    }
+
+    /**
+     * Retrieves "On Repeat" song IDs (songs with highest frequency and listening time in the last [daysBack] days).
+     */
+    fun getOnRepeatSongIds(daysBack: Int = 14, limit: Int = 50, nowMillis: Long = System.currentTimeMillis()): List<String> {
+        val cutoff = nowMillis - TimeUnit.DAYS.toMillis(daysBack.toLong())
+        val events = readEvents().filter { it.endMillis() >= cutoff && it.songId.isNotBlank() }
+        if (events.isEmpty()) return emptyList()
+
+        val songScores = mutableMapOf<String, Double>()
+        val oneDayMs = TimeUnit.DAYS.toMillis(1).toDouble()
+
+        events.forEach { event ->
+            val daysAgo = ((nowMillis - event.endMillis()).coerceAtLeast(0L) / oneDayMs).coerceAtMost(daysBack.toDouble())
+            val recencyMultiplier = 1.0 - (daysAgo / (daysBack * 1.5))
+            val eventScore = (1.0 + (event.durationMs / 60000.0).coerceAtMost(5.0)) * recencyMultiplier
+            songScores[event.songId] = (songScores[event.songId] ?: 0.0) + eventScore
+        }
+
+        return songScores.entries
+            .sortedByDescending { it.value }
+            .map { it.key }
+            .take(limit)
+    }
+
+    /**
+     * Retrieves "Forgotten Favorites" song IDs (songs with high all-time play counts that have NOT been played in the last [daysNotPlayed] days).
+     */
+    fun getForgottenFavoritesSongIds(
+        allTimePlayCounts: Map<String, Int>,
+        daysNotPlayed: Int = 30,
+        limit: Int = 50,
+        nowMillis: Long = System.currentTimeMillis()
+    ): List<String> {
+        val cutoff = nowMillis - TimeUnit.DAYS.toMillis(daysNotPlayed.toLong())
+        val recentlyPlayedIds = readEvents()
+            .filter { it.endMillis() >= cutoff }
+            .map { it.songId }
+            .toSet()
+
+        return allTimePlayCounts.entries
+            .asSequence()
+            .filter { (songId, playCount) -> playCount >= 4 && !recentlyPlayedIds.contains(songId) }
+            .sortedByDescending { it.value }
+            .map { it.key }
+            .take(limit)
+            .toList()
+    }
     
     /**
      * Clear all history

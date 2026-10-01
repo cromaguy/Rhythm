@@ -2811,12 +2811,44 @@ fun SingleCardPlaylistsContent(
         LibraryPlaylistSortOrder.NAME_ASC
     }
     
-    var isLoading by remember(playlists, playlistSortOrder) { mutableStateOf(true) }
-    var preparedPlaylists by remember(playlists, playlistSortOrder) { mutableStateOf<List<Playlist>>(emptyList()) }
+    val defaultPlaylistsEnabled by appSettings.defaultPlaylistsEnabled.collectAsState()
+    val showLikedInPlaylists by appSettings.showLikedInPlaylists.collectAsState()
+    val smartPlaylistRecentlyAdded by appSettings.smartPlaylistRecentlyAdded.collectAsState()
+    val smartPlaylistMostPlayed by appSettings.smartPlaylistMostPlayed.collectAsState()
+    val smartPlaylistOnRepeat by appSettings.smartPlaylistOnRepeat.collectAsState()
+    val smartPlaylistForgottenFavorites by appSettings.smartPlaylistForgottenFavorites.collectAsState()
+    val smartPlaylistRecentlyPlayed by appSettings.smartPlaylistRecentlyPlayed.collectAsState()
     
-    LaunchedEffect(playlists, playlistSortOrder) {
+    var isLoading by remember { mutableStateOf(playlists.isEmpty()) }
+    var preparedPlaylists by remember { mutableStateOf<List<Playlist>>(emptyList()) }
+    
+    LaunchedEffect(
+        playlists,
+        playlistSortOrder,
+        defaultPlaylistsEnabled,
+        showLikedInPlaylists,
+        smartPlaylistRecentlyAdded,
+        smartPlaylistMostPlayed,
+        smartPlaylistOnRepeat,
+        smartPlaylistForgottenFavorites,
+        smartPlaylistRecentlyPlayed
+    ) {
+        if (preparedPlaylists.isEmpty() && playlists.isNotEmpty()) {
+            isLoading = true
+        }
         preparedPlaylists = withContext(Dispatchers.Default) {
-            val baseList = playlists.distinctBy { it.id }
+            val activeDefaultIds = mutableSetOf<String>()
+            if (showLikedInPlaylists) activeDefaultIds.add("1")
+            if (defaultPlaylistsEnabled) {
+                if (smartPlaylistRecentlyAdded) activeDefaultIds.add("2")
+                if (smartPlaylistMostPlayed) activeDefaultIds.add("3")
+                if (smartPlaylistOnRepeat) activeDefaultIds.add("4")
+                if (smartPlaylistForgottenFavorites) activeDefaultIds.add("5")
+                if (smartPlaylistRecentlyPlayed) activeDefaultIds.add("6")
+            }
+            val baseList = playlists.distinctBy { it.id }.filter {
+                it.id !in Playlist.DEFAULT_PLAYLIST_IDS || activeDefaultIds.contains(it.id)
+            }
             when (playlistSortOrder) {
                 LibraryPlaylistSortOrder.NAME_ASC -> baseList.sortedBy { it.name.lowercase() }
                 LibraryPlaylistSortOrder.NAME_DESC -> baseList.sortedByDescending { it.name.lowercase() }

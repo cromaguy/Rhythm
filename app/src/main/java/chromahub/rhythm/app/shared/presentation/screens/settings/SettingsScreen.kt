@@ -168,6 +168,7 @@ object SettingsRoutes {
     const val MEDIA_SCAN = "media_scan_settings"
     const val ARTIST_SEPARATORS = "artist_separators_settings"
     const val PLAYLISTS = "playlist_settings"
+    const val DEFAULT_PLAYLISTS = "default_playlists_settings"
     const val API_MANAGEMENT = "api_management_settings"
     const val CACHE_MANAGEMENT = "cache_management_settings"
     const val BACKUP_RESTORE = "backup_restore_settings"
@@ -195,7 +196,7 @@ object SettingsRoutes {
 }
 
 data class SettingItem(
-    val icon: MaterialSymbolIcon,
+    val icon: MaterialSymbolIcon? = null,
     val title: String,
     val description: String? = null,
     val onClick: (() -> Unit)? = null,
@@ -848,26 +849,28 @@ fun SettingRow(item: SettingItem) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         // Icon container with expressive design
-        Surface(
-            modifier = Modifier.size(40.dp),
-            shape = RoundedCornerShape(24.dp),
-            color = iconBackgroundColor,
-            tonalElevation = if (item.toggleState == true) 2.dp else 0.dp
-        ) {
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier.fillMaxSize()
+        item.icon?.let { icon ->
+            Surface(
+                modifier = Modifier.size(40.dp),
+                shape = RoundedCornerShape(24.dp),
+                color = iconBackgroundColor,
+                tonalElevation = if (item.toggleState == true) 2.dp else 0.dp
             ) {
-                Icon(
-                    imageVector = item.icon,
-                    contentDescription = item.title,
-                    modifier = Modifier.size(24.dp),
-                    tint = iconTintColor
-                )
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = item.title,
+                        modifier = Modifier.size(24.dp),
+                        tint = iconTintColor
+                    )
+                }
             }
+            
+            Spacer(modifier = Modifier.width(16.dp))
         }
-        
-        Spacer(modifier = Modifier.width(16.dp))
         
         Column(
             modifier = Modifier
@@ -970,7 +973,7 @@ fun SettingsScreenWrapper(
     val isTablet = windowScreenWidthDp() >= 600
     val isLandscapeTablet = isTablet && windowScreenWidthDp() > windowScreenHeightDp()
 
-    var currentRoute by rememberSaveable { mutableStateOf<String?>(null) }
+    var routeStack by rememberSaveable { mutableStateOf(emptyList<String>()) }
     var showSleepTimerBottomSheet by rememberSaveable { mutableStateOf(false) }
     val currentSong by musicViewModel.currentSong.collectAsState()
     val isPlaying by musicViewModel.isPlaying.collectAsState()
@@ -983,10 +986,10 @@ fun SettingsScreenWrapper(
         LazyListState()
     }
 
-    // Handle back navigation - if we're in a subsettings screen, go back to main screen
-    val handleBack = {
-        if (currentRoute != null) {
-            currentRoute = null
+    // Handle back navigation
+    val handleBack: () -> Unit = {
+        if (routeStack.isNotEmpty()) {
+            routeStack = routeStack.dropLast(1)
         } else {
             onBack()
         }
@@ -996,16 +999,16 @@ fun SettingsScreenWrapper(
     LaunchedEffect(Unit) {
         val pending = appSettings.consumeInitialSettingsSubroute()
         if (!pending.isNullOrBlank()) {
-            currentRoute = pending
+            routeStack = listOf(pending)
         }
     }
 
     // Handle system back gestures when in subsettings
-    BackHandler(enabled = currentRoute != null) {
+    BackHandler(enabled = routeStack.isNotEmpty()) {
         handleBack()
     }
 
-    val onNavigateToSubsetting = { route: String ->
+    val onNavigateToSubsetting: (String) -> Unit = { route: String ->
         if (route == SettingsRoutes.RHYTHM_STATS) {
             val localStatsRoute = Screen.RhythmStats.route
             val streamingStatsRoute = "streaming_rhythm_stats"
@@ -1030,7 +1033,9 @@ fun SettingsScreenWrapper(
         } else if (route == SettingsRoutes.SLEEP_TIMER) {
             showSleepTimerBottomSheet = true
         } else {
-            currentRoute = route
+            if (routeStack.lastOrNull() != route) {
+                routeStack = routeStack + route
+            }
         }
     }
 
@@ -1045,7 +1050,13 @@ fun SettingsScreenWrapper(
             ) {
                 SettingsScreen(
                     onBackClick = handleBack,
-                    onNavigateTo = onNavigateToSubsetting,
+                    onNavigateTo = { route ->
+                        if (route == SettingsRoutes.RHYTHM_STATS || route == SettingsRoutes.EQUALIZER || route == SettingsRoutes.SLEEP_TIMER) {
+                            onNavigateToSubsetting(route)
+                        } else {
+                            routeStack = listOf(route)
+                        }
+                    },
                     scrollState = mainSettingsScrollState,
                     isTablet = true
                 )
@@ -1062,10 +1073,10 @@ fun SettingsScreenWrapper(
                 tonalElevation = 0.dp
             ) {
                 AnimatedContent(
-                    targetState = currentRoute,
+                    targetState = routeStack,
                     transitionSpec = {
-                        if (targetState != null) {
-                            // Slide in from right for subsettings
+                        val isBacking = targetState.size < initialState.size
+                        if (!isBacking && targetState.isNotEmpty()) {
                             slideInHorizontally(
                                 initialOffsetX = { it },
                                 animationSpec = tween(
@@ -1088,7 +1099,6 @@ fun SettingsScreenWrapper(
                                 animationSpec = tween(durationMillis = 250)
                             )
                         } else {
-                            // Slide in from left when going back to placeholder
                             slideInHorizontally(
                                 initialOffsetX = { -it / 4 },
                                 animationSpec = tween(
@@ -1113,25 +1123,32 @@ fun SettingsScreenWrapper(
                         }
                     },
                     label = "tablet_detail_navigation",
-                    contentKey = { it ?: "placeholder" }
-                ) { route ->
+                    contentKey = { it.lastOrNull() ?: "placeholder" }
+                ) { stack ->
+                    val route = stack.lastOrNull()
                     when (route) {
-                        SettingsRoutes.NOTIFICATIONS -> NotificationsSettingsScreen(onBackClick = { currentRoute = null })
-                        SettingsRoutes.PLAYLISTS -> PlaylistsSettingsScreen(onBackClick = { currentRoute = null })
-                        SettingsRoutes.MEDIA_SCAN -> MediaScanSettingsScreen(onBackClick = { currentRoute = null })
-                        SettingsRoutes.ARTIST_SEPARATORS -> ArtistSeparatorsSettingsScreen(onBackClick = { currentRoute = null })
-                        SettingsRoutes.ABOUT -> chromahub.rhythm.app.shared.presentation.screens.settings.AboutScreen(
-                            onBackClick = { currentRoute = null },
-                            onNavigateToUpdates = { currentRoute = SettingsRoutes.UPDATES }
+                        SettingsRoutes.NOTIFICATIONS -> NotificationsSettingsScreen(onBackClick = handleBack)
+                        SettingsRoutes.PLAYLISTS -> PlaylistsSettingsScreen(
+                            onBackClick = handleBack,
+                            onNavigateTo = onNavigateToSubsetting
                         )
-                        SettingsRoutes.UPDATES -> UpdatesSettingsScreen(onBackClick = { currentRoute = null })
+                        SettingsRoutes.DEFAULT_PLAYLISTS -> DefaultPlaylistsSettingsScreen(
+                            onBackClick = handleBack
+                        )
+                        SettingsRoutes.MEDIA_SCAN -> MediaScanSettingsScreen(onBackClick = handleBack)
+                        SettingsRoutes.ARTIST_SEPARATORS -> ArtistSeparatorsSettingsScreen(onBackClick = handleBack)
+                        SettingsRoutes.ABOUT -> chromahub.rhythm.app.shared.presentation.screens.settings.AboutScreen(
+                            onBackClick = handleBack,
+                            onNavigateToUpdates = { onNavigateToSubsetting(SettingsRoutes.UPDATES) }
+                        )
+                        SettingsRoutes.UPDATES -> UpdatesSettingsScreen(onBackClick = handleBack)
                         SettingsRoutes.LABS, SettingsRoutes.EXPERIMENTAL_FEATURES -> LabsSettingsScreen(
-                            onBackClick = { currentRoute = null },
-                            onNavigateTo = { currentRoute = it },
-                            onNavigateToGoSettings = { currentRoute = SettingsRoutes.GO_SETTINGS }
+                            onBackClick = handleBack,
+                            onNavigateTo = onNavigateToSubsetting,
+                            onNavigateToGoSettings = { onNavigateToSubsetting(SettingsRoutes.GO_SETTINGS) }
                         )
                         SettingsRoutes.GO_SETTINGS -> chromahub.rhythm.app.features.streaming.presentation.screens.GoSettingsScreen(
-                            onBackClick = { currentRoute = null },
+                            onBackClick = handleBack,
                             onConfigureCurrentProvider = { serviceId ->
                                 appSettings.setInitialStreamingRoute("streaming_service_setup/$serviceId")
                                 appSettings.setAppMode("STREAMING")
@@ -1140,30 +1157,30 @@ fun SettingsScreenWrapper(
                                 }
                             }
                         )
-                        SettingsRoutes.API_MANAGEMENT -> ApiManagementSettingsScreen(onBackClick = { currentRoute = null })
-                        SettingsRoutes.CACHE_MANAGEMENT -> CacheManagementSettingsScreen(onBackClick = { currentRoute = null })
-                        SettingsRoutes.BACKUP_RESTORE -> BackupRestoreSettingsScreen(onBackClick = { currentRoute = null })
-                        SettingsRoutes.THEME_CUSTOMIZATION -> ThemeCustomizationSettingsScreen(onBackClick = { currentRoute = null })
-                        SettingsRoutes.PLAYER_CUSTOMIZATION -> PlayerCustomizationSettingsScreen(onBackClick = { currentRoute = null })
-                        SettingsRoutes.MINIPLAYER_CUSTOMIZATION -> MiniPlayerCustomizationSettingsScreen(onBackClick = { currentRoute = null })
-                        SettingsRoutes.CRASH_LOG_HISTORY -> CrashLogHistorySettingsScreen(onBackClick = { currentRoute = null }, appSettings = appSettings)
-                        SettingsRoutes.QUEUE -> QueueSettingsScreen(onBackClick = { currentRoute = null })
+                        SettingsRoutes.API_MANAGEMENT -> ApiManagementSettingsScreen(onBackClick = handleBack)
+                        SettingsRoutes.CACHE_MANAGEMENT -> CacheManagementSettingsScreen(onBackClick = handleBack)
+                        SettingsRoutes.BACKUP_RESTORE -> BackupRestoreSettingsScreen(onBackClick = handleBack)
+                        SettingsRoutes.THEME_CUSTOMIZATION -> ThemeCustomizationSettingsScreen(onBackClick = handleBack)
+                        SettingsRoutes.PLAYER_CUSTOMIZATION -> PlayerCustomizationSettingsScreen(onBackClick = handleBack)
+                        SettingsRoutes.MINIPLAYER_CUSTOMIZATION -> MiniPlayerCustomizationSettingsScreen(onBackClick = handleBack)
+                        SettingsRoutes.CRASH_LOG_HISTORY -> CrashLogHistorySettingsScreen(onBackClick = handleBack, appSettings = appSettings)
+                        SettingsRoutes.QUEUE -> QueueSettingsScreen(onBackClick = handleBack)
                         SettingsRoutes.PLAYBACK -> PlaybackSettingsScreen(
-                            onBackClick = { currentRoute = null },
-                            onNavigateTo = { currentRoute = it }
+                            onBackClick = handleBack,
+                            onNavigateTo = onNavigateToSubsetting
                         )
                         SettingsRoutes.REPLAY_GAIN -> ReplayGainSettingsScreen(
-                            onBackClick = { currentRoute = null },
-                            onNavigateTo = { currentRoute = it }
+                            onBackClick = handleBack,
+                            onNavigateTo = onNavigateToSubsetting
                         )
-                        SettingsRoutes.LYRICS -> LyricsSettingsScreen(onBackClick = { currentRoute = null })
-                        SettingsRoutes.WIDGET -> WidgetSettingsScreen(onBackClick = { currentRoute = null })
-                        SettingsRoutes.HOME_SCREEN -> HomeScreenCustomizationSettingsScreen(onBackClick = { currentRoute = null })
-                        SettingsRoutes.GESTURES -> GesturesSettingsScreen(onBackClick = { currentRoute = null })
-                        SettingsRoutes.EXPRESSIVE_SHAPES -> ExpressiveShapesSettingsScreen(onBackClick = { currentRoute = null })
-                        SettingsRoutes.LIBRARY_SETTINGS -> LibrarySettingsScreen(onBackClick = { currentRoute = null })
-                        SettingsRoutes.RHYTHM_GUARD -> RhythmGuardSettingsScreen(onBackClick = { currentRoute = null })
-                        SettingsRoutes.BATTERY_SAVER -> PerformanceSettingsScreen(onBackClick = { currentRoute = null })
+                        SettingsRoutes.LYRICS -> LyricsSettingsScreen(onBackClick = handleBack)
+                        SettingsRoutes.WIDGET -> WidgetSettingsScreen(onBackClick = handleBack)
+                        SettingsRoutes.HOME_SCREEN -> HomeScreenCustomizationSettingsScreen(onBackClick = handleBack)
+                        SettingsRoutes.GESTURES -> GesturesSettingsScreen(onBackClick = handleBack)
+                        SettingsRoutes.EXPRESSIVE_SHAPES -> ExpressiveShapesSettingsScreen(onBackClick = handleBack)
+                        SettingsRoutes.LIBRARY_SETTINGS -> LibrarySettingsScreen(onBackClick = handleBack)
+                        SettingsRoutes.RHYTHM_GUARD -> RhythmGuardSettingsScreen(onBackClick = handleBack)
+                        SettingsRoutes.BATTERY_SAVER -> PerformanceSettingsScreen(onBackClick = handleBack)
                         else -> PlaceholderSettingsScreen()
                     }
                 }
@@ -1172,10 +1189,10 @@ fun SettingsScreenWrapper(
     } else {
         // Phone layout: Traditional navigation with AnimatedContent
         AnimatedContent(
-            targetState = currentRoute,
+            targetState = routeStack,
             transitionSpec = {
-                if (targetState != null) {
-                    // Enhanced slide in from right when navigating to a screen
+                val isBacking = targetState.size < initialState.size
+                if (!isBacking && targetState.isNotEmpty()) {
                     slideInHorizontally(
                         initialOffsetX = { it },
                         animationSpec = tween(
@@ -1210,7 +1227,6 @@ fun SettingsScreenWrapper(
                         )
                     )
                 } else {
-                    // Enhanced slide in from left when going back
                     slideInHorizontally(
                         initialOffsetX = { -it / 4 },
                         animationSpec = tween(
@@ -1247,25 +1263,32 @@ fun SettingsScreenWrapper(
                 }
             },
             label = "settings_navigation",
-            contentKey = { it ?: "main_settings" }
-        ) { route ->
+            contentKey = { it.lastOrNull() ?: "main_settings" }
+        ) { stack ->
+            val route = stack.lastOrNull()
             when (route) {
-                SettingsRoutes.NOTIFICATIONS -> NotificationsSettingsScreen(onBackClick = { currentRoute = null })
-                SettingsRoutes.PLAYLISTS -> PlaylistsSettingsScreen(onBackClick = { currentRoute = null })
-                SettingsRoutes.MEDIA_SCAN -> MediaScanSettingsScreen(onBackClick = { currentRoute = null })
-                SettingsRoutes.ARTIST_SEPARATORS -> ArtistSeparatorsSettingsScreen(onBackClick = { currentRoute = null })
-                SettingsRoutes.ABOUT -> chromahub.rhythm.app.shared.presentation.screens.settings.AboutScreen(
-                    onBackClick = { currentRoute = null },
-                    onNavigateToUpdates = { currentRoute = SettingsRoutes.UPDATES }
+                SettingsRoutes.NOTIFICATIONS -> NotificationsSettingsScreen(onBackClick = handleBack)
+                SettingsRoutes.PLAYLISTS -> PlaylistsSettingsScreen(
+                    onBackClick = handleBack,
+                    onNavigateTo = onNavigateToSubsetting
                 )
-                SettingsRoutes.UPDATES -> UpdatesSettingsScreen(onBackClick = { currentRoute = null })
+                SettingsRoutes.DEFAULT_PLAYLISTS -> DefaultPlaylistsSettingsScreen(
+                    onBackClick = handleBack
+                )
+                SettingsRoutes.MEDIA_SCAN -> MediaScanSettingsScreen(onBackClick = handleBack)
+                SettingsRoutes.ARTIST_SEPARATORS -> ArtistSeparatorsSettingsScreen(onBackClick = handleBack)
+                SettingsRoutes.ABOUT -> chromahub.rhythm.app.shared.presentation.screens.settings.AboutScreen(
+                    onBackClick = handleBack,
+                    onNavigateToUpdates = { onNavigateToSubsetting(SettingsRoutes.UPDATES) }
+                )
+                SettingsRoutes.UPDATES -> UpdatesSettingsScreen(onBackClick = handleBack)
                 SettingsRoutes.LABS, SettingsRoutes.EXPERIMENTAL_FEATURES -> LabsSettingsScreen(
-                    onBackClick = { currentRoute = null },
-                    onNavigateTo = { currentRoute = it },
-                    onNavigateToGoSettings = { currentRoute = SettingsRoutes.GO_SETTINGS }
+                    onBackClick = handleBack,
+                    onNavigateTo = onNavigateToSubsetting,
+                    onNavigateToGoSettings = { onNavigateToSubsetting(SettingsRoutes.GO_SETTINGS) }
                 )
                 SettingsRoutes.GO_SETTINGS -> chromahub.rhythm.app.features.streaming.presentation.screens.GoSettingsScreen(
-                    onBackClick = { currentRoute = null },
+                    onBackClick = handleBack,
                     onConfigureCurrentProvider = { serviceId ->
                         appSettings.setInitialStreamingRoute("streaming_service_setup/$serviceId")
                         appSettings.setAppMode("STREAMING")
@@ -1274,30 +1297,30 @@ fun SettingsScreenWrapper(
                         }
                     }
                 )
-                SettingsRoutes.API_MANAGEMENT -> ApiManagementSettingsScreen(onBackClick = { currentRoute = null })
-                SettingsRoutes.CACHE_MANAGEMENT -> CacheManagementSettingsScreen(onBackClick = { currentRoute = null })
-                SettingsRoutes.BACKUP_RESTORE -> BackupRestoreSettingsScreen(onBackClick = { currentRoute = null })
-                SettingsRoutes.THEME_CUSTOMIZATION -> ThemeCustomizationSettingsScreen(onBackClick = { currentRoute = null })
-                SettingsRoutes.PLAYER_CUSTOMIZATION -> PlayerCustomizationSettingsScreen(onBackClick = { currentRoute = null })
-                SettingsRoutes.MINIPLAYER_CUSTOMIZATION -> MiniPlayerCustomizationSettingsScreen(onBackClick = { currentRoute = null })
-                SettingsRoutes.CRASH_LOG_HISTORY -> CrashLogHistorySettingsScreen(onBackClick = { currentRoute = null }, appSettings = appSettings)
-                SettingsRoutes.QUEUE -> QueueSettingsScreen(onBackClick = { currentRoute = null })
+                SettingsRoutes.API_MANAGEMENT -> ApiManagementSettingsScreen(onBackClick = handleBack)
+                SettingsRoutes.CACHE_MANAGEMENT -> CacheManagementSettingsScreen(onBackClick = handleBack)
+                SettingsRoutes.BACKUP_RESTORE -> BackupRestoreSettingsScreen(onBackClick = handleBack)
+                SettingsRoutes.THEME_CUSTOMIZATION -> ThemeCustomizationSettingsScreen(onBackClick = handleBack)
+                SettingsRoutes.PLAYER_CUSTOMIZATION -> PlayerCustomizationSettingsScreen(onBackClick = handleBack)
+                SettingsRoutes.MINIPLAYER_CUSTOMIZATION -> MiniPlayerCustomizationSettingsScreen(onBackClick = handleBack)
+                SettingsRoutes.CRASH_LOG_HISTORY -> CrashLogHistorySettingsScreen(onBackClick = handleBack, appSettings = appSettings)
+                SettingsRoutes.QUEUE -> QueueSettingsScreen(onBackClick = handleBack)
                 SettingsRoutes.PLAYBACK -> PlaybackSettingsScreen(
-                    onBackClick = { currentRoute = null },
-                    onNavigateTo = { currentRoute = it }
+                    onBackClick = handleBack,
+                    onNavigateTo = onNavigateToSubsetting
                 )
                 SettingsRoutes.REPLAY_GAIN -> ReplayGainSettingsScreen(
-                    onBackClick = { currentRoute = null },
-                    onNavigateTo = { currentRoute = it }
+                    onBackClick = handleBack,
+                    onNavigateTo = onNavigateToSubsetting
                 )
-                SettingsRoutes.LYRICS -> LyricsSettingsScreen(onBackClick = { currentRoute = null })
-                SettingsRoutes.WIDGET -> WidgetSettingsScreen(onBackClick = { currentRoute = null })
-                SettingsRoutes.HOME_SCREEN -> HomeScreenCustomizationSettingsScreen(onBackClick = { currentRoute = null })
-                SettingsRoutes.GESTURES -> GesturesSettingsScreen(onBackClick = { currentRoute = null })
-                SettingsRoutes.EXPRESSIVE_SHAPES -> ExpressiveShapesSettingsScreen(onBackClick = { currentRoute = null })
-                SettingsRoutes.LIBRARY_SETTINGS -> LibrarySettingsScreen(onBackClick = { currentRoute = null })
-                SettingsRoutes.RHYTHM_GUARD -> RhythmGuardSettingsScreen(onBackClick = { currentRoute = null })
-                SettingsRoutes.BATTERY_SAVER -> PerformanceSettingsScreen(onBackClick = { currentRoute = null })
+                SettingsRoutes.LYRICS -> LyricsSettingsScreen(onBackClick = handleBack)
+                SettingsRoutes.WIDGET -> WidgetSettingsScreen(onBackClick = handleBack)
+                SettingsRoutes.HOME_SCREEN -> HomeScreenCustomizationSettingsScreen(onBackClick = handleBack)
+                SettingsRoutes.GESTURES -> GesturesSettingsScreen(onBackClick = handleBack)
+                SettingsRoutes.EXPRESSIVE_SHAPES -> ExpressiveShapesSettingsScreen(onBackClick = handleBack)
+                SettingsRoutes.LIBRARY_SETTINGS -> LibrarySettingsScreen(onBackClick = handleBack)
+                SettingsRoutes.RHYTHM_GUARD -> RhythmGuardSettingsScreen(onBackClick = handleBack)
+                SettingsRoutes.BATTERY_SAVER -> PerformanceSettingsScreen(onBackClick = handleBack)
                 else -> SettingsScreen(
                     onBackClick = handleBack,
                     onNavigateTo = onNavigateToSubsetting,

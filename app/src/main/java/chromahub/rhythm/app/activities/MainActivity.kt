@@ -1094,8 +1094,14 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    override fun onStop() {
+        super.onStop()
+        musicViewModel.ensurePlaylistsSaved()
+    }
+
     override fun onDestroy() {
         Log.d(TAG, "MainActivity onDestroy - cleaning up resources")
+        musicViewModel.ensurePlaylistsSaved()
         
         // Cancel all tracked coroutine jobs to prevent memory leaks
         lifecycleScopeJobs.forEach { job ->

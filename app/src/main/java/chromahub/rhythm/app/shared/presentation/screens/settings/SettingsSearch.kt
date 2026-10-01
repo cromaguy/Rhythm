@@ -660,11 +660,80 @@ fun buildSettingsSearchIndex(context: Context): List<SearchableSettingItem> {
             id = "default_playlists_enabled",
             title = context.getString(R.string.settings_enable_default_playlists),
             description = context.getString(R.string.settings_enable_default_playlists_desc),
-            keywords = listOf("default playlists", "recently added", "most played", "auto playlist"),
+            keywords = listOf("default playlists", "recently added", "most played", "auto playlist", "smart playlist"),
             icon = RhythmIcons.Library,
-            route = SettingsRoutes.PLAYLISTS,
-            parentScreen = context.getString(R.string.settings_playlists_title),
+            route = SettingsRoutes.DEFAULT_PLAYLISTS,
+            parentScreen = context.getString(R.string.settings_default_playlists),
             settingKey = "defaultPlaylistsEnabled"
+        ))
+        add(SearchableSettingItem(
+            id = "smart_playlists",
+            title = context.getString(R.string.settings_default_playlists),
+            description = context.getString(R.string.settings_default_playlists_summary),
+            keywords = listOf("default playlists", "smart playlists", "auto playlists", "playlists"),
+            icon = RhythmIcons.Library,
+            route = SettingsRoutes.DEFAULT_PLAYLISTS,
+            parentScreen = context.getString(R.string.settings_playlists_title)
+        ))
+        add(SearchableSettingItem(
+            id = "show_liked_in_playlists",
+            title = context.getString(R.string.settings_show_liked_in_playlists),
+            description = context.getString(R.string.settings_show_liked_in_playlists_desc),
+            keywords = listOf("liked songs", "favorites", "liked playlist"),
+            icon = RhythmIcons.Favorite,
+            route = SettingsRoutes.DEFAULT_PLAYLISTS,
+            parentScreen = context.getString(R.string.settings_default_playlists),
+            settingKey = "showLikedInPlaylists"
+        ))
+        add(SearchableSettingItem(
+            id = "smart_playlist_recently_added",
+            title = context.getString(R.string.settings_smart_playlist_recently_added),
+            description = context.getString(R.string.settings_smart_playlist_recently_added_desc),
+            keywords = listOf("recently added", "new songs", "smart playlist"),
+            icon = MaterialSymbolIcon("schedule"),
+            route = SettingsRoutes.DEFAULT_PLAYLISTS,
+            parentScreen = context.getString(R.string.settings_default_playlists),
+            settingKey = "smartPlaylistRecentlyAdded"
+        ))
+        add(SearchableSettingItem(
+            id = "smart_playlist_most_played",
+            title = context.getString(R.string.settings_smart_playlist_most_played),
+            description = context.getString(R.string.settings_smart_playlist_most_played_desc),
+            keywords = listOf("most played", "top songs", "smart playlist"),
+            icon = MaterialSymbolIcon("trending_up"),
+            route = SettingsRoutes.DEFAULT_PLAYLISTS,
+            parentScreen = context.getString(R.string.settings_default_playlists),
+            settingKey = "smartPlaylistMostPlayed"
+        ))
+        add(SearchableSettingItem(
+            id = "smart_playlist_on_repeat",
+            title = context.getString(R.string.settings_smart_playlist_on_repeat),
+            description = context.getString(R.string.settings_smart_playlist_on_repeat_desc),
+            keywords = listOf("on repeat", "heavy rotation", "smart playlist"),
+            icon = MaterialSymbolIcon("repeat"),
+            route = SettingsRoutes.DEFAULT_PLAYLISTS,
+            parentScreen = context.getString(R.string.settings_default_playlists),
+            settingKey = "smartPlaylistOnRepeat"
+        ))
+        add(SearchableSettingItem(
+            id = "smart_playlist_forgotten_favorites",
+            title = context.getString(R.string.settings_smart_playlist_forgotten_favorites),
+            description = context.getString(R.string.settings_smart_playlist_forgotten_favorites_desc),
+            keywords = listOf("forgotten favorites", "nostalgia", "smart playlist"),
+            icon = MaterialSymbolIcon("history"),
+            route = SettingsRoutes.DEFAULT_PLAYLISTS,
+            parentScreen = context.getString(R.string.settings_default_playlists),
+            settingKey = "smartPlaylistForgottenFavorites"
+        ))
+        add(SearchableSettingItem(
+            id = "smart_playlist_recently_played",
+            title = context.getString(R.string.settings_smart_playlist_recently_played),
+            description = context.getString(R.string.settings_smart_playlist_recently_played_desc),
+            keywords = listOf("recently played", "history", "smart playlist"),
+            icon = MaterialSymbolIcon("restore"),
+            route = SettingsRoutes.DEFAULT_PLAYLISTS,
+            parentScreen = context.getString(R.string.settings_default_playlists),
+            settingKey = "smartPlaylistRecentlyPlayed"
         ))
         add(SearchableSettingItem(
             id = "playlists_create",

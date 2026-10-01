@@ -199,7 +199,11 @@ data class Playlist(
     val artworkUri: Uri? = null
 ) : Parcelable {
     val isDefault: Boolean
-        get() = id == "1" || id == "2" || id == "3"  // Favorites, Recently Added, Most Played
+        get() = id in DEFAULT_PLAYLIST_IDS
+
+    companion object {
+        val DEFAULT_PLAYLIST_IDS = setOf("1", "2", "3", "4", "5", "6")
+    }
 }
 
 // Represents the current playback queue

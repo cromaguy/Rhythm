@@ -278,6 +278,7 @@ sealed class Screen(val route: String) {
     object TunerArtistSeparators : Screen("tuner_artist_separators_settings")
     object TunerGoSettings : Screen("tuner_go_settings")
     object TunerReplayGain : Screen("tuner_replay_gain_settings")
+    object TunerDefaultPlaylists : Screen("tuner_default_playlists_settings")
     
     // Stats Screen
     object RhythmStats : Screen("rhythm_stats")
@@ -2194,7 +2195,18 @@ private fun LocalNavigationContent(
                 }
 
                 composable(Screen.TunerPlaylists.route) {
-                    PlaylistsSettingsScreen(onBackClick = navigateBackOrToSettings)
+                    PlaylistsSettingsScreen(
+                        onBackClick = navigateBackOrToSettings,
+                        onNavigateTo = { route ->
+                            if (route == SettingsRoutes.DEFAULT_PLAYLISTS) {
+                                navController.navigate(Screen.TunerDefaultPlaylists.route)
+                            }
+                        }
+                    )
+                }
+
+                composable(Screen.TunerDefaultPlaylists.route) {
+                    DefaultPlaylistsSettingsScreen(onBackClick = navigateBackOrToSettings)
                 }
 
                 composable(Screen.TunerApiManagement.route) {

@@ -8,6 +8,7 @@ package chromahub.rhythm.app.shared.presentation.screens
 import chromahub.rhythm.app.shared.presentation.components.icons.RhythmIcons
 import chromahub.rhythm.app.shared.presentation.components.icons.MaterialSymbolIcon
 import chromahub.rhythm.app.shared.presentation.components.icons.Icon
+import android.widget.Toast
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateContentSize
@@ -185,6 +186,26 @@ private fun StatsPageContent(
         isLoading = false
     }
 
+    val context = LocalContext.current
+    val songMap = remember(songs) { songs.associateBy { it.id } }
+    val onSaveTopSongsAsPlaylist: (() -> Unit)? = remember(statsSummary, songMap, range) {
+        val summary = statsSummary ?: return@remember null
+        val matchedSongs = summary.topSongs.mapNotNull { songMap[it.songId] }
+        if (matchedSongs.isEmpty()) null
+        else {
+            {
+                val rangeName = range.name.lowercase().replaceFirstChar { it.uppercase() }
+                val playlistName = "Top Songs ($rangeName)"
+                viewModel.createPlaylist(playlistName, matchedSongs)
+                Toast.makeText(
+                    context,
+                    context.getString(R.string.settings_saved_top_songs_playlist, playlistName, matchedSongs.size),
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+    }
+
     val pageScrollState = rememberScrollState()
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -240,7 +261,8 @@ private fun StatsPageContent(
                             CategoryMetricsSection(
                                 stats = stats, 
                                 artists = artists,
-                                useHoursFormat = useHoursFormat
+                                useHoursFormat = useHoursFormat,
+                                onSaveTopSongsAsPlaylist = onSaveTopSongsAsPlaylist
                             )
                         }
                     }
@@ -261,7 +283,8 @@ private fun StatsPageContent(
                         CategoryMetricsSection(
                             stats = stats, 
                             artists = artists,
-                            useHoursFormat = useHoursFormat
+                            useHoursFormat = useHoursFormat,
+                            onSaveTopSongsAsPlaylist = onSaveTopSongsAsPlaylist
                         )
 
                         ListeningHabitsCard(
@@ -465,7 +488,8 @@ private fun ListeningOverviewCard(
 @Composable
 private fun TopSongsList(
     stats: PlaybackStatsRepository.PlaybackStatsSummary,
-    useHoursFormat: Boolean
+    useHoursFormat: Boolean,
+    onSaveAsPlaylist: (() -> Unit)? = null
 ) {
     if (stats.topSongs.isEmpty()) return
 
@@ -551,12 +575,35 @@ private fun TopSongsList(
         modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Text(
-            text = stringResource(R.string.rhythmstatsscreen_top_songs),
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurface
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = stringResource(R.string.rhythmstatsscreen_top_songs),
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            if (onSaveAsPlaylist != null) {
+                FilledTonalButton(
+                    onClick = onSaveAsPlaylist,
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                ) {
+                    Icon(
+                        imageVector = RhythmIcons.Add,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = stringResource(R.string.settings_save_top_songs_as_playlist),
+                        style = MaterialTheme.typography.labelMedium
+                    )
+                }
+            }
+        }
 
         Material3SettingsGroup(
             items = items,
@@ -656,7 +703,8 @@ private data class CategoryMetricEntry(
 private fun CategoryMetricsSection(
     stats: PlaybackStatsRepository.PlaybackStatsSummary,
     artists: List<Artist>,
-    useHoursFormat: Boolean
+    useHoursFormat: Boolean,
+    onSaveTopSongsAsPlaylist: (() -> Unit)? = null
 ) {
     var selectedDimension by remember { mutableStateOf(CategoryDimension.SONG) }
 
@@ -704,7 +752,11 @@ private fun CategoryMetricsSection(
             label = "categorySectionTransition"
         ) { targetDimension ->
             when (targetDimension) {
-                CategoryDimension.SONG -> TopSongsList(stats = stats, useHoursFormat = useHoursFormat)
+                CategoryDimension.SONG -> TopSongsList(
+                    stats = stats,
+                    useHoursFormat = useHoursFormat,
+                    onSaveAsPlaylist = onSaveTopSongsAsPlaylist
+                )
                 CategoryDimension.ARTIST -> TopArtistsList(stats = stats, artists = artists)
                 else -> {
                     val entries = when (targetDimension) {
