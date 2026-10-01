@@ -39,7 +39,13 @@ import chromahub.rhythm.app.infrastructure.audio.RhythmSpatializationProcessor
 import chromahub.rhythm.app.infrastructure.audio.RhythmMonoAudioProcessor
 import chromahub.rhythm.app.shared.data.model.TransitionSettings
 import chromahub.rhythm.app.infrastructure.service.player.replaygain.ReplayGainAudioProcessor
+import chromahub.rhythm.app.infrastructure.service.player.replaygain.ReplayGainCache
 import chromahub.rhythm.app.infrastructure.service.player.replaygain.ReplayGainUtil
+import androidx.media3.exoplayer.audio.AudioSink
+import androidx.media3.exoplayer.audio.ForwardingAudioSink
+import androidx.media3.common.audio.SonicAudioProcessor
+import androidx.media3.exoplayer.audio.DefaultAudioSink
+import androidx.media3.exoplayer.audio.SilenceSkippingAudioProcessor
 import chromahub.rhythm.app.util.envelope
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CancellationException
@@ -154,6 +160,10 @@ class RhythmPlayerEngine(
             Log.d(TAG, "Tracks changed")
             val format = tracks.getFirstSelectedTrackFormatByType(C.TRACK_TYPE_AUDIO)
             if (format != null) {
+                val info = ReplayGainUtil.parse(format)
+                masterPlayer.currentMediaItem?.mediaId?.let { id ->
+                    ReplayGainCache.put(id, info)
+                }
                 activeReplayGainProcessor?.setRootFormat(format)
             }
         }
@@ -325,14 +335,33 @@ class RhythmPlayerEngine(
                     processors.add(replayGainProcessor)
                 }
                 
-                return if (processors.isNotEmpty()) {
-                    androidx.media3.exoplayer.audio.DefaultAudioSink.Builder(context)
-                        .setEnableFloatOutput(enableFloatOutput)
-                        .setEnableAudioOutputPlaybackParameters(enableAudioTrackPlaybackParams)
-                        .setAudioProcessors(processors.toTypedArray())
-                        .build()
+                val silenceSkippingProcessor = SilenceSkippingAudioProcessor(
+                    /* minimumSilenceDurationUs = */ 500_000L,
+                    /* silenceRetentionRatio = */ 0.1f,
+                    /* maxSilenceToKeepDurationUs = */ 1_000_000L,
+                    /* minVolumeToKeepPercentageWhenMuting = */ 0,
+                    /* silenceThresholdLevel = */ 128.toShort()
+                )
+                val processorChain = DefaultAudioSink.DefaultAudioProcessorChain(
+                    processors.toTypedArray(),
+                    silenceSkippingProcessor,
+                    SonicAudioProcessor()
+                )
+                val baseSink = DefaultAudioSink.Builder(context)
+                    .setEnableFloatOutput(enableFloatOutput)
+                    .setEnableAudioOutputPlaybackParameters(enableAudioTrackPlaybackParams)
+                    .setAudioProcessorChain(processorChain)
+                    .build()
+
+                return if (replayGainProcessor != null) {
+                    object : ForwardingAudioSink(baseSink) {
+                        override fun configure(audioSinkConfig: AudioSink.AudioSinkConfig) {
+                            replayGainProcessor.setRootFormat(audioSinkConfig.format)
+                            super.configure(audioSinkConfig)
+                        }
+                    }
                 } else {
-                    super.buildAudioSink(context, enableFloatOutput, enableAudioTrackPlaybackParams)
+                    baseSink
                 }
             }
         }.apply {
@@ -387,7 +416,7 @@ class RhythmPlayerEngine(
         val defaultParams = TrackSelectionParameters.DEFAULT
         val trackSelectionParameters = buildTrackSelectionParameters(defaultParams, appSettings)
 
-        return ExoPlayer.Builder(context, renderersFactory)
+        val player = ExoPlayer.Builder(context, renderersFactory)
             .setLoadControl(loadControl)
             .setMediaSourceFactory(mediaSourceFactory)
             .setSeekBackIncrementMs(10_000L)
@@ -402,6 +431,24 @@ class RhythmPlayerEngine(
                 setSeekParameters(SeekParameters.EXACT)
                 playWhenReady = false
             }
+
+        if (replayGainProcessor != null) {
+            player.addListener(object : Player.Listener {
+                override fun onTracksChanged(tracks: androidx.media3.common.Tracks) {
+                    val currentMediaId = player.currentMediaItem?.mediaId
+                    val format = tracks.getFirstSelectedTrackFormatByType(C.TRACK_TYPE_AUDIO)
+                    if (format != null) {
+                        val info = ReplayGainUtil.parse(format)
+                        if (currentMediaId != null) {
+                            ReplayGainCache.put(currentMediaId, info)
+                        }
+                        replayGainProcessor.setRootFormat(format)
+                    }
+                }
+            })
+        }
+
+        return player
     }
 
     fun setPauseAtEndOfMediaItems(shouldPause: Boolean) {
@@ -439,6 +486,9 @@ class RhythmPlayerEngine(
     fun prepareNext(mediaItem: MediaItem, startPositionMs: Long = 0L) {
         try {
             Log.d(TAG, "prepareNext called for ${mediaItem.mediaId}")
+            ReplayGainCache.get(mediaItem.mediaId)?.let { cachedInfo ->
+                playerBReplayGain.setTags(cachedInfo)
+            }
             playerB.stop()
             playerB.clearMediaItems()
             playerB.playWhenReady = false
@@ -608,10 +658,20 @@ class RhythmPlayerEngine(
         activeReplayGainProcessor = incomingReplayGain
 
         // Sync ReplayGain formats for the incoming player
-        val tracks = playerA.currentTracks
-        val format = tracks.getFirstSelectedTrackFormatByType(C.TRACK_TYPE_AUDIO)
-        if (format != null) {
-            incomingReplayGain.setRootFormat(format)
+        val mediaIdToSync = playerA.currentMediaItem?.mediaId ?: incomingMediaId
+        val cachedTags = ReplayGainCache.get(mediaIdToSync)
+        if (cachedTags != null) {
+            incomingReplayGain.setTags(cachedTags)
+        } else {
+            val tracks = playerA.currentTracks
+            val format = tracks.getFirstSelectedTrackFormatByType(C.TRACK_TYPE_AUDIO)
+            if (format != null) {
+                val info = ReplayGainUtil.parse(format)
+                if (mediaIdToSync != null) {
+                    ReplayGainCache.put(mediaIdToSync, info)
+                }
+                incomingReplayGain.setRootFormat(format)
+            }
         }
 
         playerB.pauseAtEndOfMediaItems = true

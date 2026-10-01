@@ -7,12 +7,14 @@ package chromahub.rhythm.app.infrastructure.service.player.replaygain
 
 import androidx.media3.common.C
 import androidx.media3.common.Format
+import androidx.media3.common.Timeline
 import androidx.media3.common.audio.AudioProcessor
 import androidx.media3.common.audio.BaseAudioProcessor
 import androidx.media3.common.util.Log
 import androidx.media3.common.util.Util
 import androidx.media3.exoplayer.audio.ToFloatPcmAudioProcessor
 import java.nio.ByteBuffer
+import kotlin.math.abs
 
 @androidx.media3.common.util.UnstableApi
 class ReplayGainAudioProcessor : BaseAudioProcessor() {
@@ -37,16 +39,25 @@ class ReplayGainAudioProcessor : BaseAudioProcessor() {
     var boostGainChangedListener: (() -> Unit)? = null
     var offloadEnabledChangedListener: (() -> Unit)? = null
     private val toFloatPcmAudioProcessor = ToFloatPcmAudioProcessor()
-    private var gain = 1f
+    var targetGain = 1f
+        private set
+    var currentGain = 1f
+        private set
+    val gain: Float
+        get() = targetGain
     private var kneeThresholdDb: Float? = null
     private var outputFloat: Boolean? = null
     private var pendingOutputFloat: Boolean? = null
+    @Volatile
     private var tags: ReplayGainUtil.ReplayGainInfo? = null
 
     override fun queueInput(inputBuffer: ByteBuffer) {
         val frameCount = inputBuffer.remaining() / inputAudioFormat.bytesPerFrame
         val outputBuffer = replaceOutputBuffer(frameCount * outputAudioFormat.bytesPerFrame)
         if (inputBuffer.hasRemaining()) {
+            val localTargetGain = targetGain
+            val localCurrentGain = currentGain
+
             if (compressor != null) {
                 var inputForCompressor = inputBuffer
                 if (toFloatPcmAudioProcessor.isActive) {
@@ -55,51 +66,101 @@ class ReplayGainAudioProcessor : BaseAudioProcessor() {
                 }
                 compressor!!.compress(
                     inputAudioFormat.channelCount,
-                    gain,
+                    localTargetGain,
                     kneeThresholdDb!!, 1f, inputForCompressor,
                     outputBuffer, frameCount
                 )
                 inputForCompressor.position(inputForCompressor.limit())
                 outputBuffer.position(frameCount * outputAudioFormat.bytesPerFrame)
+                currentGain = localTargetGain
             } else {
-                if (gain == 1f) {
+                if (localCurrentGain == 1f && localTargetGain == 1f) {
                     outputBuffer.put(inputBuffer)
                 } else {
-                    while (inputBuffer.hasRemaining()) {
-                        when (inputAudioFormat.encoding) {
-                            C.ENCODING_PCM_8BIT -> outputBuffer.put(
-                                (inputBuffer.get() * gain).toInt().toByte()
-                            )
-
-                            C.ENCODING_PCM_16BIT, C.ENCODING_PCM_16BIT_BIG_ENDIAN ->
-                                outputBuffer.putShort(
-                                    (inputBuffer.getShort() * gain).toInt().toShort()
+                    val needsRamp = abs(localTargetGain - localCurrentGain) > 0.0001f
+                    if (!needsRamp) {
+                        val g = localTargetGain
+                        while (inputBuffer.hasRemaining()) {
+                            when (inputAudioFormat.encoding) {
+                                C.ENCODING_PCM_8BIT -> outputBuffer.put(
+                                    (inputBuffer.get() * g).toInt().toByte()
                                 )
 
-                            C.ENCODING_PCM_24BIT, C.ENCODING_PCM_24BIT_BIG_ENDIAN -> {
-                                Util.putInt24(
-                                    outputBuffer, (Util.getInt24(
-                                        inputBuffer,
-                                        inputBuffer.position()
-                                    ) * gain).toInt()
-                                        .shl(8).shr(8)
+                                C.ENCODING_PCM_16BIT, C.ENCODING_PCM_16BIT_BIG_ENDIAN ->
+                                    outputBuffer.putShort(
+                                        (inputBuffer.getShort() * g).toInt().toShort()
+                                    )
+
+                                C.ENCODING_PCM_24BIT, C.ENCODING_PCM_24BIT_BIG_ENDIAN -> {
+                                    Util.putInt24(
+                                        outputBuffer, (Util.getInt24(
+                                            inputBuffer,
+                                            inputBuffer.position()
+                                        ) * g).toInt()
+                                            .shl(8).shr(8)
+                                    )
+                                    inputBuffer.position(inputBuffer.position() + 3)
+                                }
+
+                                C.ENCODING_PCM_32BIT, C.ENCODING_PCM_32BIT_BIG_ENDIAN ->
+                                    outputBuffer.putInt((inputBuffer.getInt() * g).toInt())
+
+                                C.ENCODING_PCM_FLOAT -> outputBuffer.putFloat(
+                                    inputBuffer.getFloat() * g
                                 )
-                                inputBuffer.position(inputBuffer.position() + 3)
+
+                                C.ENCODING_PCM_DOUBLE -> outputBuffer.putDouble(
+                                    inputBuffer.getDouble() * g
+                                )
+
+                                else -> throw IllegalStateException("unreachable, bad encoding")
                             }
-
-                            C.ENCODING_PCM_32BIT, C.ENCODING_PCM_32BIT_BIG_ENDIAN ->
-                                outputBuffer.putInt((inputBuffer.getInt() * gain).toInt())
-
-                            C.ENCODING_PCM_FLOAT -> outputBuffer.putFloat(
-                                inputBuffer.getFloat() * gain
-                            )
-
-                            C.ENCODING_PCM_DOUBLE -> outputBuffer.putDouble(
-                                inputBuffer.getDouble() * gain
-                            )
-
-                            else -> throw IllegalStateException("unreachable, bad encoding")
                         }
+                        currentGain = localTargetGain
+                    } else {
+                        val gainStep = if (frameCount > 0) (localTargetGain - localCurrentGain) / frameCount else 0f
+                        var effectiveGain = localCurrentGain
+                        val channels = inputAudioFormat.channelCount
+                        for (f in 0 until frameCount) {
+                            effectiveGain += gainStep
+                            for (c in 0 until channels) {
+                                when (inputAudioFormat.encoding) {
+                                    C.ENCODING_PCM_8BIT -> outputBuffer.put(
+                                        (inputBuffer.get() * effectiveGain).toInt().toByte()
+                                    )
+
+                                    C.ENCODING_PCM_16BIT, C.ENCODING_PCM_16BIT_BIG_ENDIAN ->
+                                        outputBuffer.putShort(
+                                            (inputBuffer.getShort() * effectiveGain).toInt().toShort()
+                                        )
+
+                                    C.ENCODING_PCM_24BIT, C.ENCODING_PCM_24BIT_BIG_ENDIAN -> {
+                                        Util.putInt24(
+                                            outputBuffer, (Util.getInt24(
+                                                inputBuffer,
+                                                inputBuffer.position()
+                                            ) * effectiveGain).toInt()
+                                                .shl(8).shr(8)
+                                        )
+                                        inputBuffer.position(inputBuffer.position() + 3)
+                                    }
+
+                                    C.ENCODING_PCM_32BIT, C.ENCODING_PCM_32BIT_BIG_ENDIAN ->
+                                        outputBuffer.putInt((inputBuffer.getInt() * effectiveGain).toInt())
+
+                                    C.ENCODING_PCM_FLOAT -> outputBuffer.putFloat(
+                                        inputBuffer.getFloat() * effectiveGain
+                                    )
+
+                                    C.ENCODING_PCM_DOUBLE -> outputBuffer.putDouble(
+                                        inputBuffer.getDouble() * effectiveGain
+                                    )
+
+                                    else -> throw IllegalStateException("unreachable, bad encoding")
+                                }
+                            }
+                        }
+                        currentGain = localTargetGain
                     }
                 }
             }
@@ -136,7 +197,7 @@ class ReplayGainAudioProcessor : BaseAudioProcessor() {
         return inputAudioFormat
     }
 
-    fun setMode(mode: ReplayGainUtil.Mode, doNotNotifyListener: Boolean): Boolean {
+    fun setMode(mode: ReplayGainUtil.Mode, doNotNotifyListener: Boolean = false): Boolean {
         val listener: (() -> Unit)?
         synchronized(this) {
             if (this.mode == mode) {
@@ -217,8 +278,21 @@ class ReplayGainAudioProcessor : BaseAudioProcessor() {
     }
 
     fun setRootFormat(inputFormat: Format) {
-        tags = ReplayGainUtil.parse(inputFormat)
+        val parsedTags = ReplayGainUtil.parse(inputFormat)
+        synchronized(this) {
+            tags = parsedTags
+        }
+        applyGain()
     }
+
+    fun setTags(newTags: ReplayGainUtil.ReplayGainInfo?) {
+        synchronized(this) {
+            tags = newTags
+        }
+        applyGain()
+    }
+
+    fun getTags(): ReplayGainUtil.ReplayGainInfo? = synchronized(this) { tags }
 
     private fun computeGain(): Pair<Float, Float?>? {
         val mode: ReplayGainUtil.Mode
@@ -244,14 +318,23 @@ class ReplayGainAudioProcessor : BaseAudioProcessor() {
         }
         val gainPair = computeGain()
         val hasCompressor = gainPair?.second != null || (gainPair == null && reduceGain && nonRgGain > 0)
+
+        // Always update targetGain so gain attenuation is never blocked even if float configuration is pending
+        val newTargetGain = gainPair?.first ?: ReplayGainUtil.dbToAmpl(nonRgGain.toFloat())
+        this.targetGain = newTargetGain
+
+        // If currentGain was at default full volume (1f) and we now have an attenuation target,
+        // snap currentGain directly to newTargetGain so audio starts immediately at normalized level
+        if (currentGain == 1f && newTargetGain != 1f && mode != ReplayGainUtil.Mode.None) {
+            currentGain = newTargetGain
+        }
+
         if (hasCompressor != outputFloat) {
             return false
         }
         if (gainPair != null) {
-            this.gain = gainPair.first
             this.kneeThresholdDb = gainPair.second
         } else {
-            this.gain = ReplayGainUtil.dbToAmpl(nonRgGain.toFloat())
             if (reduceGain && nonRgGain > 0) {
                 val postGainPeakDb = nonRgGain.toFloat()
                 this.kneeThresholdDb = postGainPeakDb - postGainPeakDb * ReplayGainUtil.RATIO / (ReplayGainUtil.RATIO - 1f)
@@ -282,8 +365,37 @@ class ReplayGainAudioProcessor : BaseAudioProcessor() {
     override fun onFlush(streamMetadata: AudioProcessor.StreamMetadata) {
         outputFloat = pendingOutputFloat
         toFloatPcmAudioProcessor.flush(streamMetadata)
+        resolveTagsFromStreamMetadata(streamMetadata)
         if (!applyGain())
             Log.d(TAG, "raced between flush and configure, do nothing for now")
+        if (mode != ReplayGainUtil.Mode.None) {
+            currentGain = targetGain
+        }
+    }
+
+    private fun resolveTagsFromStreamMetadata(streamMetadata: AudioProcessor.StreamMetadata) {
+        try {
+            val timeline = streamMetadata.timeline
+            val periodUid = streamMetadata.periodUid
+            if (!timeline.isEmpty && periodUid != null) {
+                val period = Timeline.Period()
+                val periodIndex = timeline.getIndexOfPeriod(periodUid)
+                if (periodIndex != C.INDEX_UNSET) {
+                    timeline.getPeriod(periodIndex, period)
+                    val window = Timeline.Window()
+                    timeline.getWindow(period.windowIndex, window)
+                    val mediaId = window.mediaItem.mediaId
+                    val cachedTags = ReplayGainCache.get(mediaId)
+                    if (cachedTags != null) {
+                        synchronized(this) {
+                            tags = cachedTags
+                        }
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Could not resolve ReplayGain tags from streamMetadata", e)
+        }
     }
 
     override fun onReset() {

@@ -63,6 +63,7 @@ class TransitionController(
     private var scheduleGeneration: Long = 0L
     private var currentState: TransitionState = TransitionState.IDLE
     private var completionListener: TransitionListener? = null
+    private var pendingScheduleMediaItem: MediaItem? = null
 
     fun setTransitionListener(listener: TransitionListener) {
         completionListener = listener
@@ -110,8 +111,15 @@ class TransitionController(
                 delay(100)
             }
 
-            if (isActive && generation == scheduleGeneration) {
+            if (isActive) {
                 setState(TransitionState.IDLE)
+                val itemToSchedule = pendingScheduleMediaItem ?: engine.masterPlayer.currentMediaItem
+                pendingScheduleMediaItem = null
+                val player = engine.masterPlayer
+                if (itemToSchedule != null && (player.isPlaying || player.playWhenReady)) {
+                    Log.d(TAG, "Transition finished. Rescheduling transition for track: ${itemToSchedule.mediaId}")
+                    scheduleTransitionFor(itemToSchedule)
+                }
             }
         }
     }
@@ -136,8 +144,13 @@ class TransitionController(
             currentObservedPlayer = newPlayer
             newPlayer.addListener(listener)
 
-            if (newPlayer.isPlaying) {
-                newPlayer.currentMediaItem?.let { scheduleTransitionFor(it) }
+            val currentItem = newPlayer.currentMediaItem
+            if (currentItem != null) {
+                if (currentState == TransitionState.TRANSITIONING) {
+                    pendingScheduleMediaItem = currentItem
+                } else if (newPlayer.isPlaying || newPlayer.playWhenReady) {
+                    scheduleTransitionFor(currentItem)
+                }
             }
         }
     }
@@ -225,7 +238,8 @@ class TransitionController(
      */
     private fun scheduleTransitionFor(currentMediaItem: MediaItem) {
         if (currentState == TransitionState.TRANSITIONING) {
-            Log.d(TAG, "Cannot schedule new transition while actively transitioning")
+            Log.d(TAG, "Cannot schedule immediately while actively transitioning; stashing ${currentMediaItem.mediaId} for post-transition.")
+            pendingScheduleMediaItem = currentMediaItem
             return
         }
 
@@ -423,6 +437,7 @@ class TransitionController(
         Log.d(TAG, "Handling seek to ${positionMs}ms for ${mediaItem.mediaId}")
 
         // Cancel any pending transitions
+        pendingScheduleMediaItem = null
         invalidateScheduledTransitions()
         transitionSchedulerJob?.cancel()
 
@@ -470,6 +485,7 @@ class TransitionController(
 
     fun cancelPendingTransition() {
         Log.d(TAG, "cancelPendingTransition requested")
+        pendingScheduleMediaItem = null
         invalidateScheduledTransitions()
         transitionSchedulerJob?.cancel()
         transitionCompletionWatchJob?.cancel()

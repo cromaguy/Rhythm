@@ -44,6 +44,7 @@ import chromahub.rhythm.app.shared.data.model.Song
 import chromahub.rhythm.app.infrastructure.service.player.RhythmPlayerEngine
 import chromahub.rhythm.app.infrastructure.service.player.TransitionController
 import chromahub.rhythm.app.infrastructure.service.player.PreloadController
+import chromahub.rhythm.app.infrastructure.service.player.replaygain.ReplayGainCache
 import chromahub.rhythm.app.infrastructure.service.util.RhythmBitmapLoader
 import chromahub.rhythm.app.infrastructure.widget.WidgetUpdater
 import com.google.common.collect.ImmutableList
@@ -1081,6 +1082,13 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
                 ) {
                     Log.d(TAG, "Ignoring metadata-only player transition for mediaId=$transitionMediaId")
                     return
+                }
+
+                if (transitionMediaId != null && ::rhythmPlayerEngine.isInitialized) {
+                    val cachedTags = ReplayGainCache.get(transitionMediaId)
+                    if (cachedTags != null) {
+                        rhythmPlayerEngine.getActiveReplayGainProcessor()?.setTags(cachedTags)
+                    }
                 }
 
 

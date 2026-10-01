@@ -237,6 +237,7 @@ import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.key
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -351,9 +352,9 @@ fun EqualizerScreen(
     }
 
     // Local mutable states for UI
-    var isEqualizerEnabled by remember(equalizerEnabledState) { mutableStateOf(equalizerEnabledState) }
-    var selectedPreset by remember(equalizerPresetState) { mutableStateOf(equalizerPresetState) }
-    var bandLevels by remember(equalizerBandLevelsState) {
+    var isEqualizerEnabled by remember { mutableStateOf(equalizerEnabledState) }
+    var selectedPreset by remember { mutableStateOf(equalizerPresetState) }
+    var bandLevels by remember {
         mutableStateOf(
             equalizerBandLevelsState.split(",").mapNotNull { it.toFloatOrNull() }.let { levels ->
                 when {
@@ -363,6 +364,31 @@ fun EqualizerScreen(
                 }
             }
         )
+    }
+
+    LaunchedEffect(equalizerEnabledState) {
+        if (isEqualizerEnabled != equalizerEnabledState) {
+            isEqualizerEnabled = equalizerEnabledState
+        }
+    }
+
+    LaunchedEffect(equalizerPresetState) {
+        if (selectedPreset != equalizerPresetState) {
+            selectedPreset = equalizerPresetState
+        }
+    }
+
+    LaunchedEffect(equalizerBandLevelsState) {
+        val parsed = equalizerBandLevelsState.split(",").mapNotNull { it.toFloatOrNull() }.let { levels ->
+            when {
+                levels.size == 10 -> levels
+                levels.size == 5 -> List(10) { if (it < 5) levels[it] else 0f }
+                else -> List(10) { 0f }
+            }
+        }
+        if (parsed != bandLevels) {
+            bandLevels = parsed
+        }
     }
     var isBassBoostEnabled by remember(bassBoostEnabledState) { mutableStateOf(bassBoostEnabledState) }
     var bassBoostStrength by remember(bassBoostStrengthState) { mutableFloatStateOf(bassBoostStrengthState.toFloat()) }
@@ -1021,56 +1047,58 @@ fun EqualizerScreen(
                     val tertiaryColor = MaterialTheme.colorScheme.tertiary
 
                     bandLevels.forEachIndexed { index, level ->
-                        val bandColor = when (index) {
-                            0, 1 -> secondaryColor
-                            2, 3, 4, 5, 6, 7 -> primaryColor
-                            else -> tertiaryColor
-                        }
-                        val bandThumbColor = when (index) {
-                            0, 1 -> MaterialTheme.colorScheme.onSecondary
-                            2, 3, 4, 5, 6, 7 -> MaterialTheme.colorScheme.onPrimary
-                            else -> MaterialTheme.colorScheme.onTertiary
-                        }
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(16.dp)
-                        ) {
-                            Column(
-                                modifier = Modifier.width(48.dp),
-                                horizontalAlignment = Alignment.End
-                            ) {
-                                Text(
-                                    text = frequencyLabels[index],
-                                    style = MaterialTheme.typography.labelMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
+                        key(index) {
+                            val bandColor = when (index) {
+                                0, 1 -> secondaryColor
+                                2, 3, 4, 5, 6, 7 -> primaryColor
+                                else -> tertiaryColor
+                            }
+                            val bandThumbColor = when (index) {
+                                0, 1 -> MaterialTheme.colorScheme.onSecondary
+                                2, 3, 4, 5, 6, 7 -> MaterialTheme.colorScheme.onPrimary
+                                else -> MaterialTheme.colorScheme.onTertiary
                             }
 
-                            CookieHorizontalSlider(
-                                value = level,
-                                onValueChange = { roundedLevel ->
-                                    updateBandLevel(index, roundedLevel)
-                                },
-                                valueRange = -15f..15f,
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .height(36.dp),
-                                activeTrackColor = bandColor,
-                                inactiveTrackColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                                thumbColor = bandThumbColor
-                            )
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                            ) {
+                                Column(
+                                    modifier = Modifier.width(48.dp),
+                                    horizontalAlignment = Alignment.End
+                                ) {
+                                    Text(
+                                        text = frequencyLabels[index],
+                                        style = MaterialTheme.typography.labelMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                }
 
-                            Text(
-                                text = if (level > 0) "+${String.format(Locale.ROOT, "%.1f", level)}" else String.format(Locale.ROOT, "%.1f", level),
-                                style = MaterialTheme.typography.labelMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = bandColor,
-                                modifier = Modifier.width(40.dp),
-                                textAlign = TextAlign.End
-                            )
+                                CookieHorizontalSlider(
+                                    value = level,
+                                    onValueChange = { roundedLevel ->
+                                        updateBandLevel(index, roundedLevel)
+                                    },
+                                    valueRange = -15f..15f,
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(36.dp),
+                                    activeTrackColor = bandColor,
+                                    inactiveTrackColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                    thumbColor = bandThumbColor
+                                )
+
+                                Text(
+                                    text = if (level > 0) "+${String.format(Locale.ROOT, "%.1f", level)}" else String.format(Locale.ROOT, "%.1f", level),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = bandColor,
+                                    modifier = Modifier.width(40.dp),
+                                    textAlign = TextAlign.End
+                                )
+                            }
                         }
                     }
 

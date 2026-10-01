@@ -18,6 +18,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -121,6 +122,7 @@ fun CookieHorizontalSlider(
     modifier: Modifier = Modifier,
     step: Float = 0.5f,
     enabled: Boolean = true,
+    onValueChangeFinished: (() -> Unit)? = null,
     activeTrackColor: Color = MaterialTheme.colorScheme.primary,
     inactiveTrackColor: Color = MaterialTheme.colorScheme.surfaceContainerHighest,
     thumbColor: Color = MaterialTheme.colorScheme.surface,
@@ -134,17 +136,23 @@ fun CookieHorizontalSlider(
     val hapticFeedback = LocalHapticFeedback.current
     val view = LocalView.current
 
+    val currentOnValueChange by rememberUpdatedState(onValueChange)
+    val currentOnValueChangeFinished by rememberUpdatedState(onValueChangeFinished)
+
     val thumbSizePx = with(density) { thumbSize.toPx() }
     val thumbRadiusPx = thumbSizePx / 2f
 
     val normalizedValue = ((value - valueRange.start) / (valueRange.endInclusive - valueRange.start)).coerceIn(0f, 1f)
 
+    var lastDispatchedValue by remember { mutableFloatStateOf(value) }
     var lastHapticValue by remember { mutableFloatStateOf(value) }
     var isInteracting by remember { mutableStateOf(false) }
     var dragNormalizedValue by remember { mutableFloatStateOf(normalizedValue) }
 
-    LaunchedEffect(normalizedValue, isInteracting) {
+    LaunchedEffect(value, normalizedValue, isInteracting) {
         if (!isInteracting) {
+            lastDispatchedValue = value
+            lastHapticValue = value
             dragNormalizedValue = normalizedValue
         }
     }
@@ -202,49 +210,56 @@ fun CookieHorizontalSlider(
                             round(rawValue * 10f) / 10f
                         }.coerceIn(valueRange.start, valueRange.endInclusive)
 
-                        val snappedNormalized = ((snappedValue - valueRange.start) / (valueRange.endInclusive - valueRange.start)).coerceIn(0f, 1f)
+                        val cleanValue = round(snappedValue * 10f) / 10f
+                        val snappedNormalized = ((cleanValue - valueRange.start) / (valueRange.endInclusive - valueRange.start)).coerceIn(0f, 1f)
                         dragNormalizedValue = snappedNormalized
 
-                        onValueChange(snappedValue)
+                        if (forceHaptic || cleanValue != lastDispatchedValue) {
+                            lastDispatchedValue = cleanValue
+                            currentOnValueChange(cleanValue)
 
-                        if (forceHaptic || snappedValue != lastHapticValue) {
-                            val hapticType = if (snappedValue == 0f && lastHapticValue != 0f) {
-                                HapticType.MEDIUM
-                            } else {
-                                HapticType.LIGHT
+                            if (forceHaptic || cleanValue != lastHapticValue) {
+                                val hapticType = if (cleanValue == 0f && lastHapticValue != 0f) {
+                                    HapticType.MEDIUM
+                                } else {
+                                    HapticType.LIGHT
+                                }
+                                HapticUtils.performHapticFeedback(context, hapticFeedback, hapticType)
+                                lastHapticValue = cleanValue
                             }
-                            HapticUtils.performHapticFeedback(context, hapticFeedback, hapticType)
-                            lastHapticValue = snappedValue
                         }
                     }
 
                     awaitEachGesture {
-                        val down = awaitFirstDown(requireUnconsumed = false)
-                        view.parent?.requestDisallowInterceptTouchEvent(true)
-                        isInteracting = true
-                        down.consume()
-                        dispatchValue(down.position.x, forceHaptic = true)
+                        try {
+                            val down = awaitFirstDown(requireUnconsumed = false)
+                            view.parent?.requestDisallowInterceptTouchEvent(true)
+                            isInteracting = true
+                            down.consume()
+                            dispatchValue(down.position.x, forceHaptic = true)
 
-                        var activePointerId = down.id
-                        while (true) {
-                            val event = awaitPointerEvent()
-                            val pointerChange = event.changes.firstOrNull { it.id == activePointerId }
-                                ?: event.changes.firstOrNull { it.pressed }?.also { activePointerId = it.id }
-                                ?: break
+                            var activePointerId = down.id
+                            while (true) {
+                                val event = awaitPointerEvent()
+                                val pointerChange = event.changes.firstOrNull { it.id == activePointerId }
+                                    ?: event.changes.firstOrNull { it.pressed }?.also { activePointerId = it.id }
+                                    ?: break
 
-                            if (!pointerChange.pressed) {
-                                pointerChange.consume()
-                                break
+                                if (!pointerChange.pressed) {
+                                    pointerChange.consume()
+                                    break
+                                }
+
+                                if (pointerChange.position.x != pointerChange.previousPosition.x) {
+                                    pointerChange.consume()
+                                    dispatchValue(pointerChange.position.x)
+                                }
                             }
-
-                            if (pointerChange.position.x != pointerChange.previousPosition.x) {
-                                pointerChange.consume()
-                                dispatchValue(pointerChange.position.x)
-                            }
+                        } finally {
+                            isInteracting = false
+                            view.parent?.requestDisallowInterceptTouchEvent(false)
+                            currentOnValueChangeFinished?.invoke()
                         }
-
-                        isInteracting = false
-                        view.parent?.requestDisallowInterceptTouchEvent(false)
                     }
                 }
         ) {

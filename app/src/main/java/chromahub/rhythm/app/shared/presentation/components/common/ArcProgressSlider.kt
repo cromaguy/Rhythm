@@ -43,6 +43,7 @@ fun ArcProgressSlider(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     valueRange: ClosedFloatingPointRange<Float> = 0f..1f,
+    onValueChangeFinished: (() -> Unit)? = null,
     activeTrackColor: Color = MaterialTheme.colorScheme.primary,
     inactiveTrackColor: Color = MaterialTheme.colorScheme.surfaceVariant,
     thumbColor: Color = MaterialTheme.colorScheme.primary,
@@ -57,6 +58,9 @@ fun ArcProgressSlider(
     val context = LocalContext.current
     val hapticFeedback = LocalHapticFeedback.current
     val view = LocalView.current
+
+    val currentOnValueChange by rememberUpdatedState(onValueChange)
+    val currentOnValueChangeFinished by rememberUpdatedState(onValueChangeFinished)
 
     val trackThicknessPx = with(density) { trackThickness.toPx() }
     val thumbSizePx = with(density) { thumbSize.toPx() }
@@ -79,6 +83,12 @@ fun ArcProgressSlider(
 
     // Store integer value for haptic feedback
     var lastHapticValue by remember { mutableIntStateOf(value.roundToInt()) }
+
+    LaunchedEffect(value, isInteracting) {
+        if (!isInteracting) {
+            lastHapticValue = value.roundToInt()
+        }
+    }
 
     BoxWithConstraints(
         modifier = modifier,
@@ -117,41 +127,44 @@ fun ArcProgressSlider(
                 .pointerInput(enabled, view, valueRange.start, valueRange.endInclusive, startAngle, sweepAngle, arcCenter) {
                     if (!enabled) return@pointerInput
                     awaitEachGesture {
-                        val down = awaitFirstDown(requireUnconsumed = false)
-                        view.parent?.requestDisallowInterceptTouchEvent(true)
-                        isInteracting = true
-                        down.consume()
+                        try {
+                            val down = awaitFirstDown(requireUnconsumed = false)
+                            view.parent?.requestDisallowInterceptTouchEvent(true)
+                            isInteracting = true
+                            down.consume()
 
-                        fun dispatchValue(point: Offset, forceHaptic: Boolean = false) {
-                            val newValue = mapTouchToValue(point)
-                            onValueChange(newValue)
-                            val newInt = newValue.roundToInt()
-                            if (forceHaptic || newInt != lastHapticValue) {
-                                HapticUtils.performHapticFeedback(context, hapticFeedback, HapticType.LIGHT)
-                                lastHapticValue = newInt
+                            fun dispatchValue(point: Offset, forceHaptic: Boolean = false) {
+                                val newValue = mapTouchToValue(point)
+                                currentOnValueChange(newValue)
+                                val newInt = newValue.roundToInt()
+                                if (forceHaptic || newInt != lastHapticValue) {
+                                    HapticUtils.performHapticFeedback(context, hapticFeedback, HapticType.LIGHT)
+                                    lastHapticValue = newInt
+                                }
                             }
-                        }
 
-                        dispatchValue(down.position, forceHaptic = true)
+                            dispatchValue(down.position, forceHaptic = true)
 
-                        var activePointerId = down.id
-                        while (true) {
-                            val event = awaitPointerEvent()
-                            val pointerChange = event.changes.firstOrNull { it.id == activePointerId }
-                                ?: event.changes.firstOrNull { it.pressed }?.also { activePointerId = it.id }
-                                ?: break
+                            var activePointerId = down.id
+                            while (true) {
+                                val event = awaitPointerEvent()
+                                val pointerChange = event.changes.firstOrNull { it.id == activePointerId }
+                                    ?: event.changes.firstOrNull { it.pressed }?.also { activePointerId = it.id }
+                                    ?: break
 
-                            if (!pointerChange.pressed) {
+                                if (!pointerChange.pressed) {
+                                    pointerChange.consume()
+                                    break
+                                }
+
                                 pointerChange.consume()
-                                break
+                                dispatchValue(pointerChange.position)
                             }
-
-                            pointerChange.consume()
-                            dispatchValue(pointerChange.position)
+                        } finally {
+                            isInteracting = false
+                            view.parent?.requestDisallowInterceptTouchEvent(false)
+                            currentOnValueChangeFinished?.invoke()
                         }
-
-                        isInteracting = false
-                        view.parent?.requestDisallowInterceptTouchEvent(false)
                     }
                 }
         ) {

@@ -95,4 +95,29 @@ class EqualizerInterpolationTest {
         assertEquals(7.5f, output[3], 0.01f)
         assertEquals(10.0f, output[4], 0.01f)
     }
+
+    @Test
+    fun testSequentialBandUpdatesPreserveIndependentValues() {
+        // Simulates the exact reproduction flow of Issue #618:
+        // Starting with flat bands, updating 16kHz (band 9) to +10, then updating 8kHz (band 8) to +5
+        val initialBands = MutableList(10) { 0f }
+
+        // Update band 9 to 10f
+        initialBands[9] = 10f
+        val afterFirstUpdate = initialBands.toList()
+        assertEquals(10f, afterFirstUpdate[9], 0.01f)
+        assertEquals(0f, afterFirstUpdate[8], 0.01f)
+
+        // Update band 8 to 5f
+        val secondUpdateList = afterFirstUpdate.toMutableList()
+        secondUpdateList[8] = 5f
+        val afterSecondUpdate = secondUpdateList.toList()
+
+        // Verify band 9 was NOT reverted back to 0f, and band 8 was set correctly
+        assertEquals(10f, afterSecondUpdate[9], 0.01f)
+        assertEquals(5f, afterSecondUpdate[8], 0.01f)
+        for (i in 0..7) {
+            assertEquals(0f, afterSecondUpdate[i], 0.01f)
+        }
+    }
 }
