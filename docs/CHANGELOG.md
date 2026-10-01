@@ -10,6 +10,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - 
 
+## [5.5.492.1288 Beta] - 2026-10-01
+
+### Added
+- USB DAC and USB headset now appear in the audio output switcher with device product names
+- New Audio Routing dialog to switch between Bit-Perfect, app-managed, and system routing modes
+- Crossfade now has its own dedicated settings screen showing active/disabled/constrained state, with controls for fade duration, repeat-one behavior, and skip behavior
+
+### Fixed
+- Equalizer sliders no longer reset adjacent band values when adjusting a single band (#618)
+- ReplayGain no longer causes a volume burst when switching tracks (#610)
+- Crossfade queue no longer stalls after a few tracks and correctly continues through the playlist (#652)
+- Skip Silence no longer accelerates or distorts quiet song intros (#652)
+- USB DAC playback no longer incorrectly triggers RhythmGuard speaker volume protection
+- ALAC and other high-resolution audio formats (FLAC, Opus) now decode correctly via FFmpeg extension — previously produced silence due to a class reflection failure (#652)
+- Lyrics desync on track skip and queue state loss on shuffle toggle (#612, #613)
+- Recycled bitmap crash in MediaSession artwork scaling (#603)
+- Online artwork no longer disappears when switching tracks or refreshing the library (#616)
+- Jellyfin and Navidrome playback, download endpoints, lyrics, and quality switching (#561, #605, #606, #617)
+- Bluetooth CDM SecurityException handled gracefully instead of crashing
+
+### Performance
+- Audio processors (EQ, Bass Boost, Virtualizer, ReplayGain) now bypass the buffer pipeline entirely when disabled, eliminating unnecessary memory copies per audio packet
+- Preferred audio device now correctly bound to ExoPlayer's AudioTrack so AudioFlinger applies Bit-Perfect mixer configuration instead of falling back to resampling
+
 ## [5.5.487.1274] - 2026-09-18
 
 ### Fixed
