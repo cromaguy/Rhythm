@@ -83,6 +83,13 @@ interface StreamingMusicRepository : MusicRepository {
         limit: Int = MAX_LIBRARY_SONGS,
         onProgress: ((current: Int, total: Int, songsCount: Int) -> Unit)? = null
     ): List<StreamingSong>
+
+    /**
+     * Cheaply checks whether the server library changed since the cached catalog was fetched,
+     * i.e. whether [syncCatalog] would fetch it again. Checks once per process; later calls,
+     * and services that cannot tell, return false.
+     */
+    suspend fun isCatalogOutdated(): Boolean
     
     /**
      * Get browse categories/genres.

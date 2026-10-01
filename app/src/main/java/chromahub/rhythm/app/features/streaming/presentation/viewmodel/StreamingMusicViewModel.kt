@@ -730,6 +730,21 @@ class StreamingMusicViewModel(application: Application) : AndroidViewModel(appli
     }
     
     /**
+     * The disk cache may predate a server-side library change: check cheaply in the background
+     * and run the full sync only if the library did change. The repository runs the check once
+     * per process, so repeated cached loads (e.g. while that sync runs) do not start more syncs.
+     */
+    private fun checkCachedCatalogInBackground() {
+        viewModelScope.launch {
+            val outdated = try { repository.isCatalogOutdated() } catch (e: Exception) { false }
+            if (outdated) {
+                Log.d("StreamingMusicViewModel", "Server library changed since the cached catalog; syncing")
+                loadLibrary(forceSync = true)
+            }
+        }
+    }
+
+    /**
      * Load user's library content.
      * @param forceSync If true, performs a full network sync and shows notifications.
      *                  If false, loads quickly from disk/memory cache without notifications or server overhead.
@@ -788,6 +803,7 @@ class StreamingMusicViewModel(application: Application) : AndroidViewModel(appli
                     _hasLoadedLibrary.value = true
                     _isLoading.value = false
                     Log.d("StreamingMusicViewModel", "Loaded library instantly from disk cache: ${_allSongs.value.size} songs")
+                    checkCachedCatalogInBackground()
                     return@launch
                 } catch (e: Exception) {
                     Log.w("StreamingMusicViewModel", "Fast cache load failed, falling back to network sync", e)

@@ -62,7 +62,9 @@ data class StreamingCatalogCache(
     val artists: List<StreamingArtist> = emptyList(),
     val playlists: List<StreamingPlaylist> = emptyList(),
     val likedSongIds: List<String> = emptyList(),
-    val lastSyncTimestamp: Long = 0L
+    val lastSyncTimestamp: Long = 0L,
+    /** Server library marker the songs were fetched under, or null if not known to be current. */
+    val libraryMarker: String? = null
 )
 
 /**
@@ -149,6 +151,25 @@ class StreamingMusicRepositoryImpl(
 
     /** The catalog cache is loaded on IO, never where the repository is created (main thread). */
     private val initialCatalogLoad: BackgroundLoad
+
+    /**
+     * One catalog sync at a time: several triggers (start-up, network changes, screens) can
+     * request one together, and a request that arrives during a sync joins it.
+     */
+    private val catalogSync = SingleFlight<List<StreamingSong>>()
+
+    /** The cold-start library change check ([isCatalogOutdated]) runs once per process. */
+    private val coldStartCatalogCheck = OnceGate()
+
+    /** Skips rewriting the catalog cache when its content did not change. */
+    private val catalogSaveFilter = CatalogSaveFilter()
+
+    /**
+     * Server library marker ([SubsonicApiClient.getLibraryMarker]) of the catalog in memory, or
+     * null if that catalog is not known to match the server (partial fetch, scan running, etc.).
+     */
+    @Volatile
+    private var catalogLibraryMarker: String? = null
 
     init {
         loadDownloadedSongsIndex()
@@ -273,6 +294,7 @@ class StreamingMusicRepositoryImpl(
     private fun loadCatalogCacheForActiveService(targetServiceId: String? = null) {
         try {
             val serviceId = targetServiceId ?: activeServiceId()
+            catalogLibraryMarker = null
             val cacheFile = getCatalogCacheFile(serviceId)
             if (!cacheFile.exists()) return
 
@@ -285,6 +307,8 @@ class StreamingMusicRepositoryImpl(
                     songCache[song.id] = song
                 }
                 songsFlow.value = cache.songs
+                catalogLibraryMarker = cache.libraryMarker
+                catalogSaveFilter.remember(cache)
 
                 if (cache.albums.isNotEmpty()) {
                     providerAlbumCache.clear()
@@ -346,11 +370,18 @@ class StreamingMusicRepositoryImpl(
                         artists = currentArtists,
                         playlists = currentPlaylists,
                         likedSongIds = currentLikedIds,
-                        lastSyncTimestamp = System.currentTimeMillis()
+                        lastSyncTimestamp = System.currentTimeMillis(),
+                        libraryMarker = catalogLibraryMarker
                     )
+                    // Syncs that change nothing (library unchanged, same playlists and artists)
+                    // would otherwise rewrite the whole multi-megabyte cache several times each.
+                    if (!catalogSaveFilter.hasChanged(cache)) return@write null
                     songCount = currentSongs.size
                     cache
-                }) { cache, out -> gson.toJson(cache, out) }
+                }) { cache, out ->
+                    gson.toJson(cache, out)
+                    catalogSaveFilter.remember(cache)
+                }
                 if (saved) {
                     Log.d("StreamingMusicRepo", "Saved streaming catalog cache for $serviceId ($songCount songs)")
                 }
@@ -403,6 +434,7 @@ class StreamingMusicRepositoryImpl(
 
         try {
             catalogCacheWriter.delete(getCatalogCacheFile(normalized))
+            catalogSaveFilter.remember(null)
         } catch (e: Exception) {
             Log.e("StreamingMusicRepo", "Error deleting catalog cache on disconnect", e)
         }
@@ -1464,6 +1496,27 @@ class StreamingMusicRepositoryImpl(
     ): List<StreamingSong> {
         // Never let the cache load finish after (and overwrite) a newly synced catalog.
         initialCatalogLoad.await()
+        // Never queue a second sync behind a running one: join it and share its result.
+        return catalogSync.run { syncCatalogLocked(limit, onProgress) }
+    }
+
+    override suspend fun isCatalogOutdated(): Boolean {
+        if (appSettings.offlineMode.value) return false
+        // Only Subsonic reports library changes; other services keep using the cache until a
+        // manual refresh. A server that cannot vouch for its library (no lastModified, scan
+        // running) is treated the same way rather than triggering a full fetch on every start.
+        if (activeServiceId() != StreamingServiceId.SUBSONIC || !subsonicClient.isConnected()) return false
+        // Once per process: the cached-start path runs on every library screen load, and a
+        // sync it starts must not trigger further checks while the marker is still stale.
+        if (!coldStartCatalogCheck.tryEnter()) return false
+        val serverMarker = subsonicClient.getLibraryMarker() ?: return false
+        return serverMarker != catalogLibraryMarker
+    }
+
+    private suspend fun syncCatalogLocked(
+        limit: Int,
+        onProgress: ((current: Int, total: Int, songsCount: Int) -> Unit)?
+    ): List<StreamingSong> {
         if (appSettings.offlineMode.value) {
             val downloadedList = downloadedSongsMap.values.toList()
             replaceCatalog(downloadedList)
@@ -1478,15 +1531,26 @@ class StreamingMusicRepositoryImpl(
         // Sync artists directly from provider first so all artists appear immediately
         syncArtists()
 
+        // Subsonic: skip the full album-by-album fetch while the server library is unchanged
+        // since the catalog in memory (from the previous sync or the disk cache) was fetched.
+        val libraryMarker = if (serviceId == StreamingServiceId.SUBSONIC) subsonicClient.getLibraryMarker() else null
+        if (libraryMarker != null && libraryMarker == catalogLibraryMarker && songsFlow.value.isNotEmpty()) {
+            Log.d("StreamingMusicRepo", "Server library unchanged; reusing catalog of ${songsFlow.value.size} songs")
+            refreshSubsonicStarredSongs()
+            syncPlaylists()
+            return songsFlow.value.filterIsInstance<StreamingSong>()
+        }
+
+        val fetchComplete = java.util.concurrent.atomic.AtomicBoolean(true)
         val providerSongs = when (serviceId) {
-            StreamingServiceId.SUBSONIC -> subsonicClient.fetchLibrarySongs(limit, onProgress)
+            StreamingServiceId.SUBSONIC -> subsonicClient.fetchLibrarySongs(limit, onProgress) { fetchComplete.set(false) }
             StreamingServiceId.JELLYFIN -> jellyfinClient.fetchLibrarySongs(limit, onProgress)
             else -> Result.success(emptyList())
         }.getOrElse { emptyList() }
 
         val mappedSongs = mapProviderSongs(serviceId, providerSongs)
-        syncLikedSongIdsFromProviderSongs(serviceId, providerSongs)
-        replaceCatalog(mappedSongs)
+        // A partial fetch (skipped albums) is not marked, so the next sync fetches again.
+        replaceCatalog(mappedSongs, libraryMarker?.takeIf { fetchComplete.get() && providerSongs.isNotEmpty() })
         if (serviceId == StreamingServiceId.SUBSONIC) {
             refreshSubsonicStarredSongs()
         }
@@ -1674,8 +1738,13 @@ class StreamingMusicRepositoryImpl(
         }
     }
 
-    private suspend fun replaceCatalog(songs: List<StreamingSong>) {
+    /**
+     * @param libraryMarker server library marker [songs] were fetched under, if known to be the
+     *        complete, current library (see [SubsonicApiClient.getLibraryMarker]).
+     */
+    private suspend fun replaceCatalog(songs: List<StreamingSong>, libraryMarker: String? = null) {
         val serviceId = activeServiceId()
+        catalogLibraryMarker = libraryMarker
         // Only populate albumsFlow with derived albums if no provider albums are cached
         val deriveAlbums = providerAlbumCache.isEmpty()
         // Grouping thousands of songs into albums/artists is CPU work; keep it off the caller's
@@ -1780,6 +1849,7 @@ class StreamingMusicRepositoryImpl(
     }
 
     private fun clearInMemoryCatalog() {
+        catalogLibraryMarker = null
         songCache.clear()
         followedPlaylistIds.clear()
         songsFlow.value = emptyList()

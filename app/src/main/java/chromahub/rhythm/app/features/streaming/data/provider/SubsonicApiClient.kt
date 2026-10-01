@@ -256,9 +256,14 @@ class SubsonicApiClient internal constructor(
         }
     }
 
+    /**
+     * @param onIncomplete called (possibly from several coroutines) when an album page or an
+     *        album could not be fetched and was skipped, i.e. the result is not the full library.
+     */
     suspend fun fetchLibrarySongs(
         limit: Int = 5_000,
-        onProgress: ((current: Int, total: Int, songsCount: Int) -> Unit)? = null
+        onProgress: ((current: Int, total: Int, songsCount: Int) -> Unit)? = null,
+        onIncomplete: (() -> Unit)? = null
     ): Result<List<ProviderSong>> {
         if (!isConnected()) {
             return Result.failure(IllegalStateException("Subsonic service is not connected"))
@@ -282,6 +287,7 @@ class SubsonicApiClient internal constructor(
                             "offset" to albumOffset.toString()
                         )
                     )
+                    if (albumResult.isFailure) onIncomplete?.invoke()
                     val responseObj = albumResult.getOrNull()
                     val albumList = responseObj?.optJSONObject("albumList2") ?: responseObj?.optJSONObject("albumList")
                     val albums = parseAlbumListCompat(albumList?.opt("album"))
@@ -298,12 +304,14 @@ class SubsonicApiClient internal constructor(
                                             ?.optJSONObject("album")
                                         if (albumResponse == null) {
                                             skippedAlbums.incrementAndGet()
+                                            onIncomplete?.invoke()
                                             return@withPermit emptyList()
                                         }
                                         parseSongList(albumResponse.opt("song"))
                                     } catch (e: Exception) {
                                         Log.w(TAG, "Failed to fetch album $albumId, skipping", e)
                                         skippedAlbums.incrementAndGet()
+                                        onIncomplete?.invoke()
                                         emptyList()
                                     }
                                 }
@@ -336,6 +344,66 @@ class SubsonicApiClient internal constructor(
                 Result.failure(e)
             }
         }
+    }
+
+    /**
+     * Server-side library change state. [lastModified] is the `getIndexes` `lastModified` value
+     * (Navidrome: start time of the last scan, in ms); [scanning] is true while a scan runs
+     * (`getScanStatus`), when the library is in flux.
+     */
+    data class LibraryChangeState(val lastModified: Long, val scanning: Boolean) {
+        /**
+         * Marker for a catalog fetched now by the account [accountKey], or null if this state
+         * cannot vouch for it (no `lastModified` reported, or a scan is running). The library
+         * did not change between two fetches with equal non-null markers.
+         */
+        fun catalogMarker(accountKey: String?): String? {
+            if (accountKey == null || scanning || lastModified <= 0L) return null
+            return "$accountKey:$lastModified"
+        }
+    }
+
+    /**
+     * Marker for the server library as seen by the current account right now (see
+     * [LibraryChangeState.catalogMarker]), or null if it cannot be determined.
+     * Costs two small requests regardless of library size.
+     */
+    suspend fun getLibraryMarker(): String? {
+        if (!isConnected()) return null
+        // A far-future ifModifiedSince makes the server omit the artist index and return
+        // only `lastModified`, so this stays a tiny request even for huge libraries.
+        val farFuture = System.currentTimeMillis() + 365L * 24 * 60 * 60 * 1000
+        val indexes = requestAndParse("getIndexes", mapOf("ifModifiedSince" to farFuture.toString()))
+            .getOrNull()
+            ?.optJSONObject("indexes")
+            ?: return null
+        val scanning = requestAndParse("getScanStatus").getOrNull()
+            ?.optJSONObject("scanStatus")
+            ?.optBoolean("scanning", false) == true
+        return LibraryChangeState(indexes.optLong("lastModified", 0L), scanning)
+            .catalogMarker(catalogAccountKey())
+    }
+
+    /** Provider ids of the user's starred songs (one `getStarred2` request). */
+    suspend fun getStarredSongIds(): Result<Set<String>> {
+        if (!isConnected()) {
+            return Result.failure(IllegalStateException("Subsonic service is not connected"))
+        }
+        return requestAndParse("getStarred2").map { response ->
+            parseSongList(response.optJSONObject("starred2")?.opt("song"))
+                .mapTo(HashSet()) { it.providerId }
+        }
+    }
+
+    /**
+     * Stable key for the current server + account + auth mode, so a cached catalog is only
+     * trusted for the account that fetched it. Contains no password material.
+     */
+    private fun catalogAccountKey(): String? {
+        val cred = credentials ?: return null
+        val material = "${cred.serverUrl}\n${cred.username}\n$usePasswordAuth"
+        val digest = MessageDigest.getInstance("SHA-256").digest(material.toByteArray(Charsets.UTF_8))
+        return digest.joinToString(separator = "") { "%02x".format(it) }
     }
 
     suspend fun getPlaylists(limit: Int = 100): Result<List<ProviderPlaylist>> {
