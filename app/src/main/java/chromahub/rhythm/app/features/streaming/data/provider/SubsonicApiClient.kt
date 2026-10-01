@@ -11,6 +11,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
@@ -19,8 +20,10 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.json.JSONArray
 import org.json.JSONObject
+import java.io.IOException
 import java.security.MessageDigest
 import java.util.UUID
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.TimeUnit
 import androidx.core.content.edit
 import chromahub.rhythm.app.shared.data.model.LyricsData
@@ -30,7 +33,13 @@ class SubsonicErrorException(val code: Int, message: String) : Exception(message
 /**
  * Subsonic-compatible API client used for Navidrome/Subsonic service support.
  */
-class SubsonicApiClient(context: Context) {
+class SubsonicApiClient internal constructor(
+    context: Context,
+    private val okHttpClient: OkHttpClient,
+    private val libraryFetchRetryDelayMs: Long
+) {
+
+    constructor(context: Context) : this(context, buildHttpClient(), LIBRARY_FETCH_RETRY_DELAY_MS)
 
     private data class Credentials(
         val serverUrl: String,
@@ -45,12 +54,6 @@ class SubsonicApiClient(context: Context) {
 
     @Volatile
     private var usePasswordAuth: Boolean = prefs.getBoolean(KEY_USE_PASSWORD_AUTH, false)
-
-    private val okHttpClient = UserTrustManager.buildUserTrustingHttpClientBuilder()
-        .connectTimeout(15, TimeUnit.SECONDS)
-        .readTimeout(30, TimeUnit.SECONDS)
-        .writeTimeout(15, TimeUnit.SECONDS)
-        .build()
 
     fun isConnected(): Boolean = credentials?.let { it.serverUrl.isNotBlank() && it.username.isNotBlank() && it.password.isNotBlank() } == true
 
@@ -266,11 +269,12 @@ class SubsonicApiClient(context: Context) {
                 val albumBatchSize = 100
                 var albumOffset = 0
                 val songs = LinkedHashMap<String, ProviderSong>()
-                val semaphore = Semaphore(6)
+                val semaphore = Semaphore(LIBRARY_FETCH_CONCURRENCY)
+                val skippedAlbums = AtomicInteger(0)
                 var totalAlbumsProcessed = 0
 
                 while (songs.size < limit) {
-                    val albumResult = requestAndParse(
+                    val albumResult = requestAndParseWithRetry(
                         "getAlbumList2",
                         mapOf(
                             "type" to "alphabeticalByArtist",
@@ -290,11 +294,16 @@ class SubsonicApiClient(context: Context) {
                                 if (albumId.isBlank()) return@async emptyList<ProviderSong>()
                                 semaphore.withPermit {
                                     try {
-                                        val albumResponse = requestAndParse("getAlbum", mapOf("id" to albumId)).getOrNull()
-                                            ?.optJSONObject("album") ?: return@withPermit emptyList()
+                                        val albumResponse = requestAndParseWithRetry("getAlbum", mapOf("id" to albumId)).getOrNull()
+                                            ?.optJSONObject("album")
+                                        if (albumResponse == null) {
+                                            skippedAlbums.incrementAndGet()
+                                            return@withPermit emptyList()
+                                        }
                                         parseSongList(albumResponse.opt("song"))
                                     } catch (e: Exception) {
                                         Log.w(TAG, "Failed to fetch album $albumId, skipping", e)
+                                        skippedAlbums.incrementAndGet()
                                         emptyList()
                                     }
                                 }
@@ -317,6 +326,10 @@ class SubsonicApiClient(context: Context) {
                     if (albums.size < albumBatchSize) break
                 }
 
+                if (skippedAlbums.get() > 0) {
+                    // Keep what was fetched: a library missing a few albums beats no library.
+                    Log.w(TAG, "Library fetch skipped ${skippedAlbums.get()} album(s) that failed after retries")
+                }
                 Result.success(songs.values.take(limit).toList())
             } catch (e: Exception) {
                 Log.e(TAG, "Subsonic library fetch failed", e)
@@ -821,6 +834,27 @@ class SubsonicApiClient(context: Context) {
         requestAndParse(endpoint, params, listParams).map(transform)
     }
 
+    /**
+     * [requestAndParse] for library-sync requests: retries network failures (timeouts, reset
+     * streams) with exponential backoff, so one slow or dropped response does not lose an album.
+     * Server errors (HTTP or Subsonic error codes) are not retried.
+     */
+    private suspend fun requestAndParseWithRetry(
+        endpoint: String,
+        params: Map<String, String>
+    ): Result<JSONObject> {
+        var attempt = 0
+        while (true) {
+            val result = requestAndParse(endpoint, params)
+            if (result.exceptionOrNull() !is IOException || attempt == LIBRARY_FETCH_RETRIES) {
+                return result
+            }
+            delay(libraryFetchRetryDelayMs shl attempt)
+            attempt++
+            Log.w(TAG, "Retrying $endpoint after a network failure (attempt ${attempt + 1})")
+        }
+    }
+
     private fun parseSubsonicResponse(raw: String): Result<JSONObject> {
         return try {
             val root = JSONObject(raw)
@@ -1157,6 +1191,19 @@ class SubsonicApiClient(context: Context) {
 
         private const val API_VERSION = "1.16.1"
         private const val CLIENT_ID = "Rhythm"
+
+        /** Parallel getAlbum requests during a library sync. */
+        private const val LIBRARY_FETCH_CONCURRENCY = 4
+        /** Retries per library-sync request after a network failure. */
+        private const val LIBRARY_FETCH_RETRIES = 2
+        /** First retry delay; doubles on each further retry. */
+        private const val LIBRARY_FETCH_RETRY_DELAY_MS = 1_000L
+
+        private fun buildHttpClient(): OkHttpClient = UserTrustManager.buildUserTrustingHttpClientBuilder()
+            .connectTimeout(15, TimeUnit.SECONDS)
+            .readTimeout(30, TimeUnit.SECONDS)
+            .writeTimeout(15, TimeUnit.SECONDS)
+            .build()
     }
 }
 

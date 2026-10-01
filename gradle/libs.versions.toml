@@ -33,6 +33,7 @@ taglib = "1.0.6"
 retrofit = "3.0.0"
 okhttp = "5.5.0"
 gson = "2.14.0"
+orgJson = "20260814"
 kotlinxCoroutines = "1.11.0"
 workRuntimeKtx = "2.12.0"
 leakcanary = "2.14"
@@ -89,6 +90,8 @@ com-squareup-retrofit2-retrofit = { group = "com.squareup.retrofit2", name = "re
 com-squareup-retrofit2-converter-gson = { group = "com.squareup.retrofit2", name = "converter-gson", version.ref = "retrofit" }
 com-squareup-okhttp3-okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }
 com-squareup-okhttp3-logging-interceptor = { group = "com.squareup.okhttp3", name = "logging-interceptor", version.ref = "okhttp" }
+com-squareup-okhttp3-mockwebserver3 = { group = "com.squareup.okhttp3", name = "mockwebserver3", version.ref = "okhttp" }
+org-json = { group = "org.json", name = "json", version.ref = "orgJson" }
 com-google-code-gson-gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
 org-jetbrains-kotlinx-coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "kotlinxCoroutines" }
 org-jetbrains-kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "kotlinxCoroutines" }
