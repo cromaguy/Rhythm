@@ -114,6 +114,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.lifecycle.viewmodel.compose.viewModel
 import chromahub.rhythm.app.R
 import chromahub.rhythm.app.shared.data.model.AppSettings
+import chromahub.rhythm.app.util.rememberOffMain
 import chromahub.rhythm.app.util.DevicePosture
 import chromahub.rhythm.app.util.rememberDevicePosture
 import androidx.navigation.NavHostController
@@ -981,7 +982,8 @@ private fun LocalNavigationContent(
     val streamingServiceConnected = remember(streamingSessions, streamingServiceId, isEffectivelyOffline) {
         streamingSessions[streamingServiceId]?.isConnected == true && !isEffectivelyOffline
     }
-    val streamingSongById = remember(streamingAllSongs, streamingRecommendations, streamingLikedSongs, streamingDownloadedSongs) {
+    // Mapping the full streaming library (tens of thousands of songs) runs off the main thread.
+    val streamingSongById by rememberOffMain(emptyMap<String, StreamingSong>(), streamingAllSongs, streamingRecommendations, streamingLikedSongs, streamingDownloadedSongs) {
         (streamingAllSongs + streamingRecommendations + streamingLikedSongs + streamingDownloadedSongs)
             .distinctBy { it.id }
             .associateBy { it.id }
@@ -993,7 +995,7 @@ private fun LocalNavigationContent(
                 streamingMusicViewModel.playQueue(originals, startIndex, shuffle, pinStartIndex = shuffle)
             }
         }
-    val streamingMappedSongs = remember(streamingServiceConnected, streamingAllSongs, streamingRecommendations, streamingLikedSongs, streamingDownloadedSongs) {
+    val streamingMappedSongs by rememberOffMain(emptyList<chromahub.rhythm.app.shared.data.model.Song>(), streamingServiceConnected, streamingAllSongs, streamingRecommendations, streamingLikedSongs, streamingDownloadedSongs) {
         val base = if (!streamingServiceConnected) {
             streamingDownloadedSongs
         } else if (streamingAllSongs.isNotEmpty()) {
@@ -1011,7 +1013,7 @@ private fun LocalNavigationContent(
         }
         base.map { it.toLibraryAlbum(emptyList()) }
     }
-    val streamingMappedArtists = remember(streamingServiceConnected, streamingFollowedArtists, streamingAllSongs, streamingDownloadedArtists, streamingDownloadedSongs) {
+    val streamingMappedArtists by rememberOffMain(emptyList<chromahub.rhythm.app.shared.data.model.Artist>(), streamingServiceConnected, streamingFollowedArtists, streamingAllSongs, streamingDownloadedArtists, streamingDownloadedSongs) {
         val baseArtists = if (!streamingServiceConnected) {
             streamingDownloadedArtists
         } else if (streamingFollowedArtists.isNotEmpty() || streamingDownloadedArtists.isNotEmpty()) {

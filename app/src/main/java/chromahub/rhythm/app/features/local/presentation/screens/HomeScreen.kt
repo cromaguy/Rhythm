@@ -31,6 +31,7 @@ import chromahub.rhythm.app.features.streaming.presentation.screens.toLibrarySon
 import chromahub.rhythm.app.features.streaming.presentation.screens.toLibraryAlbum
 import chromahub.rhythm.app.features.streaming.presentation.screens.toLibraryArtist
 import chromahub.rhythm.app.util.ArtistSeparator
+import chromahub.rhythm.app.util.rememberOffMain
 
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -392,14 +393,15 @@ fun HomeScreen(
     }
 
     // Enhanced recently added songs
-    val recentlyAddedSongs = remember(songs) {
+    // Derived song lists are computed off the main thread (large libraries froze the UI).
+    val recentlyAddedSongs by rememberOffMain(emptyList<Song>(), songs) {
         val oneMonthAgo = Calendar.getInstance().apply { add(Calendar.MONTH, -1) }.timeInMillis
         songs.filter { it.dateAdded >= oneMonthAgo }
             .sortedByDescending { it.dateAdded }
     }
 
     // Enhanced recently added albums
-    val recentlyAddedAlbums = remember(albums, songs) {
+    val recentlyAddedAlbums by rememberOffMain(emptyList<Album>(), albums, songs) {
         val oneMonthAgo = Calendar.getInstance().apply { add(Calendar.MONTH, -1) }.timeInMillis
         val recentSongIds = songs.filter { it.dateAdded >= oneMonthAgo }.map { it.id }.toSet()
         albums.filter { album ->
@@ -808,7 +810,7 @@ private fun StreamingHomeBody(
     val syncProgress = vm?.syncProgress?.collectAsState()?.value ?: chromahub.rhythm.app.features.streaming.presentation.viewmodel.StreamingSyncProgress()
     val isSyncing = syncProgress.isSyncing
 
-    val streamingSongById = remember(rawAllSongs, rawRecommendations, rawNewReleases, rawDownloadedSongs) {
+    val streamingSongById by rememberOffMain(emptyMap<String, StreamingSong>(), rawAllSongs, rawRecommendations, rawNewReleases, rawDownloadedSongs) {
         (rawAllSongs + rawRecommendations + rawNewReleases.flatMap { it.tracks } + rawDownloadedSongs)
             .distinctBy { it.id }
             .associateBy { it.id }
@@ -1750,7 +1752,7 @@ private fun ModernScrollableContent(
                 "RECOMMENDED" -> {
                     if (showRecommended) {
                         val favoriteSongsState = musicViewModel.favoriteSongs.collectAsState()
-                        val recommendedSongs = remember(recentlyPlayed, songs, recommendedCount, favoriteSongsState.value) {
+                        val recommendedSongs by rememberOffMain(emptyList<Song>(), recentlyPlayed, songs, recommendedCount, favoriteSongsState.value) {
                             val favoriteIds = favoriteSongsState.value
                             val favoriteSongsList = songs.filter { it.id in favoriteIds }
 

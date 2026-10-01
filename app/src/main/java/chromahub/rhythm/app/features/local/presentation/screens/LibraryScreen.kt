@@ -169,6 +169,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.derivedStateOf
+import chromahub.rhythm.app.util.rememberOffMain
+import chromahub.rhythm.app.util.sortedByLowercase
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -520,14 +522,16 @@ fun LibraryScreen(
     }
     val breadcrumbScrollState = rememberLazyListState()
 
-    val sortedSongs = remember(songs, sortOrder) {
-        when (sortOrder) {
-            MusicViewModel.SortOrder.TITLE_ASC -> songs.sortedBy { it.title.lowercase() }
-            MusicViewModel.SortOrder.TITLE_DESC -> songs.sortedByDescending { it.title.lowercase() }
-            MusicViewModel.SortOrder.ARTIST_ASC -> songs.sortedBy { it.artist.lowercase() }
-            MusicViewModel.SortOrder.ARTIST_DESC -> songs.sortedByDescending { it.artist.lowercase() }
-            MusicViewModel.SortOrder.ALBUM_ASC -> songs.sortedBy { it.album.lowercase() }
-            MusicViewModel.SortOrder.ALBUM_DESC -> songs.sortedByDescending { it.album.lowercase() }
+    // The list transforms below run off the main thread: with a large (streaming) library,
+    // sorting and grouping tens of thousands of songs in composition caused ANRs.
+    val preparedSongs by rememberOffMain(emptyList<Song>(), songs, sortOrder) {
+        val sortedSongs = when (sortOrder) {
+            MusicViewModel.SortOrder.TITLE_ASC -> songs.sortedByLowercase { it.title }
+            MusicViewModel.SortOrder.TITLE_DESC -> songs.sortedByLowercase(descending = true) { it.title }
+            MusicViewModel.SortOrder.ARTIST_ASC -> songs.sortedByLowercase { it.artist }
+            MusicViewModel.SortOrder.ARTIST_DESC -> songs.sortedByLowercase(descending = true) { it.artist }
+            MusicViewModel.SortOrder.ALBUM_ASC -> songs.sortedByLowercase { it.album }
+            MusicViewModel.SortOrder.ALBUM_DESC -> songs.sortedByLowercase(descending = true) { it.album }
             MusicViewModel.SortOrder.YEAR_ASC -> songs.sortedBy { it.year }
             MusicViewModel.SortOrder.YEAR_DESC -> songs.sortedByDescending { it.year }
             MusicViewModel.SortOrder.DATE_ADDED_ASC -> songs.sortedBy { it.dateAdded }
@@ -535,28 +539,25 @@ fun LibraryScreen(
             MusicViewModel.SortOrder.DATE_MODIFIED_ASC -> songs.sortedBy { it.dateModified }
             MusicViewModel.SortOrder.DATE_MODIFIED_DESC -> songs.sortedByDescending { it.dateModified }
         }
-    }
-    
-    val preparedSongs = remember(sortedSongs) {
         sortedSongs.distinctBy { "${it.id}_${it.uri}" }
     }
 
-    val categories = remember(preparedSongs, streamingDownloadedSongIds) {
+    val categories by rememberOffMain(listOf("All"), preparedSongs, streamingDownloadedSongIds) {
         calculateSongCategories(
             preparedSongs,
             hasDownloadedSongs = streamingDownloadedSongIds.isNotEmpty() || (isStreamingMode && preparedSongs.any { it.id in streamingDownloadedSongIds })
         )
     }
 
-    val filteredSongs = remember(preparedSongs, selectedCategory, streamingDownloadedSongIds) {
+    val filteredSongs by rememberOffMain(emptyList<Song>(), preparedSongs, selectedCategory, streamingDownloadedSongIds) {
         filterSongsByCategory(preparedSongs, selectedCategory, streamingDownloadedSongIds)
     }
 
-    val likedSongs = remember(preparedSongs, favoriteSongs) {
+    val likedSongs by rememberOffMain(emptyList<Song>(), preparedSongs, favoriteSongs) {
         preparedSongs.filter { it.id in favoriteSongs }
     }
 
-    val sortedAlbums = remember(albums, sortOrder) {
+    val sortedAlbums by rememberOffMain(emptyList<Album>(), albums, sortOrder) {
         when (sortOrder) {
             MusicViewModel.SortOrder.TITLE_ASC -> albums.sortedBy { it.title.lowercase() }
             MusicViewModel.SortOrder.TITLE_DESC -> albums.sortedByDescending { it.title.lowercase() }
@@ -574,7 +575,7 @@ fun LibraryScreen(
     }
 
     var artistSortOption by rememberSaveable { mutableStateOf(ArtistSortOption.NAME_ASC) }
-    val sortedArtists = remember(artists, artistSortOption) {
+    val sortedArtists by rememberOffMain(emptyList<Artist>(), artists, artistSortOption) {
         val baseList = artists.distinctBy { it.id }
         when (artistSortOption) {
             ArtistSortOption.NAME_ASC -> baseList.sortedBy { it.name.lowercase() }
@@ -586,7 +587,7 @@ fun LibraryScreen(
 
     val artistSeparatorEnabled by appSettings.artistSeparatorEnabled.collectAsState()
     val artistSeparatorDelimiters by appSettings.artistSeparatorDelimiters.collectAsState()
-    val albumArtists = remember(preparedSongs, artists, artistSeparatorEnabled, artistSeparatorDelimiters) {
+    val albumArtists by rememberOffMain(emptyList<Artist>(), preparedSongs, artists, artistSeparatorEnabled, artistSeparatorDelimiters) {
         val delimitersStr = if (artistSeparatorEnabled) artistSeparatorDelimiters else ""
         val artistSongsMap = java.util.HashMap<String, MutableList<Song>>()
         val artistAlbumsMap = java.util.HashMap<String, java.util.HashSet<String>>()
@@ -618,7 +619,7 @@ fun LibraryScreen(
             )
         }
     }
-    val sortedAlbumArtists = remember(albumArtists, artistSortOption) {
+    val sortedAlbumArtists by rememberOffMain(emptyList<Artist>(), albumArtists, artistSortOption) {
         val baseList = albumArtists.distinctBy { it.id }
         when (artistSortOption) {
             ArtistSortOption.NAME_ASC -> baseList.sortedBy { it.name.lowercase() }
@@ -2484,7 +2485,7 @@ fun SingleCardSongsContent(
     var songForOverflow by remember { mutableStateOf<Song?>(null) }
     
     val isLoading = false
-    val preparedSongs = remember(songs) {
+    val preparedSongs by rememberOffMain(emptyList<Song>(), songs) {
         songs.distinctBy { "${it.id}_${it.uri}" }
     }
     
@@ -6815,7 +6816,7 @@ fun YearGroupedSongsContent(
     val context = LocalContext.current
     var songForOverflow by remember { mutableStateOf<Song?>(null) }
 
-    val songsByYear = remember(songs, sortOrder) {
+    val songsByYear by rememberOffMain(emptyList<Pair<String, List<Song>>>(), songs, sortOrder) {
         val groups = songs.groupBy { song ->
             if (song.year > 0) song.year else null
         }
