@@ -58,7 +58,9 @@ object NetworkClient {
                 Log.w(TAG, "Error logging HTTP message: ${e.message}")
             }
         }.apply {
-            level = if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.HEADERS else HttpLoggingInterceptor.Level.NONE
+            // BASIC (request line + status) in debug only; headers carry cookies and are never logged.
+            level = if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BASIC else HttpLoggingInterceptor.Level.NONE
+            listOf("Authorization", "Cookie", "Set-Cookie").forEach(::redactHeader)
         }
     }
     
@@ -69,11 +71,12 @@ object NetworkClient {
         
         while (currentRetry < MAX_RETRIES) {
             try {
-                Log.d(TAG, "Attempting request (attempt ${currentRetry + 1}/${MAX_RETRIES}): ${chain.request().url}")
+                if (BuildConfig.DEBUG && currentRetry > 0) {
+                    Log.d(TAG, "Retrying request (attempt ${currentRetry + 1}/${MAX_RETRIES}): ${chain.request().url}")
+                }
                 response = chain.proceed(chain.request())
                 
                 if (response.isSuccessful) {
-                    Log.d(TAG, "Request successful: ${chain.request().url}")
                     return@Interceptor response
                 } else {
                     val code = response.code

@@ -41,11 +41,15 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 /**
  * Data model for persisting the streaming catalog to disk.
@@ -104,6 +108,15 @@ class StreamingMusicRepositoryImpl(
             }
         }
     }
+
+    // Deezer artist-image lookups: cached (memory + disk, with TTL) so each artist is looked up
+    // once rather than on every catalog replace/merge; one enrichment pass runs at a time.
+    private val deezerArtistImageCache by lazy {
+        DeezerArtistImageCache(java.io.File(context.cacheDir, "deezer_artist_images.json"))
+    }
+    private val deezerEnrichmentMutex = Mutex()
+    @Volatile
+    private var artistEnrichmentJob: Job? = null
 
     private val downloadedSongsMap = LinkedHashMap<String, StreamingSong>()
     private val gson = com.google.gson.Gson()
@@ -1625,13 +1638,19 @@ class StreamingMusicRepositoryImpl(
 
         saveCatalogCache(serviceId)
 
-        // Asynchronously enrich with Deezer images in background to avoid blocking
-        repositoryScope.launch {
+        // Asynchronously enrich with Deezer images in background to avoid blocking.
+        // A newer catalog change supersedes a running pass (finished lookups stay cached).
+        artistEnrichmentJob?.cancel()
+        artistEnrichmentJob = repositoryScope.launch {
             try {
                 val enriched = enrichArtistsWithDeezerImages(rawArtists)
-                artistsFlow.value = enriched
-                updateFollowedArtistsFlow()
-                saveCatalogCache(serviceId)
+                if (artistsFlow.value != enriched) {
+                    artistsFlow.value = enriched
+                    updateFollowedArtistsFlow()
+                    saveCatalogCache(serviceId)
+                }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 Log.e("StreamingMusicRepo", "Background Deezer artist enrichment failed", e)
             }
@@ -1665,12 +1684,18 @@ class StreamingMusicRepositoryImpl(
         updateSavedAlbumsFlow()
         updateFollowedArtistsFlow()
 
-        // Asynchronously enrich with Deezer images in background to avoid blocking
-        repositoryScope.launch {
+        // Asynchronously enrich with Deezer images in background to avoid blocking.
+        // A newer catalog change supersedes a running pass (finished lookups stay cached).
+        artistEnrichmentJob?.cancel()
+        artistEnrichmentJob = repositoryScope.launch {
             try {
                 val enriched = enrichArtistsWithDeezerImages(rawArtists)
-                artistsFlow.value = enriched
-                updateFollowedArtistsFlow()
+                if (artistsFlow.value != enriched) {
+                    artistsFlow.value = enriched
+                    updateFollowedArtistsFlow()
+                }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 Log.e("StreamingMusicRepo", "Background Deezer artist enrichment failed", e)
             }
@@ -2194,66 +2219,79 @@ class StreamingMusicRepositoryImpl(
                 }
 
                 val enriched = mutableListOf<StreamingArtist>()
+                var lookups = 0
 
-                for (artist in artists) {
+                deezerEnrichmentMutex.withLock {
                     try {
-                        // Skip unknown/blank artists
-                        if (artist.name.isBlank() || artist.name.equals("Unknown", ignoreCase = true)) {
-                            enriched.add(artist)
-                            continue
-                        }
-
-                        // Always try Deezer enrichment, even if artist has existing artwork
-                        // This ensures we prefer actual artist images over album art
-                        var enrichedArtist = artist
-                        try {
-                            // Search for artist on Deezer
-                            val searchResponse = deezerService.searchArtists(artist.name, limit = 5)
-                            val deezerArtist = searchResponse.data.firstOrNull { 
-                                it.name.equals(artist.name, ignoreCase = true)
-                            } ?: searchResponse.data.firstOrNull() // Fallback to best match
-
-                            if (deezerArtist != null) {
-                                // Choose best quality image available
-                                val imageUrl = when {
-                                    !deezerArtist.pictureXl.isNullOrEmpty() -> deezerArtist.pictureXl
-                                    !deezerArtist.pictureBig.isNullOrEmpty() -> deezerArtist.pictureBig
-                                    !deezerArtist.pictureMedium.isNullOrEmpty() -> deezerArtist.pictureMedium
-                                    !deezerArtist.picture.isNullOrEmpty() -> deezerArtist.picture
-                                    else -> null
-                                }
-
-                                if (!imageUrl.isNullOrEmpty()) {
-                                    Log.d("StreamingMusicRepo", "Found Deezer image for ${artist.name}")
-                                    artistArtworkCache[normalizeKey(artist.name)] = imageUrl
-                                    enrichedArtist = artist.copy(artworkUri = imageUrl)
-                                } else {
-                                    Log.d("StreamingMusicRepo", "Deezer artist found but no image: ${deezerArtist.name}")
-                                }
-                            } else {
-                                Log.d("StreamingMusicRepo", "No Deezer artist found for: ${artist.name}")
+                        for (artist in artists) {
+                            // Skip unknown/blank artists
+                            if (artist.name.isBlank() || artist.name.equals("Unknown", ignoreCase = true)) {
+                                enriched.add(artist)
+                                continue
                             }
-                        } catch (e: Exception) {
-                            Log.w("StreamingMusicRepo", "Failed to fetch Deezer image for ${artist.name}: ${e.message}", e)
-                        }
 
-                        // Cache the final artwork (Deezer or original)
-                        enrichedArtist.artworkUri?.takeIf { it.isNotBlank() }?.let { cachedUri ->
-                            artistArtworkCache[normalizeKey(artist.name)] = cachedUri
+                            // Prefer the Deezer artist image over album art; look each artist up
+                            // at most once per cache TTL.
+                            val key = normalizeKey(artist.name)
+                            val cached = deezerArtistImageCache.get(key)
+                            val imageUrl = if (cached != null) {
+                                cached.imageUrl
+                            } else {
+                                lookups++
+                                lookUpDeezerArtistImage(deezerService, artist.name, key)
+                            }
+                            val enrichedArtist = if (imageUrl != null) artist.copy(artworkUri = imageUrl) else artist
+
+                            // Cache the final artwork (Deezer or original)
+                            enrichedArtist.artworkUri?.takeIf { it.isNotBlank() }?.let { cachedUri ->
+                                artistArtworkCache[key] = cachedUri
+                            }
+                            enriched.add(enrichedArtist)
                         }
-                        enriched.add(enrichedArtist)
-                    } catch (e: Exception) {
-                        Log.w("StreamingMusicRepo", "Failed to process artist ${artist.name}: ${e.message}", e)
-                        enriched.add(artist)
+                    } finally {
+                        // Persist finished lookups even if a newer catalog change cancelled this pass.
+                        deezerArtistImageCache.flush()
                     }
                 }
 
-                Log.d("StreamingMusicRepo", "Enriched ${enriched.count { it.artworkUri != null }} of ${artists.size} artists with Deezer images")
+                if (lookups > 0) {
+                    Log.d("StreamingMusicRepo", "Deezer artist enrichment: $lookups lookups for ${artists.size} artists")
+                }
                 enriched
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 Log.e("StreamingMusicRepo", "Error enriching artists with Deezer images", e)
                 artists // Return unchanged on error
             }
+        }
+    }
+
+    /** Searches Deezer for [artistName]; caches the image URL (or its absence) under [key]. */
+    private suspend fun lookUpDeezerArtistImage(
+        deezerService: DeezerApiService,
+        artistName: String,
+        key: String
+    ): String? {
+        return try {
+            val searchResponse = deezerService.searchArtists(artistName, limit = 5)
+            val deezerArtist = searchResponse.data.firstOrNull {
+                it.name.equals(artistName, ignoreCase = true)
+            } ?: searchResponse.data.firstOrNull() // Fallback to best match
+
+            val imageUrl = deezerArtist?.let {
+                // Choose best quality image available
+                listOf(it.pictureXl, it.pictureBig, it.pictureMedium, it.picture)
+                    .firstOrNull { url -> !url.isNullOrEmpty() }
+            }
+            deezerArtistImageCache.put(key, imageUrl)
+            imageUrl
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Log.w("StreamingMusicRepo", "Failed to fetch Deezer image for $artistName: ${e.message}")
+            deezerArtistImageCache.markFailed(key)
+            null
         }
     }
 
