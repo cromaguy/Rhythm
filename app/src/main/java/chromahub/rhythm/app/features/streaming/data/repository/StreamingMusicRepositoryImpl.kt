@@ -68,18 +68,6 @@ data class StreamingCatalogCache(
 )
 
 /**
- * Catalog cache file I/O. The JSON is streamed: a large library's cache is tens of MB (about
- * 1 KB per song), too much to build or parse as one String on a phone heap.
- */
-internal fun com.google.gson.Gson.writeCatalogCache(file: java.io.File, cache: StreamingCatalogCache) {
-    file.bufferedWriter().use { toJson(cache, it) }
-}
-
-internal fun com.google.gson.Gson.readCatalogCache(file: java.io.File): StreamingCatalogCache? {
-    return file.bufferedReader().use { fromJson(it, StreamingCatalogCache::class.java) }
-}
-
-/**
  * Provider-backed implementation used by Rhythm GO mode.
  */
 class StreamingMusicRepositoryImpl(
@@ -287,6 +275,18 @@ class StreamingMusicRepositoryImpl(
         return ".mp3"
     }
 
+    /**
+     * The catalog cache stores Subsonic stream and cover URLs as unsigned references and signs
+     * them again with the current credentials when loading (see [CatalogCacheCodec]).
+     */
+    private fun catalogCacheCodec(serviceId: String): CatalogCacheCodec {
+        if (serviceId != StreamingServiceId.SUBSONIC) return CatalogCacheCodec()
+        return CatalogCacheCodec(object : CatalogUrlRefs {
+            override fun toRef(url: String): String? = subsonicClient.toUrlRef(url)
+            override fun resolver(): (String) -> String? = subsonicClient.urlRefResolver()
+        })
+    }
+
     fun getCatalogCacheFile(serviceId: String): java.io.File {
         return java.io.File(context.filesDir, "streaming_catalog_${serviceId}.json")
     }
@@ -303,7 +303,7 @@ class StreamingMusicRepositoryImpl(
             val cacheFile = getCatalogCacheFile(serviceId)
             if (!cacheFile.exists()) return
 
-            val cache = gson.readCatalogCache(cacheFile) ?: return
+            val cache = catalogCacheCodec(serviceId).readFile(cacheFile) ?: return
             if (cache.serviceId != serviceId) return
 
             if (cache.songs.isNotEmpty()) {
@@ -384,7 +384,7 @@ class StreamingMusicRepositoryImpl(
                     songCount = currentSongs.size
                     cache
                 }) { cache, out ->
-                    gson.toJson(cache, out)
+                    catalogCacheCodec(serviceId).write(out, cache)
                     catalogSaveFilter.remember(cache)
                 }
                 if (saved) {

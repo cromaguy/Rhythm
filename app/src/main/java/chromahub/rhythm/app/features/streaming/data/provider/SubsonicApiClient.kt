@@ -965,6 +965,57 @@ class SubsonicApiClient internal constructor(
         }
     }
 
+    /**
+     * Credential-free reference for a stream or cover-art URL this client signed for the current
+     * server (e.g. `getCoverArt?id=al-1&size=500`), for storing in a cache; null for any other
+     * URL. [urlRefResolver] turns it back into a URL signed with the then-current credentials.
+     */
+    fun toUrlRef(url: String): String? {
+        val cred = credentials ?: return null
+        if (!url.startsWith("${cred.serverUrl}/rest/")) return null
+        val parsed = url.toHttpUrlOrNull() ?: return null
+        val endpoint = parsed.pathSegments.lastOrNull()?.removeSuffix(".view")
+        if (endpoint != "stream" && endpoint != "getCoverArt") return null
+        val params = (0 until parsed.querySize)
+            .filter { parsed.queryParameterName(it) !in URL_AUTH_PARAMS }
+            .joinToString("&") { i ->
+                val value = parsed.queryParameterValue(i).orEmpty()
+                parsed.queryParameterName(i) + "=" + java.net.URLEncoder.encode(value, "UTF-8")
+            }
+        return "$endpoint?$params"
+    }
+
+    /**
+     * Resolves [toUrlRef] references to signed URLs. One resolver signs each distinct set of
+     * parameters once and reuses that token for every id, so resolving tens of thousands of
+     * references (a cached library) stays cheap.
+     */
+    fun urlRefResolver(): (String) -> String? {
+        val templates = HashMap<String, String?>()
+        return resolve@{ ref ->
+            val endpoint = ref.substringBefore('?')
+            val params = LinkedHashMap<String, String>()
+            ref.substringAfter('?', "").split('&').filter { it.isNotEmpty() }.forEach { pair ->
+                params[pair.substringBefore('=')] = java.net.URLDecoder.decode(pair.substringAfter('=', ""), "UTF-8")
+            }
+            val id = params["id"]?.takeIf { it.isNotEmpty() } ?: return@resolve null
+            if (!id.all { it.isLetterOrDigit() || it == '-' || it == '_' || it == '.' }) {
+                // Ids that need URL encoding are rare; sign those one by one.
+                return@resolve buildFromUrlRef(endpoint, id, params)
+            }
+            val key = endpoint + "?" + params.filterKeys { it != "id" }.entries.joinToString("&")
+            val template = templates.getOrPut(key) { buildFromUrlRef(endpoint, URL_REF_ID_PLACEHOLDER, params) }
+                ?: return@resolve null
+            template.replaceFirst("id=$URL_REF_ID_PLACEHOLDER", "id=$id")
+        }
+    }
+
+    private fun buildFromUrlRef(endpoint: String, id: String, params: Map<String, String>): String? = when (endpoint) {
+        "getCoverArt" -> buildCoverArtUrl(id, params["size"]?.toIntOrNull() ?: 500)
+        "stream" -> buildStreamUrl(id, params["maxBitRate"]?.toIntOrNull() ?: 0, params["format"])
+        else -> null
+    }
+
     private fun buildApiUrl(
         cred: Credentials, 
         endpoint: String, 
@@ -1280,6 +1331,10 @@ class SubsonicApiClient internal constructor(
         private const val KEY_USE_PASSWORD_AUTH = "use_password_auth"
 
         private const val API_VERSION = "1.16.1"
+
+        /** Query parameters that carry credentials or client info; not part of a URL reference. */
+        private val URL_AUTH_PARAMS = setOf("u", "t", "s", "p", "v", "c", "f")
+        private const val URL_REF_ID_PLACEHOLDER = "RHYTHMURLREFID"
         private const val CLIENT_ID = "Rhythm"
 
         /** Parallel getAlbum requests during a library sync. */

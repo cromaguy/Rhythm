@@ -8,7 +8,6 @@ package chromahub.rhythm.app.features.streaming.data.repository
 import chromahub.rhythm.app.core.domain.model.SourceType
 import chromahub.rhythm.app.features.streaming.domain.model.StreamingSong
 import chromahub.rhythm.app.features.streaming.domain.repository.StreamingMusicRepository
-import com.google.gson.Gson
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -24,7 +23,6 @@ class LargeCatalogCacheTest {
 
     @Test
     fun fullSizeCatalogRoundTripsThroughTheStreamedCacheFile() {
-        val gson = Gson()
         val songs = (0 until StreamingMusicRepository.MAX_LIBRARY_SONGS).map { song(it) }
         val cache = StreamingCatalogCache(
             serviceId = "subsonic",
@@ -36,11 +34,11 @@ class LargeCatalogCacheTest {
         try {
             val file = dir.resolve("streaming_catalog_subsonic.json")
 
-            gson.writeCatalogCache(file, cache)
-            val restored = gson.readCatalogCache(file)
+            CatalogCacheCodec().writeFile(file, cache)
+            val restored = CatalogCacheCodec().readFile(file)
 
             assertEquals(cache, restored)
-            // About 1 KB per song, the figure MAX_LIBRARY_SONGS is sized by.
+            // Under 1 KB per song, the figure MAX_LIBRARY_SONGS is sized by.
             assertTrue(file.length() < StreamingMusicRepository.MAX_LIBRARY_SONGS * 1_024L)
         } finally {
             dir.deleteRecursively()
