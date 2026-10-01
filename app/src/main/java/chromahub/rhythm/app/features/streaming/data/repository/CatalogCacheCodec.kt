@@ -35,11 +35,8 @@ interface CatalogUrlRefs {
 }
 
 /**
- * Reads and writes the catalog cache in a compact form. Songs, which are almost all of it, use
- * short keys, skip default values and store URL references instead of signed URLs (those
- * embed auth tokens and made up most of the file); cover URLs of albums and artists are stored
- * as references too. Caches written in the old, verbose format still load; they are rewritten
- * compactly on the next save.
+ * Reads and writes the catalog cache in a compact JSON format.
+ * Automatically handles backwards compatibility with legacy caches.
  */
 internal class CatalogCacheCodec(private val urlRefs: CatalogUrlRefs = CatalogUrlRefs.None) {
 

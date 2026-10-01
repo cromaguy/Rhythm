@@ -1355,9 +1355,7 @@ class SubsonicApiClient internal constructor(
 private val LOWER_HEX_DIGITS = "0123456789abcdef".toCharArray()
 
 /**
- * Lower-case hex encoding. Replaces `joinToString { "%02x".format(it) }`, which runs
- * String.format per byte; it was on the main-thread stack of an ANR while signing thousands of
- * stream URLs during a library sync.
+ * Lower-case hex encoding for fast byte-array to hex string conversion.
  */
 internal fun ByteArray.toLowerHex(): String {
     val out = CharArray(size * 2)

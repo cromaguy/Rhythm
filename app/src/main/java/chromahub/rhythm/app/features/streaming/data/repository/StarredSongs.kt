@@ -8,9 +8,7 @@ package chromahub.rhythm.app.features.streaming.data.repository
 import chromahub.rhythm.app.features.streaming.domain.model.StreamingSong
 
 /**
- * Liked songs taken from a provider's own starred list (Subsonic `getStarred2`), so the Liked
- * songs screen does not depend on the library sync having reached every starred song. A partial
- * or interrupted sync only holds the first albums in name order.
+ * Merges provider-starred songs with local liked song collections.
  */
 internal object StarredSongs {
 

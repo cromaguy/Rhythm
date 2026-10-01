@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2024-2026 Anjishnu Nandi <https://github.com/cromaguy>
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ */
+
 package chromahub.rhythm.app.features.streaming.data.repository
 
 import android.util.Log
@@ -8,12 +13,7 @@ import java.io.File
 import java.util.concurrent.ConcurrentHashMap
 
 /**
- * Remembers Deezer artist-image lookups so each artist is looked up at most once per TTL,
- * instead of on every catalog replace/merge (every sync and every search).
- *
- * Keyed by normalized artist name. Successful lookups (including "no image found") are kept
- * in memory and persisted to [file]; failed requests are only remembered in memory, for
- * [failureTtlMs], so transient network errors are retried later but not on every catalog change.
+ * Caches Deezer artist image lookups with configurable TTL to avoid redundant network requests.
  */
 class DeezerArtistImageCache(
     private val file: File?,

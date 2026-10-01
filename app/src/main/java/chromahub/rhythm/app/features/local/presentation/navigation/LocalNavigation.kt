@@ -982,7 +982,6 @@ private fun LocalNavigationContent(
     val streamingServiceConnected = remember(streamingSessions, streamingServiceId, isEffectivelyOffline) {
         streamingSessions[streamingServiceId]?.isConnected == true && !isEffectivelyOffline
     }
-    // Mapping the full streaming library (tens of thousands of songs) runs off the main thread.
     val streamingSongById by rememberOffMain(emptyMap<String, StreamingSong>(), streamingAllSongs, streamingRecommendations, streamingLikedSongs, streamingDownloadedSongs) {
         (streamingAllSongs + streamingRecommendations + streamingLikedSongs + streamingDownloadedSongs)
             .distinctBy { it.id }

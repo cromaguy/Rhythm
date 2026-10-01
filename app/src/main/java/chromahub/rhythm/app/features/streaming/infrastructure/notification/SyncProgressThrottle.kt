@@ -1,11 +1,12 @@
+/*
+ * SPDX-FileCopyrightText: 2024-2026 Anjishnu Nandi <https://github.com/cromaguy>
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ */
+
 package chromahub.rhythm.app.features.streaming.infrastructure.notification
 
 /**
- * Rate-limits sync progress notification updates.
- *
- * The library sync reports progress once per album, which can be many times per second.
- * Android drops notification updates above ~5/s per app ("Shedding notify (update) ... rate
- * limit exceeded"), so posting every tick only wastes work and log spam.
+ * Rate-limits sync progress notification updates to stay within platform notification quotas.
  */
 class SyncProgressThrottle(
     private val minIntervalMs: Long = DEFAULT_MIN_INTERVAL_MS,

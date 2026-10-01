@@ -830,8 +830,7 @@ class StreamingMusicViewModel(application: Application) : AndroidViewModel(appli
                 }
 
                 // 2. Pull the provider catalog with live progress callbacks
-                // Progress arrives once per album; the system drops notification updates above
-                // ~5/s, so only post the notification at a bounded rate.
+                // Throttle notification updates to prevent system rate-limiting
                 val notificationThrottle = SyncProgressThrottle()
                 try {
                     repository.syncCatalog(limit = StreamingMusicRepository.MAX_LIBRARY_SONGS) { current, total, songCount ->

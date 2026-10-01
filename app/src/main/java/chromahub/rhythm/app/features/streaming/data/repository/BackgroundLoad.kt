@@ -9,10 +9,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 /**
- * Starts [load] in [scope] immediately and lets callers suspend until it has finished.
- *
- * Used for the catalog cache, which can be tens of MB for a large library: parsing it where the
- * repository is created (often the main thread) caused input-dispatch ANRs.
+ * Starts [load] asynchronously in [scope] and allows callers to suspend until completion.
  */
 internal class BackgroundLoad(scope: CoroutineScope, load: suspend () -> Unit) {
 

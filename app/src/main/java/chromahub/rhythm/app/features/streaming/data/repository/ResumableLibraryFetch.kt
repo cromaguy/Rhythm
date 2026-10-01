@@ -25,13 +25,8 @@ data class LibraryFetchCheckpoint(
 )
 
 /**
- * Runs a paged full library fetch so that it survives the app being killed or the sync being
- * cancelled. Each fetched album page is written to its own small file in [checkpointDir]
- * (`page-<offset>.json`), followed by a tiny index ([LibraryFetchCheckpoint]), so the total
- * written stays linear in the library size. The next fetch reads the pages back and continues
- * from the first page not yet fetched instead of starting over. The checkpoint is discarded
- * when the server library changed in between (different `lastModified`), and deleted once a
- * fetch completes.
+ * Executes a resumable paged library fetch that persists progress across process death.
+ * Writes fetched album pages sequentially and cleans up checkpoints upon completion.
  */
 internal class ResumableLibraryFetch(
     private val checkpointDir: File,

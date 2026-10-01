@@ -393,7 +393,6 @@ fun HomeScreen(
     }
 
     // Enhanced recently added songs
-    // Derived song lists are computed off the main thread (large libraries froze the UI).
     val recentlyAddedSongs by rememberOffMain(emptyList<Song>(), songs) {
         val oneMonthAgo = Calendar.getInstance().apply { add(Calendar.MONTH, -1) }.timeInMillis
         songs.filter { it.dateAdded >= oneMonthAgo }

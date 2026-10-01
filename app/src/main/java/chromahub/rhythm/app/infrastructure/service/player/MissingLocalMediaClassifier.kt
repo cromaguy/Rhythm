@@ -1,16 +1,15 @@
+/*
+ * SPDX-FileCopyrightText: 2024-2026 Anjishnu Nandi <https://github.com/cromaguy>
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ */
+
 package chromahub.rhythm.app.infrastructure.service.player
 
 import androidx.media3.common.PlaybackException
 import java.io.FileNotFoundException
 
 /**
- * Decides whether a playback error means a *local* queue item no longer exists
- * (e.g. a MediaStore entry that was deleted or re-scanned under a new id, which
- * surfaces as `FileNotFoundException: No item at content://media/...`).
- *
- * Such items can never play again, so they are skipped and pruned from the queue
- * instead of stopping playback. Every other error type is left to the regular
- * error handling.
+ * Classifies playback exceptions to detect missing local media items (e.g. deleted or rescanned MediaStore files).
  */
 object MissingLocalMediaClassifier {
 

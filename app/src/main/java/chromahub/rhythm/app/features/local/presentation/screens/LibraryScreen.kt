@@ -522,8 +522,6 @@ fun LibraryScreen(
     }
     val breadcrumbScrollState = rememberLazyListState()
 
-    // The list transforms below run off the main thread: with a large (streaming) library,
-    // sorting and grouping tens of thousands of songs in composition caused ANRs.
     val preparedSongs by rememberOffMain(emptyList<Song>(), songs, sortOrder) {
         val sortedSongs = when (sortOrder) {
             MusicViewModel.SortOrder.TITLE_ASC -> songs.sortedByLowercase { it.title }

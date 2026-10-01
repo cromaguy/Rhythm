@@ -19,14 +19,7 @@ import java.nio.file.StandardCopyOption
 import java.util.concurrent.ConcurrentHashMap
 
 /**
- * Writes catalog cache files one at a time, each atomically.
- *
- * A sync triggers several saves in quick succession (catalog, playlists, artist images). Without
- * this, they write the same file concurrently and can leave interleaved or truncated JSON, which
- * the next start cannot read. Here, the snapshot is taken inside the lock, so the last save
- * always writes the latest state. It is streamed to a temp file (a large library's JSON is
- * tens of MB, too much to build as one String) that is then moved over the target, so a
- * reader (or a process kill mid-write) never sees a half-written file.
+ * Writes catalog cache files atomically and sequentially via a temporary file.
  */
 internal class CatalogCacheWriter {
 
