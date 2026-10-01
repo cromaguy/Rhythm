@@ -452,6 +452,15 @@ class SubsonicApiClient(context: Context) {
         }
     }
 
+    /** The user's starred songs, complete, in one `getStarred2` request. */
+    suspend fun getStarredSongs(): Result<List<ProviderSong>> {
+        if (!isConnected()) return Result.failure(IllegalStateException("Subsonic service is not connected"))
+
+        return requestAndParse("getStarred2").map { response ->
+            parseSongList(response.optJSONObject("starred2")?.opt("song"))
+        }
+    }
+
     suspend fun markFavorite(id: String, isFavorite: Boolean): Result<Boolean> {
         if (!isConnected()) return Result.failure(IllegalStateException("Subsonic service is not connected"))
         if (id.isBlank()) return Result.failure(IllegalArgumentException("Id is required"))
