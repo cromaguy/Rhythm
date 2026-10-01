@@ -123,6 +123,13 @@ class StreamingMusicRepositoryImpl(
     private val downloadedSongsMap = LinkedHashMap<String, StreamingSong>()
     private val gson = com.google.gson.Gson()
     private val repositoryScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    private val catalogCacheWriter = CatalogCacheWriter()
+
+    /**
+     * A sync or start-up requests several saves within seconds (catalog, liked songs, playlists,
+     * artist images); each rewrites the whole cache, tens of MB for a large library. Merge them.
+     */
+    private val catalogSaveCoalescer = SaveCoalescer(repositoryScope, delayMs = 3_000L)
 
     init {
         loadDownloadedSongsIndex()
@@ -294,30 +301,36 @@ class StreamingMusicRepositoryImpl(
 
     private fun saveCatalogCache(serviceId: String = activeServiceId()) {
         if (appSettings.offlineMode.value) return
-        repositoryScope.launch(Dispatchers.IO) {
+        catalogSaveCoalescer.request(serviceId) {
             try {
-                val currentSongs = songsFlow.value.filterIsInstance<StreamingSong>()
-                if (currentSongs.isEmpty()) return@launch
+                var songCount = 0
+                // Saves run one at a time and snapshot the catalog inside the writer's lock,
+                // so overlapping saves cannot corrupt the file and the last one wins.
+                val saved = catalogCacheWriter.write(getCatalogCacheFile(serviceId), snapshot = {
+                    val currentSongs = songsFlow.value.filterIsInstance<StreamingSong>()
+                    if (currentSongs.isEmpty()) return@write null
 
-                val currentAlbums = (providerAlbumsFlow.value.ifEmpty { albumsFlow.value })
-                    .filterIsInstance<StreamingAlbum>()
-                val currentArtists = artistsFlow.value.filterIsInstance<StreamingArtist>()
-                val currentPlaylists = playlistsFlow.value.filterIsInstance<StreamingPlaylist>()
-                val currentLikedIds = likedSongIds.toList()
+                    val currentAlbums = (providerAlbumsFlow.value.ifEmpty { albumsFlow.value })
+                        .filterIsInstance<StreamingAlbum>()
+                    val currentArtists = artistsFlow.value.filterIsInstance<StreamingArtist>()
+                    val currentPlaylists = playlistsFlow.value.filterIsInstance<StreamingPlaylist>()
+                    val currentLikedIds = likedSongIds.toList()
 
-                val cache = StreamingCatalogCache(
-                    serviceId = serviceId,
-                    songs = currentSongs,
-                    albums = currentAlbums,
-                    artists = currentArtists,
-                    playlists = currentPlaylists,
-                    likedSongIds = currentLikedIds,
-                    lastSyncTimestamp = System.currentTimeMillis()
-                )
-
-                val cacheFile = getCatalogCacheFile(serviceId)
-                cacheFile.writeText(gson.toJson(cache))
-                Log.d("StreamingMusicRepo", "Saved streaming catalog cache for $serviceId (${currentSongs.size} songs)")
+                    val cache = StreamingCatalogCache(
+                        serviceId = serviceId,
+                        songs = currentSongs,
+                        albums = currentAlbums,
+                        artists = currentArtists,
+                        playlists = currentPlaylists,
+                        likedSongIds = currentLikedIds,
+                        lastSyncTimestamp = System.currentTimeMillis()
+                    )
+                    songCount = currentSongs.size
+                    cache
+                }) { cache, out -> gson.toJson(cache, out) }
+                if (saved) {
+                    Log.d("StreamingMusicRepo", "Saved streaming catalog cache for $serviceId ($songCount songs)")
+                }
             } catch (e: Exception) {
                 Log.e("StreamingMusicRepo", "Error saving streaming catalog cache for $serviceId", e)
             }
@@ -366,10 +379,7 @@ class StreamingMusicRepositoryImpl(
         }
 
         try {
-            val cacheFile = getCatalogCacheFile(normalized)
-            if (cacheFile.exists()) {
-                cacheFile.delete()
-            }
+            catalogCacheWriter.delete(getCatalogCacheFile(normalized))
         } catch (e: Exception) {
             Log.e("StreamingMusicRepo", "Error deleting catalog cache on disconnect", e)
         }
