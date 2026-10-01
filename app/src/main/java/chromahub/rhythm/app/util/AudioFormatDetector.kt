@@ -435,7 +435,7 @@ object AudioFormatDetector {
             song?.codec?.isNotBlank() == true && !song.codec.equals("Unknown", ignoreCase = true) -> song.codec
             else -> inferCodecFromUri(uri)
         }
-        val codec = normalizeCodec(rawCodec ?: "Unknown")
+        val codec = normalizeCodec(rawCodec)
         val sampleRate = song?.sampleRate ?: 0
         val channelCount = song?.channels ?: 2
         val bitrate = song?.bitrate ?: 0

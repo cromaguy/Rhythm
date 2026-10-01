@@ -57,6 +57,7 @@ class AudioDeviceManager(private val context: Context) {
         const val DEVICE_SPEAKER = "speaker"
         const val DEVICE_WIRED_HEADSET = "wired_headset"
         const val DEVICE_BLUETOOTH_PREFIX = "bt_"
+        const val DEVICE_USB_PREFIX = "usb_"
     }
     
     // Add a flag to track if the device was manually selected by the user
@@ -226,6 +227,24 @@ class AudioDeviceManager(private val context: Context) {
             } catch (e: Exception) {
                 Log.e(TAG, "Error getting Bluetooth devices: ${e.message}", e)
             }
+
+            try {
+                val usbDevices = audioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS).filter {
+                    (it.type == AudioDeviceInfo.TYPE_USB_DEVICE || it.type == AudioDeviceInfo.TYPE_USB_HEADSET) && it.isSink
+                }
+                for (usb in usbDevices) {
+                    val name = usb.productName.toString().takeIf { it.isNotBlank() } ?: "USB DAC / Audio"
+                    devices.add(
+                        PlaybackLocation(
+                            id = "${DEVICE_USB_PREFIX}${usb.id}",
+                            name = name,
+                            icon = 0
+                        )
+                    )
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error checking USB audio devices: ${e.message}", e)
+            }
             
             // Update the available devices - only if changed to avoid unnecessary UI updates
             val currentDevices = _availableDevices.value
@@ -333,6 +352,10 @@ class AudioDeviceManager(private val context: Context) {
                 return
             }
             
+            val isUsbActive = audioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS).any {
+                (it.type == AudioDeviceInfo.TYPE_USB_DEVICE || it.type == AudioDeviceInfo.TYPE_USB_HEADSET) && it.isSink
+            }
+
             // First check if Bluetooth is active
             val isBluetoothActive = isBluetoothActive()
             
@@ -341,6 +364,9 @@ class AudioDeviceManager(private val context: Context) {
             
             // Determine the active device based on the checks
             val activeDevice = when {
+                isUsbActive -> {
+                    devices.find { it.id.startsWith(DEVICE_USB_PREFIX) }
+                }
                 isBluetoothActive -> {
                     // Try to find the actually connected Bluetooth device
                     findActiveBluetoothDevice(devices) ?: 

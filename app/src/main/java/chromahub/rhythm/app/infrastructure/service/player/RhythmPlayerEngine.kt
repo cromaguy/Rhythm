@@ -6,6 +6,7 @@
 package chromahub.rhythm.app.infrastructure.service.player
 
 import android.content.Context
+import android.media.AudioDeviceInfo
 import android.media.AudioFocusRequest
 import android.media.AudioManager
 import android.util.Log
@@ -13,6 +14,7 @@ import androidx.annotation.OptIn
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
+import androidx.media3.common.PlaybackParameters
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.DefaultLoadControl
@@ -201,6 +203,19 @@ class RhythmPlayerEngine(
 
     fun getAudioSessionId(): Int = if (::playerA.isInitialized) playerA.audioSessionId else 0
 
+    @Volatile
+    private var preferredAudioDevice: AudioDeviceInfo? = null
+
+    fun setPreferredAudioDevice(device: AudioDeviceInfo?) {
+        preferredAudioDevice = device
+        if (::playerA.isInitialized) {
+            try { playerA.setPreferredAudioDevice(device) } catch (e: Exception) { Log.w(TAG, "Failed to set preferred device on playerA", e) }
+        }
+        if (::playerB.isInitialized) {
+            try { playerB.setPreferredAudioDevice(device) } catch (e: Exception) { Log.w(TAG, "Failed to set preferred device on playerB", e) }
+        }
+    }
+
     private var isReleased = false
 
     fun initialize() {
@@ -342,11 +357,31 @@ class RhythmPlayerEngine(
                     /* minVolumeToKeepPercentageWhenMuting = */ 0,
                     /* silenceThresholdLevel = */ 128.toShort()
                 )
-                val processorChain = DefaultAudioSink.DefaultAudioProcessorChain(
-                    processors.toTypedArray(),
-                    silenceSkippingProcessor,
-                    SonicAudioProcessor()
-                )
+                val sonicAudioProcessor = SonicAudioProcessor()
+                val allProcessors: Array<androidx.media3.common.audio.AudioProcessor> =
+                    (listOf(silenceSkippingProcessor) + processors + sonicAudioProcessor).toTypedArray()
+                val processorChain = object : androidx.media3.common.audio.AudioProcessorChain {
+                    override fun getAudioProcessors(): Array<androidx.media3.common.audio.AudioProcessor> = allProcessors
+
+                    override fun applyPlaybackParameters(playbackParameters: PlaybackParameters): PlaybackParameters {
+                        sonicAudioProcessor.setSpeed(playbackParameters.speed)
+                        sonicAudioProcessor.setPitch(playbackParameters.pitch)
+                        return playbackParameters
+                    }
+
+                    override fun applySkipSilenceEnabled(skipSilenceEnabled: Boolean): Boolean {
+                        silenceSkippingProcessor.setEnabled(skipSilenceEnabled)
+                        return skipSilenceEnabled
+                    }
+
+                    override fun getMediaDuration(playoutDuration: Long): Long {
+                        return if (sonicAudioProcessor.isActive) sonicAudioProcessor.getMediaDuration(playoutDuration) else playoutDuration
+                    }
+
+                    override fun getSkippedOutputFrameCount(): Long {
+                        return silenceSkippingProcessor.skippedFrames
+                    }
+                }
                 val baseSink = DefaultAudioSink.Builder(context)
                     .setEnableFloatOutput(enableFloatOutput)
                     .setEnableAudioOutputPlaybackParameters(enableAudioTrackPlaybackParams)
@@ -430,6 +465,9 @@ class RhythmPlayerEngine(
                 setSkipSilenceEnabled(appSettings.skipSilenceEnabled.value)
                 setSeekParameters(SeekParameters.EXACT)
                 playWhenReady = false
+                preferredAudioDevice?.let { dev ->
+                    try { setPreferredAudioDevice(dev) } catch (e: Exception) { Log.w(TAG, "Failed to apply preferred device", e) }
+                }
             }
 
         if (replayGainProcessor != null) {
@@ -647,8 +685,6 @@ class RhythmPlayerEngine(
                 incomingPlayer.setShuffleOrder(RhythmShuffleOrder(shuffledIndices))
             }
         }
-
-        incomingPlayer.seekTo(incomingQueueIndex, 0)
 
         outgoingPlayer.removeListener(masterPlayerListener)
 

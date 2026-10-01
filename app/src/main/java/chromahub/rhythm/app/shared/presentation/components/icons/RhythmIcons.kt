@@ -152,6 +152,8 @@ object RhythmIcons {
         val CastConnected = MaterialSymbolIcon("cast_connected")
         val Location = MaterialSymbolIcon("place", filled = true)
         val LocationOutlined = MaterialSymbolIcon("place")
+        val Usb = MaterialSymbolIcon("usb", filled = true)
+        val UsbOutlined = MaterialSymbolIcon("usb")
     }
 
     // ═══════════════════════════════════════════════════

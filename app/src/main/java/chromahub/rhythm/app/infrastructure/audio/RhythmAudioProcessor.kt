@@ -139,9 +139,9 @@ abstract class RhythmAudioProcessor : AudioProcessor {
         buffer.clear()
         buffer.put(inputBuffer)
         buffer.flip()
-        
+        outputBuffer = buffer
+
         if (isBypassed()) {
-            outputBuffer = buffer
             return
         }
         

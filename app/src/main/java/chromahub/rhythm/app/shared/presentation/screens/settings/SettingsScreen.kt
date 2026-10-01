@@ -193,6 +193,7 @@ object SettingsRoutes {
     const val GO_SETTINGS = "go_settings"
     const val BATTERY_SAVER = "battery_saver_settings"
     const val REPLAY_GAIN = "replay_gain_settings"
+    const val CROSSFADE = "crossfade_settings"
 }
 
 data class SettingItem(
@@ -1173,6 +1174,10 @@ fun SettingsScreenWrapper(
                             onBackClick = handleBack,
                             onNavigateTo = onNavigateToSubsetting
                         )
+                        SettingsRoutes.CROSSFADE -> CrossfadeSettingsScreen(
+                            onBackClick = handleBack,
+                            onNavigateTo = onNavigateToSubsetting
+                        )
                         SettingsRoutes.LYRICS -> LyricsSettingsScreen(onBackClick = handleBack)
                         SettingsRoutes.WIDGET -> WidgetSettingsScreen(onBackClick = handleBack)
                         SettingsRoutes.HOME_SCREEN -> HomeScreenCustomizationSettingsScreen(onBackClick = handleBack)
@@ -1310,6 +1315,10 @@ fun SettingsScreenWrapper(
                     onNavigateTo = onNavigateToSubsetting
                 )
                 SettingsRoutes.REPLAY_GAIN -> ReplayGainSettingsScreen(
+                    onBackClick = handleBack,
+                    onNavigateTo = onNavigateToSubsetting
+                )
+                SettingsRoutes.CROSSFADE -> CrossfadeSettingsScreen(
                     onBackClick = handleBack,
                     onNavigateTo = onNavigateToSubsetting
                 )

@@ -26,8 +26,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.Slider
-import androidx.compose.material3.SliderState
 import androidx.compose.runtime.*
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.Alignment
@@ -69,8 +67,6 @@ fun PlaybackSettingsScreen(
     val gaplessEnabled by appSettings.gaplessPlayback.collectAsState()
     val crossfadeEnabled by appSettings.crossfade.collectAsState()
     val crossfadeDuration by appSettings.crossfadeDuration.collectAsState()
-    val crossfadeRepeatOne by appSettings.crossfadeRepeatOne.collectAsState()
-    val crossfadeOnSkip by appSettings.crossfadeOnSkip.collectAsState()
     val stopPlaybackOnAppClose by appSettings.stopPlaybackOnAppClose.collectAsState()
     val monoAudioEnabled by appSettings.monoAudioEnabled.collectAsState()
     val useSystemVolume by appSettings.useSystemVolume.collectAsState()
@@ -86,6 +82,10 @@ fun PlaybackSettingsScreen(
     val useDefaultPlaybackSpeed by appSettings.useDefaultPlaybackSpeed.collectAsState()
     var showDefaultSpeedDialog by remember { mutableStateOf(false) }
 
+    val audioRoutingMode by appSettings.audioRoutingMode.collectAsState()
+    val isBitPerfect = audioRoutingMode == "app"
+    var showAudioRoutingDialog by remember { mutableStateOf(false) }
+
     CollapsibleHeaderScreen(
         title = context.getString(R.string.settings_playback_title),
         showBackButton = true,
@@ -96,16 +96,16 @@ fun PlaybackSettingsScreen(
                 title = context.getString(R.string.settings_section_volume_device),
                 items = listOf(
                     SettingItem(
-                        RhythmIcons.Player.VolumeUp,
-                        context.getString(R.string.settings_system_volume),
-                        context.getString(R.string.settings_system_volume_desc),
+                        icon = RhythmIcons.Player.VolumeUp,
+                        title = context.getString(R.string.settings_system_volume),
+                        description = context.getString(R.string.settings_system_volume_desc),
                         toggleState = useSystemVolume,
                         onToggleChange = { musicViewModel.setUseSystemVolumeMode(it) }
                     ),
                     SettingItem(
-                        RhythmIcons.Devices.Bluetooth,
-                        context.getString(R.string.settings_resume_on_device_reconnect),
-                        context.getString(R.string.settings_resume_on_device_reconnect_desc),
+                        icon = MaterialSymbolIcon("bluetooth_connected", filled = true),
+                        title = context.getString(R.string.settings_resume_on_device_reconnect),
+                        description = context.getString(R.string.settings_resume_on_device_reconnect_desc),
                         toggleState = resumeOnDeviceReconnect,
                         onToggleChange = { appSettings.setResumeOnDeviceReconnect(it) }
                     )
@@ -115,44 +115,44 @@ fun PlaybackSettingsScreen(
                 title = context.getString(R.string.settings_playback_persistence),
                 items = listOf(
                     SettingItem(
-                        RhythmIcons.Repeat,
-                        context.getString(R.string.settings_remember_repeat_mode),
-                        context.getString(R.string.settings_remember_repeat_mode_desc),
+                        icon = RhythmIcons.Repeat,
+                        title = context.getString(R.string.settings_remember_repeat_mode),
+                        description = context.getString(R.string.settings_remember_repeat_mode_desc),
                         toggleState = repeatModePersistence,
                         onToggleChange = { appSettings.setRepeatModePersistence(it) }
                     ),
                     SettingItem(
-                        RhythmIcons.Shuffle,
-                        context.getString(R.string.settings_remember_shuffle_mode),
-                        context.getString(R.string.settings_remember_shuffle_mode_desc),
+                        icon = RhythmIcons.Shuffle,
+                        title = context.getString(R.string.settings_remember_shuffle_mode),
+                        description = context.getString(R.string.settings_remember_shuffle_mode_desc),
                         toggleState = shuffleModePersistence,
                         onToggleChange = { appSettings.setShuffleModePersistence(it) }
                     ),
                     SettingItem(
-                        RhythmIcons.Shuffle,
-                        context.getString(R.string.settings_keep_shuffle_on_selection),
-                        context.getString(R.string.settings_keep_shuffle_on_selection_desc),
+                        icon = MaterialSymbolIcon("shuffle_on", filled = true),
+                        title = context.getString(R.string.settings_keep_shuffle_on_selection),
+                        description = context.getString(R.string.settings_keep_shuffle_on_selection_desc),
                         toggleState = keepShuffleOnSelection,
                         onToggleChange = { appSettings.setKeepShuffleOnSelection(it) }
                     ),
                     SettingItem(
-                        RhythmIcons.Stop,
-                        context.getString(R.string.settings_stop_playback_on_close),
-                        context.getString(R.string.settings_stop_playback_on_close_desc),
+                        icon = MaterialSymbolIcon("stop_circle", filled = true),
+                        title = context.getString(R.string.settings_stop_playback_on_close),
+                        description = context.getString(R.string.settings_stop_playback_on_close_desc),
                         toggleState = stopPlaybackOnAppClose,
                         onToggleChange = { appSettings.setStopPlaybackOnAppClose(it) }
                     ),
                     SettingItem(
-                        MaterialSymbolIcon("speed"),
-                        context.getString(R.string.use_default_playback_speed),
-                        context.getString(R.string.use_default_playback_speed_desc),
+                        icon = RhythmIcons.Player.Speed,
+                        title = context.getString(R.string.use_default_playback_speed),
+                        description = context.getString(R.string.use_default_playback_speed_desc),
                         toggleState = useDefaultPlaybackSpeed,
                         onToggleChange = { appSettings.setUseDefaultPlaybackSpeed(it) }
                     ),
                     SettingItem(
-                        MaterialSymbolIcon("tune"),
-                        context.getString(R.string.default_playback_speed),
-                        "${String.format(java.util.Locale.US, "%.3f", defaultPlaybackSpeed).dropLastWhile { it == '0' }.dropLastWhile { it == '.' }}x — ${context.getString(R.string.default_playback_speed_desc)}",
+                        icon = MaterialSymbolIcon("pace", filled = true),
+                        title = context.getString(R.string.default_playback_speed),
+                        description = "${String.format(java.util.Locale.US, "%.3f", defaultPlaybackSpeed).dropLastWhile { it == '0' }.dropLastWhile { it == '.' }}x — ${context.getString(R.string.default_playback_speed_desc)}",
                         onClick = { showDefaultSpeedDialog = true }
                     )
                 )
@@ -161,78 +161,66 @@ fun PlaybackSettingsScreen(
                 title = context.getString(R.string.settings_audio_effects),
                 items = listOf(
                     SettingItem(
-                        MaterialSymbolIcon("graphic_eq"),
-                        context.getString(R.string.settings_gapless_playback),
-                        context.getString(R.string.settings_gapless_playback_desc),
+                        icon = MaterialSymbolIcon("graphic_eq", filled = true),
+                        title = context.getString(R.string.settings_gapless_playback),
+                        description = context.getString(R.string.settings_gapless_playback_desc),
                         toggleState = gaplessEnabled,
                         onToggleChange = { appSettings.setGaplessPlayback(it) }
                     ),
                     SettingItem(
-                        MaterialSymbolIcon("hearing"),
-                        context.getString(R.string.settings_skip_silence),
-                        when {
+                        icon = MaterialSymbolIcon("hearing", filled = true),
+                        title = context.getString(R.string.settings_skip_silence),
+                        description = when {
+                            isBitPerfect -> context.getString(R.string.audio_routing_bit_perfect_disabled_effect)
                             isOffloadEnforced -> "Disabled under Lite Mode to conserve battery."
                             isAudioOffloadActive && !skipSilenceEnabled -> "${context.getString(R.string.settings_skip_silence_desc)}\n(Enabling will disable hardware Audio Offload)"
                             else -> context.getString(R.string.settings_skip_silence_desc)
                         },
-                        toggleState = if (isOffloadEnforced || isAudioOffloadActive) false else skipSilenceEnabled,
+                        toggleState = if (isOffloadEnforced || isAudioOffloadActive || isBitPerfect) false else skipSilenceEnabled,
                         onToggleChange = {
-                            if (!isOffloadEnforced && !isAudioOffloadActive) {
+                            if (!isOffloadEnforced && !isAudioOffloadActive && !isBitPerfect) {
                                 appSettings.setSkipSilenceEnabled(it)
                             }
                         },
-                        enabled = !isOffloadEnforced && !isAudioOffloadActive
+                        enabled = !isOffloadEnforced && !isAudioOffloadActive && !isBitPerfect
                     ),
                     SettingItem(
-                        RhythmIcons.Tune,
-                        context.getString(R.string.settings_crossfade),
-                        when {
+                        icon = MaterialSymbolIcon("compare_arrows", filled = true),
+                        title = context.getString(R.string.settings_crossfade),
+                        description = when {
+                            isBitPerfect -> context.getString(R.string.audio_routing_bit_perfect_disabled_effect)
                             isOffloadEnforced -> "Disabled under Lite Mode to conserve battery."
-                            isAudioOffloadActive && !crossfadeEnabled -> "${context.getString(R.string.settings_crossfade_desc)}\n(Enabling will disable hardware Audio Offload)"
+                            crossfadeEnabled -> "${context.getString(R.string.status_active)} • ${String.format(java.util.Locale.US, "%.1f", crossfadeDuration)}s"
+                            isAudioOffloadActive -> "${context.getString(R.string.status_disabled)}\n(Enabling will disable hardware Audio Offload)"
                             else -> context.getString(R.string.settings_crossfade_desc)
                         },
-                        toggleState = if (isOffloadEnforced) false else crossfadeEnabled,
-                        onToggleChange = { if (!isOffloadEnforced) appSettings.setCrossfade(it) },
-                        enabled = !isOffloadEnforced,
-                        data = if (crossfadeEnabled && !isOffloadEnforced) crossfadeDuration else null
+                        onClick = { if (!isBitPerfect) onNavigateTo(SettingsRoutes.CROSSFADE) },
+                        enabled = !isBitPerfect
                     ),
                     SettingItem(
-                        RhythmIcons.Repeat,
-                        context.getString(R.string.settings_crossfade_repeat_one),
-                        context.getString(R.string.settings_crossfade_repeat_one_desc),
-                        toggleState = if (isOffloadEnforced) false else crossfadeRepeatOne,
-                        onToggleChange = { if (!isOffloadEnforced) appSettings.setCrossfadeRepeatOne(it) },
-                        enabled = crossfadeEnabled && !isOffloadEnforced
-                    ),
-                    SettingItem(
-                        MaterialSymbolIcon("skip_next"),
-                        context.getString(R.string.settings_crossfade_on_skip),
-                        context.getString(R.string.settings_crossfade_on_skip_desc),
-                        toggleState = if (isOffloadEnforced) false else crossfadeOnSkip,
-                        onToggleChange = { if (!isOffloadEnforced) appSettings.setCrossfadeOnSkip(it) },
-                        enabled = crossfadeEnabled && !isOffloadEnforced
-                    ),
-                    SettingItem(
-                        MaterialSymbolIcon("headset_mic"),
-                        context.getString(R.string.settings_mono_audio),
-                        when {
+                        icon = MaterialSymbolIcon("spatial_audio_off", filled = true),
+                        title = context.getString(R.string.settings_mono_audio),
+                        description = when {
+                            isBitPerfect -> context.getString(R.string.audio_routing_bit_perfect_disabled_effect)
                             isOffloadEnforced -> "Disabled under Lite Mode to conserve battery."
                             isAudioOffloadActive && !monoAudioEnabled -> "${context.getString(R.string.settings_mono_audio_desc)}\n(Enabling will disable hardware Audio Offload)"
                             else -> context.getString(R.string.settings_mono_audio_desc)
                         },
-                        toggleState = if (isOffloadEnforced) false else monoAudioEnabled,
-                        onToggleChange = { if (!isOffloadEnforced) musicViewModel.setMonoAudioEnabled(it) },
-                        enabled = !isOffloadEnforced
+                        toggleState = if (isOffloadEnforced || isBitPerfect) false else monoAudioEnabled,
+                        onToggleChange = { if (!isOffloadEnforced && !isBitPerfect) musicViewModel.setMonoAudioEnabled(it) },
+                        enabled = !isOffloadEnforced && !isBitPerfect
                     ),
                     SettingItem(
-                        MaterialSymbolIcon("volume_up"),
-                        context.getString(R.string.replay_gain),
-                        when {
+                        icon = MaterialSymbolIcon("equalizer", filled = true),
+                        title = context.getString(R.string.replay_gain),
+                        description = when {
+                            isBitPerfect -> context.getString(R.string.audio_routing_bit_perfect_disabled_effect)
                             isOffloadEnforced -> "Disabled under Lite Mode to conserve battery."
                             isAudioOffloadActive && !replayGain -> "${context.getString(R.string.replay_gain_desc)}\n(Enabling will disable hardware Audio Offload)"
                             else -> context.getString(R.string.replay_gain_desc)
                         },
-                        onClick = { onNavigateTo(SettingsRoutes.REPLAY_GAIN) }
+                        onClick = { if (!isBitPerfect) onNavigateTo(SettingsRoutes.REPLAY_GAIN) },
+                        enabled = !isBitPerfect
                     )
                 )
             ),
@@ -240,12 +228,26 @@ fun PlaybackSettingsScreen(
                 title = context.getString(R.string.settings_section_audio_playback),
                 items = listOf(
                     SettingItem(
-                        MaterialSymbolIcon("bolt"),
-                        context.getString(R.string.settingsscreen_audio_offload),
-                        if (isOffloadEnforced) "Enforced under Lite Mode to conserve battery." else context.getString(R.string.settingsscreen_audio_offload_desc),
-                        toggleState = if (isOffloadEnforced) true else audioOffloadEnabled,
-                        onToggleChange = { if (!isOffloadEnforced) appSettings.setAudioOffloadEnabled(it) },
-                        enabled = !isOffloadEnforced
+                        icon = MaterialSymbolIcon("bolt", filled = true),
+                        title = context.getString(R.string.settingsscreen_audio_offload),
+                        description = when {
+                            isBitPerfect -> context.getString(R.string.audio_routing_bit_perfect_disabled_effect)
+                            isOffloadEnforced -> "Enforced under Lite Mode to conserve battery."
+                            else -> context.getString(R.string.settingsscreen_audio_offload_desc)
+                        },
+                        toggleState = if (isOffloadEnforced) true else if (isBitPerfect) false else audioOffloadEnabled,
+                        onToggleChange = { if (!isOffloadEnforced && !isBitPerfect) appSettings.setAudioOffloadEnabled(it) },
+                        enabled = !isOffloadEnforced && !isBitPerfect
+                    ),
+                    SettingItem(
+                        icon = RhythmIcons.Devices.Usb,
+                        title = context.getString(R.string.settings_audio_routing_mode),
+                        description = when (audioRoutingMode) {
+                            "app" -> context.getString(R.string.audio_routing_app)
+                            "system" -> context.getString(R.string.audio_routing_system)
+                            else -> context.getString(R.string.audio_routing_default)
+                        },
+                        onClick = { showAudioRoutingDialog = true }
                     )
                 )
             ),
@@ -253,16 +255,16 @@ fun PlaybackSettingsScreen(
                 title = context.getString(R.string.settings_time_display),
                 items = listOf(
                     SettingItem(
-                        RhythmIcons.AccessTime,
-                        context.getString(R.string.settings_use_hours),
-                        if (useHoursInTimeFormat) context.getString(R.string.settings_use_hours_enabled) else context.getString(R.string.settings_use_hours_disabled),
+                        icon = RhythmIcons.AccessTime,
+                        title = context.getString(R.string.settings_use_hours),
+                        description = if (useHoursInTimeFormat) context.getString(R.string.settings_use_hours_enabled) else context.getString(R.string.settings_use_hours_disabled),
                         toggleState = useHoursInTimeFormat,
                         onToggleChange = { appSettings.setUseHoursInTimeFormat(it) }
                     ),
                     SettingItem(
-                        RhythmIcons.AccessTime,
-                        context.getString(R.string.settings_show_remaining_time),
-                        context.getString(R.string.settings_show_remaining_time_desc),
+                        icon = MaterialSymbolIcon("timelapse", filled = true),
+                        title = context.getString(R.string.settings_show_remaining_time),
+                        description = context.getString(R.string.settings_show_remaining_time_desc),
                         toggleState = showRemainingTime,
                         onToggleChange = { appSettings.setShowRemainingTime(it) }
                     )
@@ -288,63 +290,7 @@ fun PlaybackSettingsScreen(
                     Material3SettingsItem(
                         icon = item.icon,
                         title = { Text(item.title) },
-                        description = {
-                            Column {
-                                item.description?.let { desc -> Text(desc) }
-
-                                if (item.data is Float && item.toggleState == true) {
-                                    Spacer(modifier = Modifier.height(10.dp))
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Text(
-                                            text = context.getString(R.string.settings_crossfade_duration),
-                                            style = MaterialTheme.typography.bodyLarge,
-                                            fontWeight = FontWeight.Medium
-                                        )
-                                        Text(
-                                            text = context.getString(R.string.settings_crossfade_duration_desc, crossfadeDuration),
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            color = MaterialTheme.colorScheme.primary
-                                        )
-                                    }
-                                    Spacer(modifier = Modifier.height(8.dp))
-                                     val crossfadeSliderState = remember(crossfadeDuration) {
-                                         SliderState(
-                                             value = crossfadeDuration,
-                                             steps = 22,
-                                             trackRange = 0.5f..12f
-                                         )
-                                     }
-                                     crossfadeSliderState.value = crossfadeDuration
-                                     Slider(
-                                         state = crossfadeSliderState,
-                                         onValueChange = {
-                                             HapticUtils.performHapticFeedback(context, hapticFeedback, HapticType.LIGHT)
-                                             appSettings.setCrossfadeDuration(it)
-                                         },
-                                         modifier = Modifier.fillMaxWidth()
-                                     )
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceBetween
-                                    ) {
-                                        Text(
-                                            text = context.getString(R.string.settings_crossfade_min),
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                        Text(
-                                            text = context.getString(R.string.settings_crossfade_max),
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    }
-                                }
-                            }
-                        },
+                        description = item.description?.let { desc -> { Text(desc) } },
                         trailingContent = when {
                             item.toggleState != null && item.onClick != null -> {
                                 {
@@ -435,6 +381,15 @@ fun PlaybackSettingsScreen(
                     appSettings.setDefaultPlaybackSpeed(speed)
                     showDefaultSpeedDialog = false
                 }
+            )
+        }
+
+        if (showAudioRoutingDialog) {
+            AudioRoutingDialog(
+                onDismiss = { showAudioRoutingDialog = false },
+                appSettings = appSettings,
+                context = context,
+                haptic = hapticFeedback
             )
         }
     }

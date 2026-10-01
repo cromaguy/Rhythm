@@ -355,7 +355,7 @@ fun buildSettingsSearchIndex(context: Context): List<SearchableSettingItem> {
             title = context.getString(R.string.settings_resume_on_device_reconnect),
             description = context.getString(R.string.settings_resume_on_device_reconnect_desc),
             keywords = listOf("resume", "device", "reconnect", "bluetooth", "headphones", "audio device", "playback"),
-            icon = RhythmIcons.Devices.Bluetooth,
+            icon = MaterialSymbolIcon("bluetooth_connected", filled = true),
             route = SettingsRoutes.PLAYBACK,
             parentScreen = context.getString(R.string.settings_section_queue_playback),
             settingKey = "resumeOnDeviceReconnect"
@@ -451,19 +451,30 @@ fun buildSettingsSearchIndex(context: Context): List<SearchableSettingItem> {
             title = context.getString(R.string.settingsscreen_audio_offload),
             description = context.getString(R.string.settingsscreen_audio_offload_desc),
             keywords = listOf("audio", "offload", "hardware", "dsp", "decode", "battery", "power"),
-            icon = MaterialSymbolIcon("bolt"),
+            icon = MaterialSymbolIcon("bolt", filled = true),
             route = SettingsRoutes.PLAYBACK,
-            parentScreen = context.getString(R.string.settings_playback_title)
+            parentScreen = context.getString(R.string.settings_playback_title),
+            settingKey = "audioOffloadEnabled"
         ))
         add(SearchableSettingItem(
             id = "mono_audio",
             title = context.getString(R.string.settings_mono_audio),
             description = context.getString(R.string.settings_mono_audio_desc),
             keywords = listOf("mono", "mono audio", "downmix", "stereo", "single earpiece", "earpiece", "one ear", "center", "audio"),
-            icon = MaterialSymbolIcon("graphic_eq"),
+            icon = MaterialSymbolIcon("spatial_audio_off", filled = true),
             route = SettingsRoutes.PLAYBACK,
             parentScreen = context.getString(R.string.settings_playback_title),
             settingKey = "monoAudioEnabled"
+        ))
+        add(SearchableSettingItem(
+            id = "audio_routing_mode",
+            title = context.getString(R.string.settings_audio_routing_mode),
+            description = context.getString(R.string.settings_audio_routing_mode_desc),
+            keywords = listOf("audio routing", "bit perfect", "dac", "usb dac", "external dac", "output routing", "hi-res", "direct dac", "system forced"),
+            icon = RhythmIcons.Devices.Usb,
+            route = SettingsRoutes.PLAYBACK,
+            parentScreen = context.getString(R.string.settings_playback_title),
+            settingKey = "audioRoutingMode"
         ))
         add(SearchableSettingItem(
             id = "battery_saver_disable_haptics",
@@ -2078,7 +2089,7 @@ fun buildSettingsSearchIndex(context: Context): List<SearchableSettingItem> {
             title = context.getString(R.string.settings_keep_shuffle_on_selection),
             description = context.getString(R.string.settings_keep_shuffle_on_selection_desc),
             keywords = listOf("shuffle", "persist", "library", "select", "song", "keep", "queue", "random"),
-            icon = RhythmIcons.Shuffle,
+            icon = MaterialSymbolIcon("shuffle_on", filled = true),
             route = SettingsRoutes.PLAYBACK,
             parentScreen = "Playback",
             settingKey = "keepShuffleOnSelection"
@@ -2088,10 +2099,30 @@ fun buildSettingsSearchIndex(context: Context): List<SearchableSettingItem> {
             title = context.getString(R.string.settings_queue_stop_on_close),
             description = context.getString(R.string.settings_queue_stop_on_close_desc),
             keywords = listOf("stop", "playback", "close", "exit", "quit"),
-            icon = RhythmIcons.Stop,
+            icon = MaterialSymbolIcon("stop_circle", filled = true),
             route = SettingsRoutes.PLAYBACK,
             parentScreen = "Playback",
             settingKey = "stopPlaybackOnAppClose"
+        ))
+        add(SearchableSettingItem(
+            id = "use_default_playback_speed",
+            title = context.getString(R.string.use_default_playback_speed),
+            description = context.getString(R.string.use_default_playback_speed_desc),
+            keywords = listOf("speed", "playback speed", "rate", "pace", "tempo", "fast", "slow", "pitch"),
+            icon = RhythmIcons.Player.Speed,
+            route = SettingsRoutes.PLAYBACK,
+            parentScreen = "Playback",
+            settingKey = "useDefaultPlaybackSpeed"
+        ))
+        add(SearchableSettingItem(
+            id = "default_playback_speed",
+            title = context.getString(R.string.default_playback_speed),
+            description = context.getString(R.string.default_playback_speed_desc),
+            keywords = listOf("speed", "playback speed", "default speed", "rate", "tempo", "fast", "slow"),
+            icon = MaterialSymbolIcon("pace", filled = true),
+            route = SettingsRoutes.PLAYBACK,
+            parentScreen = "Playback",
+            settingKey = "defaultPlaybackSpeed"
         ))
         add(SearchableSettingItem(
             id = "sleep_timer",
@@ -2117,7 +2148,7 @@ fun buildSettingsSearchIndex(context: Context): List<SearchableSettingItem> {
             title = context.getString(R.string.settings_show_remaining_time),
             description = context.getString(R.string.settings_show_remaining_time_desc),
             keywords = listOf("remaining", "time", "duration", "display", "countdown", "total"),
-            icon = RhythmIcons.AccessTime,
+            icon = MaterialSymbolIcon("timelapse", filled = true),
             route = SettingsRoutes.PLAYBACK,
             parentScreen = "Playback",
             settingKey = "showRemainingTime"
@@ -2127,7 +2158,7 @@ fun buildSettingsSearchIndex(context: Context): List<SearchableSettingItem> {
             title = context.getString(R.string.settings_gapless_playback),
             description = context.getString(R.string.settings_gapless_playback_desc),
             keywords = listOf("gapless", "transition", "silence", "playback", "next track"),
-            icon = MaterialSymbolIcon("graphic_eq"),
+            icon = MaterialSymbolIcon("graphic_eq", filled = true),
             route = SettingsRoutes.PLAYBACK,
             parentScreen = "Playback",
             settingKey = "gaplessPlayback"
@@ -2137,9 +2168,9 @@ fun buildSettingsSearchIndex(context: Context): List<SearchableSettingItem> {
             title = context.getString(R.string.settings_crossfade),
             description = context.getString(R.string.settings_crossfade_desc),
             keywords = listOf("crossfade", "transition", "fade", "overlap", "smooth", "songs", "playback"),
-            icon = MaterialSymbolIcon("linear_scale"),
-            route = SettingsRoutes.PLAYBACK,
-            parentScreen = "Playback",
+            icon = MaterialSymbolIcon("compare_arrows", filled = true),
+            route = SettingsRoutes.CROSSFADE,
+            parentScreen = context.getString(R.string.settings_playback_title),
             settingKey = "crossfade"
         ))
         add(SearchableSettingItem(
@@ -2147,9 +2178,9 @@ fun buildSettingsSearchIndex(context: Context): List<SearchableSettingItem> {
             title = context.getString(R.string.settings_crossfade_repeat_one),
             description = context.getString(R.string.settings_crossfade_repeat_one_desc),
             keywords = listOf("crossfade", "repeat one", "loop one", "transition", "single track"),
-            icon = RhythmIcons.Repeat,
-            route = SettingsRoutes.PLAYBACK,
-            parentScreen = "Playback",
+            icon = RhythmIcons.Player.RepeatOne,
+            route = SettingsRoutes.CROSSFADE,
+            parentScreen = context.getString(R.string.settings_playback_title),
             settingKey = "crossfadeRepeatOne"
         ))
         add(SearchableSettingItem(
@@ -2157,9 +2188,9 @@ fun buildSettingsSearchIndex(context: Context): List<SearchableSettingItem> {
             title = context.getString(R.string.settings_crossfade_duration),
             description = context.getString(R.string.settings_crossfade_duration_desc, 4.0f),
             keywords = listOf("crossfade", "duration", "seconds", "time", "length", "transition"),
-            icon = MaterialSymbolIcon("linear_scale"),
-            route = SettingsRoutes.PLAYBACK,
-            parentScreen = "Playback",
+            icon = MaterialSymbolIcon("timer", filled = true),
+            route = SettingsRoutes.CROSSFADE,
+            parentScreen = context.getString(R.string.settings_playback_title),
             settingKey = "crossfadeDuration"
         ))
         add(SearchableSettingItem(
@@ -2167,9 +2198,9 @@ fun buildSettingsSearchIndex(context: Context): List<SearchableSettingItem> {
             title = context.getString(R.string.settings_crossfade_on_skip),
             description = context.getString(R.string.settings_crossfade_on_skip_desc),
             keywords = listOf("crossfade", "skip", "next", "previous", "manual", "transition", "fade"),
-            icon = MaterialSymbolIcon("skip_next"),
-            route = SettingsRoutes.PLAYBACK,
-            parentScreen = "Playback",
+            icon = RhythmIcons.Player.SkipNext,
+            route = SettingsRoutes.CROSSFADE,
+            parentScreen = context.getString(R.string.settings_playback_title),
             settingKey = "crossfadeOnSkip"
         ))
         add(SearchableSettingItem(
@@ -2201,7 +2232,7 @@ fun buildSettingsSearchIndex(context: Context): List<SearchableSettingItem> {
             title = context.getString(R.string.settings_skip_silence),
             description = context.getString(R.string.settings_skip_silence_desc),
             keywords = listOf("skip silence", "silence", "cut silence", "audio effects", "smart play", "gapless", "playback"),
-            icon = MaterialSymbolIcon("hearing"),
+            icon = MaterialSymbolIcon("hearing", filled = true),
             route = SettingsRoutes.PLAYBACK,
             parentScreen = context.getString(R.string.settings_playback_title),
             settingKey = "skipSilenceEnabled"
@@ -2213,7 +2244,7 @@ fun buildSettingsSearchIndex(context: Context): List<SearchableSettingItem> {
             title = context.getString(R.string.replay_gain),
             description = context.getString(R.string.replay_gain_desc),
             keywords = listOf("replay gain", "replaygain", "volume normalization", "normalization", "gain", "audio effects"),
-            icon = MaterialSymbolIcon("volume_up"),
+            icon = MaterialSymbolIcon("equalizer", filled = true),
             route = SettingsRoutes.REPLAY_GAIN,
             parentScreen = context.getString(R.string.settings_playback_title),
             settingKey = "replayGain"

@@ -8889,7 +8889,7 @@ private fun IntegrationsSettingsCards(
 ) {
     val context = LocalContext.current
     val haptic = LocalHapticFeedback.current
-    val onboardingToggleItem: (MaterialSymbolIcon, String, String, Boolean, (Boolean) -> Unit, (() -> Unit)?) -> Material3SettingsItem =
+    val onboardingToggleItem: (MaterialSymbolIcon?, String, String, Boolean, (Boolean) -> Unit, (() -> Unit)?) -> Material3SettingsItem =
         { icon, title, description, isEnabled, onToggle, onConfigure ->
             Material3SettingsItem(
                 icon = icon,
@@ -8945,7 +8945,7 @@ private fun IntegrationsSettingsCards(
         }
         add(
             onboardingToggleItem(
-                MaterialSymbolIcon("movie"),
+                null,
                 "Apple Music Motion Canvas",
                 appleCanvasDesc,
                 appleCanvasEnabled,
@@ -8956,7 +8956,7 @@ private fun IntegrationsSettingsCards(
         if (chromahub.rhythm.app.BuildConfig.ENABLE_DEEZER) {
             add(
                 onboardingToggleItem(
-                    RhythmIcons.Public,
+                    null,
                     "Deezer",
                     "Get high-quality album covers and track details automatically",
                     deezerApiEnabled,
@@ -8968,7 +8968,7 @@ private fun IntegrationsSettingsCards(
         if (chromahub.rhythm.app.BuildConfig.ENABLE_BETTERLYRICS) {
             add(
                 onboardingToggleItem(
-                    MaterialSymbolIcon("music_note"),
+                    null,
                     context.getString(R.string.onboarding_integration_betterlyrics),
                     context.getString(R.string.api_betterlyrics_desc),
                     betterLyricsApiEnabled,
@@ -8980,7 +8980,7 @@ private fun IntegrationsSettingsCards(
         if (chromahub.rhythm.app.BuildConfig.ENABLE_LYRICALLY_API) {
             add(
                 onboardingToggleItem(
-                    MaterialSymbolIcon("music_note"),
+                    null,
                     "Lyrically",
                     "Enjoy beautiful, word-by-word synchronized lyrics",
                     lyricallyApiEnabled,
@@ -8992,7 +8992,7 @@ private fun IntegrationsSettingsCards(
         if (chromahub.rhythm.app.BuildConfig.ENABLE_LRCLIB) {
             add(
                 onboardingToggleItem(
-                    MaterialSymbolIcon("lyrics"),
+                    null,
                     "LrcLib",
                     "Find and download synchronized scrolling lyrics",
                     lrclibApiEnabled,
@@ -9004,7 +9004,7 @@ private fun IntegrationsSettingsCards(
         if (chromahub.rhythm.app.BuildConfig.ENABLE_YOUTUBE_MUSIC) {
             add(
                 onboardingToggleItem(
-                    MaterialSymbolIcon("music_video"),
+                    null,
                     "YouTube Music",
                     "Access matching song details and recommendations",
                     ytMusicApiEnabled,
@@ -9016,7 +9016,7 @@ private fun IntegrationsSettingsCards(
         if (chromahub.rhythm.app.BuildConfig.ENABLE_WIKIPEDIA) {
             add(
                 onboardingToggleItem(
-                    MaterialSymbolIcon("article"),
+                    null,
                     "Wikipedia",
                     "Fetch album details and descriptions for About section",
                     wikipediaApiEnabled,
@@ -9037,7 +9037,7 @@ private fun IntegrationsSettingsCards(
             null
         ),
         onboardingToggleItem(
-            MaterialSymbolIcon("lyrics"),
+            MaterialSymbolIcon("lyrics", filled = true),
             context.getString(R.string.bluetooth_lyrics_enabled),
             context.getString(R.string.bluetooth_lyrics_desc),
             bluetoothLyricsEnabled,
@@ -9559,14 +9559,6 @@ private fun AppModeSelectionList(
     Material3SettingsGroup(
         items = listOf(
             Material3SettingsItem(
-                leadingContent = {
-                    Icon(
-                        imageVector = MaterialSymbolIcon("music_note", filled = true),
-                        contentDescription = null,
-                        tint = if (selectedMode == "LOCAL") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(28.dp)
-                    )
-                },
                 title = {
                     Text(
                         text = stringResource(R.string.common_rhythm),
@@ -9595,14 +9587,6 @@ private fun AppModeSelectionList(
                 }
             ),
             Material3SettingsItem(
-                leadingContent = {
-                    Icon(
-                        imageVector = MaterialSymbolIcon("cloud_queue", filled = true),
-                        contentDescription = null,
-                        tint = if (selectedMode == "STREAMING") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(28.dp)
-                    )
-                },
                 title = {
                     Text(
                         text = stringResource(R.string.onboardingscreen_rhythm_go),

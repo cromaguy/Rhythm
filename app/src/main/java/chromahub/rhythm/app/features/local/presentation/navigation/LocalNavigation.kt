@@ -278,6 +278,7 @@ sealed class Screen(val route: String) {
     object TunerArtistSeparators : Screen("tuner_artist_separators_settings")
     object TunerGoSettings : Screen("tuner_go_settings")
     object TunerReplayGain : Screen("tuner_replay_gain_settings")
+    object TunerCrossfade : Screen("tuner_crossfade_settings")
     object TunerDefaultPlaylists : Screen("tuner_default_playlists_settings")
     
     // Stats Screen
@@ -2287,8 +2288,9 @@ private fun LocalNavigationContent(
                     PlaybackSettingsScreen(
                         onBackClick = navigateBackOrToSettings,
                         onNavigateTo = { route ->
-                            if (route == SettingsRoutes.REPLAY_GAIN) {
-                                navController.navigate(Screen.TunerReplayGain.route)
+                            when (route) {
+                                SettingsRoutes.REPLAY_GAIN -> navController.navigate(Screen.TunerReplayGain.route)
+                                SettingsRoutes.CROSSFADE -> navController.navigate(Screen.TunerCrossfade.route)
                             }
                         }
                     )
@@ -2296,6 +2298,10 @@ private fun LocalNavigationContent(
 
                 composable(Screen.TunerReplayGain.route) {
                     ReplayGainSettingsScreen(onBackClick = navigateBackOrToSettings)
+                }
+
+                composable(Screen.TunerCrossfade.route) {
+                    CrossfadeSettingsScreen(onBackClick = navigateBackOrToSettings)
                 }
 
                 composable(Screen.TunerHomeScreen.route) {

@@ -25,10 +25,10 @@
     <string name="settings_notifications_rhythm_pulse_group">Listening Highlights &amp; Tips</string>
     <string name="settings_notifications_system_group">System Controls</string>
     <string name="settings_library_operations_notifications">Library Operations &amp; Backups</string>
-    <string name="settings_library_operations_notifications_desc">Show progress notifications for media indexing and playlist export/import</string>
+    <string name="settings_library_operations_notifications_desc">Show notifications for media indexing and playlist operations</string>
     <string name="settings_update_notifications_merged_desc">Get alerts when new Rhythm updates are ready to install</string>
     <string name="settings_rhythm_guard_alert_notifications">Hearing Safety Warnings</string>
-    <string name="settings_rhythm_guard_alert_notifications_desc">Show instant alerts when volume or sound exposure exceeds safe thresholds</string>
+    <string name="settings_rhythm_guard_alert_notifications_desc">Alert when volume or sound exposure exceeds safe limits</string>
     <string name="settings_rhythm_guard_timer_notifications">Listening Break Assistant</string>
     <string name="settings_rhythm_guard_timer_notifications_desc">Show countdowns and notifications for scheduled hearing breaks</string>
     <string name="settings_rhythm_pulse_notifications">Listening Highlights &amp; Tips</string>
@@ -36,9 +36,9 @@
     <string name="settings_rhythm_pulse_interval">Tip Delivery Frequency</string>
     <string name="settings_rhythm_pulse_interval_dialog_title">Select Delivery Frequency</string>
     <string name="settings_system_notification_channels">Android Notification Settings</string>
-    <string name="settings_system_notification_channels_desc">Configure OS notification channels, sound, vibration, and lock screen behavior</string>
+    <string name="settings_system_notification_channels_desc">Configure system notification channels, alerts, and behavior</string>
     <string name="settings_notification_permission_title">Notification Permission Required</string>
-    <string name="settings_notification_permission_desc">Enable notification permissions so Rhythm can display media controls and background task updates.</string>
+    <string name="settings_notification_permission_desc">Allow notifications for media playback controls and background tasks.</string>
     <string name="settings_notification_permission_grant">Enable Notifications</string>
 
 <string name="settings_queue">Queue</string>
@@ -72,10 +72,10 @@
     <string name="settings_remember_shuffle_mode">Persist Shuffle Mode</string>
     <string name="settings_remember_shuffle_mode_desc">Restore shuffle mode after restart.</string>
     <string name="settings_keep_shuffle_on_selection">Keep Shuffle on Song Selection</string>
-    <string name="settings_keep_shuffle_on_selection_desc">Keep shuffle active when selecting a new song from the library or playlists.</string>
+    <string name="settings_keep_shuffle_on_selection_desc">Keep shuffle active when selecting a new track.</string>
     <string name="settings_audio_effects">Transitions and Output</string>
     <string name="settings_mono_audio">Mono Audio</string>
-    <string name="settings_mono_audio_desc">Downmix stereo channels to center for 1-earpiece listening.</string>
+    <string name="settings_mono_audio_desc">Downmix stereo channels into mono for single-ear listening.</string>
     <string name="device_mono_audio_title">Single Earpiece (Mono Audio)</string>
     <string name="device_mono_audio_desc">Force mono downmix when this audio device is active.</string>
     <string name="settings_resume_on_device_reconnect">Auto Resume</string>
@@ -83,13 +83,15 @@
     <string name="settings_gapless_playback">Gapless Playback</string>
     <string name="settings_gapless_playback_desc">Switch tracks without silence.</string>
     <string name="settings_crossfade">Track Crossfade</string>
-    <string name="settings_crossfade_desc">Blend outgoing and incoming tracks.</string>
+    <string name="settings_crossfade_desc">Smoothly blend outgoing and incoming tracks.</string>
     <string name="settings_crossfade_duration">Fade Duration</string>
     <string name="settings_crossfade_duration_desc">%1$.1f seconds</string>
     <string name="settings_crossfade_repeat_one">Crossfade in Repeat One</string>
     <string name="settings_crossfade_repeat_one_desc">Allow crossfade when repeating one track.</string>
     <string name="settings_crossfade_on_skip">Crossfade on Skip</string>
     <string name="settings_crossfade_on_skip_desc">Apply crossfade when manually skipping songs.</string>
+    <string name="settings_crossfade_configuration">Configuration</string>
+    <string name="settings_crossfade_duration_help">Adjust overlap duration between ending and upcoming songs.</string>
     <string name="settings_stop_playback_on_close">Stop on App Close</string>
     <string name="settings_stop_playback_on_close_desc">Stop music when the app is closed.</string>
     <string name="settings_time_display">Time Format</string>
@@ -294,11 +296,11 @@
     <string name="settings_root">Root</string>
     <string name="settings_scan_behavior">Scan Behavior</string>
     <string name="settings_include_hidden_whitelisted_media">Include Hidden &amp; .nomedia Files</string>
-    <string name="settings_include_hidden_whitelisted_media_desc">Enable scanning hidden and .nomedia audio paths during full media scans (strongest effect in whitelist folders).</string>
+    <string name="settings_include_hidden_whitelisted_media_desc">Scan hidden and .nomedia audio paths during media scans.</string>
     <string name="settings_audio_formats">Audio Formats</string>
     <string name="settings_allowed_formats">Allowed Formats</string>
     <string name="settings_allowed_formats_desc">%1$d of %2$d formats enabled</string>
-    <string name="settings_allowed_formats_open_desc">Choose which audio file types are scanned into your library. Changes trigger a full rescan on next launch.</string>
+    <string name="settings_allowed_formats_open_desc">Choose audio formats scanned into your library. Requires full rescan.</string>
     <string name="settings_formats_at_least_one">At least one format must stay enabled</string>
     <string name="settings_formats_video_note">MP4 and MKV are off by default — enable them to include audio tracks from video files.</string>
     <string name="settings_formats_group_common">Common</string>
@@ -412,9 +414,9 @@
     <string name="player_speed_label">Speed</string>
     <string name="player_pitch_label">Pitch</string>
     <string name="default_playback_speed">Default Playback Speed</string>
-    <string name="default_playback_speed_desc">Custom speed to automatically apply to new tracks</string>
+    <string name="default_playback_speed_desc">Speed automatically applied to new tracks</string>
     <string name="use_default_playback_speed">Use Default Speed for New Songs</string>
-    <string name="use_default_playback_speed_desc">Always start new tracks at default playback speed instead of remembering last speed</string>
+    <string name="use_default_playback_speed_desc">Always reset new tracks to default speed instead of remembering last speed</string>
     <string name="sync_with_speed">Sync with Speed</string>
 <string name="search_view_all_songs">View All Songs</string>
     <string name="search_recent_searches">Recent Searches</string>
@@ -746,7 +748,7 @@
 <string name="broadcast_status_enabled">Enable Status Broadcasting</string>
     <string name="broadcast_status_desc">Send playback info to Tasker, KWGT, and automation apps</string>
     <string name="bluetooth_lyrics_enabled">Notification Lyrics</string>
-    <string name="bluetooth_lyrics_desc">Send synced lyric lines as track metadata to Bluetooth devices, wearables, and notification listeners</string>
+    <string name="bluetooth_lyrics_desc">Send synced lyrics as track metadata to Bluetooth devices and wearables</string>
 <string name="equalizer">Equalizer</string>
     <string name="frequency_bands">Frequency Bands</string>
     <string name="audio_effects">Audio Effects</string>
@@ -976,7 +978,7 @@
     <string name="settings_gestures">Gestures</string>
     <string name="settings_gestures_desc">Swipe and tap shortcuts for playback</string>
     <string name="settings_ignore_mediastore_covers">Show Song Art Instead of Album Art</string>
-    <string name="settings_ignore_mediastore_covers_desc">Prefer embedded artwork from each audio file (formerly Ignore MediaStore Covers)</string>
+    <string name="settings_ignore_mediastore_covers_desc">Prefer embedded audio artwork over media store covers</string>
     <string name="settings_lossless_artwork">Lossless Artwork</string>
     <string name="settings_lossless_artwork_desc">Show full-resolution embedded song artwork without compression</string>
     <string name="settings_artwork_cache_size">Artwork Cache Size</string>
@@ -985,9 +987,9 @@
     <string name="settings_artist_artwork_source">Artist Image Source</string>
     <string name="settings_artist_artwork_source_desc">Choose preferred source for artist artwork</string>
     <string name="settings_artist_artwork_source_prefer_local">Prefer Local Image, then API</string>
-    <string name="settings_artist_artwork_source_prefer_local_desc">Look for local folder art (artist.jpg/band.jpg) first, fallback to online Deezer API</string>
+    <string name="settings_artist_artwork_source_prefer_local_desc">Check local folder art first, falling back to online Deezer API</string>
     <string name="settings_artist_artwork_source_local_only">Local Images Only</string>
-    <string name="settings_artist_artwork_source_local_only_desc">Only use local folder art (artist.jpg/band.jpg) and saved local images</string>
+    <string name="settings_artist_artwork_source_local_only_desc">Only use local folder art and saved local images</string>
     <string name="settings_artist_artwork_source_api_only">Online API Only (Deezer)</string>
     <string name="settings_artist_artwork_source_api_only_desc">Fetch artist artwork exclusively from online Deezer API</string>
     <string name="settings_artist_artwork_source_disabled">Disabled</string>
@@ -1014,10 +1016,10 @@
     <string name="settings_rhythm_guard_manual_warning_toggle">Show Safety Warnings</string>
     <string name="settings_rhythm_guard_manual_warning_toggle_desc">Warn when live volume or manual toggles may be risky</string>
     <string name="settings_rhythm_guard_manual_threshold_title">High-Volume Warning Threshold: %1$d%%</string>
-    <string name="settings_rhythm_guard_manual_threshold_desc">Set when Rhythm Guard should warn about potentially harmful volume.</string>
+    <string name="settings_rhythm_guard_manual_threshold_desc">Set the volume threshold for high-volume warnings.</string>
     <string name="settings_rhythm_guard_device_controls_title">Output Controls</string>
     <string name="settings_rhythm_guard_device_controls_speaker_limit_title">Apply Volume Limits On Phone Speaker</string>
-    <string name="settings_rhythm_guard_device_controls_speaker_limit_desc">When off, Rhythm Guard skips volume clamping and volume warnings on built-in speaker output.</string>
+    <string name="settings_rhythm_guard_device_controls_speaker_limit_desc">Skip volume limits and warnings on phone speaker output.</string>
     <string name="settings_rhythm_guard_alert_controls_title">Listening Alert Controls</string>
     <string name="settings_rhythm_guard_alert_threshold_title">Exposure Alert Threshold: %1$s</string>
     <string name="settings_rhythm_guard_alert_threshold_policy_default">Policy Default</string>
@@ -1093,7 +1095,7 @@
     <string name="settings_rhythm_guard_warning_timeout_search_title">Alert Cooldown</string>
     <string name="settings_rhythm_guard_warning_timeout_search_desc">Set the cooldown between repeated Rhythm Guard alerts</string>
     <string name="settings_rhythm_guard_post_timeout_cooldown_search_title">Post-Timeout Cooldown</string>
-    <string name="settings_rhythm_guard_post_timeout_cooldown_search_desc">Set cooldown after a timeout ends before another exposure timeout can trigger</string>
+    <string name="settings_rhythm_guard_post_timeout_cooldown_search_desc">Cooldown duration before another exposure timeout triggers</string>
     <string name="settings_rhythm_guard_protection_presets_search_title">Protection Presets</string>
     <string name="settings_rhythm_guard_protection_presets_search_desc">Apply Gentle, Balanced, or Strict guardrail bundles in one tap</string>
     <string name="settings_rhythm_guard_break_resume_search_title">Default Break Resume</string>
@@ -1585,7 +1587,7 @@
     <string name="settings_broadcast_status_enabled">Enable Status Broadcasting</string>
     <string name="settings_broadcast_status_enabled_desc">Send playback info to Tasker, KWGT, and automation apps</string>
     <string name="settings_bluetooth_lyrics_enabled">Notification Lyrics</string>
-    <string name="settings_bluetooth_lyrics_enabled_desc">Send synced lyric lines as track metadata to Bluetooth devices, wearables, and notification listeners</string>
+    <string name="settings_bluetooth_lyrics_enabled_desc">Send synced lyrics as track metadata to Bluetooth devices and wearables</string>
     <string name="exp_go_mode">Go Mode</string>
     <string name="exp_go_mode_desc">Switch to Rhythm Go streaming mode</string>
 <string name="settings_home_section_order">Section Order</string>
@@ -1631,7 +1633,7 @@
     <string name="settings_library_combine_discs">Combine Discs</string>
     <string name="settings_library_combine_discs_desc">Merge multi-disc albums into one continuous sort</string>
     <string name="settings_show_library_bottom_bar_always">Show library bottom bar always</string>
-    <string name="settings_show_library_bottom_bar_always_desc">Keep bottom bar visible under all tabs, or hide it and show key actions in the top bar actions</string>
+    <string name="settings_show_library_bottom_bar_always_desc">Keep navigation bar visible across all library tabs</string>
     <string name="settings_show_keyboard_on_search_open">Auto Focus Search</string>
     <string name="settings_show_keyboard_on_search_open_desc">Show keyboard when Search opens</string>
     <string name="settings_library_group_artwork">Artwork Rendering</string>
@@ -1696,7 +1698,7 @@
     <string name="exp_codec_monitoring_desc">Log audio codec and format info for debugging</string>
     <string name="exp_developer_debugging">Developer &amp; Debugging</string>
     <string name="exp_track_error_checker">Track Error Checker</string>
-    <string name="exp_track_error_checker_desc">Intercept corrupted or unreadable audio tracks to prevent infinite loading and auto-skip loops</string>
+    <string name="exp_track_error_checker_desc">Intercept unreadable audio tracks to prevent infinite loading loops</string>
     <string name="exp_test_crash">Test Crash</string>
     <string name="exp_test_crash_desc">Forcibly crash the app to test crash handling and reporting</string>
     <string name="exp_force_player_compact_mode">Force Player Compact Mode</string>
@@ -2137,7 +2139,7 @@
     <string name="lyrics_settings_general">General Settings</string>
     <string name="lyrics_settings_open_fullscreen_desc">Open a full-screen lyrics screen by tapping the lyrics view</string>
     <string name="lyrics_settings_autohide_controls">Auto-hide lyrics controls</string>
-    <string name="lyrics_settings_autohide_controls_desc">Automatically hide controls in full-screen lyrics screen after a few seconds of inactivity</string>
+    <string name="lyrics_settings_autohide_controls_desc">Hide playback controls after inactivity in full-screen lyrics</string>
     <string name="lyrics_settings_embedded_first">Embedded First</string>
     <string name="lyrics_settings_embedded_first_desc">Prefer lyrics embedded in audio files, fallback to online APIs</string>
     <string name="lyrics_settings_online_first">Online First</string>
@@ -2167,7 +2169,7 @@
     <string name="lyrics_settings_disable_animations">Disable Animations</string>
     <string name="lyrics_settings_disable_animations_desc">Disable transitions and animations in the lyrics view</string>
     <string name="lyrics_settings_word_by_word_translation">Auto Word Sync</string>
-    <string name="lyrics_settings_word_by_word_translation_desc">Auto-generate word-level timing for line-synced lyrics by distributing duration proportionally</string>
+    <string name="lyrics_settings_word_by_word_translation_desc">Estimate word timing for line-synced lyrics proportionally</string>
     <string name="lyrics_settings_info_bullets">Lyric sources:\n• LRCLib — free line-by-line synced lyrics\n• BetterLyrics — word-by-word karaoke-style lyrics\n• Lyrically — high-quality word-by-word sync\n\nSet your preferred source order in Lyrics API Priority.</string>
 <string name="autoeqpresetpickerbottomsheet_search_presets">Search presets…</string>
     <string name="autoeqpresetpickerbottomsheet_disable">None / Disable AutoEQ</string>
@@ -2434,17 +2436,26 @@
     <string name="downgrade_update_warning_title">Version Code Notice</string>
     <string name="downgrade_update_warning_message">Your currently installed build has a higher internal build number (versionCode) than this release. Android security prevents installing a lower versionCode directly over a higher one without uninstalling first.\n\nYou can continue downloading, but direct installation may fail unless the existing build is uninstalled first.</string>
     <string name="replay_gain_mode_title">ReplayGain Mode</string>
-    <string name="replay_gain_mode_desc">Adjust volume levels based on track metadata or album metadata.</string>
+    <string name="replay_gain_mode_desc">Normalize volume per track or across full album.</string>
     <string name="replay_gain_mode_track">Track</string>
     <string name="replay_gain_mode_album">Album</string>
     <string name="replay_gain_prevent_clipping">Prevent Clipping (DRC)</string>
-    <string name="replay_gain_prevent_clipping_desc">Dynamically compress peak levels to prevent audio distortion.</string>
+    <string name="replay_gain_prevent_clipping_desc">Compress peaks dynamically to prevent audio clipping.</string>
     <string name="replay_gain_preamp_tagged">Pre-amplifier (Tagged)</string>
-    <string name="replay_gain_preamp_tagged_desc">Volume adjustment for tracks with ReplayGain tags.</string>
+    <string name="replay_gain_preamp_tagged_desc">Preamp gain for tracks with ReplayGain tags.</string>
     <string name="replay_gain_preamp_untagged">Pre-amplifier (Untagged)</string>
-    <string name="replay_gain_preamp_untagged_desc">Volume adjustment for tracks without ReplayGain tags.</string>
+    <string name="replay_gain_preamp_untagged_desc">Preamp gain for tracks without ReplayGain tags.</string>
     <string name="replay_gain_configuration">Configuration</string>
-<string name="settingsscreen_audio_offload_desc">Hardware-accelerated audio decoding to save device power</string>
+<string name="settingsscreen_audio_offload_desc">Hardware-accelerated decoding to save battery power.</string>
+    <string name="settings_audio_routing_mode">Audio Output Routing</string>
+    <string name="settings_audio_routing_mode_desc">Configure stream routing and bit-perfect DAC output</string>
+    <string name="audio_routing_default">Standard (System Default)</string>
+    <string name="audio_routing_default_desc">Standard Android system audio routing and mixing.</string>
+    <string name="audio_routing_app">Bit-Perfect (Direct DAC)</string>
+    <string name="audio_routing_app_desc">Bit-perfect direct routing to DAC without OS resampling or DSP.</string>
+    <string name="audio_routing_system">System Forced</string>
+    <string name="audio_routing_system_desc">Enforce standard platform audio routing.</string>
+    <string name="audio_routing_bit_perfect_disabled_effect">Disabled (Bit-Perfect Mode is active)</string>
 <string name="backup_restore_section_core">Core</string>
     <string name="backup_restore_section_core_desc">Theme, player, UI, API, and app preferences.</string>
     <string name="backup_restore_section_collection">Collection</string>
@@ -2643,7 +2654,7 @@
     <string name="settings_search_suggestions_desc">Show contextual suggestions at the top</string>
     <string name="performancesettingsscreen_performance_desc">Optimize haptics, decoding, and marquee for power consumption</string>
     <string name="settings_expressive_colors">Expressive Color Palette</string>
-    <string name="settings_expressive_colors_desc">Adds rich tonal depth and elevated surface contrast for cards and controls</string>
+    <string name="settings_expressive_colors_desc">Adds rich tonal depth and surface contrast for UI controls</string>
     <string name="settings_theme_intensity">Theme Intensity</string>
     <string name="settings_theme_intensity_desc">Adjust the vibrancy and tonal depth of theme colors</string>
     <string name="theme_intensity_standard">Standard</string>
@@ -2652,7 +2663,7 @@
     <string name="theme_intensity_medium_desc">Punchier accents with enhanced container depth</string>
     <string name="theme_intensity_vivid">Vivid</string>
     <string name="theme_intensity_vivid_desc">Maximum vibrancy and rich dynamic saturation</string>
-    <string name="settings_player_thumb_style_desc">Choose the seek bar thumb shape (circle, square, pill, diamond, flower, heart…)</string>
+    <string name="settings_player_thumb_style_desc">Choose the seek bar thumb shape</string>
     <string name="settings_gesture_disable_unused_desc">Turn off gestures you never use</string>
     <string name="settings_home_start_collapsed_desc">Start the home screen header collapsed</string>
     <string name="settings_home_header_content_desc">Pick which greeting or info shows in the home header</string>
@@ -2823,7 +2834,7 @@
     <string name="unknown_artist_name">Unknown Artist</string>
     <string name="unknown_album_name">Unknown Album</string>
     <string name="settings_floating_navigation">Floating Navigation Bar</string>
-    <string name="settings_floating_navigation_desc">Float navigation bar above content on phone and tablet, or dock it to screen edges</string>
+    <string name="settings_floating_navigation_desc">Float navigation bar above content or dock it to screen edges</string>
     <string name="expressive_bottom_buttons_desc">Customize and reorder bottom action buttons</string>
     <string name="expressive_bottom_buttons_title">Edit Controls</string>
     <string name="expressive_bottom_buttons_normal_tab">Normal Mode</string>
@@ -2832,7 +2843,7 @@
     <string name="expressive_bottom_buttons_reset">Reset to default button order and visibility</string>
     <string name="expressive_bottom_buttons_at_least_one">At least one button must be visible</string>
     <string name="settings_expressive_bottom_buttons">Customize Bottom Buttons</string>
-    <string name="settings_expressive_bottom_buttons_desc">Reorder and toggle bottom action buttons for Normal and Merge modes</string>
+    <string name="settings_expressive_bottom_buttons_desc">Reorder and toggle bottom buttons for Normal and Merge modes</string>
 
     <!-- Streaming Downloads & Offline -->
     <string name="streaming_download">Download</string>

@@ -311,7 +311,9 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
                     (it.type == AudioDeviceInfo.TYPE_BLUETOOTH_A2DP ||
                      it.type == AudioDeviceInfo.TYPE_BLUETOOTH_SCO ||
                      it.type == AudioDeviceInfo.TYPE_WIRED_HEADSET ||
-                     it.type == AudioDeviceInfo.TYPE_WIRED_HEADPHONES) &&
+                     it.type == AudioDeviceInfo.TYPE_WIRED_HEADPHONES ||
+                     it.type == AudioDeviceInfo.TYPE_USB_DEVICE ||
+                     it.type == AudioDeviceInfo.TYPE_USB_HEADSET) &&
                     it.isSink
                 }
     }
@@ -901,7 +903,6 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
     private fun initializePlayer() {
         // Initialize RhythmPlayerEngine for crossfade support
         val audioRoutingMode = appSettings.audioRoutingMode.value
-        applyUsbExclusiveRoutingPreference()
         Log.d(TAG, "Initializing player (routing: $audioRoutingMode)")
         rhythmPlayerEngine = RhythmPlayerEngine(
             this, 
@@ -910,6 +911,7 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
             monoProcessor = rhythmMonoAudioProcessor
         )
         rhythmPlayerEngine.initialize()
+        applyUsbExclusiveRoutingPreference()
         
         // The master player is exposed to MediaSession and used everywhere
         player = wrapPlayer(rhythmPlayerEngine.masterPlayer)
@@ -1128,6 +1130,10 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
                     initializeAudioEffects()
                 }
             }
+
+            override fun onTracksChanged(tracks: androidx.media3.common.Tracks) {
+                applyUsbExclusiveRoutingPreference()
+            }
         }
         playerListener?.let { player.addListener(it) }
         
@@ -1140,6 +1146,35 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
         
         // Try to initialize audio effects (might fail if session ID not ready)
         initializeAudioEffects()
+        serviceScope.launch {
+            appSettings.audioRoutingMode.collect { routingMode ->
+                applyUsbExclusiveRoutingPreference()
+                if (routingMode == "app") {
+                    Log.i(TAG, "Bit-Perfect audio routing activated: disabling audio DSP effects")
+                    withEqualizerSafe("bit-perfect flat EQ", Unit) { eq ->
+                        val numberOfBands = eq.numberOfBands.toInt()
+                        for (i in 0 until numberOfBands) {
+                            eq.setBandLevel(i.toShort(), 0)
+                        }
+                    }
+                    setEqualizerEnabledSafe(false)
+                    rhythmBassBoostProcessor?.setEnabled(false)
+                    rhythmSpatializationProcessor?.setEnabled(false)
+                    rhythmMonoAudioProcessor?.setEnabled(false)
+                    if (::rhythmPlayerEngine.isInitialized) {
+                        rhythmPlayerEngine.applyReplayGainSettings(false)
+                        rhythmPlayerEngine.setSkipSilenceEnabled(false)
+                    }
+                } else {
+                    Log.i(TAG, "Standard audio routing restored: re-applying user audio effects")
+                    loadSavedAudioEffects()
+                    if (::rhythmPlayerEngine.isInitialized) {
+                        rhythmPlayerEngine.applyReplayGainSettings(appSettings.replayGain.value)
+                        rhythmPlayerEngine.setSkipSilenceEnabled(appSettings.skipSilenceEnabled.value)
+                    }
+                }
+            }
+        }
 
         // Collect replayGain setting reactively
         serviceScope.launch {
@@ -1152,7 +1187,9 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
             ) { enabled, _, _, _, _ ->
                 enabled
             }.collect { enabled ->
-                rhythmPlayerEngine.applyReplayGainSettings(enabled)
+                if (appSettings.audioRoutingMode.value != "app") {
+                    rhythmPlayerEngine.applyReplayGainSettings(enabled)
+                }
             }
         }
 
@@ -1624,45 +1661,74 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
      * This is the platform-side requirement for exclusive/bit-perfect mixer behavior when available.
      */
     private fun applyUsbExclusiveRoutingPreference() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+        if (!::rhythmPlayerEngine.isInitialized) {
             return
         }
-
         val audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
-        val mediaAttributes = android.media.AudioAttributes.Builder()
-            .setUsage(android.media.AudioAttributes.USAGE_MEDIA)
-            .setContentType(android.media.AudioAttributes.CONTENT_TYPE_MUSIC)
-            .build()
-
-        if (appSettings.audioRoutingMode.value != "app") {
-            clearUsbPreferredMixerAttributes(audioManager, mediaAttributes)
-            return
-        }
-
         val usbOutput = audioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS)
             .firstOrNull {
                 it.type == AudioDeviceInfo.TYPE_USB_DEVICE ||
                     it.type == AudioDeviceInfo.TYPE_USB_HEADSET
             }
 
-        if (usbOutput == null) {
-            Log.i(TAG, "App routing enabled but no USB output device is connected")
+        if (appSettings.audioRoutingMode.value != "app") {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                val mediaAttributes = android.media.AudioAttributes.Builder()
+                    .setUsage(android.media.AudioAttributes.USAGE_MEDIA)
+                    .setContentType(android.media.AudioAttributes.CONTENT_TYPE_MUSIC)
+                    .build()
+                clearUsbPreferredMixerAttributes(audioManager, mediaAttributes)
+            }
+            if (::rhythmPlayerEngine.isInitialized) {
+                rhythmPlayerEngine.setPreferredAudioDevice(null)
+            }
             return
         }
 
+        if (usbOutput == null) {
+            Log.i(TAG, "App routing enabled but no USB output device is connected")
+            if (::rhythmPlayerEngine.isInitialized) {
+                rhythmPlayerEngine.setPreferredAudioDevice(null)
+            }
+            return
+        }
+
+        rhythmPlayerEngine.setPreferredAudioDevice(usbOutput)
+
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            return
+        }
+
+        val mediaAttributes = android.media.AudioAttributes.Builder()
+            .setUsage(android.media.AudioAttributes.USAGE_MEDIA)
+            .setContentType(android.media.AudioAttributes.CONTENT_TYPE_MUSIC)
+            .build()
+
         try {
             val supportedMixerAttributes = audioManager.getSupportedMixerAttributes(usbOutput)
-            val bitPerfectMixer = supportedMixerAttributes.firstOrNull {
+            val bitPerfectMixers = supportedMixerAttributes.filter {
                 it.mixerBehavior == AudioMixerAttributes.MIXER_BEHAVIOR_BIT_PERFECT
             }
 
-            if (bitPerfectMixer == null) {
+            if (bitPerfectMixers.isEmpty()) {
                 Log.w(TAG, "USB device does not expose a bit-perfect mixer profile")
                 return
             }
 
-            audioManager.setPreferredMixerAttributes(mediaAttributes, usbOutput, bitPerfectMixer)
-            Log.i(TAG, "Requested bit-perfect USB mixer attributes for app routing mode")
+            val currentFormat = (rhythmPlayerEngine.masterPlayer as? ExoPlayer)?.audioFormat
+            val bitPerfectMixer = if (currentFormat != null && currentFormat.sampleRate > 0) {
+                bitPerfectMixers.firstOrNull { mixer ->
+                    mixer.format.sampleRate == currentFormat.sampleRate &&
+                        (currentFormat.channelCount <= 2 || mixer.format.channelCount == currentFormat.channelCount)
+                } ?: bitPerfectMixers.firstOrNull()
+            } else {
+                bitPerfectMixers.firstOrNull()
+            }
+
+            if (bitPerfectMixer != null) {
+                audioManager.setPreferredMixerAttributes(mediaAttributes, usbOutput, bitPerfectMixer)
+                Log.i(TAG, "Requested bit-perfect USB mixer attributes for app routing mode: ${bitPerfectMixer.format}")
+            }
         } catch (e: Exception) {
             Log.w(TAG, "Failed to request USB preferred mixer attributes", e)
         }
@@ -1672,6 +1738,9 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
         audioManager: AudioManager,
         mediaAttributes: android.media.AudioAttributes
     ) {
+        if (::rhythmPlayerEngine.isInitialized) {
+            rhythmPlayerEngine.setPreferredAudioDevice(null)
+        }
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             return
         }
@@ -1691,7 +1760,11 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
     }
     
     private fun applyPlayerSettings() {
+        if (!::rhythmPlayerEngine.isInitialized || !::player.isInitialized) {
+            return
+        }
         applyUsbExclusiveRoutingPreference()
+        val isBitPerfect = appSettings.audioRoutingMode.value == "app"
         player.apply {
             // Audio normalization - NOT IMPLEMENTED
             // if (appSettings.audioNormalization.value) {
@@ -1700,13 +1773,13 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
         }
 
         // Apply Replay Gain settings
-        rhythmPlayerEngine.applyReplayGainSettings(appSettings.replayGain.value)
+        rhythmPlayerEngine.applyReplayGainSettings(if (isBitPerfect) false else appSettings.replayGain.value)
 
         // Apply gapless playback setting
         rhythmPlayerEngine.setGaplessPlayback(appSettings.gaplessPlayback.value)
 
         // Apply skip silence setting
-        rhythmPlayerEngine.setSkipSilenceEnabled(appSettings.skipSilenceEnabled.value)
+        rhythmPlayerEngine.setSkipSilenceEnabled(if (isBitPerfect) false else appSettings.skipSilenceEnabled.value)
 
         // Crossfade is now managed by TransitionController + RhythmPlayerEngine
         // Settings are read reactively from AppSettings by the controller
@@ -1998,13 +2071,35 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
                     super.seekToPreviousMediaItem()
                 }
             }
+
+            override fun seekToDefaultPosition(mediaItemIndex: Int) {
+                if (mediaItemIndex != currentMediaItemIndex && mediaItemIndex in 0 until mediaItemCount) {
+                    if (skipWithCrossfadeToIndex(mediaItemIndex)) {
+                        return
+                    }
+                }
+                super.seekToDefaultPosition(mediaItemIndex)
+            }
+
+            override fun seekTo(mediaItemIndex: Int, positionMs: Long) {
+                if (mediaItemIndex != currentMediaItemIndex && mediaItemIndex in 0 until mediaItemCount) {
+                    if (skipWithCrossfadeToIndex(mediaItemIndex, positionMs)) {
+                        return
+                    }
+                }
+                super.seekTo(mediaItemIndex, positionMs)
+            }
         }
     }
 
     private var lastGlobalSkipTime = 0L
     private val GLOBAL_SKIP_DEBOUNCE_MS = 600L
 
-    private fun skipWithCrossfade(toNext: Boolean): Boolean {
+    private fun skipWithCrossfadeToIndex(
+        targetIndex: Int,
+        positionMs: Long = C.TIME_UNSET,
+        isSkipPrevious: Boolean = false
+    ): Boolean {
         try {
             if (!appSettings.crossfade.value || !appSettings.crossfadeOnSkip.value) {
                 return false
@@ -2034,41 +2129,15 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
                 return false
             }
 
-            val repeatMode = playerToUse.repeatMode
             val currentWindowIndex = playerToUse.currentMediaItemIndex
             val timeline = playerToUse.currentTimeline
 
-            if (timeline.isEmpty || currentWindowIndex == C.INDEX_UNSET) {
+            if (timeline.isEmpty || targetIndex < 0 || targetIndex >= playerToUse.mediaItemCount || targetIndex == currentWindowIndex) {
                 return false
             }
 
-            // Handled case: previous skip when track has played for over 5s (restarts track)
-            if (!toNext && playerToUse.currentPosition > 5000) {
-                Log.d(TAG, "Previous skip past 5s, restarting track")
-                return false
-            }
-
-            val nextIndex = if (toNext) {
-                timeline.getNextWindowIndex(
-                    currentWindowIndex,
-                    repeatMode,
-                    playerToUse.shuffleModeEnabled
-                )
-            } else {
-                timeline.getPreviousWindowIndex(
-                    currentWindowIndex,
-                    repeatMode,
-                    playerToUse.shuffleModeEnabled
-                )
-            }
-
-            if (nextIndex == C.INDEX_UNSET) {
-                return false
-            }
-
-            val nextMediaItem = playerToUse.getMediaItemAt(nextIndex)
-
-            Log.d(TAG, "Skipping with crossfade. Target track: ${nextMediaItem.mediaId}")
+            val nextMediaItem = playerToUse.getMediaItemAt(targetIndex)
+            Log.d(TAG, "Skipping with crossfade to index $targetIndex: ${nextMediaItem.mediaId}")
 
             // Cancel any pending transitions
             if (::transitionController.isInitialized) {
@@ -2076,13 +2145,15 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
             }
 
             // Prepare the next song
-            rhythmPlayerEngine.prepareNext(nextMediaItem)
+            val startPos = if (positionMs != C.TIME_UNSET && positionMs > 0L) positionMs else 0L
+            rhythmPlayerEngine.prepareNext(nextMediaItem, startPositionMs = startPos)
 
+            val computedSkipPrevious = if (isSkipPrevious) true else targetIndex < currentWindowIndex
             val settings = TransitionSettings(
                 mode = TransitionMode.OVERLAP,
                 durationMs = 1000,
                 isManualSkip = true,
-                isSkipPrevious = !toNext
+                isSkipPrevious = computedSkipPrevious
             )
 
             if (::transitionController.isInitialized) {
@@ -2090,12 +2161,50 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
             }
 
             rhythmPlayerEngine.performTransition(settings)
-
             return true
         } catch (e: Exception) {
             Log.e(TAG, "Error performing skip with crossfade, falling back to standard skip", e)
             return false
         }
+    }
+
+    private fun skipWithCrossfade(toNext: Boolean): Boolean {
+        val playerToUse = rhythmPlayerEngine.masterPlayer
+        if (!playerToUse.isPlaying) {
+            return false
+        }
+
+        if (!toNext && playerToUse.currentPosition > 5000) {
+            Log.d(TAG, "Previous skip past 5s, restarting track")
+            return false
+        }
+
+        val repeatMode = playerToUse.repeatMode
+        val currentWindowIndex = playerToUse.currentMediaItemIndex
+        val timeline = playerToUse.currentTimeline
+        if (timeline.isEmpty || currentWindowIndex == C.INDEX_UNSET) {
+            return false
+        }
+
+        val nextIndex = if (toNext) {
+            timeline.getNextWindowIndex(
+                currentWindowIndex,
+                repeatMode,
+                playerToUse.shuffleModeEnabled
+            )
+        } else {
+            timeline.getPreviousWindowIndex(
+                currentWindowIndex,
+                repeatMode,
+                playerToUse.shuffleModeEnabled
+            )
+        }
+
+        if (nextIndex == C.INDEX_UNSET) {
+            return false
+        }
+
+        return skipWithCrossfadeToIndex(nextIndex, isSkipPrevious = !toNext)
     }
 
     /**
@@ -2258,14 +2367,20 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
         }
         
         // Release crossfade engine and transition controller
-        transitionController.release()
-        rhythmPlayerEngine.release()
+        if (::transitionController.isInitialized) {
+            transitionController.release()
+        }
+        if (::rhythmPlayerEngine.isInitialized) {
+            rhythmPlayerEngine.release()
+        }
         
         // Release audio effects
         releaseAudioEffects()
         
         // Remove player listener before releasing player
-        playerListener?.let { player.removeListener(it) }
+        if (::player.isInitialized) {
+            playerListener?.let { player.removeListener(it) }
+        }
         playerListener = null
         
         // Remove service as listener from controller
@@ -3063,6 +3178,21 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
     
     private fun loadSavedAudioEffects() {
         try {
+            if (appSettings.audioRoutingMode.value == "app") {
+                Log.i(TAG, "Bit-perfect mode active, setting flat EQ and bypassing DSP audio effects")
+                withEqualizerSafe("bit-perfect flat EQ", Unit) { eq ->
+                    val numberOfBands = eq.numberOfBands.toInt()
+                    for (i in 0 until numberOfBands) {
+                        eq.setBandLevel(i.toShort(), 0)
+                    }
+                }
+                setEqualizerEnabledSafe(false)
+                rhythmBassBoostProcessor?.setEnabled(false)
+                rhythmSpatializationProcessor?.setEnabled(false)
+                rhythmMonoAudioProcessor?.setEnabled(false)
+                return
+            }
+
             if (equalizer != null) {
                 val shouldBeEnabled = appSettings.equalizerEnabled.value
                 Log.d(TAG, "Loading saved effects - EQ should be enabled: $shouldBeEnabled")
@@ -3143,6 +3273,11 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
     }
     
     fun setEqualizerEnabled(enabled: Boolean) {
+        if (enabled && appSettings.audioRoutingMode.value == "app") {
+            Log.i(TAG, "Cannot enable equalizer: Bit-Perfect mode is active")
+            return
+        }
+
         if (enabled && equalizer == null) {
             Log.w(TAG, "Attempting to enable equalizer but equalizer is null. Will reinitialize.")
             // Try to initialize if we have a valid session ID
@@ -3371,8 +3506,9 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
             initializeRhythmProcessors()
         }
         
-        rhythmBassBoostProcessor?.setEnabled(enabled)
-        Log.d(TAG, "Rhythm bass boost enabled: $enabled (applies to next audio buffer)")
+        val actualEnabled = if (appSettings.audioRoutingMode.value == "app") false else enabled
+        rhythmBassBoostProcessor?.setEnabled(actualEnabled)
+        Log.d(TAG, "Rhythm bass boost enabled: $actualEnabled (applies to next audio buffer)")
         if (::rhythmPlayerEngine.isInitialized) {
             rhythmPlayerEngine.updateTrackSelectionParameters()
         }
@@ -3401,9 +3537,10 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
             initializeRhythmProcessors()
         }
         
-        rhythmSpatializationProcessor?.setEnabled(enabled)
-        virtualizerStrength = if (enabled) virtualizerStrength else 0
-        Log.d(TAG, "Rhythm spatialization enabled: $enabled (applies to next audio buffer)")
+        val actualEnabled = if (appSettings.audioRoutingMode.value == "app") false else enabled
+        rhythmSpatializationProcessor?.setEnabled(actualEnabled)
+        virtualizerStrength = if (actualEnabled) virtualizerStrength else 0
+        Log.d(TAG, "Rhythm spatialization enabled: $actualEnabled (applies to next audio buffer)")
         if (::rhythmPlayerEngine.isInitialized) {
             rhythmPlayerEngine.updateTrackSelectionParameters()
         }
@@ -3442,8 +3579,9 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
             initializeRhythmProcessors()
         }
         
-        rhythmMonoAudioProcessor?.setEnabled(enabled)
-        Log.d(TAG, "Rhythm mono audio enabled: $enabled (applies to next audio buffer)")
+        val actualEnabled = if (appSettings.audioRoutingMode.value == "app") false else enabled
+        rhythmMonoAudioProcessor?.setEnabled(actualEnabled)
+        Log.d(TAG, "Rhythm mono audio enabled: $actualEnabled (applies to next audio buffer)")
         if (::rhythmPlayerEngine.isInitialized) {
             rhythmPlayerEngine.updateTrackSelectionParameters()
         }

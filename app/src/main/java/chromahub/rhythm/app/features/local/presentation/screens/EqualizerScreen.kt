@@ -339,6 +339,8 @@ fun EqualizerScreen(
     val isBassBoostAvailableState by viewModel.isBassBoostAvailable.collectAsState()
 
     val appSettings = remember { AppSettings.getInstance(context) }
+    val audioRoutingMode by appSettings.audioRoutingMode.collectAsState()
+    val isBitPerfectActive = audioRoutingMode == "app"
     val isAudioOffloadActive by appSettings.isAudioOffloadActive.collectAsState()
     val batterySaverEnabled by appSettings.batterySaverEnabled.collectAsState()
     val batterySaverMode by appSettings.batterySaverMode.collectAsState()
@@ -532,6 +534,7 @@ fun EqualizerScreen(
 
     // Functions
     fun applyPreset(preset: EqualizerPreset) {
+        if (isOffloadEnforced || isBitPerfectActive) return
         HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
         selectedPreset = preset.name
         bandLevels = preset.bands
@@ -552,6 +555,7 @@ fun EqualizerScreen(
     }
 
     fun updateBandLevel(band: Int, level: Float) {
+        if (isOffloadEnforced || isBitPerfectActive) return
         val newLevels = bandLevels.toMutableList()
         newLevels[band] = level
         bandLevels = newLevels
@@ -712,7 +716,7 @@ fun EqualizerScreen(
                     Icon(
                         imageVector = RhythmIcons.Equalizer,
                         contentDescription = null,
-                        tint = if (isEqualizerEnabled && !isOffloadEnforced) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        tint = if (isEqualizerEnabled && !isOffloadEnforced && !isBitPerfectActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(35.dp)
                     )
                     Spacer(modifier = Modifier.width(16.dp))
@@ -724,6 +728,7 @@ fun EqualizerScreen(
                             Text(
                                 text = when {
                                     isOffloadEnforced -> "Disabled (Lite Mode)"
+                                    isBitPerfectActive -> "Disabled (Bit-Perfect Mode)"
                                     isEqualizerEnabled -> stringResource(R.string.common_active)
                                     else -> stringResource(R.string.common_disabled)
                                 },
@@ -737,6 +742,12 @@ fun EqualizerScreen(
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
+                        } else if (isBitPerfectActive) {
+                            Text(
+                                text = stringResource(R.string.audio_routing_bit_perfect_disabled_effect),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         } else if (isAudioOffloadActive && !isEqualizerEnabled) {
                             Text(
                                 text = stringResource(R.string.replay_gain_offload_warning),
@@ -746,14 +757,14 @@ fun EqualizerScreen(
                         }
                     }
                     TunerAnimatedSwitch(
-                        checked = if (isOffloadEnforced) false else isEqualizerEnabled,
+                        checked = if (isOffloadEnforced || isBitPerfectActive) false else isEqualizerEnabled,
                         onCheckedChange = { enabled ->
-                            if (!isOffloadEnforced) {
+                            if (!isOffloadEnforced && !isBitPerfectActive) {
                                 isEqualizerEnabled = enabled
                                 viewModel.setEqualizerEnabled(enabled)
                             }
                         },
-                        enabled = !isOffloadEnforced
+                        enabled = !isOffloadEnforced && !isBitPerfectActive
                     )
                 }
             }
@@ -1082,6 +1093,7 @@ fun EqualizerScreen(
                                         updateBandLevel(index, roundedLevel)
                                     },
                                     valueRange = -15f..15f,
+                                    enabled = !isOffloadEnforced && !isBitPerfectActive && isEqualizerEnabled,
                                     modifier = Modifier
                                         .weight(1f)
                                         .height(36.dp),
@@ -1123,20 +1135,20 @@ fun EqualizerScreen(
                         icon = RhythmIcons.SpeakerFilled,
                         value = bassBoostStrength,
                         valueRange = 0f..1000f,
-                        isEnabled = if (isOffloadEnforced) false else (isBassBoostEnabled && isBassBoostAvailableState),
-                        isAvailable = if (isOffloadEnforced) false else isBassBoostAvailableState,
+                        isEnabled = if (isOffloadEnforced || isBitPerfectActive) false else (isBassBoostEnabled && isBassBoostAvailableState),
+                        isAvailable = if (isOffloadEnforced || isBitPerfectActive) false else isBassBoostAvailableState,
                         activeColor = MaterialTheme.colorScheme.secondary,
                         activeContainerColor = MaterialTheme.colorScheme.secondaryContainer,
                         onActiveContainerColor = MaterialTheme.colorScheme.onSecondaryContainer,
                         onValueChange = { strength ->
-                            if (!isOffloadEnforced) {
+                            if (!isOffloadEnforced && !isBitPerfectActive) {
                                 HapticUtils.performHapticFeedback(context, haptics, HapticType.LIGHT)
                                 bassBoostStrength = strength
                                 viewModel.setBassBoost(true, strength.toInt().toShort())
                             }
                         },
                         onEnabledChange = { enabled ->
-                            if (!isOffloadEnforced && isBassBoostAvailableState) {
+                            if (!isOffloadEnforced && !isBitPerfectActive && isBassBoostAvailableState) {
                                 HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
                                 isBassBoostEnabled = enabled
                                 viewModel.setBassBoost(enabled, bassBoostStrength.toInt().toShort())
@@ -1144,6 +1156,7 @@ fun EqualizerScreen(
                         },
                         statusText = when {
                             isOffloadEnforced -> "Disabled (Lite Mode)"
+                            isBitPerfectActive -> "Disabled (Bit-Perfect Mode)"
                             !isBassBoostAvailableState -> stringResource(R.string.common_unavailable)
                             isBassBoostEnabled -> stringResource(R.string.common_active)
                             isAudioOffloadActive -> "Enhance Lows\n(will disable offload)"
@@ -1159,20 +1172,20 @@ fun EqualizerScreen(
                         icon = RhythmIcons.HeadphonesFilled,
                         value = virtualizerStrength,
                         valueRange = 0f..1000f,
-                        isEnabled = if (isOffloadEnforced) false else (isVirtualizerEnabled && isSpatializationAvailable),
-                        isAvailable = if (isOffloadEnforced) false else isSpatializationAvailable,
+                        isEnabled = if (isOffloadEnforced || isBitPerfectActive) false else (isVirtualizerEnabled && isSpatializationAvailable),
+                        isAvailable = if (isOffloadEnforced || isBitPerfectActive) false else isSpatializationAvailable,
                         activeColor = MaterialTheme.colorScheme.tertiary,
                         activeContainerColor = MaterialTheme.colorScheme.tertiaryContainer,
                         onActiveContainerColor = MaterialTheme.colorScheme.onTertiaryContainer,
                         onValueChange = { strength ->
-                            if (!isOffloadEnforced) {
+                            if (!isOffloadEnforced && !isBitPerfectActive) {
                                 HapticUtils.performHapticFeedback(context, haptics, HapticType.LIGHT)
                                 virtualizerStrength = strength
                                 viewModel.setVirtualizer(true, strength.toInt().toShort())
                             }
                         },
                         onEnabledChange = { enabled ->
-                            if (!isOffloadEnforced && isSpatializationAvailable) {
+                            if (!isOffloadEnforced && !isBitPerfectActive && isSpatializationAvailable) {
                                 HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
                                 isVirtualizerEnabled = enabled
                                 viewModel.setVirtualizer(enabled, virtualizerStrength.toInt().toShort())
@@ -1180,6 +1193,7 @@ fun EqualizerScreen(
                         },
                         statusText = when {
                             isOffloadEnforced -> "Disabled (Lite Mode)"
+                            isBitPerfectActive -> "Disabled (Bit-Perfect Mode)"
                             !isSpatializationAvailable -> stringResource(R.string.eq_mono_only)
                             isVirtualizerEnabled -> stringResource(R.string.common_active)
                             isAudioOffloadActive -> "Widen Sound\n(will disable offload)"
