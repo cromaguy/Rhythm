@@ -54,10 +54,10 @@ class MusicSilenceSkippingTest {
         // Music-tuned processor as configured in RhythmPlayerEngine
         val musicProcessor = SilenceSkippingAudioProcessor(
             /* minimumSilenceDurationUs = */ 500_000L,
-            /* silenceRetentionRatio = */ 0.1f,
+            /* silenceRetentionRatio = */ 0.2f,
             /* maxSilenceToKeepDurationUs = */ 1_000_000L,
-            /* minVolumeToKeepPercentageWhenMuting = */ 0,
-            /* silenceThresholdLevel = */ 128.toShort()
+            /* minVolumeToKeepPercentageWhenMuting = */ 5,
+            /* silenceThresholdLevel = */ 40.toShort()
         )
         musicProcessor.setEnabled(true)
         musicProcessor.configure(format)
@@ -95,9 +95,43 @@ class MusicSilenceSkippingTest {
             defaultProcessor.skippedFrames > 0
         )
 
-        // Music-tuned processor recognizes amplitude 400 (> 128) as valid audio and skips ZERO frames
+        // Music-tuned processor recognizes amplitude 400 (> 40) as valid audio and skips ZERO frames
         assertEquals(
             "Music-tuned processor must preserve quiet intro and not skip any frames",
+            0L,
+            musicProcessor.skippedFrames
+        )
+    }
+
+    @Test
+    fun musicTunedSilenceSkipping_preservesEchoAndReverbTails() {
+        val sampleRate = 44100
+        val format = createStereo16BitFormat(sampleRate)
+
+        val musicProcessor = SilenceSkippingAudioProcessor(
+            /* minimumSilenceDurationUs = */ 500_000L,
+            /* silenceRetentionRatio = */ 0.2f,
+            /* maxSilenceToKeepDurationUs = */ 1_000_000L,
+            /* minVolumeToKeepPercentageWhenMuting = */ 5,
+            /* silenceThresholdLevel = */ 40.toShort()
+        )
+        musicProcessor.setEnabled(true)
+        musicProcessor.configure(format)
+        musicProcessor.flush()
+
+        // Simulate ending of a track: 1s loud audio -> 1s decaying reverb tail at amplitude 80 (~ -52 dBFS)
+        val songFrames = sampleRate
+        val reverbTailFrames = sampleRate
+
+        val songBuffer = createPcmBuffer(8000.toShort(), songFrames)
+        val reverbTailBuffer = createPcmBuffer(80.toShort(), reverbTailFrames)
+
+        feedAndDrain(musicProcessor, songBuffer)
+        feedAndDrain(musicProcessor, reverbTailBuffer)
+
+        // The reverb tail must NOT be truncated or skipped as silence
+        assertEquals(
+            "Music-tuned processor must not truncate reverb or echo tails",
             0L,
             musicProcessor.skippedFrames
         )
@@ -110,10 +144,10 @@ class MusicSilenceSkippingTest {
 
         val musicProcessor = SilenceSkippingAudioProcessor(
             /* minimumSilenceDurationUs = */ 500_000L,
-            /* silenceRetentionRatio = */ 0.1f,
+            /* silenceRetentionRatio = */ 0.2f,
             /* maxSilenceToKeepDurationUs = */ 1_000_000L,
-            /* minVolumeToKeepPercentageWhenMuting = */ 0,
-            /* silenceThresholdLevel = */ 128.toShort()
+            /* minVolumeToKeepPercentageWhenMuting = */ 5,
+            /* silenceThresholdLevel = */ 40.toShort()
         )
         musicProcessor.setEnabled(true)
         musicProcessor.configure(format)

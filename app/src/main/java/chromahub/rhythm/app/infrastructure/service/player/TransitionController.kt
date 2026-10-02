@@ -223,6 +223,36 @@ class TransitionController(
         currentObservedPlayer = engine.masterPlayer
         currentObservedPlayer?.addListener(transitionListener!!)
         engine.addPlayerSwapListener(swapListener)
+
+        scope.launch {
+            appSettings.crossfade.collect { enabled ->
+                Log.d(TAG, "Crossfade setting changed: $enabled")
+                if (!isInDestructiveState()) {
+                    if (enabled) {
+                        engine.masterPlayer.currentMediaItem?.let { scheduleTransitionFor(it) }
+                    } else {
+                        cancelPendingTransition()
+                        engine.setPauseAtEndOfMediaItems(false)
+                    }
+                }
+            }
+        }
+        scope.launch {
+            appSettings.crossfadeDuration.collect { duration ->
+                Log.d(TAG, "Crossfade duration changed: $duration s")
+                if (!isInDestructiveState() && appSettings.crossfade.value) {
+                    engine.masterPlayer.currentMediaItem?.let { scheduleTransitionFor(it) }
+                }
+            }
+        }
+        scope.launch {
+            appSettings.crossfadeRepeatOne.collect { repeatOne ->
+                Log.d(TAG, "Crossfade repeat-one setting changed: $repeatOne")
+                if (!isInDestructiveState() && appSettings.crossfade.value) {
+                    engine.masterPlayer.currentMediaItem?.let { scheduleTransitionFor(it) }
+                }
+            }
+        }
     }
 
     /**
@@ -328,9 +358,30 @@ class TransitionController(
                 return@launch
             }
 
-            Log.d(TAG, "Preparing next track: ${nextMediaItem.mediaId}")
+            val fullQueue = if (player.mediaItemCount > 0) {
+                (0 until player.mediaItemCount).map { player.getMediaItemAt(it) }
+            } else {
+                listOf(nextMediaItem)
+            }
+            val targetIdx = if (repeatMode == Player.REPEAT_MODE_ONE) {
+                currentWindowIndex
+            } else {
+                nextIndex.takeIf { it in fullQueue.indices } ?: 0
+            }
+            val shuffleIndices = if (player.shuffleModeEnabled) {
+                engine.extractShuffleIndices(player)
+            } else {
+                null
+            }
+
+            Log.d(TAG, "Preparing next track: ${nextMediaItem.mediaId} at targetIndex=$targetIdx (queueSize=${fullQueue.size})")
             setState(TransitionState.PREPARING)
-            engine.prepareNext(nextMediaItem)
+            engine.prepareNext(
+                mediaItem = nextMediaItem,
+                targetIndex = targetIdx,
+                fullQueue = fullQueue,
+                shuffleIndices = shuffleIndices
+            )
 
             // Build transition settings from global preferences
             val crossfadeDurationMs = (appSettings.crossfadeDuration.value * 1000).toInt()
@@ -360,21 +411,22 @@ class TransitionController(
 
             val minFade = 500L
             val guardWindow = 150L
+            val leadTimeMs = 50L
 
-            if (duration < minFade + guardWindow) {
+            if (duration < minFade * 2) {
                 Log.w(TAG, "Track too short for crossfade (duration=$duration).")
                 engine.setPauseAtEndOfMediaItems(false)
                 return@launch
             }
 
-            val maxFadeDuration = (duration - guardWindow).coerceAtLeast(minFade)
+            val maxAllowedFade = (duration * 0.45f).toLong().coerceAtLeast(minFade)
             val effectiveDuration = settings.durationMs.toLong()
-                .coerceAtLeast(minFade)
-                .coerceAtMost(maxFadeDuration)
+                .coerceIn(minFade, maxAllowedFade)
+                .coerceAtMost((duration - guardWindow).coerceAtLeast(minFade))
 
-            val transitionPoint = duration - effectiveDuration
+            val transitionPoint = (duration - effectiveDuration - leadTimeMs).coerceAtLeast(0L)
 
-            Log.d(TAG, "Scheduled crossfade at ${transitionPoint}ms (trackDur: $duration). Fade: ${effectiveDuration}ms")
+            Log.d(TAG, "Scheduled crossfade at ${transitionPoint}ms (trackDur: $duration, leadTime: ${leadTimeMs}ms). Fade: ${effectiveDuration}ms")
 
             // Prevent ExoPlayer's auto-advance; we control the transition manually
             engine.setPauseAtEndOfMediaItems(true)
@@ -407,8 +459,9 @@ class TransitionController(
                 val remaining = transitionPoint - player.currentPosition
                 val sleep = when {
                     remaining > 5000 -> 1000L
-                    remaining > 1000 -> 250L
-                    else -> 50L
+                    remaining > 2000 -> 250L
+                    remaining > 500 -> 50L
+                    else -> 20L
                 }
                 delay(sleep)
             }
@@ -430,8 +483,9 @@ class TransitionController(
         val mediaItem = player.currentMediaItem ?: return
 
         if (isInDestructiveState()) {
-            Log.d(TAG, "Seek during active transition. Let transition finish.")
-            return
+            Log.d(TAG, "Seek during active transition. Snap-completing transition immediately.")
+            engine.snapCompleteTransition()
+            setState(TransitionState.IDLE)
         }
 
         Log.d(TAG, "Handling seek to ${positionMs}ms for ${mediaItem.mediaId}")

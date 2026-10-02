@@ -1196,6 +1196,15 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
             }
         }
 
+        serviceScope.launch {
+            appSettings.skipSilenceEnabled.collect { enabled ->
+                val isBitPerfect = appSettings.audioRoutingMode.value == "app"
+                if (::rhythmPlayerEngine.isInitialized) {
+                    rhythmPlayerEngine.setSkipSilenceEnabled(if (isBitPerfect) false else enabled)
+                }
+            }
+        }
+
         // Collect widget lyrics settings reactively
         serviceScope.launch {
             kotlinx.coroutines.flow.combine(
@@ -2165,10 +2174,9 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
 
             if (rhythmPlayerEngine.isTransitionRunning()) {
                 Log.d(TAG, "Transition is running during skip request. Force completing it first and falling back to standard skip.")
+                rhythmPlayerEngine.snapCompleteTransition()
                 if (::transitionController.isInitialized) {
                     transitionController.cancelPendingTransition()
-                } else {
-                    rhythmPlayerEngine.cancelNext()
                 }
                 return false
             }
@@ -2194,14 +2202,26 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
                 transitionController.cancelPendingTransition()
             }
 
-            // Prepare the next song
             val startPos = if (positionMs != C.TIME_UNSET && positionMs > 0L) positionMs else 0L
-            rhythmPlayerEngine.prepareNext(nextMediaItem, startPositionMs = startPos)
+            val fullQueue = (0 until playerToUse.mediaItemCount).map { playerToUse.getMediaItemAt(it) }
+            val shuffleIndices = if (playerToUse.shuffleModeEnabled) {
+                rhythmPlayerEngine.extractShuffleIndices(playerToUse)
+            } else {
+                null
+            }
+            rhythmPlayerEngine.prepareNext(
+                mediaItem = nextMediaItem,
+                targetIndex = targetIndex,
+                fullQueue = fullQueue,
+                shuffleIndices = shuffleIndices,
+                startPositionMs = startPos
+            )
 
             val computedSkipPrevious = if (isSkipPrevious) true else targetIndex < currentWindowIndex
+            val skipDuration = (appSettings.crossfadeDuration.value * 1000).toInt().coerceIn(500, 2000)
             val settings = TransitionSettings(
                 mode = TransitionMode.OVERLAP,
-                durationMs = 1000,
+                durationMs = skipDuration,
                 isManualSkip = true,
                 isSkipPrevious = computedSkipPrevious
             )

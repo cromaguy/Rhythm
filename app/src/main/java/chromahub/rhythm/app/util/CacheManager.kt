@@ -244,6 +244,7 @@ object CacheManager {
             }
             
             MediaUtils.clearRawArtworkCache()
+            MediaUtils.clearArtworkDiskCache(context.cacheDir)
             
             // Clear Coil image cache
             val loader = imageLoader ?: runCatching { coil.Coil.imageLoader(context) }.getOrNull()
@@ -332,21 +333,33 @@ object CacheManager {
         val details = mutableMapOf<String, Long>()
         
         try {
-            val embeddedArtworkSize = getEmbeddedArtworkCacheSize(context.cacheDir)
+            val coilImageCacheDir = File(context.cacheDir, "image_cache")
+            val coilImageCacheSize = getDirectorySize(coilImageCacheDir)
+
+            val artL2CacheDir = File(context.cacheDir, "rhythm_art_l2")
+            val artL2CacheSize = getDirectorySize(artL2CacheDir)
+
+            val legacyEmbeddedArtSize = getEmbeddedArtworkCacheSize(context.cacheDir)
+            val totalArtworkCacheSize = coilImageCacheSize + artL2CacheSize + legacyEmbeddedArtSize
+
             val internalCacheSize = getDirectorySize(context.cacheDir)
-            val nonArtworkInternalSize = (internalCacheSize - embeddedArtworkSize).coerceAtLeast(0L)
+            val nonArtworkInternalSize = (internalCacheSize - totalArtworkCacheSize).coerceAtLeast(0L)
 
             details["Internal Cache (Other)"] = nonArtworkInternalSize
-            details["Embedded Artwork Cache"] = embeddedArtworkSize
+            details["Album Artwork Cache"] = totalArtworkCacheSize
 
             // Scan-time artwork is written to filesDir (counts as App data)
-            details["Embedded Artwork (App Data)"] = getEmbeddedArtworkCacheSize(context.filesDir)
+            val filesDirArtSize = getEmbeddedArtworkCacheSize(context.filesDir)
+            if (filesDirArtSize > 0) {
+                details["Embedded Artwork (App Data)"] = filesDirArtSize
+            }
             
             // External cache size
             context.externalCacheDir?.let { externalCache ->
-                details["External Cache"] = getDirectorySize(externalCache)
-            } ?: run {
-                details["External Cache"] = 0L
+                val externalSize = getDirectorySize(externalCache)
+                if (externalSize > 0) {
+                    details["External Cache"] = externalSize
+                }
             }
             
         } catch (e: Exception) {

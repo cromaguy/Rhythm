@@ -660,7 +660,7 @@
     <string name="cache_about">About Cache</string>
     <string name="cache_size_limit">Cache Size Limit</string>
     <string name="cache_auto_trim">Auto-trim at 90%</string>
-    <string name="cache_auto_trim_desc">Cache is automatically trimmed when usage reaches 90%% of limit</string>
+    <string name="cache_auto_trim_desc">Cache is automatically trimmed when usage reaches 90% of limit</string>
 <string name="lyrics_source_priority">Lyrics Source Priority</string>
     <string name="lyrics_choose_source">Choose where to look for Lyrics</string>
     <string name="lyrics_embedded_note">Embedded lyrics are extracted from ID3v2 USLT tags in your audio files. For best results, use properly tagged MP3/FLAC files.</string>
@@ -1329,7 +1329,7 @@
     <string name="settings_lyrics_cache_clear_failed">Failed to clear lyrics cache</string>
     <string name="settings_all_cache_cleared">All cache cleared</string>
     <string name="settings_cache_clear_failed">Failed to clear cache</string>
-    <string name="settings_cache_restart_required">Cache was cleared. Restart the app to refresh everything cleanly. Album artwork will be restored on the next library rescan.</string>
+    <string name="settings_cache_restart_required">Cache was cleared. Restart the app to refresh everything cleanly. Album artwork will reload automatically on-demand.</string>
     <string name="settings_clear_all_cache">Clear All Cache</string>
     <string name="settings_clear_all_cache_desc">Remove all cached data, including embedded artwork cache entries</string>
     <string name="settings_cache_info_1">Cache stores album art, lyrics, and temporary files</string>

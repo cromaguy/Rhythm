@@ -48,6 +48,8 @@ import androidx.media3.exoplayer.audio.ForwardingAudioSink
 import androidx.media3.common.audio.SonicAudioProcessor
 import androidx.media3.exoplayer.audio.DefaultAudioSink
 import androidx.media3.exoplayer.audio.SilenceSkippingAudioProcessor
+import chromahub.rhythm.app.util.calculateVolumeIn
+import chromahub.rhythm.app.util.calculateVolumeOut
 import chromahub.rhythm.app.util.envelope
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CancellationException
@@ -146,7 +148,13 @@ class RhythmPlayerEngine(
         override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
             if (playWhenReady) {
                 requestAudioFocus()
+                if (transitionRunning && ::playerB.isInitialized && playerB.playbackState != Player.STATE_ENDED) {
+                    playerB.playWhenReady = true
+                }
             } else {
+                if (transitionRunning && ::playerB.isInitialized) {
+                    playerB.playWhenReady = false
+                }
                 if (!isFocusLossPause) {
                     abandonAudioFocus()
                 }
@@ -285,6 +293,7 @@ class RhythmPlayerEngine(
             launch { appSettings.playbackSpeed.collect { updateTrackSelectionParameters() } }
             launch { appSettings.playbackPitch.collect { updateTrackSelectionParameters() } }
             launch { appSettings.gaplessPlayback.collect { updateTrackSelectionParameters() } }
+            launch { appSettings.skipSilenceEnabled.collect { updateTrackSelectionParameters() } }
         }
     }
 
@@ -352,10 +361,10 @@ class RhythmPlayerEngine(
                 
                 val silenceSkippingProcessor = SilenceSkippingAudioProcessor(
                     /* minimumSilenceDurationUs = */ 500_000L,
-                    /* silenceRetentionRatio = */ 0.1f,
+                    /* silenceRetentionRatio = */ 0.2f,
                     /* maxSilenceToKeepDurationUs = */ 1_000_000L,
-                    /* minVolumeToKeepPercentageWhenMuting = */ 0,
-                    /* silenceThresholdLevel = */ 128.toShort()
+                    /* minVolumeToKeepPercentageWhenMuting = */ 5,
+                    /* silenceThresholdLevel = */ 40.toShort()
                 )
                 val sonicAudioProcessor = SonicAudioProcessor()
                 val allProcessors: Array<androidx.media3.common.audio.AudioProcessor> =
@@ -520,28 +529,87 @@ class RhythmPlayerEngine(
     /**
      * Pre-buffers the next track on Player B.
      * Sets volume to 0 and pauses, ready for the crossfade transition.
+     *
+     * When [fullQueue] is supplied, sets the complete queue on Player B with [targetIndex]
+     * so Player B has 100% of the queue context in advance, eliminating timeline manipulation
+     * latency during the transition and preventing history loss on interruption.
      */
-    fun prepareNext(mediaItem: MediaItem, startPositionMs: Long = 0L) {
+    fun prepareNext(
+        mediaItem: MediaItem,
+        targetIndex: Int = 0,
+        fullQueue: List<MediaItem>? = null,
+        shuffleIndices: IntArray? = null,
+        startPositionMs: Long = 0L
+    ) {
         try {
-            Log.d(TAG, "prepareNext called for ${mediaItem.mediaId}")
+            Log.d(TAG, "prepareNext called for ${mediaItem.mediaId} (targetIndex=$targetIndex, queueSize=${fullQueue?.size ?: 1})")
             ReplayGainCache.get(mediaItem.mediaId)?.let { cachedInfo ->
                 playerBReplayGain.setTags(cachedInfo)
             }
             playerB.stop()
             playerB.clearMediaItems()
             playerB.playWhenReady = false
-            playerB.setMediaItem(mediaItem)
+
+            if (!fullQueue.isNullOrEmpty() && targetIndex in fullQueue.indices) {
+                playerB.setMediaItems(fullQueue, targetIndex, if (startPositionMs > 0) startPositionMs else 0L)
+                if (shuffleIndices != null && shuffleIndices.size == fullQueue.size) {
+                    playerB.setShuffleOrder(RhythmShuffleOrder(shuffleIndices))
+                }
+            } else {
+                playerB.setMediaItem(mediaItem)
+                if (startPositionMs > 0) {
+                    playerB.seekTo(startPositionMs)
+                } else {
+                    playerB.seekTo(0)
+                }
+            }
+
             playerB.prepare()
             playerB.volume = 0f
-            if (startPositionMs > 0) {
-                playerB.seekTo(startPositionMs)
-            } else {
-                playerB.seekTo(0)
-            }
             playerB.pause()
             Log.d(TAG, "Player B prepared, paused, volume=0")
         } catch (e: Exception) {
             Log.e(TAG, "Failed to prepare next player", e)
+        }
+    }
+
+    /**
+     * Extracts the active shuffle sequence of window indices from [player].
+     */
+    fun extractShuffleIndices(player: Player = masterPlayer): IntArray? {
+        if (!player.shuffleModeEnabled || player.mediaItemCount <= 0) return null
+        val count = player.mediaItemCount
+        val shuffledIndices = IntArray(count)
+        val timeline = player.currentTimeline
+        var idx = 0
+        var windowIndex = timeline.getFirstWindowIndex(true)
+        val visited = BooleanArray(count)
+        while (windowIndex != C.INDEX_UNSET && windowIndex in visited.indices && !visited[windowIndex] && idx < count) {
+            shuffledIndices[idx++] = windowIndex
+            visited[windowIndex] = true
+            windowIndex = timeline.getNextWindowIndex(windowIndex, Player.REPEAT_MODE_OFF, true)
+        }
+        return if (idx == count) shuffledIndices else null
+    }
+
+    /**
+     * Instantly finishes any active transition, snapping Player A to full volume
+     * and stopping Player B cleanly. Used when the user seeks or manually skips during a transition.
+     */
+    @Synchronized
+    fun snapCompleteTransition() {
+        if (!transitionRunning) return
+        Log.d(TAG, "snapCompleteTransition: force-completing active transition")
+        transitionRunning = false
+        transitionJob?.cancel()
+        if (::playerB.isInitialized) {
+            playerB.volume = 0f
+            playerB.stop()
+            playerB.clearMediaItems()
+        }
+        if (::playerA.isInitialized) {
+            playerA.volume = userVolume
+            setPauseAtEndOfMediaItems(false)
         }
     }
 
@@ -594,12 +662,11 @@ class RhythmPlayerEngine(
 
     /**
      * Core crossfade logic:
-     * 1. Waits for Player B to be ready
-     * 2. Starts Player B at volume 0
-     * 3. Swaps players EARLY so UI immediately shows the new song
-     * 4. Transfers queue history/future and playback settings
-     * 5. Runs a fade loop with shaped curves
-     * 6. Releases old player and recreates it fresh
+     * 1. Uses pre-buffered Player B with full queue context for zero-latency start
+     * 2. Swaps player references and updates MediaSession / effects
+     * 3. Runs an equal-power or configured shaped curve fade loop
+     * 4. Pauses and resumes both players synchronously if user pauses during transition
+     * 5. Releases outgoing player and resets it fresh for subsequent transitions
      */
     private suspend fun performOverlapTransition(settings: TransitionSettings) {
         if (playerB.mediaItemCount == 0) {
@@ -612,79 +679,33 @@ class RhythmPlayerEngine(
         val incomingPlayer = playerB
         val targetVolume = userVolume
 
-        val isSelfTransition = outgoingPlayer.currentMediaItem?.mediaId == incomingPlayer.currentMediaItem?.mediaId
         val outgoingMediaItemCount = outgoingPlayer.mediaItemCount
         val currentOutgoingIndex = outgoingPlayer.currentMediaItemIndex
             .takeIf { it in 0 until outgoingMediaItemCount }
             ?: 0
 
-        val outgoingTimeline = outgoingPlayer.currentTimeline
-        val timelineTargetIndex = if (!outgoingTimeline.isEmpty && currentOutgoingIndex != C.INDEX_UNSET) {
-            if (settings.isSkipPrevious) {
-                outgoingTimeline.getPreviousWindowIndex(
-                    currentOutgoingIndex,
-                    outgoingPlayer.repeatMode,
-                    outgoingPlayer.shuffleModeEnabled
-                )
-            } else {
-                outgoingTimeline.getNextWindowIndex(
-                    currentOutgoingIndex,
-                    outgoingPlayer.repeatMode,
-                    outgoingPlayer.shuffleModeEnabled
-                )
-            }
-        } else {
-            C.INDEX_UNSET
-        }
         val incomingMediaId = incomingPlayer.currentMediaItem?.mediaId
-        val incomingQueueIndex = when {
-            isSelfTransition -> currentOutgoingIndex
-            timelineTargetIndex in 0 until outgoingMediaItemCount && 
-                outgoingPlayer.getMediaItemAt(timelineTargetIndex).mediaId == incomingMediaId -> timelineTargetIndex
-            incomingMediaId != null -> (0 until outgoingMediaItemCount)
-            .firstOrNull { index -> outgoingPlayer.getMediaItemAt(index).mediaId == incomingMediaId }
-            ?: currentOutgoingIndex
-            else -> currentOutgoingIndex
-        }
-
-        val historyToTransfer = mutableListOf<MediaItem>()
-        for (i in 0 until incomingQueueIndex) {
-            historyToTransfer.add(outgoingPlayer.getMediaItemAt(i))
-        }
-
-        val futureToTransfer = mutableListOf<MediaItem>()
-        for (i in (incomingQueueIndex + 1) until outgoingMediaItemCount) {
-            futureToTransfer.add(outgoingPlayer.getMediaItemAt(i))
+        val isSelfTransition = outgoingPlayer.currentMediaItem?.mediaId == incomingMediaId
+        if (incomingPlayer.mediaItemCount <= 1 && outgoingMediaItemCount > 1) {
+            val fullQueue = (0 until outgoingMediaItemCount).map { outgoingPlayer.getMediaItemAt(it) }
+            val incomingQueueIndex = when {
+                isSelfTransition -> currentOutgoingIndex
+                incomingMediaId != null -> (0 until outgoingMediaItemCount)
+                    .firstOrNull { index -> outgoingPlayer.getMediaItemAt(index).mediaId == incomingMediaId }
+                    ?: currentOutgoingIndex
+                else -> currentOutgoingIndex
+            }
+            incomingPlayer.setMediaItems(fullQueue, incomingQueueIndex, 0L)
+            if (outgoingPlayer.shuffleModeEnabled) {
+                extractShuffleIndices(outgoingPlayer)?.let { indices ->
+                    incomingPlayer.setShuffleOrder(RhythmShuffleOrder(indices))
+                }
+            }
         }
 
         incomingPlayer.repeatMode = outgoingPlayer.repeatMode
         incomingPlayer.shuffleModeEnabled = outgoingPlayer.shuffleModeEnabled
         incomingPlayer.playbackParameters = outgoingPlayer.playbackParameters
-
-        if (historyToTransfer.isNotEmpty()) {
-            incomingPlayer.addMediaItems(0, historyToTransfer)
-        }
-
-        if (futureToTransfer.isNotEmpty()) {
-            incomingPlayer.addMediaItems(futureToTransfer)
-        }
-
-        if (outgoingPlayer.shuffleModeEnabled && outgoingMediaItemCount > 0) {
-            val count = outgoingMediaItemCount
-            val shuffledIndices = IntArray(count)
-            val timeline = outgoingPlayer.currentTimeline
-            var idx = 0
-            var windowIndex = timeline.getFirstWindowIndex(true)
-            val visited = BooleanArray(count)
-            while (windowIndex != C.INDEX_UNSET && windowIndex in visited.indices && !visited[windowIndex] && idx < count) {
-                shuffledIndices[idx++] = windowIndex
-                visited[windowIndex] = true
-                windowIndex = timeline.getNextWindowIndex(windowIndex, Player.REPEAT_MODE_OFF, true)
-            }
-            if (idx == count) {
-                incomingPlayer.setShuffleOrder(RhythmShuffleOrder(shuffledIndices))
-            }
-        }
 
         outgoingPlayer.removeListener(masterPlayerListener)
 
@@ -727,9 +748,9 @@ class RhythmPlayerEngine(
         }
 
         var readinessChecks = 0
-        val maxReadinessChecks = if (settings.isManualSkip) 16 else 120
+        val maxReadinessChecks = if (settings.isManualSkip) 16 else 60
         while (playerA.playbackState == Player.STATE_BUFFERING && readinessChecks < maxReadinessChecks) {
-            delay(25)
+            delay(20)
             readinessChecks++
         }
 
@@ -745,34 +766,46 @@ class RhythmPlayerEngine(
 
             playerA.playWhenReady = true
             playerA.play()
-
-            var playChecks = 0
-            val maxPlayChecks = if (settings.isManualSkip) 16 else 80
-            while (!playerA.isPlaying && playChecks < maxPlayChecks) {
-                delay(25)
-                playChecks++
-            }
-
-            if (playerA.isPlaying) {
-                isFading = true
-                delay(75)
-            }
+            isFading = true
         }
 
         if (isFading) {
-            val duration = settings.durationMs.toLong().coerceAtLeast(500L)
+            val configuredDuration = settings.durationMs.toLong().coerceAtLeast(500L)
+            val remainingAudio = if (playerB.duration > 0 && playerB.currentPosition >= 0) {
+                (playerB.duration - playerB.currentPosition).coerceAtLeast(500L)
+            } else {
+                configuredDuration
+            }
+            val fadeDuration = if (!settings.isManualSkip) {
+                configuredDuration.coerceAtMost(remainingAudio)
+            } else {
+                configuredDuration
+            }
+
             val stepMs = 16L
             var elapsed = 0L
 
-            while (elapsed <= duration) {
-                val progress = (elapsed.toFloat() / duration).coerceIn(0f, 1f)
-                val volIn = envelope(progress, settings.curveIn) * targetVolume
-                val volOut = (1f - envelope(progress, settings.curveOut)) * targetVolume
+            while (elapsed <= fadeDuration && transitionRunning) {
+                while (!playerA.playWhenReady && transitionRunning) {
+                    if (playerB.playWhenReady) {
+                        playerB.playWhenReady = false
+                    }
+                    delay(50)
+                }
+                if (playerA.playWhenReady && !playerB.playWhenReady && playerB.playbackState != Player.STATE_ENDED) {
+                    playerB.playWhenReady = true
+                }
+
+                if (!transitionRunning) break
+
+                val progress = (elapsed.toFloat() / fadeDuration).coerceIn(0f, 1f)
+                val volIn = calculateVolumeIn(progress, settings.curveIn) * targetVolume
+                val volOut = calculateVolumeOut(progress, settings.curveOut) * targetVolume
 
                 playerA.volume = volIn.coerceIn(0f, targetVolume)
                 playerB.volume = volOut.coerceIn(0f, targetVolume)
 
-                if (playerA.playbackState == Player.STATE_ENDED || playerB.playbackState == Player.STATE_ENDED) {
+                if (playerA.playbackState == Player.STATE_ENDED) {
                     break
                 }
 
@@ -866,10 +899,12 @@ class RhythmPlayerEngine(
             kotlin.math.abs(appSettings.playbackSpeed.value - 1f) > 0.001f ||
             kotlin.math.abs(appSettings.playbackPitch.value - 1f) > 0.001f
 
+        val isSkipSilenceEnabled = appSettings.skipSilenceEnabled.value
+
         val isOffloadSupported = appSettings.isAudioOffloadActive.value &&
             (!isCrossfadeEnabled && !isEqualizerEnabled && !isReplayGainEnabled &&
              !isBassBoostEnabled && !isVirtualizerEnabled && !isMonoAudioEnabled &&
-             !isPlaybackRateModified)
+             !isPlaybackRateModified && !isSkipSilenceEnabled)
 
         val audioOffloadPreferences = TrackSelectionParameters.AudioOffloadPreferences.Builder()
             .setAudioOffloadMode(

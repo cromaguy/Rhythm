@@ -8,6 +8,7 @@ package chromahub.rhythm.app.util
 import chromahub.rhythm.app.shared.data.model.Curve
 import kotlin.math.PI
 import kotlin.math.cos
+import kotlin.math.sin
 import kotlin.math.sqrt
 
 /**
@@ -28,5 +29,29 @@ fun envelope(progress: Float, curve: Curve): Float {
         Curve.S_CURVE -> ((1 - cos(PI * clampedProgress)) / 2f).toFloat()
         Curve.LOG -> sqrt(clampedProgress)
         Curve.EXP -> clampedProgress * clampedProgress
+        Curve.EQUAL_POWER -> sin(clampedProgress * (PI / 2.0)).toFloat()
+    }
+}
+
+/**
+ * Calculates the incoming track's volume multiplier (0.0 to 1.0) based on progress and curve.
+ */
+fun calculateVolumeIn(progress: Float, curve: Curve): Float {
+    val clampedProgress = progress.coerceIn(0f, 1f)
+    return when (curve) {
+        Curve.EQUAL_POWER -> sin(clampedProgress * (PI / 2.0)).toFloat()
+        else -> envelope(clampedProgress, curve)
+    }
+}
+
+/**
+ * Calculates the outgoing track's volume multiplier (1.0 to 0.0) based on progress and curve.
+ * For equal power, cos^2(p * PI/2) + sin^2(p * PI/2) == 1.0 at all times, avoiding any volume dip.
+ */
+fun calculateVolumeOut(progress: Float, curve: Curve): Float {
+    val clampedProgress = progress.coerceIn(0f, 1f)
+    return when (curve) {
+        Curve.EQUAL_POWER -> cos(clampedProgress * (PI / 2.0)).toFloat()
+        else -> 1f - envelope(clampedProgress, curve)
     }
 }

@@ -26,7 +26,9 @@ enum class Curve {
     /** Logarithmic curve — fast rise, slow finish */
     LOG,
     /** S-curve (sigmoid) — smooth start and end */
-    S_CURVE
+    S_CURVE,
+    /** Equal power curve (sine/cosine) — constant acoustic energy without loudness dip */
+    EQUAL_POWER
 }
 
 /**
@@ -40,8 +42,8 @@ enum class Curve {
 data class TransitionSettings(
     val mode: TransitionMode = TransitionMode.OVERLAP,
     val durationMs: Int = 6000,
-    val curveIn: Curve = Curve.S_CURVE,
-    val curveOut: Curve = Curve.S_CURVE,
+    val curveIn: Curve = Curve.EQUAL_POWER,
+    val curveOut: Curve = Curve.EQUAL_POWER,
     val isManualSkip: Boolean = false,
     val isSkipPrevious: Boolean = false,
 )
