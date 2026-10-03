@@ -5,6 +5,9 @@
 
 package chromahub.rhythm.app.shared.presentation.components.common
 
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
@@ -34,6 +37,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
@@ -148,6 +152,15 @@ fun CookieHorizontalSlider(
     var lastHapticValue by remember { mutableFloatStateOf(value) }
     var isInteracting by remember { mutableStateOf(false) }
     var dragNormalizedValue by remember { mutableFloatStateOf(normalizedValue) }
+
+    val thumbScale by animateFloatAsState(
+        targetValue = if (isInteracting) 1.25f else 1f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessMedium
+        ),
+        label = "CookieThumbScale"
+    )
 
     LaunchedEffect(value, normalizedValue, isInteracting) {
         if (!isInteracting) {
@@ -266,7 +279,6 @@ fun CookieHorizontalSlider(
             val centerY = size.height / 2f
             val trackTop = centerY - pillRadius
 
-            // 1. Inactive Track (Full Big Pill)
             drawRoundRect(
                 color = actualInactiveTrackColor,
                 topLeft = Offset(0f, trackTop),
@@ -274,7 +286,6 @@ fun CookieHorizontalSlider(
                 cornerRadius = CornerRadius(pillRadius)
             )
 
-            // 2. Active Track (Filled pill up to thumb center, capped with circle)
             drawCircle(
                 color = actualActiveTrackColor,
                 radius = pillRadius,
@@ -303,7 +314,6 @@ fun CookieHorizontalSlider(
                 )
             }
 
-            // 3. Center Marker (0 dB indication)
             if (showCenterMarker && valueRange.start < 0f && valueRange.endInclusive > 0f) {
                 val centerFraction = ((0f - valueRange.start) / (valueRange.endInclusive - valueRange.start)).coerceIn(0f, 1f)
                 val centerMarkerX = pillRadius + (centerFraction * usableTrackWidth)
@@ -321,19 +331,20 @@ fun CookieHorizontalSlider(
                 )
             }
 
-            // 4. Rotating Cookie Thumb
             translate(
                 left = thumbCenterX - thumbRadiusPx,
                 top = centerY - thumbRadiusPx
             ) {
-                rotate(
-                    degrees = displayNormalizedValue * 360f,
-                    pivot = Offset(thumbRadiusPx, thumbRadiusPx)
-                ) {
-                    drawPath(
-                        path = thumbPath,
-                        color = actualThumbColor
-                    )
+                scale(scaleX = thumbScale, scaleY = thumbScale, pivot = Offset(thumbRadiusPx, thumbRadiusPx)) {
+                    rotate(
+                        degrees = displayNormalizedValue * 360f,
+                        pivot = Offset(thumbRadiusPx, thumbRadiusPx)
+                    ) {
+                        drawPath(
+                            path = thumbPath,
+                            color = actualThumbColor
+                        )
+                    }
                 }
             }
         }

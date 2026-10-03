@@ -44,6 +44,7 @@ import chromahub.rhythm.app.R
 import chromahub.rhythm.app.shared.data.model.Playlist
 import chromahub.rhythm.app.shared.data.model.Song
 import chromahub.rhythm.app.shared.presentation.components.common.CollapsibleHeaderScreen
+import chromahub.rhythm.app.shared.presentation.components.common.HeaderAction
 import chromahub.rhythm.app.shared.presentation.components.common.M3PlaceholderType
 import chromahub.rhythm.app.util.HapticUtils
 import chromahub.rhythm.app.util.HapticType
@@ -127,15 +128,20 @@ fun AddToPlaylistScreen(
                 onBackClick()
             }
         },
-        actions = {
-            AnimatedVisibility(
-                visible = isSelectionMode && selectedSongs.isNotEmpty(),
-                enter = fadeIn() + scaleIn(),
-                exit = fadeOut() + scaleOut()
-            ) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    // Select/Deselect all button
-                    FilledTonalIconButton(
+        headerActions = buildList {
+            if (isSelectionMode && selectedSongs.isNotEmpty()) {
+                add(
+                    HeaderAction(
+                        icon = if (selectedSongs.size == filteredSongs.size) {
+                            MaterialSymbolIcon("deselect", filled = true)
+                        } else {
+                            RhythmIcons.SelectAll
+                        },
+                        contentDescription = if (selectedSongs.size == filteredSongs.size) {
+                            "Deselect all"
+                        } else {
+                            "Select all"
+                        },
                         onClick = {
                             HapticUtils.performHapticFeedback(context, haptics, HapticType.LIGHT)
                             if (selectedSongs.size == filteredSongs.size) {
@@ -143,87 +149,38 @@ fun AddToPlaylistScreen(
                             } else {
                                 selectedSongs = filteredSongs.map { it.id }.toSet()
                             }
-                        },
-                        colors = IconButtonDefaults.filledTonalIconButtonColors(
-                            containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onTertiaryContainer
-                        )
-                    ) {
-                        Icon(
-                            imageVector = if (selectedSongs.size == filteredSongs.size) {
-                                MaterialSymbolIcon("deselect", filled = true)
-                            } else {
-                                RhythmIcons.SelectAll
-                            },
-                            contentDescription = if (selectedSongs.size == filteredSongs.size) {
-                                "Deselect all"
-                            } else {
-                                "Select all"
-                            },
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                    
-                    // Add selected songs button
-                    FilledIconButton(
+                        }
+                    )
+                )
+                add(
+                    HeaderAction(
+                        icon = RhythmIcons.Check,
+                        contentDescription = context.getString(R.string.cd_add_selected_songs),
                         onClick = {
                             HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
                             val songsToAdd = filteredSongs.filter { selectedSongs.contains(it.id) }
                             onAddSongsToPlaylist(songsToAdd)
                             isSelectionMode = false
                             selectedSongs = emptySet()
-                        },
-                        colors = IconButtonDefaults.filledIconButtonColors(
-                            containerColor = MaterialTheme.colorScheme.primaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                    ) {
-                        Icon(
-                            imageVector = RhythmIcons.Check,
-                            contentDescription = stringResource(R.string.cd_add_selected_songs),
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                }
-            }
-            
-            AnimatedVisibility(
-                visible = !isSelectionMode,
-                enter = fadeIn() + scaleIn(),
-                exit = fadeOut() + scaleOut()
-            ) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    // Multi-select toggle button
-                    FilledTonalIconButton(
+                        }
+                    )
+                )
+            } else if (!isSelectionMode) {
+                add(
+                    HeaderAction(
+                        icon = MaterialSymbolIcon("checklist", filled = true),
+                        contentDescription = context.getString(R.string.cd_toggle_multi_select),
                         onClick = {
                             HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
                             isSelectionMode = !isSelectionMode
                             if (!isSelectionMode) {
                                 selectedSongs = emptySet()
                             }
-                        },
-                        colors = IconButtonDefaults.filledTonalIconButtonColors(
-                            containerColor = if (isSelectionMode) {
-                                MaterialTheme.colorScheme.primaryContainer
-                            } else {
-                                MaterialTheme.colorScheme.secondaryContainer
-                            },
-                            contentColor = if (isSelectionMode) {
-                                MaterialTheme.colorScheme.onPrimaryContainer
-                            } else {
-                                MaterialTheme.colorScheme.onSecondaryContainer
-                            }
-                        )
-                    ) {
-                        Icon(
-                            imageVector = MaterialSymbolIcon("checklist", filled = true),
-                            contentDescription = stringResource(R.string.cd_toggle_multi_select),
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                }
+                        }
+                    )
+                )
             }
-        }
+        },
     ) { contentModifier ->
         Column(modifier = contentModifier.fillMaxSize()) {
             // Sticky search bar

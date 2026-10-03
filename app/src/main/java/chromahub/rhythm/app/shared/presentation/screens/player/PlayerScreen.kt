@@ -187,17 +187,19 @@ fun PlayerScreen(
     val lyricsTimeOffset by musicViewModel.lyricsTimeOffset.collectAsState()
     var showLyricsEditorDialog by remember { mutableStateOf(false) }
 
+    val integrationsEnabled by appSettings.integrationsEnabled.collectAsState()
     val appleCanvasEnabled by appSettings.appleCanvasEnabled.collectAsState()
+    val appleCanvasActive = appleCanvasEnabled && integrationsEnabled
     val appleCanvasNetworkMode by appSettings.appleCanvasNetworkMode.collectAsState()
     var canvasArtwork by remember(song?.id) { mutableStateOf<CanvasArtwork?>(null) }
     var canvasLoading by remember(song?.id) { mutableStateOf(false) }
 
-    LaunchedEffect(song?.id, appleCanvasEnabled, appleCanvasNetworkMode) {
+    LaunchedEffect(song?.id, appleCanvasActive, appleCanvasNetworkMode) {
         // Reset immediately so stale canvas from previous track is gone
         canvasArtwork = null
         canvasLoading = false
 
-        if (song != null && appleCanvasEnabled) {
+        if (song != null && appleCanvasActive) {
             val hasNetwork = if (appleCanvasNetworkMode == CanvasNetworkMode.WIFI_ONLY) {
                 NetworkUtils.isWifiConnected(context)
             } else {

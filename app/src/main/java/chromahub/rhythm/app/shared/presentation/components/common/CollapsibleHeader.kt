@@ -7,6 +7,7 @@ package chromahub.rhythm.app.shared.presentation.components.common
 
 import chromahub.rhythm.app.shared.presentation.components.icons.RhythmIcons
 import chromahub.rhythm.app.shared.presentation.components.icons.Icon
+import chromahub.rhythm.app.shared.presentation.components.icons.MaterialSymbolIcon
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -77,7 +78,8 @@ fun CollapsibleHeaderScreen(
     showBackButton: Boolean = false,
     onBackClick: () -> Unit = {},
     actions: @Composable () -> Unit = {},
-    filterDropdown: @Composable () -> Unit = {}, // New parameter for the filter dropdown
+    headerActions: List<HeaderAction> = emptyList(),
+    filterDropdown: @Composable () -> Unit = {},
     headerContent: (@Composable () -> Unit)? = null,
     headerContentSpacing: Dp = 8.dp,
     scrollBehaviorKey: String? = null, // Key for preserving scroll behavior state
@@ -255,9 +257,10 @@ fun CollapsibleHeaderScreen(
                     actions = {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(end = 12.dp) // Match left-side padding (12.dp)
+                            modifier = Modifier.padding(end = 12.dp)
                         ) {
-                            filterDropdown() // Place the filter dropdown here
+                            filterDropdown()
+                            HeaderActionGroup(headerActions)
                             actions()
                         }
                     },
@@ -331,6 +334,7 @@ fun ArtistCollapsibleHeaderScreen(
     showBackButton: Boolean = false,
     onBackClick: () -> Unit = {},
     actions: @Composable () -> Unit = {},
+    headerActions: List<HeaderAction> = emptyList(),
     filterDropdown: @Composable () -> Unit = {},
     scrollBehaviorKey: String? = null,
     showAppIcon: Boolean = false,
@@ -580,6 +584,7 @@ fun ArtistCollapsibleHeaderScreen(
                                 modifier = Modifier.padding(end = 12.dp)
                             ) {
                                 filterDropdown()
+                                HeaderActionGroup(headerActions)
                                 actions()
                             }
                         },
@@ -632,6 +637,7 @@ fun FixedHeaderScreen(
     showBackButton: Boolean = false,
     onBackClick: () -> Unit = {},
     actions: @Composable () -> Unit = {},
+    headerActions: List<HeaderAction> = emptyList(),
     containerColor: Color = Color.Transparent,
     backButtonContainerColor: Color = MaterialTheme.colorScheme.surfaceContainerHigh,
     backButtonContentColor: Color = MaterialTheme.colorScheme.onSurface,
@@ -710,6 +716,7 @@ fun FixedHeaderScreen(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.padding(end = 12.dp)
                         ) {
+                            HeaderActionGroup(headerActions)
                             actions()
                         }
                     },
@@ -731,6 +738,66 @@ fun FixedHeaderScreen(
                 }
         ) {
             content(Modifier.fillMaxSize())
+        }
+    }
+}
+
+/**
+ * A single action rendered by [HeaderActionGroup].
+ *
+ * Provide [icon] (and optional [text]) for the common case, or [content] for a
+ * fully custom button body.
+ */
+data class HeaderAction(
+    val onClick: () -> Unit,
+    val contentDescription: String? = null,
+    val icon: MaterialSymbolIcon? = null,
+    val text: String? = null,
+    val enabled: Boolean = true,
+    val content: (@Composable () -> Unit)? = null
+)
+
+/**
+ * Renders header actions as a single connected button group (same component as
+ * the Play/Shuffle group). One action renders as a plain round button; two or
+ * more merge into one grouped pill.
+ */
+@Composable
+fun HeaderActionGroup(
+    actions: List<HeaderAction>,
+    modifier: Modifier = Modifier,
+    size: RhythmButtonSize = RhythmButtonSize.Small,
+    containerColor: Color = MaterialTheme.colorScheme.surfaceContainerHigh,
+    contentColor: Color = MaterialTheme.colorScheme.onSurface
+) {
+    if (actions.isEmpty()) return
+
+    val segmentHeight = 40.dp
+    val segmentIconSize = 25.dp
+
+    RhythmGroupedButton(
+        modifier = modifier.padding(end = 4.dp),
+        size = size,
+        isFillMaxWidth = false
+    ) {
+        actions.forEachIndexed { index, action ->
+            RhythmButtonWeighted(
+                onClick = action.onClick,
+                type = RhythmButtonType.Filled,
+                size = size,
+                text = action.text,
+                icon = action.icon,
+                enabled = action.enabled,
+                containerColor = containerColor,
+                contentColor = contentColor,
+                height = segmentHeight,
+                iconSize = segmentIconSize,
+                isFirst = index == 0,
+                isLast = index == actions.lastIndex,
+                useWeight = false,
+                contentDescription = action.contentDescription,
+                content = action.content
+            )
         }
     }
 }

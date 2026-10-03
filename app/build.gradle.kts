@@ -242,7 +242,6 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     
     // Material 3 dependencies
-    implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.material3.android)
     implementation(libs.androidx.material3.window.size)
     implementation(libs.androidx.window)

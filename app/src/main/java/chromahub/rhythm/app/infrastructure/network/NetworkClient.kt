@@ -331,14 +331,14 @@ object NetworkClient {
             .build()
     }
     
-    // Helper methods to check if APIs are enabled (respects both BuildConfig AND runtime settings)
-    fun isDeezerApiEnabled(): Boolean = BuildConfig.ENABLE_DEEZER && (appSettings?.deezerApiEnabled?.value ?: false)
-    fun isLrcLibApiEnabled(): Boolean = BuildConfig.ENABLE_LRCLIB && (appSettings?.lrclibApiEnabled?.value ?: false)
-    fun isBetterLyricsApiEnabled(): Boolean = BuildConfig.ENABLE_BETTERLYRICS && (appSettings?.betterLyricsApiEnabled?.value ?: false)
-    fun isYTMusicApiEnabled(): Boolean = BuildConfig.ENABLE_YOUTUBE_MUSIC && (appSettings?.ytMusicApiEnabled?.value ?: false)
-    fun isSpotifyApiEnabled(): Boolean = BuildConfig.ENABLE_SPOTIFY_SEARCH && (appSettings?.spotifyApiEnabled?.value ?: false)
-    fun isLyricallyApiEnabled(): Boolean = BuildConfig.ENABLE_LYRICALLY_API && (appSettings?.lyricallyApiEnabled?.value ?: false)
-    fun isWikipediaApiEnabled(): Boolean = BuildConfig.ENABLE_WIKIPEDIA && (appSettings?.wikipediaApiEnabled?.value ?: false)
+    private fun integrationsOn(): Boolean = appSettings?.integrationsEnabled?.value ?: false
+    fun isDeezerApiEnabled(): Boolean = BuildConfig.ENABLE_DEEZER && integrationsOn() && (appSettings?.deezerApiEnabled?.value ?: false)
+    fun isLrcLibApiEnabled(): Boolean = BuildConfig.ENABLE_LRCLIB && integrationsOn() && (appSettings?.lrclibApiEnabled?.value ?: false)
+    fun isBetterLyricsApiEnabled(): Boolean = BuildConfig.ENABLE_BETTERLYRICS && integrationsOn() && (appSettings?.betterLyricsApiEnabled?.value ?: false)
+    fun isYTMusicApiEnabled(): Boolean = BuildConfig.ENABLE_YOUTUBE_MUSIC && integrationsOn() && (appSettings?.ytMusicApiEnabled?.value ?: false)
+    fun isSpotifyApiEnabled(): Boolean = BuildConfig.ENABLE_SPOTIFY_SEARCH && integrationsOn() && (appSettings?.spotifyApiEnabled?.value ?: false)
+    fun isLyricallyApiEnabled(): Boolean = BuildConfig.ENABLE_LYRICALLY_API && integrationsOn() && (appSettings?.lyricallyApiEnabled?.value ?: false)
+    fun isWikipediaApiEnabled(): Boolean = BuildConfig.ENABLE_WIKIPEDIA && integrationsOn() && (appSettings?.wikipediaApiEnabled?.value ?: false)
     
     // Get Spotify API credentials
     fun getSpotifyClientId(): String = appSettings?.spotifyClientId?.value ?: ""

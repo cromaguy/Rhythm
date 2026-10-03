@@ -327,6 +327,7 @@ fun RowScope.RhythmButtonWeighted(
     iconSize: Dp? = null,
     contentDescription: String? = null,
     expandSlotWhenSelected: Boolean = true,
+    useWeight: Boolean = true,
     content: (@Composable () -> Unit)? = null
 ) {
     val interactionSource = remember { MutableInteractionSource() }
@@ -346,6 +347,11 @@ fun RowScope.RhythmButtonWeighted(
             stiffness = Spring.StiffnessLow
         ),
         label = "wButtonWeight"
+    )
+
+    val animMinWidth by animateDpAsState(
+        targetValue = if (visualActive) (height ?: 40.dp) * 1.1f else (height ?: 40.dp),
+        label = "wButtonMinWidth"
     )
 
     val resolvedHeight = height ?: when (size) {
@@ -391,7 +397,7 @@ fun RowScope.RhythmButtonWeighted(
             onClick()
         },
         modifier = modifier
-            .weight(animWeight)
+            .then(if (useWeight) Modifier.weight(animWeight) else Modifier.widthIn(min = animMinWidth))
             .height(resolvedHeight),
         enabled = enabled,
         shape = shape,
@@ -399,12 +405,21 @@ fun RowScope.RhythmButtonWeighted(
         contentColor = resolvedContentColor,
         interactionSource = interactionSource
     ) {
+        val contentPaddingH = if (useWeight || (content == null && text == null && icon != null)) 0.dp else 12.dp
         if (content != null) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Box(
+                modifier = Modifier
+                    .then(if (useWeight) Modifier.fillMaxSize() else Modifier)
+                    .padding(horizontal = contentPaddingH),
+                contentAlignment = Alignment.Center
+            ) {
                 content()
             }
         } else {
-            Box(contentAlignment = Alignment.Center) {
+            Box(
+                modifier = Modifier.padding(horizontal = contentPaddingH),
+                contentAlignment = Alignment.Center
+            ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Center

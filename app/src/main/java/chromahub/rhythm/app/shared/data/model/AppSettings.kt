@@ -311,6 +311,7 @@ class AppSettings private constructor(context: Context) {
         private const val KEY_LAST_PLAYED_TIMESTAMP = "last_played_timestamp"
         
         // API Integration
+        private const val KEY_INTEGRATIONS_ENABLED = "integrations_enabled"
         private const val KEY_DEEZER_API_ENABLED = "deezer_api_enabled"
         private const val KEY_LRCLIB_API_ENABLED = "lrclib_api_enabled"
         private const val KEY_BETTERLYRICS_API_ENABLED = "better_lyrics_api_enabled"
@@ -1648,26 +1649,29 @@ class AppSettings private constructor(context: Context) {
     private val _lastPlayedTimestamp = MutableStateFlow(safeLong(KEY_LAST_PLAYED_TIMESTAMP, 0L))
     val lastPlayedTimestamp: StateFlow<Long> = _lastPlayedTimestamp.asStateFlow()
     
+    private val _integrationsEnabled = MutableStateFlow(prefs.getBoolean(KEY_INTEGRATIONS_ENABLED, false))
+    val integrationsEnabled: StateFlow<Boolean> = _integrationsEnabled.asStateFlow()
+
     // API Enable/Disable States
-    private val _deezerApiEnabled = MutableStateFlow(prefs.getBoolean(KEY_DEEZER_API_ENABLED, BuildConfig.FLAVOR != "fdroid"))
+    private val _deezerApiEnabled = MutableStateFlow(prefs.getBoolean(KEY_DEEZER_API_ENABLED, false))
     val deezerApiEnabled: StateFlow<Boolean> = _deezerApiEnabled.asStateFlow()
     
-    private val _lrclibApiEnabled = MutableStateFlow(prefs.getBoolean(KEY_LRCLIB_API_ENABLED, BuildConfig.FLAVOR != "fdroid"))
+    private val _lrclibApiEnabled = MutableStateFlow(prefs.getBoolean(KEY_LRCLIB_API_ENABLED, false))
     val lrclibApiEnabled: StateFlow<Boolean> = _lrclibApiEnabled.asStateFlow()
     
-    private val _betterLyricsApiEnabled = MutableStateFlow(prefs.getBoolean(KEY_BETTERLYRICS_API_ENABLED, BuildConfig.FLAVOR != "fdroid"))
+    private val _betterLyricsApiEnabled = MutableStateFlow(prefs.getBoolean(KEY_BETTERLYRICS_API_ENABLED, false))
     val betterLyricsApiEnabled: StateFlow<Boolean> = _betterLyricsApiEnabled.asStateFlow()
     
-    private val _ytMusicApiEnabled = MutableStateFlow(prefs.getBoolean(KEY_YTMUSIC_API_ENABLED, BuildConfig.FLAVOR != "fdroid"))
+    private val _ytMusicApiEnabled = MutableStateFlow(prefs.getBoolean(KEY_YTMUSIC_API_ENABLED, false))
     val ytMusicApiEnabled: StateFlow<Boolean> = _ytMusicApiEnabled.asStateFlow()
     
-    private val _spotifyApiEnabled = MutableStateFlow(prefs.getBoolean(KEY_SPOTIFY_API_ENABLED, BuildConfig.FLAVOR != "fdroid"))
+    private val _spotifyApiEnabled = MutableStateFlow(prefs.getBoolean(KEY_SPOTIFY_API_ENABLED, false))
     val spotifyApiEnabled: StateFlow<Boolean> = _spotifyApiEnabled.asStateFlow()
     
-    private val _lyricallyApiEnabled = MutableStateFlow(prefs.getBoolean(KEY_LYRICALLY_API_ENABLED, BuildConfig.FLAVOR != "fdroid"))
+    private val _lyricallyApiEnabled = MutableStateFlow(prefs.getBoolean(KEY_LYRICALLY_API_ENABLED, false))
     val lyricallyApiEnabled: StateFlow<Boolean> = _lyricallyApiEnabled.asStateFlow()
 
-    private val _wikipediaApiEnabled = MutableStateFlow(prefs.getBoolean(KEY_WIKIPEDIA_API_ENABLED, BuildConfig.FLAVOR != "fdroid"))
+    private val _wikipediaApiEnabled = MutableStateFlow(prefs.getBoolean(KEY_WIKIPEDIA_API_ENABLED, false))
     val wikipediaApiEnabled: StateFlow<Boolean> = _wikipediaApiEnabled.asStateFlow()
     
     private val _autoFetchArtwork = MutableStateFlow(prefs.getBoolean(KEY_AUTO_FETCH_ARTWORK, true))
@@ -1678,7 +1682,7 @@ class AppSettings private constructor(context: Context) {
     )
     val artistArtworkSource: StateFlow<ArtistArtworkSource> = _artistArtworkSource.asStateFlow()
 
-    private val _appleCanvasEnabled = MutableStateFlow(prefs.getBoolean(KEY_APPLE_CANVAS_ENABLED, true))
+    private val _appleCanvasEnabled = MutableStateFlow(prefs.getBoolean(KEY_APPLE_CANVAS_ENABLED, false))
     val appleCanvasEnabled: StateFlow<Boolean> = _appleCanvasEnabled.asStateFlow()
 
     private val _appleCanvasNetworkMode = MutableStateFlow(
@@ -3680,6 +3684,7 @@ private val _autoCheckForUpdates = MutableStateFlow(prefs.getBoolean(KEY_AUTO_CH
     fun setAppleCanvasEnabled(enabled: Boolean) {
         prefs.edit { putBoolean(KEY_APPLE_CANVAS_ENABLED, enabled) }
         _appleCanvasEnabled.value = enabled
+        if (enabled) setIntegrationsEnabled(true)
     }
 
     fun setAppleCanvasNetworkMode(mode: CanvasNetworkMode) {
@@ -3692,39 +3697,51 @@ private val _autoCheckForUpdates = MutableStateFlow(prefs.getBoolean(KEY_AUTO_CH
         _artistArtworkSource.value = source
     }
 
+    fun setIntegrationsEnabled(enabled: Boolean) {
+        prefs.edit { putBoolean(KEY_INTEGRATIONS_ENABLED, enabled) }
+        _integrationsEnabled.value = enabled
+    }
+
     fun setDeezerApiEnabled(enabled: Boolean) {
         prefs.edit { putBoolean(KEY_DEEZER_API_ENABLED, enabled) }
         _deezerApiEnabled.value = enabled
+        if (enabled) setIntegrationsEnabled(true)
     }
     
     fun setLrcLibApiEnabled(enabled: Boolean) {
         prefs.edit { putBoolean(KEY_LRCLIB_API_ENABLED, enabled) }
         _lrclibApiEnabled.value = enabled
+        if (enabled) setIntegrationsEnabled(true)
     }
     
     fun setBetterLyricsApiEnabled(enabled: Boolean) {
         prefs.edit { putBoolean(KEY_BETTERLYRICS_API_ENABLED, enabled) }
         _betterLyricsApiEnabled.value = enabled
+        if (enabled) setIntegrationsEnabled(true)
     }
     
     fun setYTMusicApiEnabled(enabled: Boolean) {
         prefs.edit { putBoolean(KEY_YTMUSIC_API_ENABLED, enabled) }
         _ytMusicApiEnabled.value = enabled
+        if (enabled) setIntegrationsEnabled(true)
     }
     
     fun setSpotifyApiEnabled(enabled: Boolean) {
         prefs.edit { putBoolean(KEY_SPOTIFY_API_ENABLED, enabled) }
         _spotifyApiEnabled.value = enabled
+        if (enabled) setIntegrationsEnabled(true)
     }
     
     fun setLyricallyApiEnabled(enabled: Boolean) {
         prefs.edit { putBoolean(KEY_LYRICALLY_API_ENABLED, enabled) }
         _lyricallyApiEnabled.value = enabled
+        if (enabled) setIntegrationsEnabled(true)
     }
 
     fun setWikipediaApiEnabled(enabled: Boolean) {
         prefs.edit { putBoolean(KEY_WIKIPEDIA_API_ENABLED, enabled) }
         _wikipediaApiEnabled.value = enabled
+        if (enabled) setIntegrationsEnabled(true)
     }
     
     fun setAutoFetchArtwork(enabled: Boolean) {
@@ -5471,14 +5488,15 @@ private val _autoCheckForUpdates = MutableStateFlow(prefs.getBoolean(KEY_AUTO_CH
         _lastPlayedTimestamp.value = safeLong(KEY_LAST_PLAYED_TIMESTAMP, 0L)
         
         // API Enable/Disable States
-        _deezerApiEnabled.value = prefs.getBoolean(KEY_DEEZER_API_ENABLED, BuildConfig.FLAVOR != "fdroid")
-        _lrclibApiEnabled.value = prefs.getBoolean(KEY_LRCLIB_API_ENABLED, BuildConfig.FLAVOR != "fdroid")
-        _betterLyricsApiEnabled.value = prefs.getBoolean(KEY_BETTERLYRICS_API_ENABLED, BuildConfig.FLAVOR != "fdroid")
-        _ytMusicApiEnabled.value = prefs.getBoolean(KEY_YTMUSIC_API_ENABLED, BuildConfig.FLAVOR != "fdroid")
-        _spotifyApiEnabled.value = prefs.getBoolean(KEY_SPOTIFY_API_ENABLED, BuildConfig.FLAVOR != "fdroid")
-        _lyricallyApiEnabled.value = prefs.getBoolean(KEY_LYRICALLY_API_ENABLED, BuildConfig.FLAVOR != "fdroid")
-        _wikipediaApiEnabled.value = prefs.getBoolean(KEY_WIKIPEDIA_API_ENABLED, BuildConfig.FLAVOR != "fdroid")
-        _appleCanvasEnabled.value = prefs.getBoolean(KEY_APPLE_CANVAS_ENABLED, true)
+        _integrationsEnabled.value = prefs.getBoolean(KEY_INTEGRATIONS_ENABLED, false)
+        _deezerApiEnabled.value = prefs.getBoolean(KEY_DEEZER_API_ENABLED, false)
+        _lrclibApiEnabled.value = prefs.getBoolean(KEY_LRCLIB_API_ENABLED, false)
+        _betterLyricsApiEnabled.value = prefs.getBoolean(KEY_BETTERLYRICS_API_ENABLED, false)
+        _ytMusicApiEnabled.value = prefs.getBoolean(KEY_YTMUSIC_API_ENABLED, false)
+        _spotifyApiEnabled.value = prefs.getBoolean(KEY_SPOTIFY_API_ENABLED, false)
+        _lyricallyApiEnabled.value = prefs.getBoolean(KEY_LYRICALLY_API_ENABLED, false)
+        _wikipediaApiEnabled.value = prefs.getBoolean(KEY_WIKIPEDIA_API_ENABLED, false)
+        _appleCanvasEnabled.value = prefs.getBoolean(KEY_APPLE_CANVAS_ENABLED, false)
         _appleCanvasNetworkMode.value = CanvasNetworkMode.fromOrdinal(
             prefs.getInt(KEY_APPLE_CANVAS_NETWORK_MODE, CanvasNetworkMode.BOTH.ordinal)
         )
@@ -5911,7 +5929,7 @@ private val _autoCheckForUpdates = MutableStateFlow(prefs.getBoolean(KEY_AUTO_CH
         prefs.edit { putBoolean(KEY_HOME_SHOW_APP_ICON, value) }
     }
     
-    private val _homeAppIconVisibility = MutableStateFlow(prefs.getInt(KEY_HOME_APP_ICON_VISIBILITY, 0))
+    private val _homeAppIconVisibility = MutableStateFlow(prefs.getInt(KEY_HOME_APP_ICON_VISIBILITY, 1))
     val homeAppIconVisibility: StateFlow<Int> = _homeAppIconVisibility.asStateFlow()
     fun setHomeAppIconVisibility(value: Int) {
         _homeAppIconVisibility.value = value

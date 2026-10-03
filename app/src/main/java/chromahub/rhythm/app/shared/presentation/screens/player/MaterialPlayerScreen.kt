@@ -229,9 +229,6 @@ import chromahub.rhythm.app.shared.presentation.components.dialogs.PlaybackPitch
 import chromahub.rhythm.app.shared.presentation.components.bottomsheets.PlaybackSpeedAndPitchBottomSheet
 import androidx.navigation.NavController
 import androidx.compose.ui.res.stringResource
-
-// Experimental API opt-ins required for:
-// - Material3 ModalBottomSheet and related APIs
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MaterialPlayerScreen(
@@ -2586,9 +2583,8 @@ fun MaterialPlayerScreen(
                                             .height(56.dp),
                                         contentAlignment = Alignment.Center
                                     ) {
-                                        // Use a clickable slider overlay for seeking
                                         StyledProgressBar(
-                                            progress = progress(),
+                                            progress = if (isScrubbing && enhancedSeekingEnabled) scrubProgress else progress(),
                                             style = progressStyle,
                                             modifier = Modifier.fillMaxWidth(),
                                             progressColor = MaterialTheme.colorScheme.primary,
@@ -2601,10 +2597,26 @@ fun MaterialPlayerScreen(
                                             isPlaying = isPlaying,
                                             showThumb = thumbStyle != ThumbStyle.NONE,
                                             thumbStyle = thumbStyle,
-                                            thumbSize = 14.dp,
+                                            thumbSize = 18.dp,
                                             rotateThumbWhenPlaying = playerProgressThumbRotate,
                                             waveAmplitudeWhenPlaying = 3.dp,
-                                            waveLength = 60.dp // Longer wavelength = fewer waves for Player screen
+                                            waveLength = 60.dp,
+                                            enabled = canSeek,
+                                            onSeek = { newValue ->
+                                                if (canSeek && enhancedSeekingEnabled) {
+                                                    isScrubbing = true
+                                                    scrubProgress = newValue
+                                                } else if (canSeek) {
+                                                    onSeek(newValue)
+                                                }
+                                            },
+                                            onSeekFinished = {
+                                                HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
+                                                if (canSeek && enhancedSeekingEnabled && isScrubbing) {
+                                                    onSeek(scrubProgress)
+                                                    isScrubbing = false
+                                                }
+                                            }
                                         )
                                         
                                         // Enhanced seeking preview indicator
@@ -2626,36 +2638,6 @@ fun MaterialPlayerScreen(
                                                     .align(Alignment.CenterStart)
                                             )
                                         }
-                                        
-                                        // Invisible slider for seeking - overlays the progress bar
-                                        val currentSeekProgress = if (isScrubbing && enhancedSeekingEnabled) scrubProgress else progress()
-                                        val seekSliderState = remember { SliderState(value = currentSeekProgress) }
-                                        seekSliderState.value = currentSeekProgress
-                                        androidx.compose.material3.Slider(
-                                            state = seekSliderState,
-                                            onValueChange = { newValue ->
-                                                if (canSeek && enhancedSeekingEnabled) {
-                                                    isScrubbing = true
-                                                    scrubProgress = newValue
-                                                } else if (canSeek) {
-                                                    onSeek(newValue)
-                                                }
-                                            },
-                                            onValueChangeFinished = {
-                                                HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
-                                                if (canSeek && enhancedSeekingEnabled && isScrubbing) {
-                                                    onSeek(scrubProgress)
-                                                    isScrubbing = false
-                                                }
-                                            },
-                                            modifier = Modifier.fillMaxWidth(),
-                                            enabled = canSeek,
-                                            colors = SliderDefaults.colors(
-                                                thumbColor = Color.Transparent,
-                                                activeTrackColor = Color.Transparent,
-                                                inactiveTrackColor = Color.Transparent
-                                            )
-                                        )
                                     }
                                 }
 

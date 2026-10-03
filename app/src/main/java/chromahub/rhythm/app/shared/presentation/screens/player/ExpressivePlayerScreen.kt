@@ -1531,26 +1531,27 @@ fun ExpressivePlayerScreen(
                                         Column(Modifier.weight(1f), verticalArrangement = Arrangement.Center) {
                                             if (showBuffering) {
                                                 M3LinearLoader(modifier = Modifier.fillMaxWidth().height(8.dp), color = primaryColor, trackColor = onSurfaceColor.copy(alpha = 0.18f))
-                                            } else if (playerProgressStyle == "WAVY") {
-                                                WaveSlider(value = if (isScrubbing && enhancedSeekingEnabled) scrubProgress else progressValue,
-                                                    onValueChange = { if (canSeek && enhancedSeekingEnabled) { isScrubbing = true; scrubProgress = it } else if (canSeek) onSeek(it) },
-                                                    onValueChangeFinished = { if (canSeek && enhancedSeekingEnabled && isScrubbing) { HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT); onSeek(scrubProgress); isScrubbing = false } },
-                                                    modifier = Modifier.fillMaxWidth(), enabled = canSeek, isPlaying = isPlaying,
-                                                    activeTrackColor = primaryColor, inactiveTrackColor = onSurfaceColor.copy(alpha = 0.2f), thumbColor = primaryColor)
                                             } else {
                                                 val ps = try { ProgressStyle.valueOf(playerProgressStyle) } catch (e: IllegalArgumentException) { ProgressStyle.NORMAL }
                                                 val ts = ThumbStyle.fromStorage(playerProgressThumbStyle)
-                                                Box(Modifier.fillMaxWidth().height(32.dp), contentAlignment = Alignment.Center) {
-                                                    StyledProgressBar(progress = progressValue, style = ps, modifier = Modifier.fillMaxWidth(),
-                                                        progressColor = primaryColor, trackColor = onSurfaceColor.copy(alpha = 0.2f),
-                                                        height = when (ps) { ProgressStyle.THIN -> 2.dp; ProgressStyle.THICK -> 12.dp; else -> 8.dp },
-                                                        isPlaying = isPlaying, showThumb = ts != ThumbStyle.NONE, thumbStyle = ts, thumbSize = 14.dp, rotateThumbWhenPlaying = playerProgressThumbRotate, waveAmplitudeWhenPlaying = 3.dp, waveLength = 60.dp)
-                                                    val progressSliderState = remember { SliderState(value = progressValue) }
-                                                    progressSliderState.value = progressValue
-                                                    Slider(state = progressSliderState, onValueChange = { onSeek(it) }, modifier = Modifier.fillMaxWidth(), enabled = canSeek,
-                                                        onValueChangeFinished = { HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT) },
-                                                        colors = SliderDefaults.colors(thumbColor = Color.Transparent, activeTrackColor = Color.Transparent, inactiveTrackColor = Color.Transparent))
-                                                }
+                                                StyledProgressBar(
+                                                    progress = if (isScrubbing && enhancedSeekingEnabled) scrubProgress else progressValue,
+                                                    style = ps,
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    progressColor = primaryColor,
+                                                    trackColor = onSurfaceColor.copy(alpha = 0.2f),
+                                                    height = when (ps) { ProgressStyle.THIN -> 2.dp; ProgressStyle.THICK -> 12.dp; else -> 8.dp },
+                                                    isPlaying = isPlaying,
+                                                    showThumb = ts != ThumbStyle.NONE,
+                                                    thumbStyle = ts,
+                                                    thumbSize = 18.dp,
+                                                    rotateThumbWhenPlaying = playerProgressThumbRotate,
+                                                    waveAmplitudeWhenPlaying = 3.dp,
+                                                    waveLength = 60.dp,
+                                                    enabled = canSeek,
+                                                    onSeek = { if (canSeek && enhancedSeekingEnabled) { isScrubbing = true; scrubProgress = it } else if (canSeek) onSeek(it) },
+                                                    onSeekFinished = { if (canSeek && enhancedSeekingEnabled && isScrubbing) { HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT); onSeek(scrubProgress); isScrubbing = false } }
+                                                )
                                             }
                                             Row(
                                                 modifier = Modifier.fillMaxWidth().padding(top = 4.dp, start = 4.dp, end = 4.dp),

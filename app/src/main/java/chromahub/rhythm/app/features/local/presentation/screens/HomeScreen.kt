@@ -3,11 +3,6 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
-// Experimental API opt-ins required for:
-// - Material3 Carousel APIs (HorizontalCenteredHeroCarousel, HorizontalUncontainedCarousel)
-// - ModalBottomSheet, rememberModalBottomSheetState
-// - Window Size Class APIs
-// These will become stable in future Material3 releases
 @file:OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3WindowSizeClassApi::class)
 
 package chromahub.rhythm.app.features.local.presentation.screens
@@ -152,6 +147,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import chromahub.rhythm.app.shared.presentation.components.common.CollapsibleHeaderScreen
+import chromahub.rhythm.app.shared.presentation.components.common.HeaderAction
 import chromahub.rhythm.app.ui.theme.festive.FestiveConfig
 import chromahub.rhythm.app.ui.theme.festive.FestiveThemeEngine
 import chromahub.rhythm.app.shared.data.model.AppSettings
@@ -567,49 +563,35 @@ fun HomeScreen(
         alwaysCollapsed = false,
         showAppIcon = showAppIcon,
         iconVisibilityMode = iconVisibilityMode,
-        actions = {
+        headerActions = buildList {
             val showReorder = !isLandscapeTablet
             val showSettings = !isTablet && floatingNavigationBar
 
             if (showReorder) {
-                ExpressiveFilledTonalIconButton(
-                    onClick = {
-                        HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
-                        showHomeSectionOrderSheet = true
-                    },
-                    colors = IconButtonDefaults.filledTonalIconButtonColors(
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                    ),
-                    modifier = Modifier.padding(end = if (showSettings) 8.dp else 16.dp)
-                ) {
-                    Icon(
-                        imageVector = RhythmIcons.Edit,
+                add(
+                    HeaderAction(
+                        icon = RhythmIcons.Edit,
                         contentDescription = context.getString(R.string.cd_reorder_home_sections),
-                        modifier = Modifier.size(25.dp)
+                        onClick = {
+                            HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
+                            showHomeSectionOrderSheet = true
+                        }
                     )
-                }
+                )
             }
             if (showSettings) {
-                ExpressiveFilledIconButton(
-                    onClick = {
-                        HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
-                        onSettingsClick()
-                    },
-                    colors = IconButtonDefaults.filledIconButtonColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                    ),
-                    modifier = Modifier.padding(end = 16.dp)
-                ) {
-                    Icon(
-                        imageVector = RhythmIcons.Settings,
+                add(
+                    HeaderAction(
+                        icon = RhythmIcons.Settings,
                         contentDescription = context.getString(R.string.home_settings_cd),
-                        modifier = Modifier.size(25.dp)
+                        onClick = {
+                            HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
+                            onSettingsClick()
+                        }
                     )
-                }
+                )
             }
-        }
+        },
     ) { modifier ->
         if (isStreamingMode) {
             StreamingHomeBody(

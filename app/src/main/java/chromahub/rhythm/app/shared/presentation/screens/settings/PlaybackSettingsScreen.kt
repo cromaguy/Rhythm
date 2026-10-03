@@ -84,7 +84,6 @@ fun PlaybackSettingsScreen(
 
     val audioRoutingMode by appSettings.audioRoutingMode.collectAsState()
     val isBitPerfect = audioRoutingMode == "app"
-    var showAudioRoutingDialog by remember { mutableStateOf(false) }
 
     CollapsibleHeaderScreen(
         title = context.getString(R.string.settings_playback_title),
@@ -238,16 +237,6 @@ fun PlaybackSettingsScreen(
                         toggleState = if (isOffloadEnforced) true else if (isBitPerfect) false else audioOffloadEnabled,
                         onToggleChange = { if (!isOffloadEnforced && !isBitPerfect) appSettings.setAudioOffloadEnabled(it) },
                         enabled = !isOffloadEnforced && !isBitPerfect
-                    ),
-                    SettingItem(
-                        icon = RhythmIcons.Devices.Usb,
-                        title = context.getString(R.string.settings_audio_routing_mode),
-                        description = when (audioRoutingMode) {
-                            "app" -> context.getString(R.string.audio_routing_app)
-                            "system" -> context.getString(R.string.audio_routing_system)
-                            else -> context.getString(R.string.audio_routing_default)
-                        },
-                        onClick = { showAudioRoutingDialog = true }
                     )
                 )
             ),
@@ -381,15 +370,6 @@ fun PlaybackSettingsScreen(
                     appSettings.setDefaultPlaybackSpeed(speed)
                     showDefaultSpeedDialog = false
                 }
-            )
-        }
-
-        if (showAudioRoutingDialog) {
-            AudioRoutingDialog(
-                onDismiss = { showAudioRoutingDialog = false },
-                appSettings = appSettings,
-                context = context,
-                haptic = hapticFeedback
             )
         }
     }

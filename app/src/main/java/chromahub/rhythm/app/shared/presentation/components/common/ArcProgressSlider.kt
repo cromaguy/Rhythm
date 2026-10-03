@@ -9,7 +9,9 @@ import chromahub.rhythm.app.util.HapticUtils
 import chromahub.rhythm.app.util.HapticType
 
 
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
@@ -71,13 +73,15 @@ fun ArcProgressSlider(
     // Normalize value
     val normalizedValue = ((value - valueRange.start) / (valueRange.endInclusive - valueRange.start)).coerceIn(0f, 1f)
 
-    // Animation for wave phase - static wave
     val phaseShift = 0f
 
-    // Interaction state for thumb scaling
     var isInteracting by remember { mutableStateOf(false) }
     val thumbScale by animateFloatAsState(
-        targetValue = if (isInteracting) 1.2f else 1f,
+        targetValue = if (isInteracting) 1.25f else 1f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessMedium
+        ),
         label = "ThumbScale"
     )
 
@@ -170,12 +174,18 @@ fun ArcProgressSlider(
         ) {
             val activeSweep = sweepAngle * normalizedValue
 
-            // 1. Draw Inactive Track
-            if (activeSweep < sweepAngle) {
+            val thumbGapPx = thumbRadius * thumbScale + 6.dp.toPx() + trackThicknessPx / 2f
+            val thumbGapDeg = if (arcRadius > 0f) {
+                Math.toDegrees(thumbGapPx.toDouble() / arcRadius.toDouble()).toFloat()
+            } else 0f
+            val inactiveStartAngle = startAngle + activeSweep + thumbGapDeg
+            val inactiveSweep = sweepAngle - activeSweep - thumbGapDeg
+
+            if (inactiveSweep > 0f) {
                 drawArc(
                     color = inactiveTrackColor,
-                    startAngle = startAngle + activeSweep,
-                    sweepAngle = sweepAngle - activeSweep,
+                    startAngle = inactiveStartAngle,
+                    sweepAngle = inactiveSweep,
                     useCenter = false,
                     style = Stroke(width = trackThicknessPx, cap = StrokeCap.Round),
                     topLeft = Offset(arcCenter.x - arcRadius, arcCenter.y - arcRadius),
@@ -183,7 +193,6 @@ fun ArcProgressSlider(
                 )
             }
 
-            // 2. Draw Active Track (Wavy)
             if (activeSweep > 0) {
                 val wavePath = Path()
 
@@ -222,7 +231,6 @@ fun ArcProgressSlider(
                 )
             }
 
-            // 3. Draw Thumb
             val thumbAngleDeg = startAngle + activeSweep
             val thumbAngleRad = Math.toRadians(thumbAngleDeg.toDouble())
             val thumbX = arcCenter.x + arcRadius * cos(thumbAngleRad)

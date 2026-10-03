@@ -85,6 +85,8 @@ import chromahub.rhythm.app.shared.presentation.components.common.RhythmSortMenu
 import chromahub.rhythm.app.shared.presentation.components.common.RhythmSortMenuElevation
 import chromahub.rhythm.app.shared.presentation.components.common.RhythmSortMenuShape
 import chromahub.rhythm.app.shared.presentation.components.common.RhythmSortOption
+import chromahub.rhythm.app.shared.presentation.components.common.HeaderAction
+import chromahub.rhythm.app.shared.presentation.components.common.HeaderActionGroup
 import chromahub.rhythm.app.shared.presentation.components.common.RhythmDetailActionButton
 import chromahub.rhythm.app.shared.presentation.components.common.RhythmButtonType
 import chromahub.rhythm.app.network.WikipediaProvider
@@ -153,7 +155,9 @@ fun ArtistDetailScreen(
     val artistSeparatorEnabled by appSettings.artistSeparatorEnabled.collectAsState()
     val artistSeparatorDelimiters by appSettings.artistSeparatorDelimiters.collectAsState()
     val useHoursFormat by appSettings.useHoursInTimeFormat.collectAsState()
+    val integrationsEnabled by appSettings.integrationsEnabled.collectAsState()
     val wikipediaApiEnabled by appSettings.wikipediaApiEnabled.collectAsState()
+    val wikipediaApiActive = wikipediaApiEnabled && integrationsEnabled
     val albumScreenGradientBlur by appSettings.albumBottomSheetGradientBlur.collectAsState()
     
     // Get songs and albums from viewModel
@@ -282,8 +286,8 @@ fun ArtistDetailScreen(
     var artistDescription by remember(artistName) { mutableStateOf<String?>(null) }
     var isDescriptionLoading by remember(artistName) { mutableStateOf(false) }
 
-    LaunchedEffect(artistName, wikipediaApiEnabled) {
-        if (artistName.isNotBlank() && wikipediaApiEnabled) {
+    LaunchedEffect(artistName, wikipediaApiActive) {
+        if (artistName.isNotBlank() && wikipediaApiActive) {
             isDescriptionLoading = true
             withContext(Dispatchers.IO) {
                 val desc = WikipediaProvider.getAlbumDescription(artistName, null)
@@ -896,41 +900,24 @@ fun ArtistDetailScreen(
                                     verticalAlignment = Alignment.CenterVertically,
                                     modifier = Modifier.padding(end = 12.dp)
                                 ) {
-                                    FilledIconButton(
-                                        onClick = {
-                                            HapticUtils.performHapticFeedback(context, haptics, HapticType.LIGHT)
-                                            showCustomizeImageDialog = true
-                                        },
-                                        modifier = Modifier.size(40.dp),
-                                        colors = IconButtonDefaults.filledIconButtonColors(
-                                            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                                            contentColor = MaterialTheme.colorScheme.onSurface
-                                        )
-                                    ) {
-                                        Icon(
-                                            imageVector = RhythmIcons.Edit,
-                                            contentDescription = stringResource(R.string.content_desc_customize_artwork),
-                                            modifier = Modifier.size(20.dp)
-                                        )
-                                    }
-
-                                    Spacer(modifier = Modifier.width(8.dp))
-
                                     Box {
-                                        FilledIconButton(
-                                            onClick = { showSortMenu = true },
-                                            modifier = Modifier.size(40.dp),
-                                            colors = IconButtonDefaults.filledIconButtonColors(
-                                                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                                                contentColor = MaterialTheme.colorScheme.onSurface
+                                        HeaderActionGroup(
+                                            actions = listOf(
+                                                HeaderAction(
+                                                    icon = RhythmIcons.Edit,
+                                                    contentDescription = stringResource(R.string.content_desc_customize_artwork),
+                                                    onClick = {
+                                                        HapticUtils.performHapticFeedback(context, haptics, HapticType.LIGHT)
+                                                        showCustomizeImageDialog = true
+                                                    }
+                                                ),
+                                                HeaderAction(
+                                                    icon = RhythmIcons.Actions.Sort,
+                                                    contentDescription = stringResource(R.string.content_desc_sort_songs),
+                                                    onClick = { showSortMenu = true }
+                                                )
                                             )
-                                        ) {
-                                            Icon(
-                                                imageVector = RhythmIcons.Actions.Sort,
-                                                contentDescription = stringResource(R.string.content_desc_sort_songs),
-                                                modifier = Modifier.size(20.dp)
-                                            )
-                                        }
+                                        )
 
                                         DropdownMenu(
                                             expanded = showSortMenu,

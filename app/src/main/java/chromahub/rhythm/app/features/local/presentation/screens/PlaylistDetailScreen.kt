@@ -55,6 +55,7 @@ import chromahub.rhythm.app.shared.presentation.components.common.RhythmSortMenu
 import chromahub.rhythm.app.shared.presentation.components.common.RhythmSortMenuElevation
 import chromahub.rhythm.app.shared.presentation.components.common.RhythmSortMenuShape
 import chromahub.rhythm.app.shared.presentation.components.common.RhythmSortOption
+import chromahub.rhythm.app.shared.presentation.components.common.HeaderAction
 import chromahub.rhythm.app.shared.presentation.components.common.RhythmDetailActionButton
 import chromahub.rhythm.app.shared.presentation.components.common.RhythmGroupedMenuContent
 import chromahub.rhythm.app.shared.presentation.components.common.RhythmMenuItem
@@ -145,7 +146,7 @@ import chromahub.rhythm.app.shared.presentation.theme.rememberExpressiveShape
 import chromahub.rhythm.app.shared.presentation.components.common.ExpressiveShapeTarget
 import chromahub.rhythm.app.shared.presentation.components.common.DragDropLazyColumn
 import chromahub.rhythm.app.shared.presentation.components.player.formatDuration
-import chromahub.rhythm.app.shared.presentation.components.bottomsheets.PlaylistSongOptionsBottomSheet
+import chromahub.rhythm.app.shared.presentation.components.bottomsheets.SongOverflowBottomSheet
 import chromahub.rhythm.app.shared.presentation.components.bottomsheets.SongInfoBottomSheet
 import kotlinx.coroutines.delay // Import delay
 import androidx.compose.animation.core.Spring
@@ -249,6 +250,7 @@ fun PlaylistDetailScreen(
     var showPlaylistSelector by remember { mutableStateOf(false) }
     var selectedSongForInfo by remember { mutableStateOf<Song?>(null) }
     var showSongInfo by remember { mutableStateOf(false) }
+    var showSongInfoInEditMode by remember { mutableStateOf(false) }
 
     var currentArtworkUri by remember(playlist.id, playlist.artworkUri) {
         mutableStateOf(playlist.artworkUri)
@@ -290,6 +292,7 @@ fun PlaylistDetailScreen(
     // Song picker sheet state
     val coroutineScope = rememberCoroutineScope()
     val allSongs by musicViewModel.filteredSongs.collectAsState()
+    val favoriteSongs by musicViewModel.favoriteSongs.collectAsState()
     var showSongPicker by remember { mutableStateOf(false) }
     val sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded))
 
@@ -551,52 +554,71 @@ fun PlaylistDetailScreen(
     }
     
     if (showSongOptionsSheet && selectedSongForOptions != null) {
-        PlaylistSongOptionsBottomSheet(
-            song = selectedSongForOptions!!,
+        val targetSong = selectedSongForOptions!!
+        SongOverflowBottomSheet(
+            song = targetSong,
             onDismiss = { showSongOptionsSheet = false },
-            onShare = {
-                onShare(selectedSongForOptions!!)
-                showSongOptionsSheet = false
-            },
-            onRemoveFromPlaylist = {
-                onRemoveSong(selectedSongForOptions!!, context.getString(R.string.playlist_removed_from_playlist, selectedSongForOptions!!.title))
+            onPlay = {
+                onPlaySongFromPlaylist?.invoke(targetSong, playlist.songs) ?: onSongClick(targetSong)
                 showSongOptionsSheet = false
             },
             onPlayNext = {
-                onPlayNext(selectedSongForOptions!!)
+                onPlayNext(targetSong)
                 showSongOptionsSheet = false
-                Toast.makeText(context, context.getString(R.string.will_play_next, selectedSongForOptions!!.title), Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, context.getString(R.string.will_play_next, targetSong.title), Toast.LENGTH_SHORT).show()
             },
             onAddToQueue = {
-                onAddToQueue(selectedSongForOptions!!)
+                onAddToQueue(targetSong)
                 showSongOptionsSheet = false
-                Toast.makeText(context, context.getString(R.string.added_to_queue, selectedSongForOptions!!.title), Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, context.getString(R.string.added_to_queue, targetSong.title), Toast.LENGTH_SHORT).show()
+            },
+            isFavorite = favoriteSongs.contains(targetSong.id),
+            onToggleFavorite = {
+                onToggleFavorite(targetSong)
             },
             onAddToPlaylist = {
-                onAddToPlaylist(selectedSongForOptions!!)
-                showSongOptionsSheet = false
-            },
-            onShowSongInfo = {
-                selectedSongForInfo = selectedSongForOptions
-                showSongInfo = true
+                onAddToPlaylist(targetSong)
                 showSongOptionsSheet = false
             },
             onGoToAlbum = {
-                onGoToAlbum(selectedSongForOptions!!)
+                onGoToAlbum(targetSong)
                 showSongOptionsSheet = false
             },
             onGoToArtist = {
-                onGoToArtist(selectedSongForOptions!!)
+                onGoToArtist(targetSong)
                 showSongOptionsSheet = false
             },
-            showRemoveFromPlaylist = canEditPlaylist || isStreamingPlaylist,
-            showAddToPlaylist = false,
-            isStreamingMode = isStreamingPlaylist,
-            onDeleteSong = {
-                musicViewModel.deleteSong(selectedSongForOptions!!)
+            onShowSongInfo = {
+                selectedSongForInfo = targetSong
+                showSongInfoInEditMode = false
+                showSongInfo = true
                 showSongOptionsSheet = false
             },
-            haptics = haptics
+            onEditSong = if (!isStreamingPlaylist) {
+                {
+                    selectedSongForInfo = targetSong
+                    showSongInfoInEditMode = true
+                    showSongInfo = true
+                    showSongOptionsSheet = false
+                }
+            } else null,
+            onRemoveFromPlaylist = if (canEditPlaylist || isStreamingPlaylist) {
+                {
+                    onRemoveSong(targetSong, context.getString(R.string.playlist_removed_from_playlist, targetSong.title))
+                    showSongOptionsSheet = false
+                }
+            } else null,
+            onDeleteSong = if (!isStreamingPlaylist) {
+                {
+                    musicViewModel.deleteSong(targetSong)
+                    showSongOptionsSheet = false
+                }
+            } else null,
+            onShare = {
+                onShare(targetSong)
+                showSongOptionsSheet = false
+            },
+            isStreaming = isStreamingPlaylist
         )
     }
 
@@ -633,8 +655,10 @@ fun PlaylistDetailScreen(
             song = selectedSongForInfo,
             onDismiss = {
                 showSongInfo = false
+                showSongInfoInEditMode = false
                 selectedSongForInfo = null
             },
+            startInEditMode = showSongInfoInEditMode,
             appSettings = appSettings,
             isStreamingMode = isStreamingPlaylist,
             onEditSong = { title, artist, album, genre, year, trackNumber, artworkUri, removeArtwork, albumArtist, composer, discNumber, onComplete ->
@@ -703,93 +727,69 @@ fun PlaylistDetailScreen(
                 onBack()
             }
         },
-        actions = {
-            // Sort button (only show if sorting is available)
-            val isDefault = playlist.isDefault
-            if (isDefault || (onUpdatePlaylistSongs != null && playlist.songs.size > 1)) {
-                val sortButtonScale by animateFloatAsState(
-                    targetValue = if (showSortMenu) 0.95f else 1f,
-                    animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
-                    label = "sortButtonScale"
+        headerActions = buildList {
+            if (playlist.isDefault || (onUpdatePlaylistSongs != null && playlist.songs.size > 1)) {
+                add(
+                    HeaderAction(
+                        contentDescription = context.getString(R.string.content_desc_sort_songs),
+                        onClick = {
+                            HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
+                            showSortMenu = true
+                        },
+                        content = {
+                            val sortText = when (currentPlaylistSort) {
+                                PlaylistSortOrder.TITLE_ASC, PlaylistSortOrder.TITLE_DESC -> "Title"
+                                PlaylistSortOrder.ARTIST_ASC, PlaylistSortOrder.ARTIST_DESC -> "Artist"
+                                PlaylistSortOrder.ALBUM_ASC, PlaylistSortOrder.ALBUM_DESC -> "Album"
+                                PlaylistSortOrder.DURATION_ASC, PlaylistSortOrder.DURATION_DESC -> "Duration"
+                                PlaylistSortOrder.DATE_ADDED_ASC, PlaylistSortOrder.DATE_ADDED_DESC -> "Date Added"
+                            }
+                            val sortArrowIcon = when (currentPlaylistSort) {
+                                PlaylistSortOrder.TITLE_ASC, PlaylistSortOrder.ARTIST_ASC, PlaylistSortOrder.ALBUM_ASC,
+                                PlaylistSortOrder.DURATION_ASC, PlaylistSortOrder.DATE_ADDED_ASC -> RhythmIcons.ArrowUpward
+                                else -> RhythmIcons.ArrowDownward
+                            }
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = RhythmIcons.Sort,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = sortText,
+                                    style = MaterialTheme.typography.labelLarge,
+                                    fontWeight = FontWeight.Medium,
+                                    maxLines = 1
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Icon(
+                                    imageVector = sortArrowIcon,
+                                    contentDescription = if (currentPlaylistSort.name.endsWith("_ASC")) "Ascending" else "Descending",
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        }
+                    )
                 )
-                
-                FilledTonalButton(
-                    onClick = {
-                        HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
-                        showSortMenu = true
-                    },
-                    colors = ButtonDefaults.filledTonalButtonColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                    ),
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp),
-                    modifier = Modifier.graphicsLayer {
-                        scaleX = sortButtonScale
-                        scaleY = sortButtonScale
-                    }
-                ) {
-                    Icon(
-                        imageVector = RhythmIcons.Sort,
-                        contentDescription = null,
-                        modifier = Modifier.size(20.dp)
-                    )
-
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    // Sort order text
-                    val sortText = when (currentPlaylistSort) {
-                        PlaylistSortOrder.TITLE_ASC, PlaylistSortOrder.TITLE_DESC -> "Title"
-                        PlaylistSortOrder.ARTIST_ASC, PlaylistSortOrder.ARTIST_DESC -> "Artist"
-                        PlaylistSortOrder.ALBUM_ASC, PlaylistSortOrder.ALBUM_DESC -> "Album"
-                        PlaylistSortOrder.DURATION_ASC, PlaylistSortOrder.DURATION_DESC -> "Duration"
-                        PlaylistSortOrder.DATE_ADDED_ASC, PlaylistSortOrder.DATE_ADDED_DESC -> "Date Added"
-                    }
-
-                    Text(
-                        text = sortText,
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.Medium
-                    )
-                    
-                    Spacer(modifier = Modifier.width(4.dp))
-                    
-                    val sortArrowIcon = when (currentPlaylistSort) {
-                        PlaylistSortOrder.TITLE_ASC, PlaylistSortOrder.ARTIST_ASC, PlaylistSortOrder.ALBUM_ASC, 
-                        PlaylistSortOrder.DURATION_ASC, PlaylistSortOrder.DATE_ADDED_ASC -> RhythmIcons.ArrowUpward
-                        else -> RhythmIcons.ArrowDownward
-                    }
-                    
-                    Icon(
-                        imageVector = sortArrowIcon,
-                        contentDescription = if (currentPlaylistSort.name.endsWith("_ASC")) "Ascending" else "Descending",
-                        modifier = Modifier.size(18.dp)
-                    )
-                }
             }
-            
+
             if (canEditPlaylist || isStreamingPlaylist) {
-                IconButton(
-                    onClick = {
-                        HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
-                        showMenu = true
-                    }
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .width(32.dp)
-                            .height(40.dp)
-                            .clip(RoundedCornerShape(50))
-                            .background(MaterialTheme.colorScheme.primaryContainer),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = RhythmIcons.More,
-                            contentDescription = context.getString(R.string.playlist_more_options),
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                            modifier = Modifier.size(22.dp)
-                        )
-                    }
-                }
+                add(
+                    HeaderAction(
+                        icon = RhythmIcons.More,
+                        contentDescription = context.getString(R.string.playlist_more_options),
+                        onClick = {
+                            HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
+                            showMenu = true
+                        }
+                    )
+                )
+            }
+        },
+        actions = {
+            val isDefault = playlist.isDefault
+            if (canEditPlaylist || isStreamingPlaylist) {
                 DropdownMenu(
                     expanded = showMenu,
                     onDismissRequest = { showMenu = false },
@@ -1915,7 +1915,6 @@ fun PlaylistDetailScreen(
                         end = if (canScroll && !isReorderMode) 28.dp else 16.dp
                     ),
                 contentPadding = PaddingValues(
-//                    top = if (playlist.songs.isNotEmpty()) 90.dp else 16.dp,
                     bottom = (LocalMiniPlayerPadding.current.calculateBottomPadding() + 20.dp).coerceAtLeast(120.dp)
                 )
             ) {

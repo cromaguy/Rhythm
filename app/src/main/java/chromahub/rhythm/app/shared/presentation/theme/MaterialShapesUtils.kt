@@ -162,11 +162,17 @@ enum class ShapeTarget(
  */
 fun RoundedPolygon.toComposeShape(): Shape {
     return object : Shape {
+        private var lastSize: Size? = null
+        private var cachedOutline: Outline? = null
+
         override fun createOutline(
             size: Size,
             layoutDirection: LayoutDirection,
             density: Density
         ): Outline {
+            if (size == lastSize && cachedOutline != null) {
+                return cachedOutline!!
+            }
             val path = this@toComposeShape.toPath().asComposePath()
             
             // Scale and center the path to fit the target size
@@ -189,7 +195,10 @@ fun RoundedPolygon.toComposeShape(): Shape {
             scaledPath.addPath(path)
             scaledPath.transform(matrix)
             
-            return Outline.Generic(scaledPath)
+            val outline = Outline.Generic(scaledPath)
+            lastSize = size
+            cachedOutline = outline
+            return outline
         }
     }
 }

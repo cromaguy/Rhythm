@@ -78,11 +78,13 @@ import chromahub.rhythm.app.network.CanvasArtwork
 import chromahub.rhythm.app.shared.data.model.CanvasNetworkMode
 import chromahub.rhythm.app.core.utils.NetworkUtils
 import chromahub.rhythm.app.shared.presentation.components.bottomsheets.ArtistChooserBottomSheet
-import chromahub.rhythm.app.shared.presentation.components.bottomsheets.PlaylistSongOptionsBottomSheet
+import chromahub.rhythm.app.shared.presentation.components.bottomsheets.SongOverflowBottomSheet
 import chromahub.rhythm.app.shared.presentation.components.common.RhythmSortMenuContent
 import chromahub.rhythm.app.shared.presentation.components.common.RhythmSortMenuElevation
 import chromahub.rhythm.app.shared.presentation.components.common.RhythmSortMenuShape
 import chromahub.rhythm.app.shared.presentation.components.common.RhythmSortOption
+import chromahub.rhythm.app.shared.presentation.components.common.HeaderAction
+import chromahub.rhythm.app.shared.presentation.components.common.HeaderActionGroup
 import chromahub.rhythm.app.shared.presentation.components.common.RhythmDetailActionButton
 import chromahub.rhythm.app.shared.presentation.components.common.RhythmButtonType
 import chromahub.rhythm.app.util.ArtistSeparator
@@ -300,11 +302,15 @@ fun AlbumDetailScreen(
         }
     }
 
+    val integrationsEnabled by appSettings.integrationsEnabled.collectAsState()
     val wikipediaApiEnabled by appSettings.wikipediaApiEnabled.collectAsState()
+    val wikipediaApiActive = wikipediaApiEnabled && integrationsEnabled
+    val appleCanvasEnabled by appSettings.appleCanvasEnabled.collectAsState()
+    val appleCanvasActive = appleCanvasEnabled && integrationsEnabled
     var description by remember(albumId) { mutableStateOf<String?>(null) }
     var isDescriptionLoading by remember(albumId) { mutableStateOf(false) }
 
-    LaunchedEffect(albumId, albumName, album?.artist, allDisplaySongs, wikipediaApiEnabled) {
+    LaunchedEffect(albumId, albumName, album?.artist, allDisplaySongs, wikipediaApiActive, appleCanvasActive) {
         val fallbackArtist = allDisplaySongs.firstOrNull()?.artist
         val effectiveArtistName = album?.artist?.takeIf { it.isNotBlank() && !it.equals("<unknown>", ignoreCase = true) }
             ?: fallbackArtist?.takeIf { it.isNotBlank() && !it.equals("<unknown>", ignoreCase = true) }
@@ -313,10 +319,10 @@ fun AlbumDetailScreen(
             isDescriptionLoading = true
             withContext(Dispatchers.IO) {
                 var desc: String? = null
-                if (effectiveArtistName != null) {
+                if (effectiveArtistName != null && appleCanvasActive) {
                     desc = AppleMusicCanvasProvider.getAlbumDescription(albumName, effectiveArtistName)
                 }
-                if (desc.isNullOrBlank() && wikipediaApiEnabled) {
+                if (desc.isNullOrBlank() && wikipediaApiActive) {
                     desc = WikipediaProvider.getAlbumDescription(albumName, effectiveArtistName)
                 }
                 withContext(Dispatchers.Main) {
@@ -327,17 +333,16 @@ fun AlbumDetailScreen(
         }
     }
 
-    val appleCanvasEnabled by appSettings.appleCanvasEnabled.collectAsState()
     val appleCanvasNetworkMode by appSettings.appleCanvasNetworkMode.collectAsState()
     var canvasArtwork by remember(albumId) { mutableStateOf<CanvasArtwork?>(null) }
     var canvasLoading by remember(albumId) { mutableStateOf(false) }
 
-    LaunchedEffect(albumId, albumName, album?.artist, allDisplaySongs, appleCanvasEnabled, appleCanvasNetworkMode) {
+    LaunchedEffect(albumId, albumName, album?.artist, allDisplaySongs, appleCanvasActive, appleCanvasNetworkMode) {
         canvasArtwork = null
         canvasLoading = false
 
         val artistName = album?.artist ?: allDisplaySongs.firstOrNull()?.artist
-        if (albumName.isNotBlank() && artistName != null && appleCanvasEnabled) {
+        if (albumName.isNotBlank() && artistName != null && appleCanvasActive) {
             val hasNetwork = if (appleCanvasNetworkMode == CanvasNetworkMode.WIFI_ONLY) {
                 NetworkUtils.isWifiConnected(context)
             } else {
@@ -377,7 +382,7 @@ fun AlbumDetailScreen(
         album?.artist ?: allDisplaySongs.firstOrNull()?.artist ?: "Unknown Artist"
     }
     val displayArtworkUri = album?.artworkUri ?: allDisplaySongs.firstNotNullOfOrNull { it.artworkUri }
-    val hasCanvas = appleCanvasEnabled && canvasArtwork != null
+    val hasCanvas = appleCanvasActive && canvasArtwork != null
     val backgroundColor = MaterialTheme.colorScheme.background
     val isLoading = isContentLoadingOverride ?: (album == null && allDisplaySongs.isEmpty())
 
@@ -942,20 +947,15 @@ fun AlbumDetailScreen(
                                     modifier = Modifier.padding(end = 12.dp)
                                 ) {
                                     Box {
-                                        FilledIconButton(
-                                            onClick = { showSortMenu = true },
-                                            modifier = Modifier.size(40.dp),
-                                            colors = IconButtonDefaults.filledIconButtonColors(
-                                                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                                                contentColor = MaterialTheme.colorScheme.onSurface
+                                        HeaderActionGroup(
+                                            actions = listOf(
+                                                HeaderAction(
+                                                    icon = RhythmIcons.Actions.Sort,
+                                                    contentDescription = stringResource(R.string.content_desc_sort_songs),
+                                                    onClick = { showSortMenu = true }
+                                                )
                                             )
-                                        ) {
-                                            Icon(
-                                                imageVector = RhythmIcons.Actions.Sort,
-                                                contentDescription = stringResource(R.string.content_desc_sort_songs),
-                                                modifier = Modifier.size(20.dp)
-                                            )
-                                        }
+                                        )
 
                                         DropdownMenu(
                                             expanded = showSortMenu,
@@ -1210,46 +1210,55 @@ fun AlbumDetailScreen(
     }
 
     if (showSongOptionsSheet && selectedSongForOptions != null) {
-        PlaylistSongOptionsBottomSheet(
-            song = selectedSongForOptions!!,
+        val targetSong = selectedSongForOptions!!
+        SongOverflowBottomSheet(
+            song = targetSong,
             onDismiss = { showSongOptionsSheet = false },
-            onShare = {
-                onShare(selectedSongForOptions!!)
+            onPlay = {
+                onSongClickInContext(targetSong, displaySongs)
                 showSongOptionsSheet = false
             },
-            onRemoveFromPlaylist = { },
             onPlayNext = {
-                onPlayNext(selectedSongForOptions!!)
+                onPlayNext(targetSong)
                 showSongOptionsSheet = false
-                Toast.makeText(context, context.getString(R.string.will_play_next, selectedSongForOptions!!.title), Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, context.getString(R.string.will_play_next, targetSong.title), Toast.LENGTH_SHORT).show()
             },
             onAddToQueue = {
-                onAddToQueue(selectedSongForOptions!!)
+                onAddToQueue(targetSong)
                 showSongOptionsSheet = false
-                Toast.makeText(context, context.getString(R.string.added_to_queue, selectedSongForOptions!!.title), Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, context.getString(R.string.added_to_queue, targetSong.title), Toast.LENGTH_SHORT).show()
+            },
+            isFavorite = favoriteSongs.contains(targetSong.id),
+            onToggleFavorite = {
+                onToggleFavorite(targetSong)
             },
             onAddToPlaylist = {
-                onAddSongToPlaylist(selectedSongForOptions!!)
+                onAddSongToPlaylist(targetSong)
                 showSongOptionsSheet = false
+            },
+            onGoToArtist = {
+                showSongOptionsSheet = false
+                handleArtistTap(targetSong)
             },
             onShowSongInfo = {
-                onShowSongInfo(selectedSongForOptions!!)
+                onShowSongInfo(targetSong)
                 showSongOptionsSheet = false
             },
-            onGoToAlbum = { },
-            onGoToArtist = {
-                val song = selectedSongForOptions!!
-                showSongOptionsSheet = false
-                handleArtistTap(song)
-            },
-            showRemoveFromPlaylist = false,
-            showGoToAlbum = false,
-            isStreamingMode = isStreamingMode,
-            onDeleteSong = {
-                viewModel.deleteSong(selectedSongForOptions!!)
+            onAddToBlacklist = {
+                onAddToBlacklist(targetSong)
                 showSongOptionsSheet = false
             },
-            haptics = haptics
+            onDeleteSong = if (!isStreamingMode) {
+                {
+                    viewModel.deleteSong(targetSong)
+                    showSongOptionsSheet = false
+                }
+            } else null,
+            onShare = {
+                onShare(targetSong)
+                showSongOptionsSheet = false
+            },
+            isStreaming = isStreamingMode
         )
     }
 }

@@ -392,7 +392,7 @@ fun SettingsScreen(
                 items = buildList {
                     add(SettingItem(RhythmIcons.Notifications, context.getString(R.string.settings_notifications), context.getString(R.string.settings_notifications_desc), palette = SettingsPalettes.Coral, onClick = { onNavigateTo(SettingsRoutes.NOTIFICATIONS) }))
                     // API Management/Integrations is available in both LOCAL and STREAMING modes
-                    add(SettingItem(MaterialSymbolIcon("api"), context.getString(R.string.settings_api_management), context.getString(R.string.settings_api_management_desc), palette = SettingsPalettes.Slate, onClick = { onNavigateTo(SettingsRoutes.API_MANAGEMENT) }))
+                    add(SettingItem(MaterialSymbolIcon("hub"), context.getString(R.string.settings_api_management), context.getString(R.string.settings_api_management_desc), palette = SettingsPalettes.Slate, onClick = { onNavigateTo(SettingsRoutes.API_MANAGEMENT) }))
                 }
             ),
             // 7. Data & Storage - split into shared and local-only items

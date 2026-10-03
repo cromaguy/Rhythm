@@ -86,6 +86,7 @@ import kotlin.system.exitProcess
 import chromahub.rhythm.app.shared.presentation.components.Material3SettingsGroup
 import chromahub.rhythm.app.shared.presentation.components.Material3SettingsItem
 import chromahub.rhythm.app.shared.presentation.components.common.CollapsibleHeaderScreen
+import chromahub.rhythm.app.shared.presentation.components.common.HeaderAction
 import chromahub.rhythm.app.shared.presentation.components.common.RhythmGroupedMenuContent
 import chromahub.rhythm.app.shared.presentation.components.common.RhythmMenuItem
 import chromahub.rhythm.app.shared.presentation.components.common.ArcProgressSlider
@@ -613,30 +614,17 @@ fun EqualizerScreen(
         title = if (isAutoEQPresetActive) "AutoEQ" else stringResource(R.string.player_chip_equalizer),
         showBackButton = true,
         onBackClick = { navController.popBackStack() },
-        actions = {
-            IconButton(
+        headerActions = listOf(
+            HeaderAction(
+                icon = RhythmIcons.More,
+                contentDescription = stringResource(R.string.content_desc_more_options),
                 onClick = {
                     HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
                     showMenu = true
                 }
-            ) {
-                Box(
-                    modifier = Modifier
-                        .width(32.dp)
-                        .height(40.dp)
-                        .clip(RoundedCornerShape(50))
-                        .background(MaterialTheme.colorScheme.primaryContainer),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = RhythmIcons.More,
-                        contentDescription = stringResource(R.string.content_desc_more_options),
-                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                        modifier = Modifier.size(22.dp)
-                    )
-                }
-            }
-            // Dropdown Menu
+            )
+        ),
+        actions = {
             DropdownMenu(
                 expanded = showMenu,
                 onDismissRequest = { showMenu = false },

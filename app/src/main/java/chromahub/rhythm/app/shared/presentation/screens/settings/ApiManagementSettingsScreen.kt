@@ -171,6 +171,7 @@ fun ApiManagementSettingsScreen(onBackClick: () -> Unit) {
     val appSettings = AppSettings.getInstance(context)
 
     // API states
+    val integrationsEnabled by appSettings.integrationsEnabled.collectAsState()
     val deezerApiEnabled by appSettings.deezerApiEnabled.collectAsState()
     val lrclibApiEnabled by appSettings.lrclibApiEnabled.collectAsState()
     val betterLyricsApiEnabled by appSettings.betterLyricsApiEnabled.collectAsState()
@@ -187,6 +188,53 @@ fun ApiManagementSettingsScreen(onBackClick: () -> Unit) {
         onBackClick = {
             HapticUtils.performHapticFeedback(context, hapticFeedback, HapticType.HEAVY)
             onBackClick()
+        },
+        headerContent = {
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = if (integrationsEnabled)
+                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+                    else
+                        MaterialTheme.colorScheme.surfaceContainer
+                ),
+                shape = RoundedCornerShape(28.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 12.dp)
+                ) {
+                    Icon(
+                        imageVector = MaterialSymbolIcon("hub"),
+                        contentDescription = null,
+                        tint = if (integrationsEnabled) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        },
+                        modifier = Modifier.size(35.dp)
+                    )
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = stringResource(if (integrationsEnabled) R.string.status_active else R.string.status_disabled),
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                    TunerAnimatedSwitch(
+                        checked = integrationsEnabled,
+                        onCheckedChange = { enabled ->
+                            HapticUtils.performHapticFeedback(context, hapticFeedback, HapticType.HEAVY)
+                            appSettings.setIntegrationsEnabled(enabled)
+                        }
+                    )
+                }
+            }
         }
     ) { modifier ->
         LazyColumn(
@@ -220,6 +268,7 @@ fun ApiManagementSettingsScreen(onBackClick: () -> Unit) {
                                     icon = null,
                                     title = stringResource(R.string.onboarding_integration_deezer),
                                     description = context.getString(R.string.api_deezer_desc),
+                                    enabled = integrationsEnabled,
                                     toggleState = deezerApiEnabled,
                                     onToggleChange = { enabled -> appSettings.setDeezerApiEnabled(enabled) }
                                 )
@@ -236,6 +285,7 @@ fun ApiManagementSettingsScreen(onBackClick: () -> Unit) {
                                     icon = null,
                                     title = stringResource(R.string.onboarding_integration_lrclib),
                                     description = context.getString(R.string.api_lrclib_desc),
+                                    enabled = integrationsEnabled,
                                     toggleState = lrclibApiEnabled,
                                     onToggleChange = { enabled -> appSettings.setLrcLibApiEnabled(enabled) }
                                 )
@@ -252,6 +302,7 @@ fun ApiManagementSettingsScreen(onBackClick: () -> Unit) {
                                     icon = null,
                                     title = stringResource(R.string.onboarding_integration_betterlyrics),
                                     description = context.getString(R.string.api_betterlyrics_desc),
+                                    enabled = integrationsEnabled,
                                     toggleState = betterLyricsApiEnabled,
                                     onToggleChange = { enabled -> appSettings.setBetterLyricsApiEnabled(enabled) }
                                 )
@@ -268,6 +319,7 @@ fun ApiManagementSettingsScreen(onBackClick: () -> Unit) {
                                     icon = null,
                                     title = stringResource(R.string.apimanagementsettingsscreen_lyrically),
                                     description = context.getString(R.string.api_lyrically_desc),
+                                    enabled = integrationsEnabled,
                                     toggleState = lyricallyApiEnabled,
                                     onToggleChange = { enabled -> appSettings.setLyricallyApiEnabled(enabled) }
                                 )
@@ -289,6 +341,7 @@ fun ApiManagementSettingsScreen(onBackClick: () -> Unit) {
                                         chromahub.rhythm.app.shared.data.model.CanvasNetworkMode.BOTH -> context.getString(R.string.api_apple_canvas_both)
                                     }
                                 ),
+                                enabled = integrationsEnabled,
                                 toggleState = appleCanvasEnabled,
                                 onToggleChange = { enabled -> appSettings.setAppleCanvasEnabled(enabled) },
                                 onClick = {
@@ -310,6 +363,7 @@ fun ApiManagementSettingsScreen(onBackClick: () -> Unit) {
                                     icon = null,
                                     title = stringResource(R.string.onboarding_integration_ytmusic),
                                     description = context.getString(R.string.api_ytmusic_desc),
+                                    enabled = integrationsEnabled,
                                     toggleState = ytMusicApiEnabled,
                                     onToggleChange = { enabled -> appSettings.setYTMusicApiEnabled(enabled) }
                                 )
@@ -326,6 +380,7 @@ fun ApiManagementSettingsScreen(onBackClick: () -> Unit) {
                                     icon = null,
                                     title = stringResource(R.string.onboarding_integration_wikipedia),
                                     description = stringResource(R.string.onboarding_integration_wikipedia_desc),
+                                    enabled = integrationsEnabled,
                                     toggleState = wikipediaApiEnabled,
                                     onToggleChange = { enabled -> appSettings.setWikipediaApiEnabled(enabled) }
                                 )

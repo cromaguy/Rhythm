@@ -95,6 +95,7 @@ fun SongOverflowBottomSheet(
     onGoToAlbum: (() -> Unit)? = null,
     onGoToArtist: (() -> Unit)? = null,
     onShowSongInfo: (() -> Unit)? = null,
+    onRemoveFromPlaylist: (() -> Unit)? = null,
     onAddToBlacklist: (() -> Unit)? = null,
     onDeleteSong: (() -> Unit)? = null,
     onShare: (() -> Unit)? = null,
@@ -156,7 +157,7 @@ fun SongOverflowBottomSheet(
         song, isFavorite, isDownloaded, isDownloading,
         onPlayNext, onAddToQueue, onToggleFavorite, onAddToPlaylist,
         onGoToAlbum, onGoToArtist, onShowSongInfo, onToggleDownload,
-        onAddToBlacklist, onDeleteSong, finalOnShare
+        onRemoveFromPlaylist, onAddToBlacklist, onDeleteSong, finalOnShare
     ) {
         buildList {
             onPlayNext?.let { action ->
@@ -249,6 +250,16 @@ fun SongOverflowBottomSheet(
                     )
                 )
             }
+            onRemoveFromPlaylist?.let { action ->
+                add(
+                    SongOverflowItem(
+                        title = context.getString(R.string.cd_remove_from_playlist),
+                        icon = MaterialSymbolIcon("playlist_remove"),
+                        iconColor = errorIconColor,
+                        onClick = action
+                    )
+                )
+            }
             onAddToBlacklist?.let { action ->
                 add(
                     SongOverflowItem(
@@ -306,7 +317,7 @@ fun SongOverflowBottomSheet(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 12.dp),
+                    .padding(horizontal = 24.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Row(
@@ -385,8 +396,7 @@ fun SongOverflowBottomSheet(
                 if (canEditSong) {
                     RhythmGroupedButton(
                         size = RhythmButtonSize.Small,
-                        isFillMaxWidth = false,
-                        modifier = Modifier.widthIn(max = 120.dp)
+                        isFillMaxWidth = false
                     ) {
                         RhythmButtonWeighted(
                             onClick = {
@@ -394,7 +404,7 @@ fun SongOverflowBottomSheet(
                                 onPlay()
                                 onDismiss()
                             },
-                            weight = 1f,
+                            useWeight = false,
                             size = RhythmButtonSize.Small,
                             height = 44.dp,
                             iconSize = 22.dp,
@@ -410,7 +420,7 @@ fun SongOverflowBottomSheet(
                                 onEditSong.invoke()
                                 onDismiss()
                             },
-                            weight = 1f,
+                            useWeight = false,
                             size = RhythmButtonSize.Small,
                             height = 44.dp,
                             iconSize = 22.dp,
@@ -460,7 +470,7 @@ fun SongOverflowBottomSheet(
                     modifier = Modifier
                         .fillMaxWidth()
                         .verticalScroll(scrollState)
-                        .padding(start = 20.dp, end = 20.dp + endPadding, top = 4.dp, bottom = 8.dp),
+                        .padding(start = 24.dp, end = 24.dp + endPadding, top = 4.dp, bottom = 8.dp),
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     menuItems.forEachIndexed { index, item ->
@@ -497,7 +507,7 @@ fun SongOverflowBottomSheet(
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(horizontal = 20.dp, vertical = 14.dp),
+                                    .padding(horizontal = 24.dp, vertical = 14.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Icon(

@@ -487,7 +487,7 @@ fun PlayerCustomizationSettingsScreen(onBackClick: () -> Unit) {
                     isPlaying = true,
                     showThumb = previewThumbStyle != ThumbStyle.NONE,
                     thumbStyle = previewThumbStyle,
-                    thumbSize = 14.dp,
+                    thumbSize = 18.dp,
                     rotateThumbWhenPlaying = playerProgressThumbRotate
                 )
 
@@ -1158,7 +1158,19 @@ fun ThumbStyleBottomSheet(
         ThumbStyleOption("FLOWER", "Flower", MaterialSymbolIcon("local_florist"), "M3 flower"),
         ThumbStyleOption("HEART", "Heart", MaterialSymbolIcon("favorite"), "M3 heart"),
         ThumbStyleOption("COOKIE", "Cookie", MaterialSymbolIcon("cookie"), "M3 6-sided cookie"),
-        ThumbStyleOption("PUFFY", "Puffy", MaterialSymbolIcon("cloud"), "M3 puffy")
+        ThumbStyleOption("PUFFY", "Puffy", MaterialSymbolIcon("cloud"), "M3 puffy"),
+        ThumbStyleOption("CLOVER", "Clover", MaterialSymbolIcon("eco"), "M3 4-leaf clover"),
+        ThumbStyleOption("CLOVER_8", "Clover 8", MaterialSymbolIcon("spa"), "M3 8-leaf clover"),
+        ThumbStyleOption("BURST", "Burst", MaterialSymbolIcon("star"), "M3 burst"),
+        ThumbStyleOption("SOFT_BURST", "Soft Burst", MaterialSymbolIcon("blur_on"), "M3 soft burst"),
+        ThumbStyleOption("SUNNY", "Sunny", MaterialSymbolIcon("wb_sunny"), "M3 sunny"),
+        ThumbStyleOption("BOOM", "Boom", MaterialSymbolIcon("flare"), "M3 boom"),
+        ThumbStyleOption("PUFFY_DIAMOND", "Puffy Diamond", MaterialSymbolIcon("cloud_circle"), "M3 puffy diamond"),
+        ThumbStyleOption("GEM", "Gem", MaterialSymbolIcon("diamond"), "M3 gem"),
+        ThumbStyleOption("TRIANGLE", "Triangle", MaterialSymbolIcon("change_history"), "M3 triangle"),
+        ThumbStyleOption("PENTAGON", "Pentagon", MaterialSymbolIcon("pentagon"), "M3 pentagon"),
+        ThumbStyleOption("COOKIE_12", "Cookie 12", MaterialSymbolIcon("cookie"), "M3 12-sided cookie"),
+        ThumbStyleOption("CLAM_SHELL", "Clam", MaterialSymbolIcon("water_drop"), "M3 clam shell")
     )
 
     RhythmAdaptiveModalSheet(
@@ -1236,7 +1248,7 @@ fun ThumbStyleBottomSheet(
                                     isPlaying = true,
                                     showThumb = thumbStyleEnum != ThumbStyle.NONE,
                                     thumbStyle = thumbStyleEnum,
-                                    thumbSize = 12.dp
+                                    thumbSize = 18.dp
                                 )
                             }
 

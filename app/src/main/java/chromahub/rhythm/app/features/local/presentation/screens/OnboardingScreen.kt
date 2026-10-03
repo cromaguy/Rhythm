@@ -1709,8 +1709,6 @@ fun EnhancedPermissionContent(
                     )
                 }
             }
-
-            // Button removed - now handled by bottom navigation bar
         }
     }
 }
@@ -4936,7 +4934,7 @@ fun EnhancedUpdaterContent(
                             downloadedFile != null -> RhythmIcons.CheckCircle
                             updateAvailable -> RhythmIcons.Download
                             isDownloading -> MaterialSymbolIcon("autorenew", filled = true)
-                            else -> RhythmIcons.SystemUpdate
+                            else -> RhythmIcons.Update
                         },
                         tint = when {
                             error != null -> MaterialTheme.colorScheme.error
@@ -5198,7 +5196,7 @@ fun EnhancedUpdaterContent(
                         downloadedFile != null -> RhythmIcons.CheckCircle
                         updateAvailable -> RhythmIcons.Download
                         isDownloading -> MaterialSymbolIcon("autorenew", filled = true)
-                        else -> RhythmIcons.SystemUpdate
+                        else -> RhythmIcons.Update
                     },
                     tint = when {
                         error != null -> MaterialTheme.colorScheme.error
@@ -5935,7 +5933,7 @@ fun EnhancedMediaScanContent(
                     enter = scaleIn() + fadeIn()
                 ) {
                     OnboardingStepHeaderIcon(
-                        imageVector = RhythmIcons.FilterList,
+                        imageVector = RhythmIcons.Folder,
                         tint = MaterialTheme.colorScheme.primary,
                         iconSize = 72.dp
                     )
@@ -6054,7 +6052,7 @@ fun EnhancedMediaScanContent(
                 enter = scaleIn() + fadeIn()
             ) {
                 OnboardingStepHeaderIcon(
-                    imageVector = RhythmIcons.FilterList,
+                    imageVector = RhythmIcons.Folder,
                     tint = MaterialTheme.colorScheme.primary,
                     iconSize = 56.dp
                 )
@@ -7040,7 +7038,7 @@ fun EnhancedPlayerThemeChoiceContent(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 OnboardingStepHeaderIcon(
-                    imageVector = RhythmIcons.Palette,
+                    imageVector = RhythmIcons.MusicNote,
                     tint = MaterialTheme.colorScheme.primary,
                     iconSize = 72.dp
                 )
@@ -7109,7 +7107,7 @@ fun EnhancedPlayerThemeChoiceContent(
                 .verticalScroll(scrollState)
         ) {
             OnboardingStepHeaderIcon(
-                imageVector = RhythmIcons.Palette,
+                imageVector = RhythmIcons.MusicNote,
                 tint = MaterialTheme.colorScheme.primary,
                 iconSize = 56.dp
             )
@@ -7152,8 +7150,6 @@ fun EnhancedPlayerThemeChoiceContent(
             )
 
             Spacer(modifier = Modifier.height(32.dp))
-
-            // Bottom navigation buttons removed on mobile view as they are rendered globally by OnboardingScreen bottom nav bar.
         }
     }
 }
@@ -8722,7 +8718,7 @@ fun EnhancedIntegrationsContent(
             ) {
                 AnimatedVisibility(visible = true, enter = scaleIn() + fadeIn()) {
                     OnboardingStepHeaderIcon(
-                        imageVector = MaterialSymbolIcon("api", filled = true),
+                        imageVector = MaterialSymbolIcon("hub", filled = true),
                         tint = MaterialTheme.colorScheme.primary,
                         iconSize = 72.dp
                     )
@@ -8800,7 +8796,7 @@ fun EnhancedIntegrationsContent(
         ) {
             AnimatedVisibility(visible = true, enter = scaleIn() + fadeIn()) {
                 OnboardingStepHeaderIcon(
-                    imageVector = MaterialSymbolIcon("api", filled = true),
+                    imageVector = MaterialSymbolIcon("hub", filled = true),
                     tint = MaterialTheme.colorScheme.primary,
                     iconSize = 56.dp
                 )

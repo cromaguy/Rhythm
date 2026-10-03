@@ -20,10 +20,12 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -32,16 +34,22 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ProgressIndicatorDefaults
 import androidx.compose.material3.SliderDefaults
+import androidx.compose.material3.WavyProgressIndicatorDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
@@ -56,10 +64,28 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.lerp
+import androidx.compose.ui.unit.max
+import chromahub.rhythm.app.util.HapticType
+import chromahub.rhythm.app.util.HapticUtils
+import kotlinx.coroutines.isActive
 import kotlin.math.PI
+import kotlin.math.abs
+import kotlin.math.roundToInt
 import kotlin.math.sin
 
 /**
@@ -81,16 +107,28 @@ enum class ProgressStyle {
  * Thumb style options for the progress bar slider
  */
 enum class ThumbStyle(val shapeId: String?, val sizeScale: Float = 1f) {
-    NONE(null),                     // No thumb
-    DEFAULT(null),                  // Official M3 slider thumb composable
-    CIRCLE("CIRCLE"),               // M3 Circle
-    SQUARE("SQUARE"),               // M3 Square (rounded)
-    PILL("PILL", 1.25f),            // M3 Pill
-    DIAMOND("DIAMOND", 1.25f),      // M3 Diamond
-    FLOWER("FLOWER", 1.25f),        // M3 Flower
-    HEART("HEART", 1.25f),          // M3 Heart
-    COOKIE("COOKIE_6", 1.25f),      // M3 Cookie 6-sided
-    PUFFY("PUFFY", 1.25f);          // M3 Puffy
+    NONE(null),
+    DEFAULT(null),
+    CIRCLE("CIRCLE"),
+    SQUARE("SQUARE"),
+    PILL("PILL", 1.25f),
+    DIAMOND("DIAMOND", 1.25f),
+    FLOWER("FLOWER", 1.25f),
+    HEART("HEART", 1.25f),
+    COOKIE("COOKIE_6", 1.25f),
+    PUFFY("PUFFY", 1.25f),
+    CLOVER("CLOVER_4_LEAF", 1.25f),
+    CLOVER_8("CLOVER_8_LEAF", 1.25f),
+    BURST("BURST", 1.25f),
+    SOFT_BURST("SOFT_BURST", 1.25f),
+    SUNNY("SUNNY", 1.25f),
+    BOOM("BOOM", 1.25f),
+    PUFFY_DIAMOND("PUFFY_DIAMOND", 1.25f),
+    GEM("GEM", 1.25f),
+    TRIANGLE("TRIANGLE", 1.25f),
+    PENTAGON("PENTAGON", 1.25f),
+    COOKIE_12("COOKIE_12", 1.25f),
+    CLAM_SHELL("CLAM_SHELL", 1.25f);
 
     companion object {
         /** Resolves a stored style name, mapping legacy names to the M3 set. */
@@ -106,15 +144,27 @@ enum class ThumbStyle(val shapeId: String?, val sizeScale: Float = 1f) {
             "HEART" -> HEART
             "COOKIE" -> COOKIE
             "PUFFY" -> PUFFY
+            "CLOVER" -> CLOVER
+            "CLOVER_8" -> CLOVER_8
+            "BURST" -> BURST
+            "SOFT_BURST" -> SOFT_BURST
+            "SUNNY" -> SUNNY
+            "BOOM" -> BOOM
+            "PUFFY_DIAMOND" -> PUFFY_DIAMOND
+            "GEM" -> GEM
+            "TRIANGLE" -> TRIANGLE
+            "PENTAGON" -> PENTAGON
+            "COOKIE_12" -> COOKIE_12
+            "CLAM_SHELL" -> CLAM_SHELL
             else -> DEFAULT
         }
     }
 }
 
 /**
- * Material 3 thumb for the progress bar slider.
- * [ThumbStyle.DEFAULT] renders the official M3 slider thumb; the rest render
- * Rhythm's M3 Expressive shapes.
+ * Material 3 Expressive thumb for the progress bar slider.
+ * Supports interactive press/scrub morphing and scaling matching WaveSlider behavior,
+ * smooth rotation when playing, and clean Material 3 shapes without extra dots.
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -124,18 +174,39 @@ fun M3Thumb(
     size: Dp,
     modifier: Modifier = Modifier,
     isPlaying: Boolean = true,
-    rotateWhenPlaying: Boolean = false
+    rotateWhenPlaying: Boolean = false,
+    isInteracting: Boolean = false,
+    interactionSource: MutableInteractionSource? = null
 ) {
-    val effectiveSize = size * style.sizeScale
+    if (style == ThumbStyle.NONE) return
 
-    // Slow spin while playing (render thread only)
+    val effectiveSize = size * style.sizeScale
+    val source = interactionSource ?: remember { MutableInteractionSource() }
+    val isPressed by source.collectIsPressedAsState()
+    val active = isInteracting || isPressed
+
+    val thumbInteractionFraction by animateFloatAsState(
+        targetValue = if (active) 1f else 0f,
+        animationSpec = tween(250, easing = FastOutSlowInEasing),
+        label = "M3ThumbInteraction"
+    )
+
+    val thumbScale by animateFloatAsState(
+        targetValue = if (active) 1.25f else 1f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessMedium
+        ),
+        label = "M3ThumbScale"
+    )
+
     val rotation: Float = if (rotateWhenPlaying && isPlaying) {
         val infiniteTransition = rememberInfiniteTransition(label = "thumbRotate")
         infiniteTransition.animateFloat(
             initialValue = 0f,
             targetValue = 360f,
             animationSpec = infiniteRepeatable(
-                animation = tween(durationMillis = 4000, easing = LinearEasing),
+                animation = tween(durationMillis = 6000, easing = LinearEasing),
                 repeatMode = RepeatMode.Restart
             ),
             label = "thumbRotation"
@@ -143,32 +214,157 @@ fun M3Thumb(
     } else {
         0f
     }
+
     val rotatedModifier = modifier.graphicsLayer { rotationZ = rotation }
 
     when (style) {
         ThumbStyle.NONE -> Unit
-        ThumbStyle.DEFAULT -> {
-            SliderDefaults.Thumb(
-                interactionSource = remember { MutableInteractionSource() },
-                modifier = rotatedModifier.size(effectiveSize),
-                colors = SliderDefaults.colors(thumbColor = color),
-                enabled = true,
-                thumbSize = DpSize(effectiveSize, effectiveSize)
+        ThumbStyle.DEFAULT, ThumbStyle.CIRCLE -> {
+            val idleWidth = effectiveSize
+            val idleHeight = effectiveSize
+            val activeWidth = (effectiveSize * 0.42f).coerceIn(4.dp, 6.dp)
+            val activeHeight = (effectiveSize * 1.7f).coerceIn(20.dp, 28.dp)
+
+            val currentWidth = lerp(idleWidth, activeWidth, thumbInteractionFraction)
+            val currentHeight = lerp(idleHeight, activeHeight, thumbInteractionFraction)
+
+            Box(
+                modifier = rotatedModifier
+                    .size(width = currentWidth, height = currentHeight)
+                    .clip(RoundedCornerShape(percent = 50))
+                    .background(color, RoundedCornerShape(percent = 50))
+            )
+        }
+        ThumbStyle.PILL -> {
+            val idleWidth = 6.dp
+            val idleHeight = effectiveSize.coerceAtLeast(16.dp)
+            val activeWidth = 5.dp
+            val activeHeight = (effectiveSize * 1.7f).coerceIn(22.dp, 28.dp)
+
+            val currentWidth = lerp(idleWidth, activeWidth, thumbInteractionFraction)
+            val currentHeight = lerp(idleHeight, activeHeight, thumbInteractionFraction)
+
+            Box(
+                modifier = rotatedModifier
+                    .size(width = currentWidth, height = currentHeight)
+                    .clip(RoundedCornerShape(percent = 50))
+                    .background(color, RoundedCornerShape(percent = 50))
             )
         }
         else -> {
-            // M3 Expressive shape via Rhythm's shape system. No elevation shadow
-            // (path shadows on custom shapes are expensive and cause ANRs).
             val shape = remember(style) {
                 ExpressiveShapeProvider.getShapeById(style.shapeId ?: "CIRCLE", CircleShape)
             }
-            val thumbColor = SliderDefaults.colors(thumbColor = color).thumbColor
             Box(
                 modifier = rotatedModifier
-                    .size(effectiveSize)
-                    .background(thumbColor, shape)
+                    .size(effectiveSize * thumbScale)
+                    .background(color, shape)
             )
         }
+    }
+}
+
+/**
+ * Animated thumb geometry shared by every linear progress style.
+ *
+ * [effectiveSize] is the resting (largest) thumb diameter, while [halfWidth] is
+ * the live half-width as the thumb morphs or spring-scales during interaction.
+ * Keeping both in one place means the track gap and the drawn thumb can never
+ * disagree.
+ */
+private data class ThumbMorph(
+    val effectiveSize: Dp,
+    val halfWidth: Dp
+)
+
+@Composable
+private fun rememberThumbMorph(
+    thumbStyle: ThumbStyle,
+    thumbSize: Dp,
+    isInteracting: Boolean
+): ThumbMorph {
+    val interactionFraction by animateFloatAsState(
+        targetValue = if (isInteracting) 1f else 0f,
+        animationSpec = tween(250, easing = FastOutSlowInEasing),
+        label = "ThumbInteraction"
+    )
+    val interactionScale by animateFloatAsState(
+        targetValue = if (isInteracting) 1.25f else 1f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessMedium
+        ),
+        label = "ThumbScale"
+    )
+
+    val effectiveSize = thumbSize * thumbStyle.sizeScale
+    val halfWidth = when {
+        thumbStyle == ThumbStyle.PILL -> lerp(3.dp, 2.5.dp, interactionFraction)
+        thumbStyle == ThumbStyle.DEFAULT || thumbStyle == ThumbStyle.CIRCLE -> {
+            val idleHalfWidth = effectiveSize / 2f
+            val activeHalfWidth = (effectiveSize * 0.42f).coerceIn(4.dp, 6.dp) / 2f
+            lerp(idleHalfWidth, activeHalfWidth, interactionFraction)
+        }
+        else -> (effectiveSize * interactionScale) / 2f
+    }
+    return ThumbMorph(effectiveSize, halfWidth)
+}
+
+/**
+ * Vertical space a thumb slider needs: enough for the track plus the largest
+ * thumb the style can reach while interacting, with a minimum touch target.
+ * Shared by the outer [StyledProgressBar] box and the inner bars so they agree
+ * on the very same height and nothing gets clipped.
+ */
+private fun thumbContainerHeight(trackHeight: Dp, effectiveThumbSize: Dp): Dp =
+    max(trackHeight.coerceAtLeast(24.dp), effectiveThumbSize * 2f)
+
+/**
+ * Resolves the x position of the thumb centre along the track, clamped to the
+ * bar bounds so scaled/morphing thumbs are never clipped at 0% or 100%.
+ */
+private fun resolveThumbCenter(
+    barWidth: Dp,
+    trackInset: Dp,
+    halfWidth: Dp,
+    progress: Float
+): Dp {
+    val travel = (barWidth - trackInset * 2).coerceAtLeast(0.dp)
+    val rawCenter = trackInset + travel * progress.coerceIn(0f, 1f)
+    val minCenter = halfWidth.coerceAtMost(barWidth / 2)
+    val maxCenter = (barWidth - halfWidth).coerceAtLeast(minCenter)
+    return rawCenter.coerceIn(minCenter, maxCenter)
+}
+
+/**
+ * Draws the shared Material 3 Expressive thumb anchored at [center], vertically
+ * centred and horizontally centred on that position.
+ */
+@Composable
+private fun PositionedThumb(
+    center: Dp,
+    thumbStyle: ThumbStyle,
+    thumbSize: Dp,
+    color: Color,
+    isPlaying: Boolean,
+    rotateThumbWhenPlaying: Boolean,
+    isInteracting: Boolean
+) {
+    Box(
+        modifier = Modifier
+            .offset(x = center)
+            .graphicsLayer { translationX = -size.width / 2f }
+            .fillMaxHeight(),
+        contentAlignment = Alignment.Center
+    ) {
+        M3Thumb(
+            style = thumbStyle,
+            color = color,
+            size = thumbSize,
+            isPlaying = isPlaying,
+            rotateWhenPlaying = rotateThumbWhenPlaying,
+            isInteracting = isInteracting
+        )
     }
 }
 
@@ -190,95 +386,343 @@ fun StyledProgressBar(
     thumbSize: Dp = 12.dp,
     rotateThumbWhenPlaying: Boolean = false,
     waveAmplitudeWhenPlaying: Dp = 3.dp,
-    waveLength: Dp = 40.dp
+    waveLength: Dp = 40.dp,
+    enabled: Boolean = true,
+    isInteracting: Boolean = false,
+    onSeek: ((Float) -> Unit)? = null,
+    onSeekFinished: (() -> Unit)? = null
 ) {
-    when (style) {
-        ProgressStyle.NORMAL -> NormalProgressBar(
-            progress = progress,
-            modifier = modifier,
-            progressColor = progressColor,
-            trackColor = trackColor,
-            height = height,
-            isPlaying = isPlaying,
-            showThumb = showThumb,
+    val density = LocalDensity.current
+    val context = LocalContext.current
+    val hapticFeedback = LocalHapticFeedback.current
+
+    val latestOnSeek by rememberUpdatedState(onSeek)
+    val latestOnSeekFinished by rememberUpdatedState(onSeekFinished)
+
+    var isPointerSeeking by remember { mutableStateOf(false) }
+    var lastHapticValue by remember { mutableIntStateOf(Int.MIN_VALUE) }
+    val effectiveInteracting = isInteracting || isPointerSeeking
+
+    val effectiveThumbSize = if (showThumb && thumbStyle != ThumbStyle.NONE) thumbSize * thumbStyle.sizeScale else 0.dp
+    val trackEdgePadding = effectiveThumbSize / 2f
+    val trackEdgePaddingPx = with(density) { trackEdgePadding.toPx() }
+
+    val normalizedProgress = progress.coerceIn(0f, 1f)
+    val renderedNormalizedProgress = remember { mutableFloatStateOf(normalizedProgress) }
+    var lastProgressUpdateNanos by remember { mutableLongStateOf(0L) }
+
+    LaunchedEffect(normalizedProgress, effectiveInteracting, enabled) {
+        val target = normalizedProgress
+        if (!enabled || effectiveInteracting) {
+            renderedNormalizedProgress.floatValue = target
+            lastProgressUpdateNanos = System.nanoTime()
+            return@LaunchedEffect
+        }
+
+        val nowNanos = System.nanoTime()
+        val intervalMs = if (lastProgressUpdateNanos == 0L) 180L
+        else ((nowNanos - lastProgressUpdateNanos) / 1_000_000L).coerceAtLeast(1L)
+        lastProgressUpdateNanos = nowNanos
+
+        val start = renderedNormalizedProgress.floatValue
+        if (abs(start - target) <= 0.0001f) {
+            renderedNormalizedProgress.floatValue = target
+            return@LaunchedEffect
+        }
+
+        val durationNanos = (intervalMs * 900_000L).coerceAtLeast(1_000_000L)
+        var startFrameNanos = 0L
+        while (isActive) {
+            val frameNanos = withFrameNanos { it }
+            if (startFrameNanos == 0L) startFrameNanos = frameNanos
+            val elapsedNanos = (frameNanos - startFrameNanos).coerceAtLeast(0L)
+            val fraction = (elapsedNanos.toDouble() / durationNanos.toDouble()).toFloat().coerceIn(0f, 1f)
+            renderedNormalizedProgress.floatValue = start + (target - start) * fraction
+            if (fraction >= 1f) break
+        }
+        renderedNormalizedProgress.floatValue = target
+    }
+
+    val hasThumb = showThumb && thumbStyle != ThumbStyle.NONE
+    val displayProgress = if (onSeek != null) renderedNormalizedProgress.floatValue else progress
+    val containerHeight = when {
+        hasThumb -> thumbContainerHeight(height, effectiveThumbSize)
+        style == ProgressStyle.DOTS -> height.coerceAtLeast(24.dp)
+        onSeek != null -> height.coerceAtLeast(24.dp)
+        else -> height
+    }
+
+    val gestureModifier = if (onSeek != null && enabled) {
+        Modifier.pointerInput(enabled, trackEdgePaddingPx) {
+            fun valueForX(rawX: Float): Float {
+                val edgePadding = trackEdgePaddingPx.coerceIn(0f, size.width / 2f)
+                val trackStart = edgePadding
+                val trackEnd = size.width - edgePadding
+                val trackWidth = (trackEnd - trackStart).coerceAtLeast(1f)
+                return ((rawX - trackStart) / trackWidth).coerceIn(0f, 1f)
+            }
+
+            awaitEachGesture {
+                try {
+                    val down = awaitFirstDown(requireUnconsumed = false)
+                    isPointerSeeking = true
+                    down.consume()
+                    var latestGestureValue = valueForX(down.position.x)
+                    latestOnSeek?.invoke(latestGestureValue)
+                    lastHapticValue = (latestGestureValue * 100).roundToInt()
+                    HapticUtils.performHapticFeedback(context, hapticFeedback, HapticType.LIGHT)
+
+                    var pointerId = down.id
+                    while (true) {
+                        val event = awaitPointerEvent()
+                        val change = event.changes.firstOrNull { it.id == pointerId }
+                            ?: event.changes.firstOrNull { it.pressed }
+                            ?: break
+
+                        pointerId = change.id
+                        if (!change.pressed) {
+                            change.consume()
+                            break
+                        }
+
+                        if (change.position != change.previousPosition) {
+                            change.consume()
+                            latestGestureValue = valueForX(change.position.x)
+                            latestOnSeek?.invoke(latestGestureValue)
+                            val newTick = (latestGestureValue * 100).roundToInt()
+                            if (newTick != lastHapticValue) {
+                                HapticUtils.performHapticFeedback(context, hapticFeedback, HapticType.LIGHT)
+                                lastHapticValue = newTick
+                            }
+                        }
+                    }
+
+                    latestOnSeekFinished?.invoke()
+                } finally {
+                    isPointerSeeking = false
+                }
+            }
+        }
+    } else Modifier
+
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(containerHeight)
+            .then(gestureModifier),
+        contentAlignment = Alignment.Center
+    ) {
+        when (style) {
+            ProgressStyle.NORMAL -> NormalProgressBar(
+                progress = displayProgress,
+                modifier = Modifier.fillMaxWidth(),
+                progressColor = progressColor,
+                trackColor = trackColor,
+                height = height,
+                isPlaying = isPlaying,
+                showThumb = showThumb,
+                thumbStyle = thumbStyle,
+                thumbSize = thumbSize,
+                rotateThumbWhenPlaying = rotateThumbWhenPlaying,
+                isInteracting = effectiveInteracting
+            )
+            ProgressStyle.WAVY -> {
+                if (showThumb && thumbStyle != ThumbStyle.NONE) {
+                    WaveSlider(
+                        value = displayProgress,
+                        onValueChange = { latestOnSeek?.invoke(it) },
+                        onValueChangeFinished = { latestOnSeekFinished?.invoke() },
+                        modifier = Modifier.fillMaxWidth(),
+                        enabled = enabled && onSeek != null,
+                        isPlaying = isPlaying && animated,
+                        activeTrackColor = progressColor,
+                        inactiveTrackColor = trackColor,
+                        thumbColor = progressColor
+                    )
+                } else {
+                    WavyProgressBar(
+                        progress = displayProgress,
+                        modifier = Modifier.fillMaxWidth(),
+                        progressColor = progressColor,
+                        trackColor = trackColor,
+                        height = height,
+                        isPlaying = isPlaying && animated,
+                        waveAmplitudeWhenPlaying = waveAmplitudeWhenPlaying,
+                        waveLength = waveLength
+                    )
+                }
+            }
+            ProgressStyle.ROUNDED -> RoundedProgressBar(
+                progress = displayProgress,
+                modifier = Modifier.fillMaxWidth(),
+                progressColor = progressColor,
+                trackColor = trackColor,
+                height = height,
+                isPlaying = isPlaying,
+                showThumb = showThumb,
+                thumbStyle = thumbStyle,
+                thumbSize = thumbSize,
+                rotateThumbWhenPlaying = rotateThumbWhenPlaying,
+                isInteracting = effectiveInteracting
+            )
+            ProgressStyle.THIN -> ThinProgressBar(
+                progress = displayProgress,
+                modifier = Modifier.fillMaxWidth(),
+                progressColor = progressColor,
+                trackColor = trackColor,
+                isPlaying = isPlaying,
+                showThumb = showThumb,
+                thumbStyle = thumbStyle,
+                thumbSize = thumbSize,
+                rotateThumbWhenPlaying = rotateThumbWhenPlaying,
+                isInteracting = effectiveInteracting
+            )
+            ProgressStyle.THICK -> ThickProgressBar(
+                progress = displayProgress,
+                modifier = Modifier.fillMaxWidth(),
+                progressColor = progressColor,
+                trackColor = trackColor,
+                isPlaying = isPlaying,
+                showThumb = showThumb,
+                thumbStyle = thumbStyle,
+                thumbSize = thumbSize,
+                rotateThumbWhenPlaying = rotateThumbWhenPlaying,
+                isInteracting = effectiveInteracting
+            )
+            ProgressStyle.GRADIENT -> GradientProgressBar(
+                progress = displayProgress,
+                modifier = Modifier.fillMaxWidth(),
+                trackColor = trackColor,
+                height = height,
+                isPlaying = isPlaying,
+                showThumb = showThumb,
+                thumbStyle = thumbStyle,
+                thumbSize = thumbSize,
+                rotateThumbWhenPlaying = rotateThumbWhenPlaying,
+                isInteracting = effectiveInteracting
+            )
+            ProgressStyle.SEGMENTED -> SegmentedProgressBar(
+                progress = displayProgress,
+                modifier = Modifier.fillMaxWidth(),
+                progressColor = progressColor,
+                trackColor = trackColor,
+                height = height,
+                isPlaying = isPlaying,
+                showThumb = showThumb,
+                thumbStyle = thumbStyle,
+                thumbSize = thumbSize,
+                rotateThumbWhenPlaying = rotateThumbWhenPlaying,
+                isInteracting = effectiveInteracting
+            )
+            ProgressStyle.DOTS -> DotsProgressBar(
+                progress = displayProgress,
+                modifier = Modifier.fillMaxWidth(),
+                activeColor = progressColor,
+                inactiveColor = trackColor,
+                isPlaying = isPlaying,
+                showThumb = showThumb,
+                thumbStyle = thumbStyle,
+                thumbSize = thumbSize,
+                rotateThumbWhenPlaying = rotateThumbWhenPlaying,
+                isInteracting = effectiveInteracting
+            )
+        }
+    }
+}
+
+/**
+ * Shared Material 3 Expressive linear track with thumb spacing and morph animations.
+ * The filled track runs into the thumb, and the clearance sits on the remaining
+ * (inactive) side only, matching the wavy indicator. Dynamic edge padding keeps the
+ * thumb aligned 1:1 with 0% and 100% progress without dead zones, and the thumb stays
+ * anchored under the centre while it morphs during interaction.
+ */
+@Composable
+private fun ThumbTrackProgressBar(
+    progress: Float,
+    modifier: Modifier = Modifier,
+    trackHeight: Dp,
+    progressColor: Color,
+    trackColor: Color,
+    gradientColors: List<Color>? = null,
+    isPlaying: Boolean = true,
+    thumbStyle: ThumbStyle = ThumbStyle.DEFAULT,
+    thumbSize: Dp = 12.dp,
+    rotateThumbWhenPlaying: Boolean = false,
+    isInteracting: Boolean = false
+) {
+    val progressCoerced = progress.coerceIn(0f, 1f)
+
+    val morph = rememberThumbMorph(thumbStyle, thumbSize, isInteracting)
+    val trackEdgePaddingDp = morph.effectiveSize / 2f
+    val totalGap = morph.halfWidth + 6.dp
+    val containerHeight = thumbContainerHeight(trackHeight, morph.effectiveSize)
+
+    BoxWithConstraints(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(containerHeight),
+        contentAlignment = Alignment.CenterStart
+    ) {
+        val thumbCenterDp = resolveThumbCenter(maxWidth, trackEdgePaddingDp, morph.halfWidth, progressCoerced)
+        Canvas(Modifier.fillMaxSize()) {
+            val strokePx = trackHeight.toPx()
+            val centerY = size.height / 2f
+            val trackEdgePaddingPx = trackEdgePaddingDp.toPx()
+            val trackStart = trackEdgePaddingPx
+            val trackEnd = (size.width - trackEdgePaddingPx).coerceAtLeast(trackStart)
+            val thumbCenterXPx = thumbCenterDp.toPx()
+            val totalGapPx = totalGap.toPx()
+
+            val activeEndX = thumbCenterXPx.coerceAtMost(trackEnd)
+            if (activeEndX > trackStart) {
+                if (gradientColors != null && gradientColors.size >= 2) {
+                    drawLine(
+                        brush = Brush.horizontalGradient(gradientColors, startX = trackStart, endX = trackEnd),
+                        start = Offset(trackStart, centerY),
+                        end = Offset(activeEndX, centerY),
+                        strokeWidth = strokePx,
+                        cap = StrokeCap.Round
+                    )
+                } else {
+                    drawLine(
+                        color = progressColor,
+                        start = Offset(trackStart, centerY),
+                        end = Offset(activeEndX, centerY),
+                        strokeWidth = strokePx,
+                        cap = StrokeCap.Round
+                    )
+                }
+            }
+
+            val inactiveStartX = (thumbCenterXPx + totalGapPx + strokePx / 2f).coerceAtLeast(trackStart)
+            if (inactiveStartX < trackEnd) {
+                drawLine(
+                    color = trackColor,
+                    start = Offset(inactiveStartX, centerY),
+                    end = Offset(trackEnd, centerY),
+                    strokeWidth = strokePx,
+                    cap = StrokeCap.Round
+                )
+            }
+        }
+
+        PositionedThumb(
+            center = thumbCenterDp,
             thumbStyle = thumbStyle,
             thumbSize = thumbSize,
-            rotateThumbWhenPlaying = rotateThumbWhenPlaying
-        )
-        ProgressStyle.WAVY -> WavyProgressBar(
-            progress = progress,
-            modifier = modifier,
-            progressColor = progressColor,
-            trackColor = trackColor,
-            height = height,
-            isPlaying = isPlaying && animated,
-            waveAmplitudeWhenPlaying = waveAmplitudeWhenPlaying,
-            waveLength = waveLength
-        )
-        ProgressStyle.ROUNDED -> RoundedProgressBar(
-            progress = progress,
-            modifier = modifier,
-            progressColor = progressColor,
-            trackColor = trackColor,
-            height = height,
+            color = if (gradientColors != null && gradientColors.isNotEmpty()) gradientColors.last() else progressColor,
             isPlaying = isPlaying,
-            showThumb = showThumb,
-            thumbStyle = thumbStyle,
-            thumbSize = thumbSize,
-            rotateThumbWhenPlaying = rotateThumbWhenPlaying
-        )
-        ProgressStyle.THIN -> ThinProgressBar(
-            progress = progress,
-            modifier = modifier,
-            progressColor = progressColor,
-            trackColor = trackColor,
-            isPlaying = isPlaying,
-            showThumb = showThumb,
-            thumbStyle = thumbStyle,
-            thumbSize = thumbSize,
-            rotateThumbWhenPlaying = rotateThumbWhenPlaying
-        )
-        ProgressStyle.THICK -> ThickProgressBar(
-            progress = progress,
-            modifier = modifier,
-            progressColor = progressColor,
-            trackColor = trackColor,
-            isPlaying = isPlaying,
-            showThumb = showThumb,
-            thumbStyle = thumbStyle,
-            thumbSize = thumbSize,
-            rotateThumbWhenPlaying = rotateThumbWhenPlaying
-        )
-        ProgressStyle.GRADIENT -> GradientProgressBar(
-            progress = progress,
-            modifier = modifier,
-            trackColor = trackColor,
-            height = height,
-            isPlaying = isPlaying,
-            showThumb = showThumb,
-            thumbStyle = thumbStyle,
-            thumbSize = thumbSize,
-            rotateThumbWhenPlaying = rotateThumbWhenPlaying
-        )
-        ProgressStyle.SEGMENTED -> SegmentedProgressBar(
-            progress = progress,
-            modifier = modifier,
-            progressColor = progressColor,
-            trackColor = trackColor,
-            height = height
-        )
-        ProgressStyle.DOTS -> DotsProgressBar(
-            progress = progress,
-            modifier = modifier,
-            activeColor = progressColor,
-            inactiveColor = trackColor
+            rotateThumbWhenPlaying = rotateThumbWhenPlaying,
+            isInteracting = isInteracting
         )
     }
 }
 
 /**
- * Standard Material3 LinearProgressIndicator
+ * Standard Material3 Expressive LinearProgressIndicator
  */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun NormalProgressBar(
     progress: Float,
@@ -290,70 +734,41 @@ private fun NormalProgressBar(
     showThumb: Boolean = false,
     thumbStyle: ThumbStyle = ThumbStyle.DEFAULT,
     thumbSize: Dp = 12.dp,
-    rotateThumbWhenPlaying: Boolean = false
+    rotateThumbWhenPlaying: Boolean = false,
+    isInteracting: Boolean = false
 ) {
+    val progressCoerced = progress.coerceIn(0f, 1f)
     if (showThumb && thumbStyle != ThumbStyle.NONE) {
-        val effectiveThumbSize = thumbSize * thumbStyle.sizeScale
-        BoxWithConstraints(
-            modifier = modifier
-                .fillMaxWidth()
-                .height(height.coerceAtLeast(effectiveThumbSize))
-        ) {
-            Canvas(Modifier.fillMaxSize()) {
-                val progressWidth = size.width * progress.coerceIn(0f, 1f)
-                val centerY = size.height / 2
-                val trackHeight = height.toPx()
-                
-                // Draw track
-                drawRoundRect(
-                    color = trackColor,
-                    topLeft = Offset(0f, centerY - trackHeight / 2),
-                    size = androidx.compose.ui.geometry.Size(size.width, trackHeight),
-                    cornerRadius = CornerRadius(trackHeight / 2)
-                )
-                
-                // Draw progress
-                if (progressWidth > 0) {
-                    drawRoundRect(
-                        color = progressColor,
-                        topLeft = Offset(0f, centerY - trackHeight / 2),
-                        size = androidx.compose.ui.geometry.Size(progressWidth, trackHeight),
-                        cornerRadius = CornerRadius(trackHeight / 2)
-                    )
-                }
-            }
-            
-            if (progress > 0f) {
-                val thumbCenterX = (maxWidth * progress.coerceIn(0f, 1f))
-                    .coerceIn(effectiveThumbSize / 2, maxWidth - effectiveThumbSize / 2)
-                M3Thumb(
-                    style = thumbStyle,
-                    color = progressColor,
-                    size = thumbSize,
-                    isPlaying = isPlaying,
-                    rotateWhenPlaying = rotateThumbWhenPlaying,
-                    modifier = Modifier
-                        .align(Alignment.CenterStart)
-                        .offset(x = thumbCenterX - effectiveThumbSize / 2)
-                )
-            }
-        }
+        ThumbTrackProgressBar(
+            progress = progressCoerced,
+            modifier = modifier,
+            trackHeight = height,
+            progressColor = progressColor,
+            trackColor = trackColor,
+            isPlaying = isPlaying,
+            thumbStyle = thumbStyle,
+            thumbSize = thumbSize,
+            rotateThumbWhenPlaying = rotateThumbWhenPlaying,
+            isInteracting = isInteracting
+        )
     } else {
         LinearProgressIndicator(
-            progress = { progress.coerceIn(0f, 1f) },
+            progress = { progressCoerced },
             modifier = modifier
                 .fillMaxWidth()
                 .height(height),
             color = progressColor,
-            trackColor = trackColor
+            trackColor = trackColor,
+            strokeCap = StrokeCap.Round,
+            gapSize = 4.dp
         )
     }
 }
 
 /**
- * Wavy animated progress bar - playful and musical
- * Enhanced with smooth amplitude transitions and bezier curve smoothing
+ * Material 3 Expressive LinearWavyProgressIndicator
  */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun WavyProgressBar(
     progress: Float,
@@ -365,126 +780,35 @@ private fun WavyProgressBar(
     waveAmplitudeWhenPlaying: Dp = 3.dp,
     waveLength: Dp = 40.dp
 ) {
-    // Smooth wave amplitude animation - only show wave when playing
-    val animatedAmplitude by animateDpAsState(
-        targetValue = if (isPlaying) waveAmplitudeWhenPlaying else 0.dp,
-        animationSpec = tween(300, easing = FastOutSlowInEasing),
-        label = "WaveAmplitudeAnim"
+    val animatedAmplitude by animateFloatAsState(
+        targetValue = if (isPlaying) 1f else 0f,
+        animationSpec = ProgressIndicatorDefaults.ProgressAnimationSpec,
+        label = "amplitude"
     )
-    
-    // Conditional phase animation - only when wave should show
-    val phaseShiftAnim = remember { Animatable(0f) }
-    val phaseShift = phaseShiftAnim.value
-    
-    LaunchedEffect(isPlaying) {
-        if (isPlaying) {
-            val fullRotation = (2 * PI).toFloat()
-            while (isPlaying) {
-                val start = (phaseShiftAnim.value % fullRotation).let { 
-                    if (it < 0f) it + fullRotation else it 
-                }
-                phaseShiftAnim.snapTo(start)
-                phaseShiftAnim.animateTo(
-                    targetValue = start + fullRotation,
-                    animationSpec = tween(durationMillis = 4000, easing = LinearEasing)
-                )
-            }
-        }
-    }
-    
-    Canvas(
+
+    val waveContainerHeight = max(
+        height,
+        max(WavyProgressIndicatorDefaults.LinearContainerHeight, 24.dp)
+    )
+
+    LinearWavyProgressIndicator(
+        progress = { progress.coerceIn(0f, 1f) },
         modifier = modifier
             .fillMaxWidth()
-            .height(height.coerceAtLeast(8.dp))
-    ) {
-        val width = size.width
-        val centerY = size.height / 2
-        val progressWidth = width * progress.coerceIn(0f, 1f)
-        val waveAmplitude = animatedAmplitude.toPx().coerceAtLeast(0f)
-        val strokeWidth = (size.height / 2).coerceIn(2f, 6f)
-        
-        // Draw track
-        drawLine(
-            color = trackColor,
-            start = Offset(0f, centerY),
-            end = Offset(width, centerY),
-            strokeWidth = strokeWidth,
-            cap = StrokeCap.Round
-        )
-        
-        // Draw wavy progress
-        if (progressWidth > 0) {
-            if (waveAmplitude > 0.01f) {
-                // Draw wavy line
-                val path = Path()
-                val waveLengthPx = waveLength.toPx()
-                val waveFrequency = if (waveLengthPx > 0f) {
-                    ((2 * PI) / waveLengthPx).toFloat()
-                } else {
-                    0f
-                }
-                
-                val waveStartDrawX = 0f
-                val waveEndDrawX = progressWidth.coerceAtLeast(waveStartDrawX)
-                
-                if (waveEndDrawX > waveStartDrawX) {
-                    val periodPx = ((2 * PI) / waveFrequency).toFloat()
-                    val samplesPerCycle = 20f
-                    val waveStep = (periodPx / samplesPerCycle).coerceAtLeast(1.2f).coerceAtMost(strokeWidth)
-
-                    fun yAt(x: Float): Float {
-                        val s = sin(waveFrequency * x + phaseShift)
-                        return (centerY + waveAmplitude * s).coerceIn(
-                            centerY - waveAmplitude - strokeWidth / 2f,
-                            centerY + waveAmplitude + strokeWidth / 2f
-                        )
-                    }
-
-                    var prevX = waveStartDrawX
-                    var prevY = yAt(prevX)
-                    path.moveTo(prevX, prevY)
-
-                    var x = prevX + waveStep
-                    while (x < waveEndDrawX) {
-                        val y = yAt(x)
-                        val midX = (prevX + x) * 0.5f
-                        val midY = (prevY + y) * 0.5f
-                        path.quadraticTo(prevX, prevY, midX, midY)
-                        prevX = x
-                        prevY = y
-                        x += waveStep
-                    }
-                    val endY = yAt(waveEndDrawX)
-                    path.quadraticTo(prevX, prevY, waveEndDrawX, endY)
-
-                    drawPath(
-                        path = path,
-                        color = progressColor,
-                        style = Stroke(
-                            width = strokeWidth,
-                            cap = StrokeCap.Round,
-                            join = StrokeJoin.Round,
-                            miter = 1f
-                        )
-                    )
-                }
-            } else {
-                // Draw straight line when paused
-                drawLine(
-                    color = progressColor,
-                    start = Offset(0f, centerY),
-                    end = Offset(progressWidth, centerY),
-                    strokeWidth = strokeWidth,
-                    cap = StrokeCap.Round
-                )
-            }
-        }
-    }
+            .height(waveContainerHeight),
+        color = progressColor,
+        trackColor = trackColor,
+        gapSize = 4.dp,
+        stopSize = 3.dp,
+        amplitude = { p -> if (p > 0f) animatedAmplitude else 0f },
+        wavelength = waveLength
+    )
 }
 
 /**
  * Rounded pill-shaped progress bar
  */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun RoundedProgressBar(
     progress: Float,
@@ -496,78 +820,43 @@ private fun RoundedProgressBar(
     showThumb: Boolean = false,
     thumbStyle: ThumbStyle = ThumbStyle.DEFAULT,
     thumbSize: Dp = 12.dp,
-    rotateThumbWhenPlaying: Boolean = false
+    rotateThumbWhenPlaying: Boolean = false,
+    isInteracting: Boolean = false
 ) {
     val actualHeight = height.coerceAtLeast(6.dp)
+    val progressCoerced = progress.coerceIn(0f, 1f)
     
     if (showThumb && thumbStyle != ThumbStyle.NONE) {
-        val effectiveThumbSize = thumbSize * thumbStyle.sizeScale
-        BoxWithConstraints(
-            modifier = modifier
-                .fillMaxWidth()
-                .height(actualHeight.coerceAtLeast(effectiveThumbSize))
-        ) {
-            Canvas(Modifier.fillMaxSize()) {
-                val progressWidth = size.width * progress.coerceIn(0f, 1f)
-                val centerY = size.height / 2
-                val trackHeight = actualHeight.toPx()
-                
-                // Draw track
-                drawRoundRect(
-                    color = trackColor,
-                    topLeft = Offset(0f, centerY - trackHeight / 2),
-                    size = Size(size.width, trackHeight),
-                    cornerRadius = CornerRadius(trackHeight / 2)
-                )
-                
-                // Draw progress
-                if (progressWidth > 0) {
-                    drawRoundRect(
-                        color = progressColor,
-                        topLeft = Offset(0f, centerY - trackHeight / 2),
-                        size = Size(progressWidth, trackHeight),
-                        cornerRadius = CornerRadius(trackHeight / 2)
-                    )
-                }
-            }
-            
-            if (progress > 0f) {
-                val thumbCenterX = (maxWidth * progress.coerceIn(0f, 1f))
-                    .coerceIn(effectiveThumbSize / 2, maxWidth - effectiveThumbSize / 2)
-                M3Thumb(
-                    style = thumbStyle,
-                    color = progressColor,
-                    size = thumbSize,
-                    isPlaying = isPlaying,
-                    rotateWhenPlaying = rotateThumbWhenPlaying,
-                    modifier = Modifier
-                        .align(Alignment.CenterStart)
-                        .offset(x = thumbCenterX - effectiveThumbSize / 2)
-                )
-            }
-        }
+        ThumbTrackProgressBar(
+            progress = progressCoerced,
+            modifier = modifier,
+            trackHeight = actualHeight,
+            progressColor = progressColor,
+            trackColor = trackColor,
+            isPlaying = isPlaying,
+            thumbStyle = thumbStyle,
+            thumbSize = thumbSize,
+            rotateThumbWhenPlaying = rotateThumbWhenPlaying,
+            isInteracting = isInteracting
+        )
     } else {
-        Box(
+        LinearProgressIndicator(
+            progress = { progressCoerced },
             modifier = modifier
                 .fillMaxWidth()
-                .height(actualHeight)
-                .clip(RoundedCornerShape(50))
-                .background(trackColor)
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth(progress.coerceIn(0f, 1f))
-                    .height(actualHeight)
-                    .clip(RoundedCornerShape(50))
-                    .background(progressColor)
-            )
-        }
+                .height(actualHeight),
+            color = progressColor,
+            trackColor = trackColor,
+            strokeCap = StrokeCap.Round,
+            gapSize = 4.dp
+        )
     }
 }
 
 /**
- * Thin elegant progress line - 2dp height
+ * Thin elegant progress line - 2.5dp height
  */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun ThinProgressBar(
     progress: Float,
@@ -578,92 +867,42 @@ private fun ThinProgressBar(
     showThumb: Boolean = false,
     thumbStyle: ThumbStyle = ThumbStyle.DEFAULT,
     thumbSize: Dp = 10.dp,
-    rotateThumbWhenPlaying: Boolean = false
+    rotateThumbWhenPlaying: Boolean = false,
+    isInteracting: Boolean = false
 ) {
+    val progressCoerced = progress.coerceIn(0f, 1f)
+    val actualHeight = 2.5.dp
     if (showThumb && thumbStyle != ThumbStyle.NONE) {
-        val effectiveThumbSize = thumbSize * thumbStyle.sizeScale
-        BoxWithConstraints(
-            modifier = modifier
-                .fillMaxWidth()
-                .height(effectiveThumbSize)
-        ) {
-            Canvas(Modifier.fillMaxSize()) {
-                val width = size.width
-                val centerY = size.height / 2
-                
-                // Track
-                drawLine(
-                    color = trackColor,
-                    start = Offset(0f, centerY),
-                    end = Offset(width, centerY),
-                    strokeWidth = 2.dp.toPx(),
-                    cap = StrokeCap.Round
-                )
-                
-                // Progress
-                val progressWidth = width * progress.coerceIn(0f, 1f)
-                if (progressWidth > 0) {
-                    drawLine(
-                        color = progressColor,
-                        start = Offset(0f, centerY),
-                        end = Offset(progressWidth, centerY),
-                        strokeWidth = 2.dp.toPx(),
-                        cap = StrokeCap.Round
-                    )
-                }
-            }
-            
-            if (progress > 0f) {
-                val thumbCenterX = (maxWidth * progress.coerceIn(0f, 1f))
-                    .coerceIn(effectiveThumbSize / 2, maxWidth - effectiveThumbSize / 2)
-                M3Thumb(
-                    style = thumbStyle,
-                    color = progressColor,
-                    size = thumbSize,
-                    isPlaying = isPlaying,
-                    rotateWhenPlaying = rotateThumbWhenPlaying,
-                    modifier = Modifier
-                        .align(Alignment.CenterStart)
-                        .offset(x = thumbCenterX - effectiveThumbSize / 2)
-                )
-            }
-        }
+        ThumbTrackProgressBar(
+            progress = progressCoerced,
+            modifier = modifier,
+            trackHeight = actualHeight,
+            progressColor = progressColor,
+            trackColor = trackColor,
+            isPlaying = isPlaying,
+            thumbStyle = thumbStyle,
+            thumbSize = thumbSize,
+            rotateThumbWhenPlaying = rotateThumbWhenPlaying,
+            isInteracting = isInteracting
+        )
     } else {
-        Canvas(
+        LinearProgressIndicator(
+            progress = { progressCoerced },
             modifier = modifier
                 .fillMaxWidth()
-                .height(2.dp)
-        ) {
-            val width = size.width
-            val centerY = size.height / 2
-            
-            // Track
-            drawLine(
-                color = trackColor,
-                start = Offset(0f, centerY),
-                end = Offset(width, centerY),
-                strokeWidth = 2.dp.toPx(),
-                cap = StrokeCap.Round
-            )
-            
-            // Progress
-            val progressWidth = width * progress.coerceIn(0f, 1f)
-            if (progressWidth > 0) {
-                drawLine(
-                    color = progressColor,
-                    start = Offset(0f, centerY),
-                    end = Offset(progressWidth, centerY),
-                    strokeWidth = 2.dp.toPx(),
-                    cap = StrokeCap.Round
-                )
-            }
-        }
+                .height(actualHeight),
+            color = progressColor,
+            trackColor = trackColor,
+            strokeCap = StrokeCap.Round,
+            gapSize = 3.dp
+        )
     }
 }
 
 /**
- * Thick bold progress bar - 8dp height
+ * Thick bold progress bar - 10dp height
  */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun ThickProgressBar(
     progress: Float,
@@ -674,70 +913,35 @@ private fun ThickProgressBar(
     showThumb: Boolean = false,
     thumbStyle: ThumbStyle = ThumbStyle.DEFAULT,
     thumbSize: Dp = 14.dp,
-    rotateThumbWhenPlaying: Boolean = false
+    rotateThumbWhenPlaying: Boolean = false,
+    isInteracting: Boolean = false
 ) {
+    val progressCoerced = progress.coerceIn(0f, 1f)
+    val actualHeight = 10.dp
     if (showThumb && thumbStyle != ThumbStyle.NONE) {
-        val effectiveThumbSize = thumbSize * thumbStyle.sizeScale
-        BoxWithConstraints(
-            modifier = modifier
-                .fillMaxWidth()
-                .height(8.dp.coerceAtLeast(effectiveThumbSize))
-        ) {
-            Canvas(Modifier.fillMaxSize()) {
-                val progressWidth = size.width * progress.coerceIn(0f, 1f)
-                val centerY = size.height / 2
-                val trackHeight = 8.dp.toPx()
-                
-                // Draw track
-                drawRoundRect(
-                    color = trackColor,
-                    topLeft = Offset(0f, centerY - trackHeight / 2),
-                    size = Size(size.width, trackHeight),
-                    cornerRadius = CornerRadius(4.dp.toPx())
-                )
-                
-                // Draw progress
-                if (progressWidth > 0) {
-                    drawRoundRect(
-                        color = progressColor,
-                        topLeft = Offset(0f, centerY - trackHeight / 2),
-                        size = Size(progressWidth, trackHeight),
-                        cornerRadius = CornerRadius(4.dp.toPx())
-                    )
-                }
-            }
-            
-            if (progress > 0f) {
-                val thumbCenterX = (maxWidth * progress.coerceIn(0f, 1f))
-                    .coerceIn(effectiveThumbSize / 2, maxWidth - effectiveThumbSize / 2)
-                M3Thumb(
-                    style = thumbStyle,
-                    color = progressColor,
-                    size = thumbSize,
-                    isPlaying = isPlaying,
-                    rotateWhenPlaying = rotateThumbWhenPlaying,
-                    modifier = Modifier
-                        .align(Alignment.CenterStart)
-                        .offset(x = thumbCenterX - effectiveThumbSize / 2)
-                )
-            }
-        }
+        ThumbTrackProgressBar(
+            progress = progressCoerced,
+            modifier = modifier,
+            trackHeight = actualHeight,
+            progressColor = progressColor,
+            trackColor = trackColor,
+            isPlaying = isPlaying,
+            thumbStyle = thumbStyle,
+            thumbSize = thumbSize,
+            rotateThumbWhenPlaying = rotateThumbWhenPlaying,
+            isInteracting = isInteracting
+        )
     } else {
-        Box(
+        LinearProgressIndicator(
+            progress = { progressCoerced },
             modifier = modifier
                 .fillMaxWidth()
-                .height(8.dp)
-                .clip(RoundedCornerShape(4.dp))
-                .background(trackColor)
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth(progress.coerceIn(0f, 1f))
-                    .height(8.dp)
-                    .clip(RoundedCornerShape(4.dp))
-                    .background(progressColor)
-            )
-        }
+                .height(actualHeight),
+            color = progressColor,
+            trackColor = trackColor,
+            strokeCap = StrokeCap.Round,
+            gapSize = 6.dp
+        )
     }
 }
 
@@ -754,85 +958,68 @@ private fun GradientProgressBar(
     showThumb: Boolean = false,
     thumbStyle: ThumbStyle = ThumbStyle.DEFAULT,
     thumbSize: Dp = 12.dp,
-    rotateThumbWhenPlaying: Boolean = false
+    rotateThumbWhenPlaying: Boolean = false,
+    isInteracting: Boolean = false
 ) {
     val gradientColors = listOf(
         MaterialTheme.colorScheme.primary,
         MaterialTheme.colorScheme.secondary,
         MaterialTheme.colorScheme.tertiary
     )
-    
-    val actualHeight = height.coerceAtLeast(4.dp)
-    
+    val actualHeight = height.coerceAtLeast(6.dp)
+    val progressCoerced = progress.coerceIn(0f, 1f)
+
     if (showThumb && thumbStyle != ThumbStyle.NONE) {
-        val effectiveThumbSize = thumbSize * thumbStyle.sizeScale
-        BoxWithConstraints(
-            modifier = modifier
-                .fillMaxWidth()
-                .height(actualHeight.coerceAtLeast(effectiveThumbSize))
-        ) {
-            Canvas(Modifier.fillMaxSize()) {
-                val progressWidth = size.width * progress.coerceIn(0f, 1f)
-                val centerY = size.height / 2
-                val trackHeight = actualHeight.toPx()
-                
-                // Draw track
-                drawRoundRect(
-                    color = trackColor,
-                    topLeft = Offset(0f, centerY - trackHeight / 2),
-                    size = Size(size.width, trackHeight),
-                    cornerRadius = CornerRadius(trackHeight / 2)
-                )
-                
-                // Draw gradient progress
-                if (progressWidth > 0) {
-                    drawRoundRect(
-                        brush = Brush.horizontalGradient(gradientColors),
-                        topLeft = Offset(0f, centerY - trackHeight / 2),
-                        size = Size(progressWidth, trackHeight),
-                        cornerRadius = CornerRadius(trackHeight / 2)
-                    )
-                }
-            }
-            
-            if (progress > 0f) {
-                val thumbCenterX = (maxWidth * progress.coerceIn(0f, 1f))
-                    .coerceIn(effectiveThumbSize / 2, maxWidth - effectiveThumbSize / 2)
-                M3Thumb(
-                    style = thumbStyle,
-                    color = gradientColors.last(),
-                    size = thumbSize,
-                    isPlaying = isPlaying,
-                    rotateWhenPlaying = rotateThumbWhenPlaying,
-                    modifier = Modifier
-                        .align(Alignment.CenterStart)
-                        .offset(x = thumbCenterX - effectiveThumbSize / 2)
-                )
-            }
-        }
+        ThumbTrackProgressBar(
+            progress = progressCoerced,
+            modifier = modifier,
+            trackHeight = actualHeight,
+            progressColor = gradientColors.first(),
+            trackColor = trackColor,
+            gradientColors = gradientColors,
+            isPlaying = isPlaying,
+            thumbStyle = thumbStyle,
+            thumbSize = thumbSize,
+            rotateThumbWhenPlaying = rotateThumbWhenPlaying,
+            isInteracting = isInteracting
+        )
     } else {
-        Box(
+        Canvas(
             modifier = modifier
                 .fillMaxWidth()
                 .height(actualHeight)
-                .clip(RoundedCornerShape(50))
-                .background(trackColor)
         ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth(progress.coerceIn(0f, 1f))
-                    .height(actualHeight)
-                    .clip(RoundedCornerShape(50))
-                    .background(
-                        brush = Brush.horizontalGradient(gradientColors)
-                    )
-            )
+            val centerY = size.height / 2
+            val strokePx = actualHeight.toPx()
+            val progressWidth = size.width * progressCoerced
+
+            val gapPx = 5.dp.toPx()
+            val trackStartX = (progressWidth + gapPx).coerceAtMost(size.width)
+            if (trackStartX < size.width - strokePx / 2) {
+                drawLine(
+                    color = trackColor,
+                    start = Offset(trackStartX, centerY),
+                    end = Offset(size.width - strokePx / 2, centerY),
+                    strokeWidth = strokePx,
+                    cap = StrokeCap.Round
+                )
+            }
+
+            if (progressWidth > strokePx / 2) {
+                drawLine(
+                    brush = Brush.horizontalGradient(gradientColors, endX = size.width),
+                    start = Offset(strokePx / 2, centerY),
+                    end = Offset(progressWidth, centerY),
+                    strokeWidth = strokePx,
+                    cap = StrokeCap.Round
+                )
+            }
         }
     }
 }
 
 /**
- * Segmented progress bar with gaps
+ * Segmented progress bar with modern rounded segments and spring filling
  */
 @Composable
 private fun SegmentedProgressBar(
@@ -840,61 +1027,229 @@ private fun SegmentedProgressBar(
     modifier: Modifier = Modifier,
     progressColor: Color,
     trackColor: Color,
-    height: Dp
+    height: Dp,
+    isPlaying: Boolean = true,
+    showThumb: Boolean = false,
+    thumbStyle: ThumbStyle = ThumbStyle.DEFAULT,
+    thumbSize: Dp = 12.dp,
+    rotateThumbWhenPlaying: Boolean = false,
+    isInteracting: Boolean = false
 ) {
-    val segments = 20
-    val actualHeight = height.coerceAtLeast(4.dp)
-    val filledSegments = (progress * segments).toInt()
+    val segments = 16
+    val actualHeight = height.coerceAtLeast(5.dp)
+    val progressCoerced = progress.coerceIn(0f, 1f)
     
-    Canvas(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(actualHeight)
-    ) {
-        val segmentWidth = (size.width - (segments - 1) * 3.dp.toPx()) / segments
-        val cornerRadius = CornerRadius(size.height / 2)
-        
-        for (i in 0 until segments) {
-            val x = i * (segmentWidth + 3.dp.toPx())
-            val color = if (i < filledSegments) progressColor else trackColor
-            
-            drawRoundRect(
-                color = color,
-                topLeft = Offset(x, 0f),
-                size = Size(segmentWidth, size.height),
-                cornerRadius = cornerRadius
+    if (showThumb && thumbStyle != ThumbStyle.NONE) {
+        val morph = rememberThumbMorph(thumbStyle, thumbSize, isInteracting)
+        val trackEdgePaddingDp = morph.effectiveSize / 2f
+        val totalGap = morph.halfWidth + 6.dp
+        val containerHeight = thumbContainerHeight(actualHeight, morph.effectiveSize)
+
+        BoxWithConstraints(
+            modifier = modifier
+                .fillMaxWidth()
+                .height(containerHeight),
+            contentAlignment = Alignment.CenterStart
+        ) {
+            val thumbCenterDp = resolveThumbCenter(maxWidth, trackEdgePaddingDp, morph.halfWidth, progressCoerced)
+            Canvas(Modifier.fillMaxSize()) {
+                val trackEdgePaddingPx = trackEdgePaddingDp.toPx()
+                val trackStart = trackEdgePaddingPx
+                val trackEnd = (size.width - trackEdgePaddingPx).coerceAtLeast(trackStart)
+                val trackWidth = (trackEnd - trackStart).coerceAtLeast(0f)
+                val thumbCenterXPx = thumbCenterDp.toPx()
+                val totalGapPx = totalGap.toPx()
+                val activeEndX = thumbCenterXPx.coerceAtMost(trackEnd)
+                val inactiveStartX = (thumbCenterXPx + totalGapPx).coerceAtLeast(trackStart)
+
+                val gapPx = 4.dp.toPx()
+                val totalGaps = (segments - 1) * gapPx
+                val segmentWidth = (trackWidth - totalGaps) / segments
+                val barHeight = actualHeight.toPx()
+                val topY = (size.height - barHeight) / 2f
+                val cornerRadius = CornerRadius(barHeight / 2f)
+
+                for (i in 0 until segments) {
+                    val segStartX = trackStart + i * (segmentWidth + gapPx)
+                    val segEndX = segStartX + segmentWidth
+
+                    if (segEndX > inactiveStartX) {
+                        val drawStart = segStartX.coerceAtLeast(inactiveStartX)
+                        val drawWidth = segEndX - drawStart
+                        if (drawWidth > 0f) {
+                            drawRoundRect(
+                                color = trackColor,
+                                topLeft = Offset(drawStart, topY),
+                                size = Size(drawWidth, barHeight),
+                                cornerRadius = cornerRadius
+                            )
+                        }
+                    } else if (segEndX <= activeEndX) {
+                        drawRoundRect(
+                            color = trackColor,
+                            topLeft = Offset(segStartX, topY),
+                            size = Size(segmentWidth, barHeight),
+                            cornerRadius = cornerRadius
+                        )
+                    }
+
+                    val segmentProgressStart = i.toFloat() / segments
+                    val fillFraction = ((progressCoerced - segmentProgressStart) * segments).coerceIn(0f, 1f)
+                    if (fillFraction > 0f && segStartX < activeEndX) {
+                        val activeRight = (segStartX + segmentWidth * fillFraction).coerceAtMost(activeEndX)
+                        val drawWidth = activeRight - segStartX
+                        if (drawWidth > 0f) {
+                            drawRoundRect(
+                                color = progressColor,
+                                topLeft = Offset(segStartX, topY),
+                                size = Size(drawWidth, barHeight),
+                                cornerRadius = cornerRadius
+                            )
+                        }
+                    }
+                }
+            }
+
+            PositionedThumb(
+                center = thumbCenterDp,
+                thumbStyle = thumbStyle,
+                thumbSize = thumbSize,
+                color = progressColor,
+                isPlaying = isPlaying,
+                rotateThumbWhenPlaying = rotateThumbWhenPlaying,
+                isInteracting = isInteracting
             )
+        }
+    } else {
+        Canvas(
+            modifier = modifier
+                .fillMaxWidth()
+                .height(actualHeight)
+        ) {
+            val gapPx = 4.dp.toPx()
+            val totalGaps = (segments - 1) * gapPx
+            val segmentWidth = (size.width - totalGaps) / segments
+            val cornerRadius = CornerRadius(size.height / 2f)
+
+            for (i in 0 until segments) {
+                val segmentStartFraction = i.toFloat() / segments
+                val x = i * (segmentWidth + gapPx)
+                val fillFraction = ((progressCoerced - segmentStartFraction) * segments).coerceIn(0f, 1f)
+
+                drawRoundRect(
+                    color = trackColor,
+                    topLeft = Offset(x, 0f),
+                    size = Size(segmentWidth, size.height),
+                    cornerRadius = cornerRadius
+                )
+
+                if (fillFraction > 0f) {
+                    drawRoundRect(
+                        color = progressColor,
+                        topLeft = Offset(x, 0f),
+                        size = Size(segmentWidth * fillFraction, size.height),
+                        cornerRadius = cornerRadius
+                    )
+                }
+            }
         }
     }
 }
 
 /**
- * Dots progress indicator
+ * Dots progress indicator with animated spring scaling
  */
 @Composable
 private fun DotsProgressBar(
     progress: Float,
     modifier: Modifier = Modifier,
     activeColor: Color,
-    inactiveColor: Color
+    inactiveColor: Color,
+    isPlaying: Boolean = true,
+    showThumb: Boolean = false,
+    thumbStyle: ThumbStyle = ThumbStyle.DEFAULT,
+    thumbSize: Dp = 12.dp,
+    rotateThumbWhenPlaying: Boolean = false,
+    isInteracting: Boolean = false
 ) {
-    val dotCount = 12
-    val activeDots = (progress * dotCount).toInt()
-    
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(vertical = 2.dp),
-        horizontalArrangement = Arrangement.SpaceEvenly,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        for (i in 0 until dotCount) {
-            Box(
-                modifier = Modifier
-                    .size(6.dp)
-                    .clip(CircleShape)
-                    .background(if (i < activeDots) activeColor else inactiveColor)
+    val dotCount = 14
+    val progressCoerced = progress.coerceIn(0f, 1f)
+
+    if (showThumb && thumbStyle != ThumbStyle.NONE) {
+        val morph = rememberThumbMorph(thumbStyle, thumbSize, isInteracting)
+        val trackEdgePaddingDp = morph.effectiveSize / 2f
+        val totalGap = morph.halfWidth + 6.dp
+        val containerHeight = thumbContainerHeight(0.dp, morph.effectiveSize)
+
+        BoxWithConstraints(
+            modifier = modifier
+                .fillMaxWidth()
+                .height(containerHeight),
+            contentAlignment = Alignment.CenterStart
+        ) {
+            val thumbCenterDp = resolveThumbCenter(maxWidth, trackEdgePaddingDp, morph.halfWidth, progressCoerced)
+            Canvas(Modifier.fillMaxSize()) {
+                val trackEdgePaddingPx = trackEdgePaddingDp.toPx()
+                val trackStart = trackEdgePaddingPx
+                val trackEnd = (size.width - trackEdgePaddingPx).coerceAtLeast(trackStart)
+                val trackWidth = (trackEnd - trackStart).coerceAtLeast(0f)
+                val thumbCenterXPx = thumbCenterDp.toPx()
+                val totalGapPx = totalGap.toPx()
+                val centerY = size.height / 2f
+
+                for (i in 0 until dotCount) {
+                    val dotX = trackStart + (i.toFloat() / (dotCount - 1).coerceAtLeast(1)) * trackWidth
+                    if (dotX > thumbCenterXPx && dotX < thumbCenterXPx + totalGapPx + 2.5.dp.toPx()) {
+                        continue
+                    }
+                    val dotThreshold = (i + 1).toFloat() / dotCount
+                    val isActive = progressCoerced >= dotThreshold - (1f / dotCount / 2f)
+                    val dotRadius = (if (isActive) 3.5.dp else 2.5.dp).toPx()
+                    drawCircle(
+                        color = if (isActive) activeColor else inactiveColor,
+                        radius = dotRadius,
+                        center = Offset(dotX, centerY)
+                    )
+                }
+            }
+
+            PositionedThumb(
+                center = thumbCenterDp,
+                thumbStyle = thumbStyle,
+                thumbSize = thumbSize,
+                color = activeColor,
+                isPlaying = isPlaying,
+                rotateThumbWhenPlaying = rotateThumbWhenPlaying,
+                isInteracting = isInteracting
             )
+        }
+    } else {
+        Row(
+            modifier = modifier
+                .fillMaxWidth()
+                .padding(vertical = 4.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            for (i in 0 until dotCount) {
+                val dotThreshold = (i + 1).toFloat() / dotCount
+                val isActive = progressCoerced >= dotThreshold - (1f / dotCount / 2f)
+                val animatedDotSize by animateDpAsState(
+                    targetValue = if (isActive) 8.dp else 5.dp,
+                    animationSpec = spring(
+                        dampingRatio = Spring.DampingRatioMediumBouncy,
+                        stiffness = Spring.StiffnessMedium
+                    ),
+                    label = "dotSize"
+                )
+
+                Box(
+                    modifier = Modifier
+                        .size(animatedDotSize)
+                        .clip(CircleShape)
+                        .background(if (isActive) activeColor else inactiveColor)
+                )
+            }
         }
     }
 }
@@ -1022,6 +1377,7 @@ fun CircularStyledProgressBar(
     }
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun WavyCircularProgress(
     progress: Float,
@@ -1031,43 +1387,55 @@ private fun WavyCircularProgress(
     isPlaying: Boolean,
     cornerRadius: Dp = 50.dp
 ) {
-    // Conditional phase animation - only when playing
-    val phaseShiftAnim = remember { Animatable(0f) }
-    val phaseShift = phaseShiftAnim.value
-    
-    // Wave amplitude animation - animates to 0 when paused (flat circle)
-    val waveAmplitudeAnim by animateFloatAsState(
-        targetValue = if (isPlaying) 0.3f else 0f,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessMedium
-        ),
-        label = "waveAmplitude"
-    )
-    
-    LaunchedEffect(isPlaying) {
-        if (isPlaying) {
-            val fullRotation = (2 * PI).toFloat()
-            while (isPlaying) {
-                val start = (phaseShiftAnim.value % fullRotation).let { 
-                    if (it < 0f) it + fullRotation else it 
+    val isRoundedRect = cornerRadius < 40.dp
+    if (!isRoundedRect) {
+        val animatedAmplitude by animateFloatAsState(
+            targetValue = if (isPlaying) 1f else 0f,
+            animationSpec = ProgressIndicatorDefaults.ProgressAnimationSpec,
+            label = "circularWavyAmplitude"
+        )
+        CircularWavyProgressIndicator(
+            progress = { progress.coerceIn(0f, 1f) },
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(strokeWidth / 2),
+            color = progressColor,
+            trackColor = trackColor,
+            gapSize = 4.dp,
+            amplitude = { if (progress > 0f) animatedAmplitude else 0f }
+        )
+    } else {
+        val phaseShiftAnim = remember { Animatable(0f) }
+        val phaseShift = phaseShiftAnim.value
+
+        val waveAmplitudeAnim by animateFloatAsState(
+            targetValue = if (isPlaying) 0.3f else 0f,
+            animationSpec = spring(
+                dampingRatio = Spring.DampingRatioMediumBouncy,
+                stiffness = Spring.StiffnessMedium
+            ),
+            label = "waveAmplitude"
+        )
+
+        LaunchedEffect(isPlaying) {
+            if (isPlaying) {
+                val fullRotation = (2 * PI).toFloat()
+                while (isPlaying) {
+                    val start = (phaseShiftAnim.value % fullRotation).let {
+                        if (it < 0f) it + fullRotation else it
+                    }
+                    phaseShiftAnim.snapTo(start)
+                    phaseShiftAnim.animateTo(
+                        targetValue = start + fullRotation,
+                        animationSpec = tween(durationMillis = 4000, easing = LinearEasing)
+                    )
                 }
-                phaseShiftAnim.snapTo(start)
-                phaseShiftAnim.animateTo(
-                    targetValue = start + fullRotation,
-                    animationSpec = tween(durationMillis = 4000, easing = LinearEasing)
-                )
             }
         }
-    }
-    
-    Canvas(modifier = Modifier.fillMaxSize()) {
-        val stroke = strokeWidth.toPx()
-        val rectCornerRadius = cornerRadius.toPx().coerceAtMost(size.minDimension / 2)
-        val isRoundedRect = rectCornerRadius < size.minDimension / 2 - 1
-        
-        if (isRoundedRect) {
-            // Draw rounded rectangle track and progress
+
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val stroke = strokeWidth.toPx()
+            val rectCornerRadius = cornerRadius.toPx().coerceAtMost(size.minDimension / 2)
             drawRoundedRectProgress(
                 progress = progress,
                 progressColor = progressColor,
@@ -1078,64 +1446,6 @@ private fun WavyCircularProgress(
                 waveOffset = phaseShift,
                 waveAmplitude = waveAmplitudeAnim
             )
-        } else {
-            // Original circular implementation
-            val radius = (size.minDimension / 2) - stroke
-            val center = Offset(size.width / 2, size.height / 2)
-            
-            // Draw track
-            drawCircle(
-                color = trackColor,
-                radius = radius,
-                center = center,
-                style = Stroke(width = stroke)
-            )
-            
-            // Draw wavy progress (wave flattens to circle when paused)
-            if (progress > 0f) {
-                val path = Path()
-                val sweepAngle = 360f * progress
-                val steps = 200
-                
-                var prevX = 0f
-                var prevY = 0f
-                
-                for (i in 0..steps) {
-                    val angle = (i.toFloat() / steps) * sweepAngle
-                    if (angle > sweepAngle) break
-                    
-                    val angleRad = Math.toRadians((angle - 90).toDouble())
-                    val wave = sin((angle / 360f * 12 * PI) + phaseShift).toFloat() * stroke * waveAmplitudeAnim
-                    val currentRadius = radius + wave
-                    
-                    val x = center.x + (currentRadius * kotlin.math.cos(angleRad)).toFloat()
-                    val y = center.y + (currentRadius * kotlin.math.sin(angleRad)).toFloat()
-                    
-                    if (i == 0) {
-                        path.moveTo(x, y)
-                        prevX = x
-                        prevY = y
-                    } else {
-                        // Use quadratic bezier for smoother curves
-                        val midX = (prevX + x) * 0.5f
-                        val midY = (prevY + y) * 0.5f
-                        path.quadraticTo(prevX, prevY, midX, midY)
-                        prevX = x
-                        prevY = y
-                    }
-                }
-                
-                drawPath(
-                    path = path,
-                    color = progressColor,
-                    style = Stroke(
-                        width = stroke,
-                        cap = StrokeCap.Round,
-                        join = StrokeJoin.Round,
-                        miter = 1f
-                    )
-                )
-            }
         }
     }
 }

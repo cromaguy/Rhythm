@@ -196,6 +196,9 @@ fun LabsSettingsScreen(
     var showRestartDialog by remember { mutableStateOf(false) }
     var restartDialogMessage by remember { mutableStateOf("") }
 
+    val audioRoutingMode by appSettings.audioRoutingMode.collectAsState()
+    var showAudioRoutingDialog by remember { mutableStateOf(false) }
+
     CollapsibleHeaderScreen(
         title = context.getString(R.string.settings_labs),
         showBackButton = true,
@@ -222,6 +225,16 @@ fun LabsSettingsScreen(
                 SettingGroup(
                     title = context.getString(R.string.exp_developer_debugging),
                     items = listOf(
+                        SettingItem(
+                            icon = RhythmIcons.Devices.Usb,
+                            title = context.getString(R.string.settings_audio_routing_mode),
+                            description = when (audioRoutingMode) {
+                                "app" -> context.getString(R.string.audio_routing_app)
+                                "system" -> context.getString(R.string.audio_routing_system)
+                                else -> context.getString(R.string.audio_routing_default)
+                            },
+                            onClick = { showAudioRoutingDialog = true }
+                        ),
                         SettingItem(
                             MaterialSymbolIcon("running_with_errors"),
                             context.getString(R.string.exp_track_error_checker),
@@ -347,7 +360,14 @@ fun LabsSettingsScreen(
         )
     }
 
-    // Show update bottomsheet - removed, now handled globally in LocalNavigation
+    if (showAudioRoutingDialog) {
+        AudioRoutingDialog(
+            onDismiss = { showAudioRoutingDialog = false },
+            appSettings = appSettings,
+            context = context,
+            haptic = haptic
+        )
+    }
 }
 
 
