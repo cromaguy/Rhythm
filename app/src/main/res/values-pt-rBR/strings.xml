@@ -29,7 +29,7 @@
     <string name="settings_notifications_rhythm_pulse_group">Destaques e dicas de escuta</string>
     <string name="settings_update_notifications_merged_desc">Receba alertas quando novas atualizações do Rhythm estiverem prontas para serem instaladas</string>
     <string name="settings_rhythm_guard_alert_notifications">Avisos de segurança auditiva</string>
-    <string name="settings_rhythm_guard_alert_notifications_desc">Exibe alertas instantâneos quando o volume ou a exposição sonora exceder os limites seguros</string>
+    <string name="settings_rhythm_guard_alert_notifications_desc">Alerta quando o volume ou a exposição ao som excede os limites de segurança</string>
     <string name="settings_rhythm_guard_timer_notifications">Assistente de pausas na escuta</string>
     <string name="settings_rhythm_guard_timer_notifications_desc">Exibe contagens regressivas e notificações para pausas na escuta agendadas</string>
     <string name="settings_rhythm_pulse_notifications">Destaques e dicas de escuta</string>
@@ -110,7 +110,7 @@
     <string name="settings_custom">Personalizado</string>
     <string name="settings_default">Padrão</string>
     <string name="settings_enable_default_playlists">Ativar playlists padrão</string>
-    <string name="settings_enable_default_playlists_desc">Cria as playlists \"Adicionadas recentemente\" e \"Mais tocadas\" automaticamente</string>
+    <string name="settings_enable_default_playlists_desc">Cria e mantém playlists inteligentes automaticamente</string>
     <!-- Operation Progress -->
     <string name="operation_exporting_playlists">Fazendo backup de suas playlists personalizadas…</string>
     <string name="operation_exporting_playlists_location">Fazendo backup de playlists no armazenamento…</string>
@@ -283,7 +283,7 @@
     <string name="settings_root">Raiz</string>
     <string name="settings_scan_behavior">Comportamento da verificação</string>
     <string name="settings_include_hidden_whitelisted_media">Incluir arquivos ocultos e .nomedia</string>
-    <string name="settings_include_hidden_whitelisted_media_desc">Ativar a verificação de caminhos de áudio ocultos e .nomedia durante escaneamentos completos de mídia (efeito mais forte em pastas na lista de permissões).</string>
+    <string name="settings_include_hidden_whitelisted_media_desc">Analisar caminhos de áudio ocultos e com extensão .nomedia durante a verificação de mídia.</string>
     <!-- Settings - Spotify -->
     
     <!-- Settings - About -->
@@ -752,7 +752,7 @@
     <string name="broadcast_status_enabled">Ativar transmissão de status</string>
     <string name="broadcast_status_desc">Envia informações de reprodução para o Tasker, KWGT e apps de automação</string>
     <string name="bluetooth_lyrics_enabled">Letras na notificação</string>
-    <string name="bluetooth_lyrics_desc">Envia linhas de letras sincronizadas como metadados da faixa para dispositivos Bluetooth, wearables e leitores de notificações</string>
+    <string name="bluetooth_lyrics_desc">Envia letras sincronizadas como metadados da faixa para dispositivos Bluetooth e wearables</string>
     <!-- Equalizer -->
     <string name="equalizer">Equalizador</string>
     <string name="frequency_bands">Bandas de frequência</string>
@@ -1035,7 +1035,7 @@
     <string name="settings_gestures">Gestos</string>
     <string name="settings_gestures_desc">Atalhos de deslizar e tocar para a reprodução</string>
     <string name="settings_ignore_mediastore_covers">Mostrar a capa da música em vez da capa do álbum</string>
-    <string name="settings_ignore_mediastore_covers_desc">Prioriza capas incorporadas em cada arquivo de áudio (anteriormente \"Ignorar capas do MediaStore\")</string>
+    <string name="settings_ignore_mediastore_covers_desc">Prioriza a arte da capa incorporada ao áudio em vez das capas das lojas de mídia</string>
     <string name="settings_lossless_artwork">Capa sem perda de qualidade</string>
     <string name="settings_lossless_artwork_desc">Exibe a capa incorporada da música em resolução completa, sem compressão</string>
     <string name="settings_artwork_cache_size">Tamanho do cache de capas</string>
@@ -1064,10 +1064,10 @@
     <string name="settings_rhythm_guard_manual_warning_toggle">Mostrar avisos de segurança</string>
     <string name="settings_rhythm_guard_manual_warning_toggle_desc">Avisa quando o volume em tempo real ou alternâncias manuais podem representar risco</string>
     <string name="settings_rhythm_guard_manual_threshold_title">Limite de aviso de volume alto: %1$d%%</string>
-    <string name="settings_rhythm_guard_manual_threshold_desc">Define quando o Rhythm Guard deve avisar sobre volume potencialmente prejudicial.</string>
+    <string name="settings_rhythm_guard_manual_threshold_desc">Defina o limite de volume para avisos de alto volume.</string>
     <string name="settings_rhythm_guard_device_controls_title">Controles de saída</string>
     <string name="settings_rhythm_guard_device_controls_speaker_limit_title">Aplicar limites de volume no alto-falante do celular</string>
-    <string name="settings_rhythm_guard_device_controls_speaker_limit_desc">Quando desativado, o Rhythm Guard ignora a limitação de volume e os avisos de volume na saída do alto-falante integrado.</string>
+    <string name="settings_rhythm_guard_device_controls_speaker_limit_desc">Ignora os limites de volume e os avisos na saída de áudio do alto-falante do telefone.</string>
     <string name="settings_rhythm_guard_alert_controls_title">Controles de alerta de escuta</string>
     <string name="settings_rhythm_guard_alert_threshold_title">Limite do alerta de exposição: %1$s</string>
     <string name="settings_rhythm_guard_alert_threshold_policy_default">Política padrão</string>
@@ -1134,7 +1134,7 @@
     <string name="settings_rhythm_guard_warning_timeout_search_title">Tempo de espera do alerta</string>
     <string name="settings_rhythm_guard_warning_timeout_search_desc">Defina o tempo de espera entre alertas repetidos do Rhythm Guard</string>
     <string name="settings_rhythm_guard_post_timeout_cooldown_search_title">Tempo de espera após o intervalo</string>
-    <string name="settings_rhythm_guard_post_timeout_cooldown_search_desc">Defina o tempo de espera após o término de um intervalo antes que outro intervalo de exposição possa ser acionado</string>
+    <string name="settings_rhythm_guard_post_timeout_cooldown_search_desc">Duração do período de resfriamento antes que outro tempo limite de exposição seja acionado</string>
     <string name="settings_rhythm_guard_protection_presets_search_title">Predefinições de proteção</string>
     <string name="settings_rhythm_guard_protection_presets_search_desc">Aplique os conjuntos de proteção suave, equilibrado ou rigoroso com um toque</string>
     <string name="settings_rhythm_guard_break_resume_search_title">Retomada padrão após a pausa</string>
@@ -1669,7 +1669,7 @@
     <string name="settings_broadcast_status_enabled">Ativar transmissão de status</string>
     <string name="settings_broadcast_status_enabled_desc">Envia informações de reprodução para o Tasker, KWGT e apps de automação</string>
     <string name="settings_bluetooth_lyrics_enabled">Letras na notificação</string>
-    <string name="settings_bluetooth_lyrics_enabled_desc">Envia linhas de letras sincronizadas como metadados da faixa para dispositivos Bluetooth, wearables e leitores de notificações</string>
+    <string name="settings_bluetooth_lyrics_enabled_desc">Envia letras sincronizadas como metadados da faixa para dispositivos Bluetooth e wearables</string>
     <string name="exp_go_mode">Modo Go</string>
     <string name="exp_go_mode_desc">Troca para o modo de streaming Rhythm Go</string>
     <!-- Home Screen Search Strings -->
@@ -1717,7 +1717,7 @@
     <string name="settings_library_combine_discs">Combinar discos</string>
     <string name="settings_library_combine_discs_desc">Mesclar álbuns de múltiplos discos em uma ordenação contínua</string>
     <string name="settings_show_library_bottom_bar_always">Mostrar sempre a barra inferior da biblioteca</string>
-    <string name="settings_show_library_bottom_bar_always_desc">Mantém a barra inferior visível em todas as abas, ou oculta-a e mostra as ações principais na barra superior</string>
+    <string name="settings_show_library_bottom_bar_always_desc">Mantém a barra de navegação visível em todas as abas da biblioteca</string>
     <string name="settings_show_keyboard_on_search_open">Focar a busca automaticamente</string>
     <string name="settings_show_keyboard_on_search_open_desc">Mostra o teclado quando a pesquisa for aberta</string>
     <string name="settings_library_group_artwork">Renderização de capa</string>
@@ -2214,7 +2214,7 @@
     <string name="lyrics_settings_general">Configurações gerais</string>
     <string name="lyrics_settings_open_fullscreen_desc">Abre a tela de letras em tela cheia tocando no botão \"Letras\"</string>
     <string name="lyrics_settings_autohide_controls">Ocultar automaticamente os controles das letras</string>
-    <string name="lyrics_settings_autohide_controls_desc">Oculta automaticamente os controles na tela de letras em tela cheia após alguns segundos de inatividade</string>
+    <string name="lyrics_settings_autohide_controls_desc">Oculta controles de reprodução após inatividade no modo de letras em tela cheia</string>
     <string name="lyrics_settings_embedded_first">Incorporadas primeiro</string>
     <string name="lyrics_settings_embedded_first_desc">Prioriza letras incorporadas nos arquivos de áudio e usa APIs online como alternativa</string>
     <string name="lyrics_settings_online_first">Online primeiro</string>
@@ -2243,7 +2243,7 @@
     <string name="lyrics_settings_disable_animations">Desativar animações</string>
     <string name="lyrics_settings_disable_animations_desc">Desativa transições e animações na visualização de letras</string>
     <string name="lyrics_settings_word_by_word_translation">Sincronização automática de palavras</string>
-    <string name="lyrics_settings_word_by_word_translation_desc">Gera automaticamente o tempo palavra por palavra para letras sincronizadas linha por linha, distribuindo a duração de forma proporcional</string>
+    <string name="lyrics_settings_word_by_word_translation_desc">Estima a duração das palavras para letras sincronizadas proporcionalmente</string>
     <string name="lyrics_settings_info_bullets">Fontes de letras:\n• LRCLib — letras sincronizadas linha por linha gratuitamente\n• BetterLyrics — letras no estilo karaokê palavra por palavra\n• Lyrically — sincronização palavra por palavra de alta qualidade\n\nDefina a ordem de preferência das fontes em Prioridade da API de Letras.</string>
     <!-- AutoEQ Preset Picker additions -->
     <string name="autoeqpresetpickerbottomsheet_search_presets">Pesquisar predefinições…</string>
@@ -2521,15 +2521,15 @@
     <string name="fdroid_update_warning_message">Ativar atualizações no app em uma build do F-Droid ignora as verificações de segurança do F-Droid. As atualizações serão baixadas diretamente do distribuidor. Deseja continuar?</string>
     <!-- Replay Gain Settings Screen -->
     <string name="replay_gain_mode_title">Modo ReplayGain</string>
-    <string name="replay_gain_mode_desc">Ajusta os níveis de volume com base nos metadados da faixa ou do álbum.</string>
+    <string name="replay_gain_mode_desc">Normaliza o volume por faixa ou em todo o álbum.</string>
     <string name="replay_gain_mode_track">Faixa</string>
     <string name="replay_gain_mode_album">Álbum</string>
     <string name="replay_gain_prevent_clipping">Evitar clipping (DRC)</string>
-    <string name="replay_gain_prevent_clipping_desc">Comprime dinamicamente os níveis de pico para evitar distorção no áudio.</string>
+    <string name="replay_gain_prevent_clipping_desc">Comprime os picos dinamicamente para evitar distorção de áudio.</string>
     <string name="replay_gain_preamp_tagged">Pré-amplificador (com tags)</string>
-    <string name="replay_gain_preamp_tagged_desc">Ajuste de volume para faixas com tags ReplayGain.</string>
+    <string name="replay_gain_preamp_tagged_desc">Ganho de volume para faixas com tags ReplayGain.</string>
     <string name="replay_gain_preamp_untagged">Pré-amplificador (sem tags)</string>
-    <string name="replay_gain_preamp_untagged_desc">Ajuste de volume para faixas sem tags ReplayGain.</string>
+    <string name="replay_gain_preamp_untagged_desc">Ganho de volume para faixas sem tags ReplayGain.</string>
     <string name="replay_gain_configuration">Configuração</string>
     <!-- Playback Settings Screen Extra -->
     <string name="settingsscreen_audio_offload_desc">Decodificação de áudio acelerada por hardware para economizar energia do dispositivo</string>
@@ -2601,22 +2601,22 @@
     <string name="settings_notifications_library_group">Biblioteca e sincronização</string>
     <string name="settings_notifications_system_group">Controles do sistema</string>
     <string name="settings_library_operations_notifications">Operações da biblioteca e backups</string>
-    <string name="settings_library_operations_notifications_desc">Exibe notificações de progresso para indexação de mídia e exportação/importação de playlist</string>
+    <string name="settings_library_operations_notifications_desc">Exibe notificações para indexação de mídia e operações de playlist</string>
     <string name="settings_system_notification_channels">Configurações de notificação do Android</string>
-    <string name="settings_system_notification_channels_desc">Configure os canais de notificação do sistema, som, vibração e comportamento na tela de bloqueio</string>
+    <string name="settings_system_notification_channels_desc">Configure os canais de notificação, alertas e comportamento do sistema</string>
     <string name="settings_notification_permission_title">Permissão de notificação necessária</string>
-    <string name="settings_notification_permission_desc">Ative as permissões de notificação para que o Rhythm possa exibir controles de mídia e atualizações de tarefas em segundo plano.</string>
+    <string name="settings_notification_permission_desc">Permita notificações para controles de reprodução de mídia e tarefas em segundo plano.</string>
     <string name="settings_notification_permission_grant">Ativar notificações</string>
     <string name="settings_queue_autofill">Adicionar automaticamente</string>
     <string name="settings_queue_display">Exibição da fila</string>
     <string name="settings_respect_album_on_play_desc">Toque em uma música em um álbum ou artista para continuar reproduzindo o restante.</string>
     <string name="settings_keep_shuffle_on_selection">Manter modo aleatório ao selecionar música</string>
-    <string name="settings_keep_shuffle_on_selection_desc">Mantém o modo aleatório ativo ao selecionar uma nova música na biblioteca ou nas playlists.</string>
+    <string name="settings_keep_shuffle_on_selection_desc">Mantém o modo aleatório ativado ao selecionar uma nova faixa.</string>
     <string name="widget_cookie_action_shuffle">Aleatório</string>
     <string name="widget_cookie_action_shuffle_desc">Ativa/desativa a reprodução aleatória</string>
     <string name="settings_respect_album_on_play">Continuar reproduzindo álbuns e artistas</string>
     <string name="settings_mono_audio">Áudio mono</string>
-    <string name="settings_mono_audio_desc">Mescla os canais estéreo em mono para escuta com apenas 1 fone.</string>
+    <string name="settings_mono_audio_desc">Converte os canais estéreo para mono para escuta com um único lado.</string>
     <string name="device_mono_audio_title">Fone único (áudio mono)</string>
     <string name="device_mono_audio_desc">Força mixagem mono quando este dispositivo de áudio estiver ativo.</string>
     <string name="settings_show_remaining_time">Mostrar tempo restante</string>
@@ -2624,7 +2624,7 @@
     <string name="settings_audio_formats">Formatos de áudio</string>
     <string name="settings_allowed_formats">Formatos permitidos</string>
     <string name="settings_allowed_formats_desc">%1$d de %2$d formatos ativados</string>
-    <string name="settings_allowed_formats_open_desc">Escolha quais tipos de arquivo de áudio são escaneados na sua biblioteca. As alterações acionam um novo escaneamento completo na próxima abertura do app.</string>
+    <string name="settings_allowed_formats_open_desc">Selecione os formatos de áudio digitalizados para sua biblioteca. Requer um escaneamento completo.</string>
     <string name="settings_formats_at_least_one">Pelo menos um formato deve permanecer ativado</string>
     <string name="settings_formats_video_note">MP4 e MKV vêm desativados por padrão — ative-os para incluir faixas de áudio de arquivos de vídeo.</string>
     <string name="settings_formats_group_common">Comum</string>
@@ -2640,9 +2640,9 @@
     <string name="settings_min_duration_minutes_only">%1$d minutos</string>
     <string name="settings_min_duration_tip">Defina como 0s para incluir faixas curtas, como trechos de ópera, efeitos sonoros ou interlúdios. Aumente para filtrar toques e notas de voz.</string>
     <string name="default_playback_speed">Velocidade de reprodução padrão</string>
-    <string name="default_playback_speed_desc">Velocidade personalizada que será aplicada automaticamente a novas faixas</string>
+    <string name="default_playback_speed_desc">Velocidade aplicada automaticamente às novas faixas</string>
     <string name="use_default_playback_speed">Usar velocidade padrão para novas músicas</string>
-    <string name="use_default_playback_speed_desc">Sempre inicia novas faixas na velocidade de reprodução padrão, em vez de lembrar a última velocidade usada</string>
+    <string name="use_default_playback_speed_desc">Sempre redefinir novas faixas para a velocidade padrão em vez de lembrar última velocidade</string>
     <string name="onboarding_streaming_setup_later">Configure o servidor posteriormente em \"Configurações\"</string>
     <string name="onboardingscreen_choose_streaming_provider">Escolher o serviço de Streaming</string>
     <string name="onboardingscreen_choose_streaming_provider_desc">Selecione seu provedor de servidor para transmitir sua biblioteca de música remota</string>
@@ -2678,7 +2678,7 @@
     <string name="settings_miniplayer_swipe_tracks">Deslizar para trocar de faixa</string>
     <string name="settings_miniplayer_swipe_tracks_desc">Deslize para a esquerda/direita no miniplayer para pular faixas</string>
     <string name="exp_track_error_checker">Verificador de erros de faixas</string>
-    <string name="exp_track_error_checker_desc">Intercepta faixas de áudio corrompidas ou ilegíveis para evitar carregamento infinito e loops de pular automático</string>
+    <string name="exp_track_error_checker_desc">Intercepta faixas de áudio ilegíveis para evitar loops de carregamento infinitos</string>
     <string name="library_auto_fetch_artwork_desc">Obter capas ausentes na internet automaticamente durante a reprodução de faixas ou na inicialização do app</string>
     <string name="widget_cookie_action_skip">Pular faixa</string>
     <string name="widget_cookie_action_skip_left_desc">Exibe o botão de faixa anterior</string>
@@ -2708,9 +2708,9 @@
     <string name="settings_artist_artwork_source">Fonte das imagem dos artistas</string>
     <string name="settings_artist_artwork_source_desc">Escolha a fonte preferida para as capas dos artistas</string>
     <string name="settings_artist_artwork_source_prefer_local">Prioriza imagem local, depois API</string>
-    <string name="settings_artist_artwork_source_prefer_local_desc">Busca capas na pasta local (artist.jpg/band.jpg) primeiro; usa a API do Deezer como alternativa</string>
+    <string name="settings_artist_artwork_source_prefer_local_desc">Verifica primeiro a arte da pasta local e, se necessário, utiliza a API online do Deezer</string>
     <string name="settings_artist_artwork_source_local_only">Apenas imagens locais</string>
-    <string name="settings_artist_artwork_source_local_only_desc">Usa apenas capas de pastas locais (artist.jpg/band.jpg) e imagens salvas localmente</string>
+    <string name="settings_artist_artwork_source_local_only_desc">Usa apenas imagens locais e pastas com imagens salvas no local</string>
     <string name="settings_artist_artwork_source_api_only">Apenas API online (Deezer)</string>
     <string name="settings_artist_artwork_source_api_only_desc">Busca capas de artistas exclusivamente pela API online do Deezer</string>
     <string name="settings_artist_artwork_source_disabled">Desativado</string>
@@ -2721,7 +2721,7 @@
     <string name="settings_library_swipe_tabs_desc">Deslize para a esquerda/direita para alternar entre as abas da biblioteca</string>
     <string name="licenses_desc_room">Biblioteca de mapeamento de objetos SQLite para persistência de dados</string>
     <string name="streamingservicesetup_establishing_connection">Estabelecendo conexão com o provedor…</string>
-    <string name="settings_floating_navigation_desc">Deixe a barra de navegação flutuando sobre o conteúdo no celular e no tablet, ou fixe-a nas bordas da tela</string>
+    <string name="settings_floating_navigation_desc">Deixe a barra de navegação flutuando sobre o conteúdo, ou fixe-a nas bordas da tela</string>
     <string name="expressive_bottom_buttons_normal_tab">Modo normal</string>
     <string name="expressive_bottom_buttons_merge_tab">Modo mesclado</string>
     <string name="licenses_desc_gramophone">Player de música completo e focado em privacidade para Android</string>
@@ -2729,7 +2729,7 @@
     <string name="settings_tap_artwork_lyrics_desc">Toque uma vez na capa do álbum para ativar/desativar as letras sincronizadas</string>
     <string name="expressiveplayerscreen_lyrics">Ativar/desativar letras</string>
     <string name="widget_cookie_action_favorite_desc">Favorita/desfavorita a música atual</string>
-    <string name="settings_expressive_bottom_buttons_desc">Reordena e ativa/desativa os botões de ação inferiores para os modos normal e mesclado</string>
+    <string name="settings_expressive_bottom_buttons_desc">Reordena e ativa/desativa os botões inferiores para os modos Normal e Mesclado</string>
     <string name="settings_rhythm_guard_first_break_dialog_message">O Rhythm Guard programa pausas na escuta para proteger sua audição quando os limites diários de exposição são atingidos. Uma pausa interrompe a reprodução e bloqueia os controles para garantir que seus ouvidos descansem adequadamente.\n\nNesta primeira pausa, você pode optar por desativar o Rhythm Guard. No entanto, nas pausas seguintes, não será possível desativar o Rhythm Guard até o fim do tempo de pausa. Você sempre pode desativá-lo ou ajustar as configurações fora das pausas ativas.</string>
     <string name="settings_rhythm_guard_first_break_dialog_turn_off">Desativar o Rhythm Guard</string>
     <string name="settings_rhythm_guard_locked_during_break">Bloqueado durante a pausa na escuta</string>
@@ -2925,7 +2925,7 @@
     <string name="media_suggested_folders">Pastas sugeridas (música detectada)</string>
     <string name="settings_search_suggestions_desc">Exibe sugestões contextuais no topo</string>
     <string name="performancesettingsscreen_performance_desc">Otimiza o feedback tátil, a decodificação e a rolagem do texto para reduzir o consumo de energia</string>
-    <string name="settings_player_thumb_style_desc">Escolha a forma do indicador da barra de progresso (círculo, quadrado, pílula, diamante, flor, coração…)</string>
+    <string name="settings_player_thumb_style_desc">Escolha o formato do indicador da barra de busca</string>
     <string name="settings_gesture_disable_unused_desc">Desativa os gestos que você nunca usa</string>
     <string name="settings_home_start_collapsed_desc">Inicia o cabeçalho da tela inicial recolhido</string>
     <string name="settings_home_header_content_desc">Escolha a saudação ou informação exibida no cabeçalho da tela inicial</string>
@@ -3086,4 +3086,68 @@
     <string name="rhythm_go_online_toast">O Rhythm Go está online novamente</string>
     <string name="streaming_downloaded_albums">Álbuns baixados</string>
     <string name="streaming_syncing_downloads_subtitle">Disponível durante a sincronização</string>
+    <string name="settings_crossfade_configuration">Configuração</string>
+    <string name="settings_crossfade_duration_help">Ajuste a duração do fade entre a música final e a próxima.</string>
+    <string name="settings_show_liked_in_playlists">Mostrar Favoritos nas Playlists</string>
+    <string name="settings_show_liked_in_playlists_desc">Exibir Favoritos como uma Playlist</string>
+    <string name="settings_smart_playlist_recently_added">Adicionados recentemente</string>
+    <string name="settings_smart_playlist_recently_added_desc">Músicas adicionadas recentemente à sua biblioteca</string>
+    <string name="settings_smart_playlist_most_played">Mais Tocadas</string>
+    <string name="settings_smart_playlist_most_played_desc">Suas músicas mais tocadas</string>
+    <string name="settings_smart_playlist_on_repeat">Em Repetição</string>
+    <string name="settings_smart_playlist_on_repeat_desc">Músicas que você mais ouviu nos últimos 14 dias</string>
+    <string name="settings_smart_playlist_forgotten_favorites">Favoritos Esquecidos</string>
+    <string name="settings_smart_playlist_forgotten_favorites_desc">Músicas favoritas antigas que você não ouviu recentemente</string>
+    <string name="settings_smart_playlist_recently_played">Tocadas recentemente</string>
+    <string name="settings_smart_playlist_recently_played_desc">Histórico cronológico das suas músicas tocadas recentemente</string>
+    <string name="settings_smart_playlists">Playlists Inteligentes</string>
+    <string name="settings_active_smart_playlists">Playlists Ativas</string>
+    <string name="settings_default_playlists_summary">Configure e gerencie playlists inteligentes mantidas automaticamente</string>
+    <string name="settings_save_top_songs_as_playlist">Salvar como Playlist</string>
+    <string name="settings_saved_top_songs_playlist">Playlist \'%1$s\' criada com %2$d músicas</string>
+    <string name="playlist_on_repeat">Em Repetição</string>
+    <string name="playlist_forgotten_favorites">Favoritos Esquecidos</string>
+    <string name="playlist_recently_played">Tocadas Recentemente</string>
+    <string name="action_pause">Pausar</string>
+    <string name="action_resume">Retomar</string>
+    <string name="settings_audio_routing_mode">Roteamento da Saída de Áudio</string>
+    <string name="settings_audio_routing_mode_desc">Configure o roteamento de fluxo e a saída DAC bit-perfect</string>
+    <string name="audio_routing_default">Padrão (Sistema)</string>
+    <string name="audio_routing_default_desc">Roteamento e mixagem de áudio padrão do sistema Android.</string>
+    <string name="audio_routing_app">Bit-Perfect (DAC direto)</string>
+    <string name="audio_routing_app_desc">Roteamento direto bit-perfect para o DAC sem reamostragem do SO ou DSP.</string>
+    <string name="audio_routing_system">Sistema Forçado</string>
+    <string name="audio_routing_system_desc">Força o roteamento de áudio padrão da plataforma.</string>
+    <string name="audio_routing_bit_perfect_disabled_effect">Desativado (Modo Bit-Perfect ativo)</string>
+    <string name="settings_expressive_colors">Paleta de Cores Expressiva</string>
+    <string name="settings_expressive_colors_desc">Adiciona profundidade tonal rica e contraste de superfície aos controles da IU</string>
+    <string name="settings_theme_intensity">Intensidade do Tema</string>
+    <string name="settings_theme_intensity_desc">Ajuste a vivacidade e a profundidade tonal das cores do tema</string>
+    <string name="theme_intensity_standard">Padrão</string>
+    <string name="theme_intensity_standard_desc">Tons equilibrados do Material 3 e contraste natural</string>
+    <string name="theme_intensity_medium">Médio</string>
+    <string name="theme_intensity_medium_desc">Detalhes mais marcantes com maior profundidade do container</string>
+    <string name="theme_intensity_vivid">Vívido</string>
+    <string name="theme_intensity_vivid_desc">Vibração máxima e rica saturação dinâmica</string>
+    <string name="eq_preset_order_title">Reordenar Predefinições</string>
+    <string name="eq_preset_order_desc">Arraste para reorganizar a ordem predefinida ou alternar a visibilidade</string>
+    <string name="eq_preset_order_saved">Ordem de predefinições salva</string>
+    <string name="eq_preset_order_reset">A ordem predefinida foi redefinida para o padrão</string>
+    <string name="eq_preset_at_least_one">Pelo menos uma predefinição deve estar visível</string>
+    <string name="eq_preset_type_builtin">Embutido</string>
+    <string name="eq_preset_type_custom">Personalizado</string>
+    <string name="eq_preset_type_autoeq">AutoEQ</string>
+    <string name="eq_save_custom_preset">Salvar Predefinição Personalizada</string>
+    <string name="eq_save_custom_preset_desc">Salve seus ajustes de equalização atuais como uma predefinição reutilizável</string>
+    <string name="eq_preset_name_hint">Nome da predefinição</string>
+    <string name="eq_preset_name_empty">Por favor, insira o nome da predefinição</string>
+    <string name="eq_preset_name_exists">Já existe uma predefinição com esse nome</string>
+    <string name="eq_preset_saved_success">Predefinição \"%1$s\" salva</string>
+    <string name="eq_preset_delete_title">Excluir Predefinição</string>
+    <string name="eq_preset_delete_confirm">Tem certeza de que deseja excluir a predefinição personalizada \"%1$s\"?</string>
+    <string name="eq_preset_deleted">Predefinição excluída</string>
+    <string name="eq_reorder_presets">Reordenar Predefinições</string>
+    <string name="eq_device_no_profile">Nenhum perfil AutoEQ vinculado</string>
+    <string name="eq_manage_all_devices">Gerenciar Dispositivos</string>
+    <string name="eq_reorder">Reordenar</string>
 </resources>

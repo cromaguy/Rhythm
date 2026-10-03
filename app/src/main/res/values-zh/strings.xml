@@ -167,7 +167,7 @@
         <item quantity="other">同步：%1$d 首歌曲 • %2$d 个专辑 • %3$d 个艺术家</item>
     </plurals>
     <plurals name="notification_streaming_sync_complete">
-        <item quantity="other">已同步 %2$s 的 %1$d 首歌曲！</item>
+        <item quantity="other">已同步 %2$s 的 %1$d 首歌曲。</item>
     </plurals>
     <string name="notification_streaming_sync_failed">同步失败。检查您的网络连接。</string>
     <!-- Streaming Liked Songs -->
@@ -697,7 +697,7 @@
     <string name="backup_all_settings_placeholder">所有设置、播放列表、主题和库自定义</string>
     <string name="backup_restore_tap_placeholder">一键从文件或剪贴板恢复</string>
     <string name="backup_local_storage_placeholder">为了保护隐私，备份本地存储在您的设备上</string>
-    <string name="external_services_desc">控制哪些外部 API 服务处于活动状态以增强您的音乐体验。打开/关闭服务以管理数据使用和功能。</string>
+    <string name="external_services_desc">切换 Rhythm 调取歌词、艺人图片以及动态专辑封面所使用的在线服务。可关闭不需要的服务，以减少流量消耗。</string>
     <string name="lyrics_source_priority_title">歌词优先来源</string>
     <string name="queue_action_title">队列冲突操作</string>
     <string name="queue_action_choose">选择默认队列冲突动作</string>
@@ -828,7 +828,7 @@
     <string name="settings_backup_restore_title">备份与恢复</string>
     <string name="settings_backup_restore_desc">导出、导入</string>
     <string name="settings_api_management">集成工具</string>
-    <string name="settings_api_management_desc">API、小工具</string>
+    <string name="settings_api_management_desc">歌词、封面图和听歌记录同步服务</string>
     <string name="settings_section_updates_info">更新与信息</string>
     <string name="settings_updates_title">更新</string>
     <string name="settings_updates_desc">应用程序更新</string>
@@ -2504,7 +2504,7 @@
         <item quantity="other">已启用 %1$d（共 %2$d）</item>
     </plurals>
     <!-- Settings status cards -->
-    <string name="status_active">活跃</string>
+    <string name="status_active">已启用</string>
     <!-- Sort menu options -->
     <string name="sort_order_title">排序</string>
     <string name="sort_order_ascending">升序</string>
@@ -2600,4 +2600,13 @@
     <string name="onboardingscreen_choose_streaming_provider_desc">选择你的流媒体提供者，流式传输你的远程音乐库</string>
     <string name="onboardingscreen_configure_provider">配置%1$s</string>
     <string name="about_replay_tour">重放启动设置教程</string>
+    <string name="settings_theme_intensity">主题强度</string>
+    <string name="settings_theme_intensity_desc">调整主题色的鲜艳程度和主题强度</string>
+    <string name="theme_intensity_standard">标准</string>
+    <string name="theme_intensity_standard_desc">平衡的 Material 3 颜色效果，对比度自然</string>
+    <string name="theme_intensity_medium">中等</string>
+    <string name="theme_intensity_medium_desc">更亮眼的颜色，容器纵深感增强</string>
+    <string name="theme_intensity_vivid">鲜艳</string>
+    <string name="theme_intensity_vivid_desc">最为明艳，具有丰富的动态饱和度</string>
+    <string name="mainactivity_preparing">准备中……</string>
 </resources>
