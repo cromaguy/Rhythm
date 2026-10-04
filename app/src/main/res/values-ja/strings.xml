@@ -2595,7 +2595,7 @@
     <string name="api_betterlyrics_desc">単語単位で歌詞が同期されます。(カラオケ風)</string>
     <string name="api_lyrically_desc">単語単位で歌詞が同期されます。（高精度）</string>
     <string name="api_apple_motion_canvas">Apple Music モーションアートワーク</string>
-    <string name="api_apple_motion_canvas_desc">ジャケット画像が動きます</string>
+    <string name="api_apple_motion_canvas_desc">ジャケット画像が動きます - %1$s</string>
     <string name="api_apple_canvas_wifi">Wi-Fi のみ</string>
     <string name="api_apple_canvas_both">Wi-Fi &amp; モバイルデータ</string>
     <string name="api_ytmusic_desc">Deezserから取得されない場合、アーティスト画像とジャケット画像 を YouTube Music から取得します</string>
