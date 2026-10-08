@@ -1,6 +1,6 @@
 [versions]
 agp = "9.4.1"
-kotlin = "2.4.20"
+kotlin = "2.4.21"
 ksp = "2.3.6"
 coreKtx = "1.19.1"
 core = "1.19.1"
@@ -16,7 +16,7 @@ animationCore = "1.12.1"
 roomKtx = "2.8.5"
 appcompat = "1.8.0"
 desugarJdkLibs = "2.1.5"
-material3 = "1.5.0-alpha29"
+material3 = "1.5.0-beta01"
 material = "1.14.0"
 media3 = "1.11.1"
 paletteKtx = "1.0.0"
@@ -103,8 +103,8 @@ androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = 
 androidx-room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "roomKtx" }
 androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "roomKtx" }
 androidx-room-paging = { group = "androidx.room", name = "room-paging", version.ref = "roomKtx" }
-androidx-paging-runtime-ktx = { group = "androidx.paging", name = "paging-runtime-ktx", version = "3.5.1" }
-androidx-paging-compose = { group = "androidx.paging", name = "paging-compose", version = "3.5.1" }
+androidx-paging-runtime-ktx = { group = "androidx.paging", name = "paging-runtime-ktx", version = "3.5.2" }
+androidx-paging-compose = { group = "androidx.paging", name = "paging-compose", version = "3.5.2" }
 androidx-compose-ui-unit = { group = "androidx.compose.ui", name = "ui-unit", version.ref = "uiUnit" }
 androidx-benchmark-macro-junit4 = { group = "androidx.benchmark", name = "benchmark-macro-junit4", version.ref = "macrobenchmark" }
 androidx-benchmark-junit4 = { group = "androidx.benchmark", name = "benchmark-junit4", version.ref = "macrobenchmark" }

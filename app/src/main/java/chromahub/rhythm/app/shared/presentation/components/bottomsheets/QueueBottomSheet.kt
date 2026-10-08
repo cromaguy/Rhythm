@@ -10,7 +10,6 @@ import chromahub.rhythm.app.shared.presentation.components.icons.RhythmIcons
 import chromahub.rhythm.app.shared.presentation.components.icons.MaterialSymbolIcon
 import chromahub.rhythm.app.shared.presentation.components.icons.Icon
 
-import android.util.Log
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
@@ -67,6 +66,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
@@ -116,6 +116,8 @@ import chromahub.rhythm.app.shared.presentation.components.common.RhythmGroupedB
 import chromahub.rhythm.app.util.HapticType
 import chromahub.rhythm.app.util.HapticUtils
 import chromahub.rhythm.app.util.ImageUtils
+import chromahub.rhythm.app.util.QueueEntry
+import chromahub.rhythm.app.util.QueueEntryKeyTracker
 import androidx.compose.ui.res.stringResource
 
 
@@ -143,12 +145,13 @@ private fun groupedQueueItemCorners(index: Int, totalCount: Int): QueueItemCorne
 private enum class QueueSectionLabel { PLAYED, UP_NEXT }
 
 private data class QueueSongRow(
-    val position: Int,
+    val queueIndex: Int,
+    val upcomingIndex: Int,
     val displayNumber: Int,
+    val entryId: Long,
     val song: Song,
     val isPlayed: Boolean,
-    val corners: QueueItemCorners,
-    val stableKey: String
+    val corners: QueueItemCorners
 )
 
 private sealed interface QueueListRow {
@@ -156,45 +159,67 @@ private sealed interface QueueListRow {
     data class Song(val row: QueueSongRow) : QueueListRow
 }
 
-private fun queueEntryKey(queue: List<Song>, position: Int): String {
-    val song = queue[position]
-    var ordinal = 0
-    for (i in 0..position) {
-        if (queue[i].id == song.id) ordinal++
-    }
-    return "${song.id}@$ordinal"
-}
-
 private fun queueListRowKey(row: QueueListRow): String = when (row) {
-    is QueueListRow.Section -> "section_${row.label}"
-    is QueueListRow.Song -> row.row.stableKey
+    is QueueListRow.Section -> "section_${row.label.name}"
+    is QueueListRow.Song -> "entry_${row.row.entryId}"
 }
 
 private fun buildQueueListRows(
-    visibleQueue: List<Pair<Int, Song>>,
-    queue: List<Song>,
+    entries: List<QueueEntry<Song>>,
     currentSongIndex: Int,
     showPlayedSongs: Boolean
 ): List<QueueListRow> = buildList {
-    val played = visibleQueue.filter { it.first < currentSongIndex }
-    val upcoming = visibleQueue.filter { it.first > currentSongIndex }
+    if (entries.isEmpty()) return@buildList
 
-    if (showPlayedSongs && played.isNotEmpty()) {
+    val safeCurrentIndex = currentSongIndex.coerceIn(0, entries.lastIndex)
+    val playedEntries = if (safeCurrentIndex > 0) {
+        entries.subList(0, safeCurrentIndex)
+    } else {
+        emptyList()
+    }
+
+    val upcomingEntries = if (safeCurrentIndex + 1 < entries.size) {
+        entries.subList(safeCurrentIndex + 1, entries.size)
+    } else {
+        emptyList()
+    }
+
+    if (showPlayedSongs && playedEntries.isNotEmpty()) {
         add(QueueListRow.Section(QueueSectionLabel.PLAYED))
-        played.forEachIndexed { index, (position, song) ->
+        playedEntries.forEachIndexed { index, entry ->
             add(
                 QueueListRow.Song(
-                    QueueSongRow(position, 0, song, true, groupedQueueItemCorners(index, played.size), queueEntryKey(queue, position))
+                    QueueSongRow(
+                        queueIndex = index,
+                        upcomingIndex = -1,
+                        displayNumber = 0,
+                        entryId = entry.entryId,
+                        song = entry.item,
+                        isPlayed = true,
+                        corners = groupedQueueItemCorners(index, playedEntries.size)
+                    )
                 )
             )
         }
     }
-    if (upcoming.isNotEmpty()) {
-        if (played.isNotEmpty()) add(QueueListRow.Section(QueueSectionLabel.UP_NEXT))
-        upcoming.forEachIndexed { index, (position, song) ->
+
+    if (upcomingEntries.isNotEmpty()) {
+        if (showPlayedSongs && playedEntries.isNotEmpty()) {
+            add(QueueListRow.Section(QueueSectionLabel.UP_NEXT))
+        }
+        val upcomingBaseIndex = safeCurrentIndex + 1
+        upcomingEntries.forEachIndexed { index, entry ->
             add(
                 QueueListRow.Song(
-                    QueueSongRow(position, index + 1, song, false, groupedQueueItemCorners(index, upcoming.size), queueEntryKey(queue, position))
+                    QueueSongRow(
+                        queueIndex = upcomingBaseIndex + index,
+                        upcomingIndex = index,
+                        displayNumber = index + 1,
+                        entryId = entry.entryId,
+                        song = entry.item,
+                        isPlayed = false,
+                        corners = groupedQueueItemCorners(index, upcomingEntries.size)
+                    )
                 )
             )
         }
@@ -249,34 +274,36 @@ fun QueueBottomSheet(
         }
     }
 
-    // Use the queue directly for display, create mutable version only for reordering operations
-    val displayQueue = queue
-    val mutableQueue = remember { mutableStateListOf<Song>() }
-    
-    // Update mutableQueue when displayQueue changes
-    LaunchedEffect(displayQueue) {
-        mutableQueue.clear()
-        mutableQueue.addAll(displayQueue)
-        Log.d("QueueBottomSheet", "Updated displayQueue with ${displayQueue.size} songs")
-        Log.d("QueueBottomSheet", "First 5 songs in displayQueue:")
-        displayQueue.take(5).forEachIndexed { idx, song ->
-            Log.d("QueueBottomSheet", "  $idx: ${song.title} by ${song.artist}")
+    val keyTracker = remember { QueueEntryKeyTracker<Song> { it.id } }
+    var localQueueEntries by remember { mutableStateOf(keyTracker.sync(queue)) }
+    var isActivelyDragging by remember { mutableStateOf(false) }
+    var dragSnapshotEntries by remember { mutableStateOf<List<QueueEntry<Song>>?>(null) }
+    var dragStartQueueIndex by remember { mutableIntStateOf(-1) }
+    var dragStartEntryId by remember { mutableLongStateOf(-1L) }
+
+    // Sync from incoming queue when not dragging
+    LaunchedEffect(queue) {
+        if (!isActivelyDragging) {
+            localQueueEntries = keyTracker.sync(queue)
         }
     }
 
-    fun removeQueueSong(song: Song) {
-        val position = mutableQueue.indexOfFirst { it.id == song.id }
-        if (position < 0 || position >= mutableQueue.size) return
-        mutableQueue.removeAt(position)
+    fun removeQueueSong(entryId: Long) {
+        val position = localQueueEntries.indexOfFirst { it.entryId == entryId }
+        if (position < 0 || position >= localQueueEntries.size) return
+        val updated = localQueueEntries.toMutableList()
+        updated.removeAt(position)
+        keyTracker.updateEntries(updated)
+        localQueueEntries = updated
         onRemoveSongAtIndex(position)
     }
 
     LaunchedEffect(clearRequested) {
         if (clearRequested) {
-            for (i in displayQueue.indices) {
-                removingQueueKeys[queueEntryKey(displayQueue, i)] = true
+            for (entry in localQueueEntries) {
+                removingQueueKeys["entry_${entry.entryId}"] = true
             }
-            if (displayQueue.isNotEmpty()) {
+            if (localQueueEntries.isNotEmpty()) {
                 delay(280)
             }
             removingQueueKeys.clear()
@@ -310,11 +337,11 @@ fun QueueBottomSheet(
         ) {
             // Header with title and actions
             QueueHeader(
-                queueSize = displayQueue.size,
+                queueSize = localQueueEntries.size,
                 isShuffleEnabled = isShuffleEnabled,
                 repeatMode = repeatMode,
                 onAddSongsClick = onAddSongsClick,
-                onClearQueue = if (displayQueue.isNotEmpty()) {
+                onClearQueue = if (localQueueEntries.isNotEmpty()) {
                     {
                         queueEpoch++
                         clearRequested = true
@@ -327,7 +354,7 @@ fun QueueBottomSheet(
             Spacer(modifier = Modifier.height(16.dp))
             
             // Queue settings info and warnings
-            if (displayQueue.isNotEmpty() && hidePlayedQueueSongs) {
+            if (localQueueEntries.isNotEmpty() && hidePlayedQueueSongs) {
                 Column(
                     modifier = Modifier.graphicsLayer { alpha = clearFadeAlpha }
                 ) {
@@ -335,13 +362,13 @@ fun QueueBottomSheet(
                         isShuffleEnabled = isShuffleEnabled,
                         repeatMode = repeatMode,
                         hidePlayedSongs = hidePlayedQueueSongs,
-                        queueSize = displayQueue.size
+                        queueSize = localQueueEntries.size
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                 }
             }
             
-            if (displayQueue.isEmpty()) {
+            if (localQueueEntries.isEmpty()) {
                 EmptyQueueContent()
             } else {
                 // Now Playing section - show current song separately
@@ -353,33 +380,33 @@ fun QueueBottomSheet(
                     )
                 }
                 
-                val currentSongIndexInQueue = remember(currentSong, displayQueue, currentQueueIndex) {
-                    if (currentSong != null && currentQueueIndex in displayQueue.indices && displayQueue[currentQueueIndex].id == currentSong.id) {
+                val currentSongIndexInQueue = remember(currentSong, localQueueEntries, currentQueueIndex) {
+                    if (currentSong != null && currentQueueIndex in localQueueEntries.indices && localQueueEntries[currentQueueIndex].item.id == currentSong.id) {
                         currentQueueIndex
                     } else if (currentSong != null) {
-                        displayQueue.indexOfFirst { it.id == currentSong.id }.takeIf { it >= 0 } ?: currentQueueIndex
+                        localQueueEntries.indexOfFirst { it.item.id == currentSong.id }.takeIf { it >= 0 } ?: currentQueueIndex
                     } else {
                         currentQueueIndex
                     }
-                }.coerceIn(0, displayQueue.lastIndex.coerceAtLeast(0))
-                val shouldHidePlayedSongs = !showAlreadyPlayedSongsInQueue
-                // Build visible queue according to current playback behavior.
-                val visibleQueue = displayQueue.mapIndexedNotNull { index, song ->
-                    if (shouldHidePlayedSongs && index < currentSongIndexInQueue) return@mapIndexedNotNull null
-                    if (index == currentSongIndexInQueue) null else index to song
+                }.coerceIn(0, localQueueEntries.lastIndex.coerceAtLeast(0))
+
+                val queueListRows = remember(localQueueEntries, currentSongIndexInQueue, showAlreadyPlayedSongsInQueue) {
+                    buildQueueListRows(
+                        entries = localQueueEntries,
+                        currentSongIndex = currentSongIndexInQueue,
+                        showPlayedSongs = showAlreadyPlayedSongsInQueue
+                    )
                 }
 
-                val queueListRows = buildQueueListRows(
-                    visibleQueue,
-                    displayQueue,
-                    currentSongIndexInQueue,
-                    showAlreadyPlayedSongsInQueue
-                )
                 val hasPlayedSection = queueListRows.any {
                     it is QueueListRow.Section && it.label == QueueSectionLabel.PLAYED
                 }
 
-                if (visibleQueue.isNotEmpty()) {
+                val hasUpcomingSongs = queueListRows.any {
+                    it is QueueListRow.Song && !it.row.isPlayed
+                }
+
+                if (hasUpcomingSongs || hasPlayedSection) {
                     if (!hasPlayedSection) {
                         Text(
                             text = context.getString(R.string.bottomsheet_up_next),
@@ -399,7 +426,7 @@ fun QueueBottomSheet(
                                 delay(10)
                             }
                             val firstUpcomingIndex = queueListRows.indexOfFirst {
-                                it is QueueListRow.Song && it.row.position > currentSongIndexInQueue
+                                it is QueueListRow.Song && it.row.queueIndex > currentSongIndexInQueue
                             }
                             if (firstUpcomingIndex > 0) {
                                 lazyListState.scrollToItem(firstUpcomingIndex - 1)
@@ -442,7 +469,7 @@ fun QueueBottomSheet(
                                         enableSwipeToRemove = gestureQueueSwipeToRemove,
                                         onSongClickAtIndex = onSongClickAtIndex,
                                         onRequestRemove = { songRow, itemKey ->
-                                            dismissQueueRow(itemKey) { removeQueueSong(songRow.song) }
+                                            dismissQueueRow(itemKey) { removeQueueSong(songRow.entryId) }
                                         },
                                         modifier = Modifier.animateItem(
                                             fadeInSpec = tween(0),
@@ -462,9 +489,58 @@ fun QueueBottomSheet(
                                 modifier = Modifier.fillMaxWidth(),
                                 lazyListState = lazyListState,
                                 onMove = { fromIndex, toIndex ->
-                                    val fromRow = (queueListRows[fromIndex] as QueueListRow.Song).row
-                                    val toRow = (queueListRows[toIndex] as QueueListRow.Song).row
-                                    onMoveQueueItem(fromRow.position, toRow.position)
+                                    val fromRow = (queueListRows.getOrNull(fromIndex) as? QueueListRow.Song)?.row ?: return@DragDropLazyColumn
+                                    val toRow = (queueListRows.getOrNull(toIndex) as? QueueListRow.Song)?.row ?: return@DragDropLazyColumn
+
+                                    // Guard: cannot reorder played songs, nor swap across boundary
+                                    if (fromRow.isPlayed || toRow.isPlayed) return@DragDropLazyColumn
+                                    if (fromRow.queueIndex == toRow.queueIndex) return@DragDropLazyColumn
+                                    if (fromRow.queueIndex !in localQueueEntries.indices || toRow.queueIndex !in localQueueEntries.indices) return@DragDropLazyColumn
+
+                                    val updated = localQueueEntries.toMutableList()
+                                    val moved = updated.removeAt(fromRow.queueIndex)
+                                    updated.add(toRow.queueIndex, moved)
+                                    keyTracker.updateEntries(updated)
+                                    localQueueEntries = updated
+                                },
+                                onDragStart = { listIndex ->
+                                    val songRow = (queueListRows.getOrNull(listIndex) as? QueueListRow.Song)?.row
+                                    if (songRow != null && !songRow.isPlayed) {
+                                        isActivelyDragging = true
+                                        dragStartQueueIndex = songRow.queueIndex
+                                        dragStartEntryId = songRow.entryId
+                                        dragSnapshotEntries = localQueueEntries.toList()
+                                    }
+                                },
+                                onDrop = { fromListIndex, toListIndex ->
+                                    isActivelyDragging = false
+                                    val startIdx = dragStartQueueIndex
+                                    val entryId = dragStartEntryId
+                                    dragStartQueueIndex = -1
+                                    dragStartEntryId = -1L
+                                    dragSnapshotEntries = null
+
+                                    val targetRow = (queueListRows.getOrNull(toListIndex) as? QueueListRow.Song)?.row
+                                    val finalIdx = if (entryId != -1L) {
+                                        localQueueEntries.indexOfFirst { it.entryId == entryId }.takeIf { it >= 0 }
+                                            ?: (targetRow?.queueIndex ?: -1)
+                                    } else {
+                                        targetRow?.queueIndex ?: -1
+                                    }
+
+                                    if (startIdx >= 0 && finalIdx >= 0 && startIdx != finalIdx) {
+                                        onMoveQueueItem(startIdx, finalIdx)
+                                    }
+                                },
+                                onDragCancel = {
+                                    isActivelyDragging = false
+                                    dragStartQueueIndex = -1
+                                    dragStartEntryId = -1L
+                                    dragSnapshotEntries?.let { snapshot ->
+                                        keyTracker.updateEntries(snapshot)
+                                        localQueueEntries = snapshot
+                                    }
+                                    dragSnapshotEntries = null
                                 },
                                 itemKey = { row -> queueListRowKey(row) },
                                 isReorderableItem = { row ->
@@ -486,7 +562,7 @@ fun QueueBottomSheet(
                                     enableSwipeToRemove = gestureQueueSwipeToRemove,
                                     onSongClickAtIndex = onSongClickAtIndex,
                                     onRequestRemove = { songRow, itemKey ->
-                                        dismissQueueRow(itemKey) { removeQueueSong(songRow.song) }
+                                        dismissQueueRow(itemKey) { removeQueueSong(songRow.entryId) }
                                     }
                                 )
                             }
@@ -1049,8 +1125,8 @@ private fun DismissibleQueueItem(
 
         SwipeToDismissBox(
             state = dismissState,
-            enableDismissFromStartToEnd = enableSwipeToRemove,
-            enableDismissFromEndToStart = enableSwipeToRemove,
+            enableDismissFromStartToEnd = enableSwipeToRemove && !isDragging,
+            enableDismissFromEndToStart = enableSwipeToRemove && !isDragging,
             onDismiss = {
                 HapticUtils.performHapticFeedback(context, haptic, HapticType.HEAVY)
                 onRequestRemove()
@@ -1123,7 +1199,7 @@ private fun QueueListRowContent(
             val itemKey = queueListRowKey(row)
             DismissibleQueueItem(
                 song = songRow.song,
-                queuePosition = songRow.position,
+                queuePosition = songRow.queueIndex,
                 displayNumber = songRow.displayNumber,
                 isPlayed = songRow.isPlayed,
                 isDragging = isDragging,

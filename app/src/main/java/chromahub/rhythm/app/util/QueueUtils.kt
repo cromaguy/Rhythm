@@ -160,3 +160,44 @@ object QueueUtils {
     ): List<Song> = restoreQueueOrderOnShuffleDisable(currentSongs, currentIndex, originalOrder) { it.id }
 }
 
+/**
+ * Represents an entry in a playback queue paired with a stable, persistent entryId
+ * that survives reordering, removals, and duplicate items.
+ */
+data class QueueEntry<T>(
+    val entryId: Long,
+    val item: T
+)
+
+/**
+ * Tracks and preserves stable entry IDs for queue items across updates and reorders,
+ * even when identical items / duplicate song IDs are present.
+ */
+class QueueEntryKeyTracker<T>(private val idSelector: (T) -> String) {
+    private var nextEntryId = 1L
+    private var currentEntries = listOf<QueueEntry<T>>()
+
+    fun sync(items: List<T>): List<QueueEntry<T>> {
+        val pool = currentEntries.toMutableList()
+        val result = ArrayList<QueueEntry<T>>(items.size)
+        for (item in items) {
+            val key = idSelector(item)
+            val idx = pool.indexOfFirst { idSelector(it.item) == key }
+            if (idx >= 0) {
+                val matched = pool.removeAt(idx)
+                result.add(matched.copy(item = item))
+            } else {
+                result.add(QueueEntry(entryId = nextEntryId++, item = item))
+            }
+        }
+        currentEntries = result
+        return result
+    }
+
+    fun updateEntries(entries: List<QueueEntry<T>>) {
+        currentEntries = entries
+    }
+
+    fun currentEntries(): List<QueueEntry<T>> = currentEntries
+}
+

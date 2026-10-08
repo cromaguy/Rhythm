@@ -42,6 +42,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import chromahub.rhythm.app.util.HapticUtils
 import chromahub.rhythm.app.util.HapticType
+import chromahub.rhythm.app.util.DragDropUtils
+import chromahub.rhythm.app.util.ReorderableItemBounds
 import kotlin.math.abs
 import kotlinx.coroutines.launch
 
@@ -59,6 +61,9 @@ fun <T> DragDropLazyColumn(
     animateItemPlacement: Boolean = false,
     dragTopInset: Dp = 0.dp,
     dragBottomInset: Dp = 0.dp,
+    onDragStart: ((startIndex: Int) -> Unit)? = null,
+    onDrop: ((fromIndex: Int, toIndex: Int) -> Unit)? = null,
+    onDragCancel: (() -> Unit)? = null,
     itemContent: @Composable (item: T, isDragging: Boolean, index: Int) -> Unit
 ) {
     val edgeThresholdPx = 84f
@@ -73,10 +78,14 @@ fun <T> DragDropLazyColumn(
     val currentItems = rememberUpdatedState(items)
     val currentOnMove = rememberUpdatedState(onMove)
     val currentReorderable = rememberUpdatedState(isReorderableItem)
+    val currentOnDragStart = rememberUpdatedState(onDragStart)
+    val currentOnDrop = rememberUpdatedState(onDrop)
+    val currentOnDragCancel = rememberUpdatedState(onDragCancel)
 
     var isDragging by remember { mutableStateOf(false) }
     var isDropping by remember { mutableStateOf(false) }
     var draggedIndex by remember { mutableIntStateOf(-1) }
+    var initialDragIndex by remember { mutableIntStateOf(-1) }
     var draggedKey by remember { mutableStateOf<Any?>(null) }
     var dragRowHeightPx by remember { mutableFloatStateOf(0f) }
     var grabOffsetPx by remember { mutableFloatStateOf(0f) }
@@ -93,10 +102,16 @@ fun <T> DragDropLazyColumn(
         return index in list.indices && currentReorderable.value(list[index])
     }
 
-    fun visibleInfoAtY(y: Float): LazyListItemInfo? =
-        lazyListState.layoutInfo.visibleItemsInfo.firstOrNull { info ->
-            y >= info.offset && y <= info.offset + info.size
+    fun visibleInfoAtY(y: Float): LazyListItemInfo? {
+        val visible = lazyListState.layoutInfo.visibleItemsInfo
+        if (visible.isEmpty()) return null
+        val direct = visible.firstOrNull { y >= it.offset && y <= it.offset + it.size }
+        if (direct != null) return direct
+        return visible.minByOrNull { info ->
+            val mid = info.offset + info.size / 2f
+            abs(y - mid)
         }
+    }
 
     fun visibleInfoOfIndex(index: Int): LazyListItemInfo? =
         lazyListState.layoutInfo.visibleItemsInfo.firstOrNull { it.index == index }
@@ -119,38 +134,36 @@ fun <T> DragDropLazyColumn(
 
     fun isDragLayoutSynced(): Boolean {
         val info = lazyListState.layoutInfo.visibleItemsInfo.firstOrNull { it.key == draggedKey }
-        return info == null || info.index == draggedIndex
-    }
-
-    fun clampEdges(
-        visible: List<LazyListItemInfo>,
-        range: IntRange,
-        containerBottomLimit: Float
-    ): Pair<Float, Float> {
-        val top = visible.minOfOrNull { it.offset }
-            ?.let { maxOf(dragTopInsetPx, it.toFloat()) }
-            ?: dragTopInsetPx
-        val bottom = when {
-            visible.isEmpty() -> containerBottomLimit
-            visible.maxOf { it.index } >= range.last -> {
-                val lastBottom = visible.maxOf { it.offset + it.size }
-                (lastBottom - dragRowHeightPx).coerceIn(dragTopInsetPx, containerBottomLimit)
-            }
-            else -> containerBottomLimit
+        if (info != null) {
+            return info.index == draggedIndex
         }
-        return top to bottom
+        val visible = lazyListState.layoutInfo.visibleItemsInfo
+        if (visible.isEmpty()) return true
+        val minIdx = visible.minOf { it.index }
+        val maxIdx = visible.maxOf { it.index }
+        return draggedIndex < minIdx || draggedIndex > maxIdx
     }
 
-    fun finishDrag() {
+    fun finishDrag(cancelled: Boolean = false) {
+        val from = initialDragIndex
+        val to = draggedIndex
+        val moved = reorderMoved
         isDragging = false
         isDropping = false
         draggedIndex = -1
         draggedKey = null
+        initialDragIndex = -1
         dragCardTopPx = 0f
         draggedSlotTopPx = 0f
-        if (reorderMoved) {
+        if (cancelled) {
+            reorderMoved = false
+            currentOnDragCancel.value?.invoke()
+        } else if (moved) {
             HapticUtils.performHapticFeedback(context, haptic, HapticType.MEDIUM)
             reorderMoved = false
+            if (from != -1 && to != -1 && from != to) {
+                currentOnDrop.value?.invoke(from, to)
+            }
         }
     }
 
@@ -158,23 +171,41 @@ fun <T> DragDropLazyColumn(
         val range = reorderableRange() ?: return
         if (draggedIndex !in range) return
 
-        val layout = lazyListState.layoutInfo
-        val visible = layout.visibleItemsInfo.filter { isReorderableAt(it.index) }
-        val topVisibleIndex = visible.minOfOrNull { it.index }
-        val bottomVisibleIndex = visible.maxOfOrNull { it.index }
-        val containerBottomLimit =
-            (boxHeightPx - dragBottomInsetPx - dragRowHeightPx).coerceAtLeast(0f)
-
-        val (topEdge, bottomEdge) = clampEdges(visible, range, containerBottomLimit)
+        val topLimit = dragTopInsetPx
+        val bottomLimit = (boxHeightPx - dragBottomInsetPx - dragRowHeightPx).coerceAtLeast(topLimit)
         val desiredTop = lastPointerY - grabOffsetPx
+        val cardTop = desiredTop.coerceIn(topLimit, bottomLimit)
+        dragCardTopPx = cardTop
 
-        val pushUp = (topEdge - desiredTop).coerceAtLeast(0f)
-        val pushDown = (desiredTop - bottomEdge).coerceAtLeast(0f)
-        val canScrollUp =
-            topVisibleIndex != null && topVisibleIndex > range.first && draggedIndex > range.first
-        val canScrollDown =
-            bottomVisibleIndex != null && bottomVisibleIndex < range.last && draggedIndex < range.last
-        // Scroll stays near one row per hop so hops stay calm and the held row stays under the thumb.
+        if (lazyListState.firstVisibleItemIndex > range.first && (draggedIndex == range.first || cardTop <= topLimit + edgeThresholdPx)) {
+            lazyListState.requestScrollToItem(range.first, 0)
+            lazyListState.scrollToItem(range.first, 0)
+        }
+
+        val pushUp = (topLimit + edgeThresholdPx - desiredTop).coerceAtLeast(0f)
+        val pushDown = (desiredTop - (bottomLimit - edgeThresholdPx)).coerceAtLeast(0f)
+
+        val layout = lazyListState.layoutInfo
+        val visibleReorderable = layout.visibleItemsInfo.filter { isReorderableAt(it.index) }
+        val firstReorderable = visibleReorderable.firstOrNull { it.index == range.first }
+        val lastReorderable = visibleReorderable.firstOrNull { it.index == range.last }
+
+        val canScrollUp = DragDropUtils.canScrollUp(
+            draggedIndex = draggedIndex,
+            rangeFirst = range.first,
+            canScrollBackward = lazyListState.canScrollBackward,
+            firstItemOffset = firstReorderable?.offset?.toFloat(),
+            topLimit = topLimit
+        )
+
+        val canScrollDown = DragDropUtils.canScrollDown(
+            draggedIndex = draggedIndex,
+            rangeLast = range.last,
+            canScrollForward = lazyListState.canScrollForward,
+            lastItemBottom = lastReorderable?.let { (it.offset + it.size).toFloat() },
+            bottomLimit = boxHeightPx - dragBottomInsetPx
+        )
+
         val maxScrollPerFrame = dragRowHeightPx * 0.11f
         val scrollSpeed = when {
             pushUp > 0f && canScrollUp ->
@@ -188,56 +219,64 @@ fun <T> DragDropLazyColumn(
 
         if (scrollSpeed != 0f) {
             lazyListState.scrollBy(scrollSpeed)
+            autoscrollSwapDistance += abs(scrollSpeed)
         }
 
-        val freshVisible = lazyListState.layoutInfo.visibleItemsInfo.filter { isReorderableAt(it.index) }
-        val (finalTopEdge, finalBottomEdge) =
-            if (scrollSpeed != 0f) clampEdges(freshVisible, range, containerBottomLimit)
-            else topEdge to bottomEdge
-        val cardTop = desiredTop.coerceIn(finalTopEdge, finalBottomEdge)
-        dragCardTopPx = cardTop
-        if (scrollSpeed != 0f) autoscrollSwapDistance += abs(scrollSpeed)
+        val freshLayout = lazyListState.layoutInfo
+        val freshVisibleReorderable = freshLayout.visibleItemsInfo.filter { isReorderableAt(it.index) }
+        val draggedInfo = freshLayout.visibleItemsInfo.firstOrNull { it.key == draggedKey }
+        if (draggedInfo != null) {
+            draggedSlotTopPx = draggedInfo.offset.toFloat()
+        }
+
+        val cardCenterY = cardTop + dragRowHeightPx / 2f
+        val firstReorderableItem = freshVisibleReorderable.firstOrNull { it.index == range.first }
+        val firstItemBottom = firstReorderableItem?.let { (it.offset + it.size).toFloat() } ?: Float.MAX_VALUE
+
+        val targetIndex = if (scrollSpeed != 0f) {
+            DragDropUtils.computeAutoscrollHop(
+                scrollSpeed = scrollSpeed,
+                draggedIndex = draggedIndex,
+                range = range,
+                autoscrollDistance = autoscrollSwapDistance,
+                rowHeight = dragRowHeightPx,
+                paceFraction = 0.85f
+            )
+        } else if (cardTop <= topLimit + 16f * density.density || (draggedIndex == range.first && cardCenterY <= firstItemBottom)) {
+            range.first
+        } else if (freshVisibleReorderable.isNotEmpty()) {
+            val bounds = freshVisibleReorderable.map {
+                ReorderableItemBounds(it.index, it.offset.toFloat(), it.size.toFloat())
+            }
+            DragDropUtils.computeManualTargetIndex(
+                cardCenterY = cardCenterY,
+                draggedIndex = draggedIndex,
+                range = range,
+                visibleReorderable = bounds,
+                hysteresisBonus = dragRowHeightPx * 0.22f
+            )
+        } else {
+            draggedIndex
+        }
 
         if (isDragLayoutSynced()) {
-            val draggedInfo = visibleInfoOfKey(draggedKey)
-            if (draggedInfo != null) {
-                draggedSlotTopPx = draggedInfo.offset.toFloat()
-                val targetIndex = if (scrollSpeed != 0f) {
-                    // Hop in the scroll direction, paced by distance, only while the row is in view at the edge.
-                    val paced = autoscrollSwapDistance > dragRowHeightPx * 0.9f
-                    val inView = if (scrollSpeed < 0f) {
-                        draggedInfo.offset > dragRowHeightPx * 0.1f
-                    } else {
-                        draggedInfo.offset < boxHeightPx - dragRowHeightPx * 1.1f
-                    }
-                    if (paced && inView) {
-                        if (scrollSpeed < 0f) draggedIndex - 1 else draggedIndex + 1
-                    } else {
-                        draggedIndex
-                    }
-                } else {
-                    // Swap with the row under the card's center so the held row lands under the card.
-                    val hovered = visibleInfoAtY(cardTop + dragRowHeightPx / 2f)
-                    if (hovered != null && hovered.index != draggedIndex &&
-                        isReorderableAt(hovered.index)
-                    ) {
-                        hovered.index
-                    } else {
-                        draggedIndex
-                    }
-                }
-                // Manual hops at most once per 100ms to keep fast swipes calm.
-                val hopReady = scrollSpeed != 0f ||
-                    SystemClock.elapsedRealtime() - lastHopTimeMs >= 100L
-                if (targetIndex != draggedIndex && targetIndex in range &&
-                    isReorderableAt(targetIndex) && hopReady
-                ) {
-                    reorderMoved = true
-                    HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
-                    autoscrollSwapDistance = 0f
-                    lastHopTimeMs = SystemClock.elapsedRealtime()
-                    currentOnMove.value(draggedIndex, targetIndex)
-                    draggedIndex = targetIndex
+            val hopReady = scrollSpeed != 0f ||
+                SystemClock.elapsedRealtime() - lastHopTimeMs >= 40L
+            if (targetIndex != draggedIndex && targetIndex in range &&
+                isReorderableAt(targetIndex) && hopReady
+            ) {
+                val wasAtTop = lazyListState.firstVisibleItemIndex <= range.first &&
+                    lazyListState.firstVisibleItemScrollOffset == 0
+                reorderMoved = true
+                HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
+                autoscrollSwapDistance = 0f
+                lastHopTimeMs = SystemClock.elapsedRealtime()
+                currentOnMove.value(draggedIndex, targetIndex)
+                draggedIndex = targetIndex
+
+                if (targetIndex == range.first || wasAtTop) {
+                    lazyListState.requestScrollToItem(range.first, 0)
+                    lazyListState.scrollToItem(range.first, 0)
                 }
             }
         }
@@ -251,10 +290,15 @@ fun <T> DragDropLazyColumn(
         }
     }
 
-    fun settleDrop() {
+    fun settleDrop(cancelled: Boolean = false) {
         if (!isDragging || isDropping) return
         isDropping = true
         scope.launch {
+            val range = reorderableRange()
+            if (range != null && draggedIndex == range.first && lazyListState.firstVisibleItemIndex > range.first) {
+                lazyListState.requestScrollToItem(range.first, 0)
+                lazyListState.scrollToItem(range.first, 0)
+            }
             for (i in 0 until 10) {
                 withFrameNanos { }
                 if (!lazyListState.isScrollInProgress && isDragLayoutSynced()) break
@@ -271,7 +315,7 @@ fun <T> DragDropLazyColumn(
                     if (fraction >= 1f) break
                 }
             }
-            finishDrag()
+            finishDrag(cancelled)
         }
     }
 
@@ -285,6 +329,7 @@ fun <T> DragDropLazyColumn(
                         val info = visibleInfoAtY(offset.y) ?: return@detectDragGesturesAfterLongPress
                         if (!isReorderableAt(info.index)) return@detectDragGesturesAfterLongPress
                         draggedIndex = info.index
+                        initialDragIndex = info.index
                         draggedKey = itemKey(currentItems.value[info.index])
                         dragRowHeightPx = info.size.toFloat()
                         grabOffsetPx = (offset.y - info.offset).coerceIn(0f, info.size.toFloat())
@@ -295,6 +340,7 @@ fun <T> DragDropLazyColumn(
                         draggedSlotTopPx = info.offset.toFloat()
                         autoscrollSwapDistance = 0f
                         isDragging = true
+                        currentOnDragStart.value?.invoke(info.index)
                     },
                     onDrag = { change, _ ->
                         if (isDragging && !isDropping) {
@@ -303,10 +349,10 @@ fun <T> DragDropLazyColumn(
                         }
                     },
                     onDragEnd = {
-                        settleDrop()
+                        settleDrop(cancelled = false)
                     },
                     onDragCancel = {
-                        settleDrop()
+                        settleDrop(cancelled = true)
                     }
                 )
             }
@@ -345,20 +391,29 @@ fun <T> DragDropLazyColumn(
                                 .zIndex(if (isCurrentlyDragged) 1f else 0f)
                                 .then(placementModifier)
                                 .graphicsLayer {
-                                    // Draw-time translation against the live slot so a reorder can
-                                    // never leave a stale offset; falls back to the last slot seen.
-                                    if (isCurrentlyDragged) {
-                                        val slotTop = lazyListState.layoutInfo.visibleItemsInfo
-                                            .firstOrNull { it.key == draggedKey }?.offset?.toFloat()
-                                        translationY = dragCardTopPx - (slotTop ?: draggedSlotTopPx)
-                                    } else {
-                                        translationY = 0f
-                                    }
+                                    alpha = if (isCurrentlyDragged) 0f else 1f
                                 }
                         ) {
-                            itemContent(item, isCurrentlyDragged, index)
+                            itemContent(item, false, index)
                         }
                     }
+                }
+            }
+        }
+
+        if (isDragging && draggedKey != null) {
+            val draggedItem = currentItems.value.firstOrNull { itemKey(it) == draggedKey }
+                ?: currentItems.value.getOrNull(draggedIndex)
+            if (draggedItem != null) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .zIndex(100f)
+                        .graphicsLayer {
+                            translationY = dragCardTopPx
+                        }
+                ) {
+                    itemContent(draggedItem, true, draggedIndex)
                 }
             }
         }
