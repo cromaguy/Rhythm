@@ -41,7 +41,8 @@ import chromahub.rhythm.app.infrastructure.provider.RhythmAlbumArtProvider
 class MediaScanEngine(
     private val context: Context,
     private val database: RhythmDatabase,
-    private val appSettings: AppSettings
+    private val appSettings: AppSettings,
+    val dateAddedResolver: StableDateAddedResolver = StableDateAddedResolver(context)
 ) {
     companion object {
         private const val TAG = "MediaScanEngine"
@@ -72,9 +73,11 @@ class MediaScanEngine(
         Log.d(TAG, "Starting media scan (forceRefresh=$forceRefresh, minimumDuration=${minimumDuration}ms)")
         _scanProgress.value = ScanProgress(0, 0, ScanPhase.Songs, 0)
 
-        // Query existing DB entries into an O(1) Map by ID
+        val allExistingSongs = database.songDao().getAllSongs()
+        dateAddedResolver.prepareForScan(allExistingSongs)
+
         val existingDbSongs = if (!forceRefresh) {
-            database.songDao().getAllSongs().associateBy { it.id }
+            allExistingSongs.associateBy { it.id }
         } else {
             emptyMap()
         }
@@ -166,8 +169,8 @@ class MediaScanEngine(
                     if (seenIds.contains(id) || blacklistedSongs.contains(id)) continue
 
                     val path = if (colData >= 0) cursor.getString(colData) else null
-                    if (path != null) {
-                        val normPath = path.lowercase()
+                    val normPath = path?.let { StableDateAddedResolver.normalizePath(it) }
+                    if (path != null && normPath != null) {
                         if (seenPaths.contains(normPath)) continue
 
                         if (allowedFormats != null) {
@@ -201,7 +204,7 @@ class MediaScanEngine(
                     val losslessArtwork = appSettings.isLosslessArtworkActive.value
 
                     // Differential check: reuse existing DB record if unmodified and timestamps are in ms
-                    val existing = existingDbSongs[id]
+                    val existing = existingDbSongs[id] ?: (if (!forceRefresh && !normPath.isNullOrBlank()) dateAddedResolver.findExistingByPath(normPath) else null)
 
                     if (existing != null && existing.dateModified == dateModified && existing.dateAdded >= 100_000_000_000L) {
                         val defaultArt = Uri.withAppendedPath(
@@ -218,7 +221,19 @@ class MediaScanEngine(
                         } else {
                             defaultArt
                         }
-                        scannedSongs.add(existing.copy(artworkUri = existingArt))
+                        dateAddedResolver.claimExistingSong(existing.id)
+                        if (normPath != null) {
+                            dateAddedResolver.recordResolvedDate(
+                                normPath = normPath,
+                                normTitle = StableDateAddedResolver.normalizeMetadata(existing.title),
+                                normArtist = StableDateAddedResolver.normalizeMetadata(existing.artist),
+                                normAlbum = StableDateAddedResolver.normalizeMetadata(existing.album),
+                                durSec = existing.duration / 1000L,
+                                dateAddedMs = existing.dateAdded
+                            )
+                        }
+                        val contentUri = Uri.withAppendedPath(collection, id).toString()
+                        scannedSongs.add(existing.copy(id = id, uri = contentUri, artworkUri = existingArt))
                         seenIds.add(id)
                     } else {
                         val rawTitle = cursor.getString(colTitle) ?: "Unknown Title"
@@ -230,14 +245,7 @@ class MediaScanEngine(
                         val discFromStore = if (colDiscNumber >= 0) cursor.getInt(colDiscNumber) else 0
                         val rawYear = cursor.getInt(colYear)
                         val rawDateAdded = cursor.getLong(colDateAdded)
-                        val dateAdded = if (rawDateAdded in 1..99_999_999_999L) {
-                            rawDateAdded * 1000L
-                        } else if (rawDateAdded > 0L) {
-                            rawDateAdded
-                        } else {
-                            System.currentTimeMillis()
-                        }
-                        val finalDateModified = dateModified.takeIf { it > 0L } ?: dateAdded
+                        val observedDateAdded = StableDateAddedResolver.normalizeTimestamp(rawDateAdded)
                         val rawGenre = if (colGenre >= 0) cursor.getString(colGenre) else null
                         val rawAlbumArtist = if (colAlbumArtist >= 0) cursor.getString(colAlbumArtist) else null
 
@@ -340,6 +348,17 @@ class MediaScanEngine(
                             defaultArtworkUri
                         }
 
+                        val dateAdded = dateAddedResolver.resolveDateAdded(
+                            songId = id,
+                            filePath = path,
+                            title = title,
+                            artist = artist,
+                            album = album,
+                            durationMs = duration,
+                            observedDateAddedMs = observedDateAdded
+                        )
+                        val finalDateModified = dateModified.takeIf { it > 0L } ?: dateAdded
+
                         val entity = SongEntity(
                             id = id,
                             title = title,
@@ -375,6 +394,8 @@ class MediaScanEngine(
                 }
             }
 
+            dateAddedResolver.flush()
+
             // Sync with Room DB atomically
             _scanProgress.value = ScanProgress(scannedSongs.size, scannedSongs.size, ScanPhase.SavingDb, 0)
             database.withTransaction {
@@ -383,8 +404,8 @@ class MediaScanEngine(
                     database.artistDao().deleteAll()
                     database.songArtistDao().deleteAll()
                 } else {
-                    val staleSongIds = existingDbSongs.keys - seenIds
-                    val newSongIds = seenIds - existingDbSongs.keys
+                    val staleSongIds = allExistingSongs.map { it.id }.toSet() - seenIds
+                    val newSongIds = seenIds - allExistingSongs.map { it.id }.toSet()
                     if (staleSongIds.isNotEmpty()) {
                         database.songDao().deleteByIds(staleSongIds.toList())
                         database.songArtistDao().deleteBySongIds(staleSongIds.toList())

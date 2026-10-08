@@ -6,6 +6,7 @@
 package chromahub.rhythm.app.features.local.data.repository
 import chromahub.rhythm.app.shared.data.model.ScanProgress
 import chromahub.rhythm.app.core.domain.scan.MediaScanEngine
+import chromahub.rhythm.app.core.domain.scan.StableDateAddedResolver
 import chromahub.rhythm.app.core.domain.backup.BackupRestoreManager
 
 
@@ -154,13 +155,9 @@ class MusicRepository(context: Context) {
     
     private val repositoryScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     
-    // In-memory buffer for pending date-added writes to avoid SharedPreferences write loops
-    private val pendingDateAddedWrites = java.util.concurrent.ConcurrentHashMap<String, Long>()
-    
     // Genre cache using SharedPreferences
     private val genrePrefs: SharedPreferences by lazy { context.getSharedPreferences("genre_cache", Context.MODE_PRIVATE) }
     private val artworkPrefs: SharedPreferences by lazy { context.getSharedPreferences("artwork_overrides", Context.MODE_PRIVATE) }
-    private val dateAddedPrefs: SharedPreferences by lazy { context.getSharedPreferences("song_date_added_cache", Context.MODE_PRIVATE) }
     private val libraryScanPrefs: SharedPreferences by lazy { context.getSharedPreferences("library_scan_metadata", Context.MODE_PRIVATE) }
     
     // Scan progress tracking
@@ -986,70 +983,33 @@ class MusicRepository(context: Context) {
     }
 
     private fun dateAddedCacheKeyForPath(filePath: String): String {
-        val normalizedPath = filePath
-            .trim()
-            .replace('\\', '/')
-            .lowercase(Locale.ROOT)
-
-        val digest = MessageDigest.getInstance("SHA-256")
-            .digest(normalizedPath.toByteArray(Charsets.UTF_8))
-
-        val hex = buildString(digest.size * 2) {
-            digest.forEach { byte ->
-                append(((byte.toInt() ushr 4) and 0xF).toString(16))
-                append((byte.toInt() and 0xF).toString(16))
-            }
-        }
-
-        return "date_added_$hex"
+        return StableDateAddedResolver.pathKey(
+            StableDateAddedResolver.normalizePath(filePath)
+        )
     }
 
-    private fun resolveStableDateAdded(filePath: String?, observedDateAddedMs: Long): Long {
-        val normalizedObservedDate = (if (observedDateAddedMs in 1..99_999_999_999L) observedDateAddedMs * 1000L else observedDateAddedMs)
-            .takeIf { it > 0L } ?: System.currentTimeMillis()
-        val resolvedPath = filePath?.trim()?.takeIf { it.isNotBlank() } ?: return normalizedObservedDate
-
-        val key = try {
-            dateAddedCacheKeyForPath(resolvedPath)
-        } catch (e: Exception) {
-            Log.w(TAG, "Failed to compute date-added cache key for path", e)
-            return normalizedObservedDate
-        }
-
-        val rawCachedDate = pendingDateAddedWrites[key] ?: dateAddedPrefs.getLong(key, -1L)
-        val cachedDate = if (rawCachedDate in 1..99_999_999_999L) rawCachedDate * 1000L else rawCachedDate
-        if (cachedDate > 0L) {
-            val stableDate = minOf(cachedDate, normalizedObservedDate)
-            if (stableDate != rawCachedDate) {
-                pendingDateAddedWrites[key] = stableDate
-            }
-            return stableDate
-        }
-
-        pendingDateAddedWrites[key] = normalizedObservedDate
-        return normalizedObservedDate
+    private fun resolveStableDateAdded(
+        filePath: String?,
+        observedDateAddedMs: Long,
+        songId: String? = null,
+        title: String? = null,
+        artist: String? = null,
+        album: String? = null,
+        durationMs: Long = 0L
+    ): Long {
+        return mediaScanEngine.dateAddedResolver.resolveDateAdded(
+            songId = songId,
+            filePath = filePath,
+            title = title,
+            artist = artist,
+            album = album,
+            durationMs = durationMs,
+            observedDateAddedMs = observedDateAddedMs
+        )
     }
 
     private fun flushPendingDateAddedWrites() {
-        if (pendingDateAddedWrites.isEmpty()) return
-        
-        val updates = mutableMapOf<String, Long>()
-        synchronized(pendingDateAddedWrites) {
-            updates.putAll(pendingDateAddedWrites)
-            pendingDateAddedWrites.clear()
-        }
-        
-        if (updates.isEmpty()) return
-        Log.d(TAG, "Flushing ${updates.size} stable date-added values to SharedPreferences")
-        try {
-            dateAddedPrefs.edit {
-            for ((key, value) in updates) {
-                putLong(key, value)
-            }
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to flush stable date-added values to SharedPreferences", e)
-        }
+        mediaScanEngine.dateAddedResolver.flush()
     }
 
     private fun createSongFromFile(file: File, appSettings: AppSettings): Song? {
@@ -1139,7 +1099,14 @@ class MusicRepository(context: Context) {
             trackNumber = trackNumber,
             year = year,
             genre = null,
-            dateAdded = resolveStableDateAdded(file.absolutePath, file.lastModified()),
+            dateAdded = resolveStableDateAdded(
+                filePath = file.absolutePath,
+                observedDateAddedMs = file.lastModified(),
+                title = title,
+                artist = artist,
+                album = album,
+                durationMs = duration
+            ),
             dateModified = file.lastModified(),
             albumArtist = albumArtist,
             bitrate = null,
@@ -1452,7 +1419,15 @@ class MusicRepository(context: Context) {
             val discNumber = if (mediaStoreDisc > 0) mediaStoreDisc else inferredDisc
             val year = cursor.getInt(indices.year)
             val observedDateAdded = cursor.getLong(indices.dateAdded) * 1000L
-            val dateAdded = resolveStableDateAdded(filePath, observedDateAdded)
+            val dateAdded = resolveStableDateAdded(
+                filePath = filePath,
+                observedDateAddedMs = observedDateAdded,
+                songId = id.toString(),
+                title = title,
+                artist = artist,
+                album = album,
+                durationMs = duration
+            )
             val observedDateModified = cursor.getLong(indices.dateModified) * 1000L
             val dateModified = observedDateModified
                 .takeIf { it > 0L }
