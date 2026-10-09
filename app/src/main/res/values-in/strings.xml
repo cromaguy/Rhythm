@@ -3022,6 +3022,8 @@
     <string name="expressive_bottom_buttons_saved">Konfigurasi tombol bawah disimpan</string>
     <string name="expressive_bottom_buttons_reset">Kembalikan urutan dan visibilitas tombol ke bawaan</string>
     <string name="expressive_bottom_buttons_at_least_one">Setidaknya satu tombol harus terlihat</string>
+    <string name="expressive_bottom_buttons_max_limit">Anda dapat menyematkan hingga %1$d tombol</string>
+    <string name="expressive_bottom_buttons_more_required">Tombol menu 3-titik selalu diperlukan</string>
     <string name="settings_expressive_bottom_buttons">Sesuaikan Tombol Bawah</string>
     <string name="settings_expressive_bottom_buttons_desc">Urutkan ulang dan aktifkan/nonaktifkan tombol tindakan bawah untuk mode Normal dan Gabung</string>
     <string name="streaming_download">Unduh</string>

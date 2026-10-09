@@ -1614,11 +1614,25 @@ fun ExpressivePlayerScreen(
                                 expressiveHiddenBottomButtonsNormal
                             ) {
                                 if (playerMergeControlsToBottom) {
-                                    val filtered = expressiveBottomButtonsMerge.filter { !expressiveHiddenBottomButtonsMerge.contains(it) }
+                                    val filtered = expressiveBottomButtonsMerge
+                                        .filter { !expressiveHiddenBottomButtonsMerge.contains(it) }
+                                        .take(AppSettings.MAX_EXPRESSIVE_BOTTOM_BUTTONS_MERGE)
                                     if (filtered.isEmpty()) appSettings.defaultExpressiveBottomButtonsMerge else filtered
                                 } else {
-                                    val filtered = expressiveBottomButtonsNormal.filter { !expressiveHiddenBottomButtonsNormal.contains(it) }
-                                    if (filtered.isEmpty()) appSettings.defaultExpressiveBottomButtonsNormal else filtered
+                                    val visibleButtons = expressiveBottomButtonsNormal
+                                        .filter { !expressiveHiddenBottomButtonsNormal.contains(it) }
+                                        .filterNot { it in AppSettings.fixedBottomButtonsNormal }
+                                    val pins = visibleButtons
+                                        .filter { it != "MORE" }
+                                        .take(AppSettings.MAX_EXPRESSIVE_BOTTOM_PINS_NORMAL)
+                                    val result = visibleButtons.filter { it in pins || it == "MORE" }
+                                    if (result.isEmpty()) {
+                                        appSettings.defaultExpressiveBottomButtonsNormal
+                                    } else if (!result.contains("MORE")) {
+                                        result + "MORE"
+                                    } else {
+                                        result
+                                    }
                                 }
                             }
 
@@ -1702,8 +1716,8 @@ fun ExpressivePlayerScreen(
                                                     icon = RhythmIcons.Queue,
                                                     iconSize = 20.dp,
                                                     text = null,
-                                                    textContent = {
-                                                        if (queueTotal > 1) {
+                                                    textContent = if (!playerMergeControlsToBottom && queueTotal > 1) {
+                                                        {
                                                             Box(
                                                                 modifier = Modifier.size(18.dp).clip(CircleShape).background(primaryColor.copy(alpha = 0.22f)),
                                                                 contentAlignment = Alignment.Center
@@ -1716,7 +1730,7 @@ fun ExpressivePlayerScreen(
                                                                 )
                                                             }
                                                         }
-                                                    },
+                                                    } else null,
                                                     contentDescription = stringResource(R.string.bottomsheet_queue),
                                                     containerColor = controlsContainerColor,
                                                     contentColor = defaultContentColor

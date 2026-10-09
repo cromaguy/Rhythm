@@ -205,6 +205,9 @@ class AppSettings private constructor(context: Context) {
         private const val KEY_EXPRESSIVE_HIDDEN_BOTTOM_BUTTONS_NORMAL = "expressive_hidden_bottom_buttons_normal"
         private const val KEY_EXPRESSIVE_BOTTOM_BUTTONS_MERGE = "expressive_bottom_buttons_merge"
         private const val KEY_EXPRESSIVE_HIDDEN_BOTTOM_BUTTONS_MERGE = "expressive_hidden_bottom_buttons_merge"
+        const val MAX_EXPRESSIVE_BOTTOM_PINS_NORMAL = 2
+        const val MAX_EXPRESSIVE_BOTTOM_BUTTONS_MERGE = 5
+        val fixedBottomButtonsNormal = listOf("LYRICS", "FAVORITE")
         private const val KEY_LYRICALLY_SOURCES_ORDER = "lyrically_sources_order"
         private const val KEY_DISABLED_LYRICALLY_SOURCES = "disabled_lyrically_sources"
         private const val KEY_GROUP_BY_ALBUM_ARTIST = "group_by_album_artist" // New setting for album artist grouping
@@ -974,13 +977,27 @@ class AppSettings private constructor(context: Context) {
         "ADD_TO_PLAYLIST", "ALBUM", "ARTIST", "SONG_INFO", "SHARE"
     )
 
+    val allExpressiveBottomButtonsNormal = allExpressiveBottomButtons.filterNot { it in fixedBottomButtonsNormal }
+
     private val _expressiveBottomButtonsNormal = MutableStateFlow(
         prefs.getString(KEY_EXPRESSIVE_BOTTOM_BUTTONS_NORMAL, null)
             ?.split(",")
             ?.filter { it.isNotBlank() }
             ?.distinct()
-            ?.filter { it in allExpressiveBottomButtons }
+            ?.filter { it in allExpressiveBottomButtons && it !in fixedBottomButtonsNormal }
             ?.takeIf { it.isNotEmpty() }
+            ?.let { savedList ->
+                val result = savedList.toMutableList()
+                defaultExpressiveBottomButtonsNormal.forEachIndexed { defaultIndex, button ->
+                    if (!result.contains(button)) {
+                        result.add(defaultIndex.coerceAtMost(result.size), button)
+                    }
+                }
+                if (!result.contains("MORE")) {
+                    result.add("MORE")
+                }
+                result
+            }
             ?: defaultExpressiveBottomButtonsNormal
     )
     val expressiveBottomButtonsNormal: StateFlow<List<String>> = _expressiveBottomButtonsNormal.asStateFlow()
@@ -989,7 +1006,7 @@ class AppSettings private constructor(context: Context) {
         prefs.getString(KEY_EXPRESSIVE_HIDDEN_BOTTOM_BUTTONS_NORMAL, null)
             ?.split(",")
             ?.filter { it.isNotBlank() }
-            ?.filter { it in allExpressiveBottomButtons }
+            ?.filter { it in allExpressiveBottomButtons && it !in fixedBottomButtonsNormal && it != "MORE" }
             ?.toSet()
             ?: emptySet()
     )
@@ -2640,14 +2657,17 @@ private val _autoCheckForUpdates = MutableStateFlow(prefs.getBoolean(KEY_AUTO_CH
     }
 
     fun setExpressiveBottomButtonsNormal(order: List<String>) {
-        val sanitized = order.filter { it in allExpressiveBottomButtons }
+        val sanitized = order.filter { it in allExpressiveBottomButtons && it !in fixedBottomButtonsNormal }.toMutableList()
+        if (!sanitized.contains("MORE")) {
+            sanitized.add("MORE")
+        }
         val orderString = sanitized.joinToString(",")
         prefs.edit { putString(KEY_EXPRESSIVE_BOTTOM_BUTTONS_NORMAL, orderString) }
         _expressiveBottomButtonsNormal.value = sanitized
     }
 
     fun setExpressiveHiddenBottomButtonsNormal(hidden: Set<String>) {
-        val sanitized = hidden.filter { it in allExpressiveBottomButtons }.toSet()
+        val sanitized = hidden.filter { it in allExpressiveBottomButtons && it !in fixedBottomButtonsNormal && it != "MORE" }.toSet()
         val hiddenString = sanitized.joinToString(",")
         prefs.edit { putString(KEY_EXPRESSIVE_HIDDEN_BOTTOM_BUTTONS_NORMAL, hiddenString) }
         _expressiveHiddenBottomButtonsNormal.value = sanitized

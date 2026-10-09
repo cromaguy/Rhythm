@@ -2842,6 +2842,8 @@
     <string name="expressive_bottom_buttons_saved">Bottom buttons configuration saved</string>
     <string name="expressive_bottom_buttons_reset">Reset to default button order and visibility</string>
     <string name="expressive_bottom_buttons_at_least_one">At least one button must be visible</string>
+    <string name="expressive_bottom_buttons_max_limit">You can pin up to %1$d buttons</string>
+    <string name="expressive_bottom_buttons_more_required">3-dot menu button is always required</string>
     <string name="settings_expressive_bottom_buttons">Customize Bottom Buttons</string>
     <string name="settings_expressive_bottom_buttons_desc">Reorder and toggle bottom buttons for Normal and Merge modes</string>
 

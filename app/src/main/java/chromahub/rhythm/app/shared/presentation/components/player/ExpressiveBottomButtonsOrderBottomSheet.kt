@@ -90,24 +90,6 @@ private data class ButtonDescriptor(
     val icon: MaterialSymbolIcon
 )
 
-private val fixedBottomButtonsNormal = listOf("LYRICS", "FAVORITE")
-
-private fun restoreFixedButtonsNormal(original: List<String>, editable: List<String>): List<String> {
-    val result = editable.toMutableList()
-    var inserted = 0
-    original.forEach { item ->
-        if (item in fixedBottomButtonsNormal) {
-            val editableBefore = original.take(original.indexOf(item)).count { it !in fixedBottomButtonsNormal }
-            val insertAt = (editableBefore + inserted).coerceAtMost(result.size)
-            if (item !in result) {
-                result.add(insertAt, item)
-                inserted++
-            }
-        }
-    }
-    return result
-}
-
 @Composable
 fun ExpressiveBottomButtonsOrderBottomSheet(
     onDismiss: () -> Unit,
@@ -123,13 +105,23 @@ fun ExpressiveBottomButtonsOrderBottomSheet(
 
     var selectedModeIndex by remember { mutableIntStateOf(initialModeIndex.coerceIn(0, 1)) }
 
-    val editableNormalBottomButtons = appSettings.allExpressiveBottomButtons.filterNot { it in fixedBottomButtonsNormal }
+    val editableNormalBottomButtons = remember {
+        appSettings.allExpressiveBottomButtons.filterNot { it in AppSettings.fixedBottomButtonsNormal }
+    }
     val editableMergeBottomButtons = appSettings.allExpressiveBottomButtons
 
     val fullNormalList = remember(normalOrder) {
-        val list = normalOrder.filterNot { it in fixedBottomButtonsNormal }.toMutableList()
+        val list = normalOrder.filter { it in editableNormalBottomButtons }.toMutableList()
+        appSettings.defaultExpressiveBottomButtonsNormal.forEachIndexed { defaultIndex, button ->
+            if (!list.contains(button)) {
+                list.add(defaultIndex.coerceAtMost(list.size), button)
+            }
+        }
         editableNormalBottomButtons.forEach { btn ->
             if (!list.contains(btn)) list.add(btn)
+        }
+        if (!list.contains("MORE")) {
+            list.add("MORE")
         }
         list
     }
@@ -148,10 +140,19 @@ fun ExpressiveBottomButtonsOrderBottomSheet(
 
     var reorderableNormalList by remember { mutableStateOf(fullNormalList) }
     var hiddenNormalSet by remember {
-        val initiallyHidden = hiddenNormal.toMutableSet()
+        val initiallyHidden = hiddenNormal.filter { it in editableNormalBottomButtons && it != "MORE" }.toMutableSet()
+        val activeNormalButtons = normalOrder.toSet() + appSettings.defaultExpressiveBottomButtonsNormal.toSet()
         editableNormalBottomButtons.forEach { btn ->
-            if (!normalOrder.contains(btn)) {
+            if (!activeNormalButtons.contains(btn)) {
                 initiallyHidden.add(btn)
+            }
+        }
+        initiallyHidden.remove("MORE")
+
+        val visiblePins = fullNormalList.filter { it != "MORE" && !initiallyHidden.contains(it) }
+        if (visiblePins.size > AppSettings.MAX_EXPRESSIVE_BOTTOM_PINS_NORMAL) {
+            visiblePins.drop(AppSettings.MAX_EXPRESSIVE_BOTTOM_PINS_NORMAL).forEach {
+                initiallyHidden.add(it)
             }
         }
         mutableStateOf(initiallyHidden.toSet())
@@ -164,6 +165,12 @@ fun ExpressiveBottomButtonsOrderBottomSheet(
         editableMergeBottomButtons.forEach { btn ->
             if (!activeMergeButtons.contains(btn)) {
                 initiallyHidden.add(btn)
+            }
+        }
+        val visibleButtons = fullMergeList.filterNot { initiallyHidden.contains(it) }
+        if (visibleButtons.size > AppSettings.MAX_EXPRESSIVE_BOTTOM_BUTTONS_MERGE) {
+            visibleButtons.drop(AppSettings.MAX_EXPRESSIVE_BOTTOM_BUTTONS_MERGE).forEach {
+                initiallyHidden.add(it)
             }
         }
         mutableStateOf(initiallyHidden.toSet())
@@ -266,7 +273,27 @@ fun ExpressiveBottomButtonsOrderBottomSheet(
         StandardBottomSheetHeader(
             title = context.getString(R.string.expressive_bottom_buttons_title),
             subtitle = context.getString(R.string.expressive_bottom_buttons_desc),
-            visible = true
+            visible = true,
+            trailingContent = {
+                val currentPinnedCount = if (isNormalMode) {
+                    activeList.count { it != "MORE" && !activeHiddenSet.contains(it) }
+                } else {
+                    activeList.count { !activeHiddenSet.contains(it) }
+                }
+                val maxAllowed = if (isNormalMode) AppSettings.MAX_EXPRESSIVE_BOTTOM_PINS_NORMAL else AppSettings.MAX_EXPRESSIVE_BOTTOM_BUTTONS_MERGE
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = MaterialTheme.colorScheme.secondaryContainer
+                ) {
+                    Text(
+                        text = "$currentPinnedCount / $maxAllowed",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                    )
+                }
+            }
         )
 
         Column(modifier = Modifier.fillMaxWidth()) {
@@ -397,13 +424,47 @@ fun ExpressiveBottomButtonsOrderBottomSheet(
                             ) {
                                 IconButton(
                                     onClick = {
+                                        if (isNormalMode && buttonId == "MORE") {
+                                            HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
+                                            Toast.makeText(
+                                                context,
+                                                R.string.expressive_bottom_buttons_more_required,
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                            return@IconButton
+                                        }
                                         if (!isHidden && visibleButtonsCount <= 1) {
+                                            HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
                                             Toast.makeText(
                                                 context,
                                                 R.string.expressive_bottom_buttons_at_least_one,
                                                 Toast.LENGTH_SHORT
                                             ).show()
                                             return@IconButton
+                                        }
+                                        if (isHidden) {
+                                            if (isNormalMode) {
+                                                val currentPinsCount = activeList.count { it != "MORE" && !activeHiddenSet.contains(it) }
+                                                if (currentPinsCount >= AppSettings.MAX_EXPRESSIVE_BOTTOM_PINS_NORMAL) {
+                                                    HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
+                                                    Toast.makeText(
+                                                        context,
+                                                        context.getString(R.string.expressive_bottom_buttons_max_limit, AppSettings.MAX_EXPRESSIVE_BOTTOM_PINS_NORMAL),
+                                                        Toast.LENGTH_SHORT
+                                                    ).show()
+                                                    return@IconButton
+                                                }
+                                            } else {
+                                                if (visibleButtonsCount >= AppSettings.MAX_EXPRESSIVE_BOTTOM_BUTTONS_MERGE) {
+                                                    HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
+                                                    Toast.makeText(
+                                                        context,
+                                                        context.getString(R.string.expressive_bottom_buttons_max_limit, AppSettings.MAX_EXPRESSIVE_BOTTOM_BUTTONS_MERGE),
+                                                        Toast.LENGTH_SHORT
+                                                    ).show()
+                                                    return@IconButton
+                                                }
+                                            }
                                         }
                                         HapticUtils.performHapticFeedback(context, haptics, HapticType.LIGHT)
                                         if (isNormalMode) {
@@ -423,12 +484,12 @@ fun ExpressiveBottomButtonsOrderBottomSheet(
                                     modifier = Modifier.size(40.dp)
                                 ) {
                                     Icon(
-                                        imageVector = if (isHidden) RhythmIcons.VisibilityOff else RhythmIcons.Visibility,
-                                        contentDescription = if (isHidden) "Show button" else "Hide button",
-                                        tint = if (isHidden)
-                                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                                        imageVector = if (!isHidden) RhythmIcons.Pushpin else RhythmIcons.PinOutline,
+                                        contentDescription = if (!isHidden) "Unpin button" else "Pin button",
+                                        tint = if (!isHidden)
+                                            MaterialTheme.colorScheme.primary
                                         else
-                                            MaterialTheme.colorScheme.primary,
+                                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
                                         modifier = Modifier.size(20.dp)
                                     )
                                 }
@@ -440,7 +501,7 @@ fun ExpressiveBottomButtonsOrderBottomSheet(
                                     modifier = Modifier
                                         .size(24.dp)
                                         .padding(horizontal = 4.dp)
-                                )
+                                 )
                             }
                         }
                     }
@@ -465,7 +526,7 @@ fun ExpressiveBottomButtonsOrderBottomSheet(
                             HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
                             if (isNormalMode) {
                                 appSettings.resetExpressiveBottomButtonsNormal()
-                                val defaultNormal = appSettings.defaultExpressiveBottomButtonsNormal.filterNot { it in fixedBottomButtonsNormal }
+                                val defaultNormal = appSettings.defaultExpressiveBottomButtonsNormal
                                 val full = defaultNormal.toMutableList()
                                 editableNormalBottomButtons.forEach { if (!full.contains(it)) full.add(it) }
                                 reorderableNormalList = full
@@ -489,8 +550,8 @@ fun ExpressiveBottomButtonsOrderBottomSheet(
                     RhythmButtonWeighted(
                         onClick = {
                             HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
-                            appSettings.setExpressiveBottomButtonsNormal(restoreFixedButtonsNormal(fullNormalList, reorderableNormalList))
-                            appSettings.setExpressiveHiddenBottomButtonsNormal(hiddenNormalSet - fixedBottomButtonsNormal.toSet())
+                            appSettings.setExpressiveBottomButtonsNormal(reorderableNormalList)
+                            appSettings.setExpressiveHiddenBottomButtonsNormal(hiddenNormalSet)
                             appSettings.setExpressiveBottomButtonsMerge(reorderableMergeList)
                             appSettings.setExpressiveHiddenBottomButtonsMerge(hiddenMergeSet)
                             Toast.makeText(context, R.string.expressive_bottom_buttons_saved, Toast.LENGTH_SHORT).show()

@@ -3077,6 +3077,8 @@
     <string name="expressive_bottom_buttons_saved">Configuração dos botões inferiores salva</string>
     <string name="expressive_bottom_buttons_reset">Restaurar a ordem e a visibilidade padrão dos botões</string>
     <string name="expressive_bottom_buttons_at_least_one">Pelo menos um botão deve estar visível</string>
+    <string name="expressive_bottom_buttons_max_limit">Você pode fixar até %1$d botões</string>
+    <string name="expressive_bottom_buttons_more_required">O botão de menu de 3 pontos é sempre obrigatório</string>
     <string name="settings_expressive_bottom_buttons">Personalizar botões inferiores</string>
     <string name="streaming_download">Baixar</string>
     <string name="streaming_downloading">Baixando…</string>
