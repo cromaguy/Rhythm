@@ -1,3 +1,4 @@
+@file:OptIn(kotlinx.coroutines.FlowPreview::class)
 /*
  * SPDX-FileCopyrightText: 2024-2026 Anjishnu Nandi <https://github.com/cromaguy>
  * SPDX-License-Identifier: GPL-3.0-or-later
@@ -88,6 +89,7 @@ import androidx.paging.cachedIn
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.yield
@@ -633,11 +635,11 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
         val hasWhitelist = whitelistedIds.isNotEmpty() || whitelistedFolders.isNotEmpty()
         
         // Determine which filtering mode to use based on mediaScanMode setting
-        val useBlacklistMode = mediaScanMode == MediaScanMode.BLACKLIST
-        val useWhitelistMode = mediaScanMode == MediaScanMode.WHITELIST
+        val useBlacklistMode = mediaScanMode.usesBlacklist
+        val useWhitelistMode = mediaScanMode.usesWhitelist
         
         // If no filters are active for the current mode, return all songs
-        if (useBlacklistMode && !hasBlacklist) {
+        if (!useWhitelistMode && useBlacklistMode && !hasBlacklist) {
             return@withContext songs
         }
         if (useWhitelistMode && !hasWhitelist) {
@@ -664,21 +666,10 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
         val startTime = System.currentTimeMillis()
         val result = ArrayList<Song>(songs.size)
 
-        // Pre-normalize target folders once for O(N+M) efficiency instead of O(N*M)
-        val normBlacklistedFolders = if (useBlacklistMode && blacklistedFolders.isNotEmpty()) {
-            blacklistedFolders.map { normalizeStoragePath(it) }
-        } else {
-            emptyList()
-        }
-        val normWhitelistedFolders = if (useWhitelistMode && whitelistedFolders.isNotEmpty()) {
-            whitelistedFolders.map { normalizeStoragePath(it) }
-        } else {
-            emptyList()
-        }
+        val policy = chromahub.rhythm.app.core.domain.scan.LibraryFilterPolicy(
+            mediaScanMode, blacklistedIds, blacklistedFolders, whitelistedIds, whitelistedFolders,
+        )
 
-        val blacklistedIdsSet = if (useBlacklistMode && blacklistedIds.isNotEmpty()) blacklistedIds.toSet() else emptySet()
-        val whitelistedIdsSet = if (useWhitelistMode && whitelistedIds.isNotEmpty()) whitelistedIds.toSet() else emptySet()
-        
         // Process in batches to allow yielding
         val batchSize = 100
         var processed = 0
@@ -692,36 +683,9 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                 continue
             }
             
-            var shouldInclude = false
-            
-            // In BLACKLIST mode: exclude blacklisted songs/folders, include everything else
-            if (useBlacklistMode && hasBlacklist) {
-                // Check if song is individually blacklisted
-                if (blacklistedIdsSet.contains(song.id)) {
-                    shouldInclude = false
-                } else if (normBlacklistedFolders.isNotEmpty()) {
-                    // Check if song is in a blacklisted folder
-                    val songPath = song.path ?: if (song.uri.scheme == "file") song.uri.path else getPathFromUriCached(song.uri)
-                    shouldInclude = songPath == null || !isNormalizedPathInFolders(normalizeStoragePath(songPath), normBlacklistedFolders)
-                } else {
-                    shouldInclude = true
-                }
-            }
-            // In WHITELIST mode: include ONLY whitelisted songs/folders, exclude everything else
-            else if (useWhitelistMode && hasWhitelist) {
-                // Check if song ID is individually whitelisted
-                if (whitelistedIdsSet.contains(song.id)) {
-                    shouldInclude = true
-                } else if (normWhitelistedFolders.isNotEmpty()) {
-                    // Check if song is in a whitelisted folder
-                    val songPath = song.path ?: if (song.uri.scheme == "file") song.uri.path else getPathFromUriCached(song.uri)
-                    if (songPath == null) {
-                        Log.w(TAG, "Whitelist: could not resolve path for song '${song.title}' (${song.uri}), excluding it")
-                    }
-                    shouldInclude = songPath != null && isNormalizedPathInFolders(normalizeStoragePath(songPath), normWhitelistedFolders)
-                }
-            }
-            
+            val songPath = song.path ?: if (song.uri.scheme == "file") song.uri.path else getPathFromUriCached(song.uri)
+            val shouldInclude = policy.includes(song.id, songPath)
+
             // Cache result
             filterCache[cacheKey] = shouldInclude
             if (shouldInclude) {
@@ -1238,6 +1202,33 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     init {
+        val catalog = chromahub.rhythm.app.features.local.data.metadata.CatalogEnrichmentService.get(application)
+        viewModelScope.launch {
+            catalog.changes.debounce(750).collect {
+                val updated = withContext(Dispatchers.IO) { repository.storedSongs(_songs.value) }
+                if (updated != _songs.value) {
+                    _songs.value = updated
+                    repository.updateAndPersistSongs(updated)
+                    _currentSong.value?.let { current -> updated.find { it.id == current.id }?.let { replacement ->
+                        if (replacement != current) updateCurrentSongMetadata(replacement)
+                    } }
+                }
+                val artwork = withContext(Dispatchers.IO) {
+                    _albums.value.map { album -> album.copy(artworkUri = catalog.preferredArtwork(album.artworkUri,
+                        catalog.image(catalog.read(kr.co.metadata.crawler.EntityKind.ALBUM, catalog.albumKey(album.title, album.artist))))) } to
+                    _artists.value.map { artist -> artist.copy(artworkUri = catalog.preferredArtwork(artist.artworkUri,
+                        catalog.image(catalog.read(kr.co.metadata.crawler.EntityKind.ARTIST, catalog.artistKey(artist.name))))) }
+                }
+                _albums.value = artwork.first
+                _artists.value = artwork.second
+                _currentSong.value?.let { song ->
+                    val saved = withContext(Dispatchers.IO) { chromahub.rhythm.app.features.local.data.metadata.AutomaticLyricsStore.get(application).read(song) }
+                    if (saved != null && saved.hasLyrics() &&
+                        (_currentLyrics.value?.hasLyrics() != true || _currentLyrics.value?.isErrorMessage() == true)) _currentLyrics.value = saved
+                }
+            }
+        }
+
         Log.d(TAG, "Initializing MusicViewModel")
         startLibrarySetupCompletionMonitor()
         
@@ -1372,7 +1363,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                     val mode = appSettings.mediaScanMode.value
                     val hasWhitelist = appSettings.whitelistedFolders.value.isNotEmpty() ||
                         appSettings.whitelistedSongs.value.isNotEmpty()
-                    if (mode == MediaScanMode.WHITELIST && !hasWhitelist) {
+                    if (mode.usesWhitelist && !hasWhitelist) {
                         Log.d(TAG, "Whitelist mode active with no folders or songs selected; clearing current songs without full media scan")
                         _songs.value = emptyList()
                         _albums.value = emptyList()
@@ -8448,6 +8439,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                     file.writeText(json)
                     
                     repository.updateLyricsCache(artist, title, song.id, lyricsData)
+                    chromahub.rhythm.app.features.local.data.metadata.AutomaticLyricsStore.get(getApplication<Application>()).saveFetched(song, lyricsData)
 
                     // Update in-memory state
                     _currentLyrics.value = lyricsData
@@ -9733,8 +9725,8 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
     fun removeBlacklistedSongsFromQueue() {
         mediaController?.let { controller ->
             val mediaScanMode = appSettings.mediaScanMode.value
-            val useBlacklist = mediaScanMode == MediaScanMode.BLACKLIST
-            val useWhitelist = mediaScanMode == MediaScanMode.WHITELIST
+            val useBlacklist = mediaScanMode.usesBlacklist
+            val useWhitelist = mediaScanMode.usesWhitelist
             val blacklistedIds = appSettings.blacklistedSongs.value
             val blacklistedFolders = appSettings.blacklistedFolders.value
             val whitelistedIds = appSettings.whitelistedSongs.value
@@ -9743,8 +9735,10 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
             val hasBlacklist = blacklistedIds.isNotEmpty() || blacklistedFolders.isNotEmpty()
             val hasWhitelist = whitelistedIds.isNotEmpty() || whitelistedFolders.isNotEmpty()
             
-            if (useBlacklist && !hasBlacklist) return@let
-            if (useWhitelist && !hasWhitelist) return@let
+            if (!useWhitelist && useBlacklist && !hasBlacklist) return@let
+            val policy = chromahub.rhythm.app.core.domain.scan.LibraryFilterPolicy(
+                mediaScanMode, blacklistedIds, blacklistedFolders, whitelistedIds, whitelistedFolders,
+            )
             
             val count = controller.mediaItemCount
             if (count == 0) return@let
@@ -9758,23 +9752,8 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                 val song = _songs.value.find { it.id == songId }
                 val songPath = song?.path ?: if (song?.uri?.scheme == "file") song.uri.path else getPathFromUriCached(song?.uri ?: android.net.Uri.EMPTY)
                 
-                var shouldInclude = true
-                if (useBlacklist && hasBlacklist) {
-                    if (blacklistedIds.contains(songId)) {
-                        shouldInclude = false
-                    } else if (blacklistedFolders.isNotEmpty() && songPath != null) {
-                        shouldInclude = !isPathBlacklisted(songPath, blacklistedFolders)
-                    }
-                } else if (useWhitelist && hasWhitelist) {
-                    if (whitelistedIds.contains(songId)) {
-                        shouldInclude = true
-                    } else if (whitelistedFolders.isNotEmpty() && songPath != null) {
-                        shouldInclude = isPathWhitelisted(songPath, whitelistedFolders)
-                    } else {
-                        shouldInclude = false
-                    }
-                }
-                
+                val shouldInclude = policy.includes(songId, songPath)
+
                 if (!shouldInclude) {
                     controller.removeMediaItem(i)
                     Log.d(TAG, "Removed blacklisted/unwhitelisted song from active queue: $songId at index $i")

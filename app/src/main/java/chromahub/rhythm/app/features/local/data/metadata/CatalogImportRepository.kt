@@ -18,8 +18,8 @@ import java.net.URI
 import java.util.UUID
 
 /** Shared HTTP client keeps provider requests throttled across searches and details. */
-class CatalogImportRepository {
-    private val http = PageClient()
+class CatalogImportRepository(context: Context) {
+    private val http = CatalogEnrichmentService.get(context).http
     private val search = CatalogSearch(http)
     private val metadata = MusicMetadataRepository(listOf(
         BugsMobileProvider(http), BugsPcProvider(http), GenieProvider(http), MelonProvider(http),

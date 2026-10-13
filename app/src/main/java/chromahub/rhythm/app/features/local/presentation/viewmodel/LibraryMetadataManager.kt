@@ -206,6 +206,7 @@ class LibraryMetadataManager(
                     discNumber = discNumber
                 )
                 
+                chromahub.rhythm.app.features.local.data.metadata.CatalogEnrichmentService.get(appContext).recordManualSong(updatedSong)
                 updateCurrentSongMetadata(updatedSong)
                 
                 // Update genre cache so it persists across library rescans
@@ -305,6 +306,7 @@ class LibraryMetadataManager(
                     albumArtist = finalAlbumArtist,
                     discNumber = discNumber
                 )
+                chromahub.rhythm.app.features.local.data.metadata.CatalogEnrichmentService.get(appContext).recordManualSong(updatedSong)
                 updateCurrentSongMetadata(updatedSong)
                 
                 // Try to create a write request for Android 11+
@@ -421,6 +423,7 @@ class LibraryMetadataManager(
                         artworkUri = updatedArtworkUri,
                         albumArtist = pendingRequest.newAlbumArtist
                     )
+                    chromahub.rhythm.app.features.local.data.metadata.CatalogEnrichmentService.get(appContext).recordManualSong(updatedSong)
                     updateCurrentSongMetadata(updatedSong)
                     
                     withContext(Dispatchers.Main) {
@@ -633,6 +636,7 @@ class LibraryMetadataManager(
                         updatedSongs[song.id] = updatedSong
                         
                         // Also update currently playing song if it matches
+                        chromahub.rhythm.app.features.local.data.metadata.CatalogEnrichmentService.get(appContext).recordManualSong(updatedSong)
                         updateCurrentSongMetadata(updatedSong)
 
                         if (newGenre.isNotBlank()) {
@@ -775,6 +779,7 @@ class LibraryMetadataManager(
                             albumArtist = newAlbumArtist
                         )
                         updatedSongs[song.id] = updatedSong
+                        chromahub.rhythm.app.features.local.data.metadata.CatalogEnrichmentService.get(appContext).recordManualSong(updatedSong)
                         updateCurrentSongMetadata(updatedSong)
 
                         if (newGenre.isNotBlank()) {
@@ -872,6 +877,7 @@ class LibraryMetadataManager(
                     persistArtworkOverrideUri(appContext, song.id, cachedUri)
                     MediaUtils.deleteCachedEmbeddedArtwork(appContext.cacheDir, song.uri)
                     val updatedSong = song.copy(artworkUri = cachedUri)
+                    chromahub.rhythm.app.features.local.data.metadata.CatalogEnrichmentService.get(appContext).recordManualSong(updatedSong)
                     updateCurrentSongMetadata(updatedSong)
                     withContext(Dispatchers.Main) {
                         onSuccess()

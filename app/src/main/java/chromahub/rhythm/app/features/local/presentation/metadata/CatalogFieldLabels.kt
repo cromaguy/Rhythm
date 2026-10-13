@@ -20,6 +20,7 @@ fun CatalogField.label(context: Context): String = context.getString(when (this)
     CatalogField.ARTIST_GENRES, CatalogField.TRACK_GENRES, CatalogField.ALBUM_GENRES -> R.string.bottomsheet_genre
     CatalogField.TRACK_RELEASE_DATE, CatalogField.ALBUM_RELEASE_DATE -> R.string.catalog_release_date
     CatalogField.ARTIST_DEBUT_DATE -> R.string.catalog_debut_date
+    CatalogField.ALBUM_DESCRIPTION -> R.string.catalog_album_description
     CatalogField.ARTIST_DESCRIPTION -> R.string.catalog_description
     CatalogField.ARTIST_IMAGE, CatalogField.TRACK_IMAGE, CatalogField.ALBUM_IMAGE -> R.string.catalog_image
     CatalogField.TRACK_LYRICS -> R.string.metadata_lyrics

@@ -87,8 +87,10 @@ class MediaScanEngine(
         val whitelistedSongs = appSettings.whitelistedSongs.value
         val blacklistedFolders = appSettings.blacklistedFolders.value
         val blacklistedSongs = appSettings.blacklistedSongs.value
+        val filterPolicy = LibraryFilterPolicy(mediaScanMode, blacklistedSongs, blacklistedFolders,
+            whitelistedSongs, whitelistedFolders)
 
-        if (mediaScanMode == MediaScanMode.WHITELIST && whitelistedFolders.isEmpty() && whitelistedSongs.isEmpty()) {
+        if (mediaScanMode.usesWhitelist && whitelistedFolders.isEmpty() && whitelistedSongs.isEmpty()) {
             Log.d(TAG, "Whitelist mode active with no whitelisted folders or songs; skipping MediaStore scan")
             database.withTransaction {
                 if (forceRefresh) {
@@ -166,29 +168,17 @@ class MediaScanEngine(
                 while (cursor.moveToNext()) {
                     processed++
                     val id = cursor.getLong(colId).toString()
-                    if (seenIds.contains(id) || blacklistedSongs.contains(id)) continue
+                    if (seenIds.contains(id)) continue
 
                     val path = if (colData >= 0) cursor.getString(colData) else null
                     val normPath = path?.let { StableDateAddedResolver.normalizePath(it) }
+                    if (!filterPolicy.includes(id, path)) continue
                     if (path != null && normPath != null) {
                         if (seenPaths.contains(normPath)) continue
 
                         if (allowedFormats != null) {
                             val ext = path.substringAfterLast('.', "").lowercase()
                             if (ext.isNotEmpty() && !allowedFormats.contains(ext)) continue
-                        }
-
-                        if (mediaScanMode == MediaScanMode.WHITELIST) {
-                            val isFolderWhitelisted = whitelistedFolders.isNotEmpty() &&
-                                whitelistedFolders.any { normPath.startsWith(it.lowercase()) }
-                            val isSongWhitelisted = whitelistedSongs.isNotEmpty() &&
-                                whitelistedSongs.contains(id)
-                            if (!isFolderWhitelisted && !isSongWhitelisted) continue
-                        }
-
-                        if (mediaScanMode == MediaScanMode.BLACKLIST && blacklistedFolders.isNotEmpty()) {
-                            val isBlacklisted = blacklistedFolders.any { normPath.startsWith(it.lowercase()) }
-                            if (isBlacklisted) continue
                         }
 
                         seenPaths.add(normPath)

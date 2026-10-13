@@ -106,7 +106,8 @@ private val RHYTHM_GUARD_POLICY_BANDS = RHYTHM_AURA_POLICY_BANDS
 enum class LyricsApiPriority(val displayName: String) {
     LYRICALLY_FIRST("Lyrically"),
     LRCLIB_FIRST("LRCLib"),
-    BETTERLYRICS_FIRST("Better Lyrics");
+    BETTERLYRICS_FIRST("Better Lyrics"),
+    MUSIC_CRAWLER_FIRST("Music sites");
 
     companion object {
         fun fromOrdinal(ordinal: Int): LyricsApiPriority {
@@ -324,6 +325,7 @@ class AppSettings private constructor(context: Context) {
         private const val KEY_INTEGRATIONS_ENABLED = "integrations_enabled"
         private const val KEY_DEEZER_API_ENABLED = "deezer_api_enabled"
         private const val KEY_LRCLIB_API_ENABLED = "lrclib_api_enabled"
+        private const val KEY_MUSIC_CRAWLER_LYRICS_API_ENABLED = "music_crawler_lyrics_api_enabled"
         private const val KEY_BETTERLYRICS_API_ENABLED = "better_lyrics_api_enabled"
         private const val KEY_YTMUSIC_API_ENABLED = "ytmusic_api_enabled"
         private const val KEY_SPOTIFY_API_ENABLED = "spotify_api_enabled"
@@ -1702,6 +1704,13 @@ class AppSettings private constructor(context: Context) {
     private val _lrclibApiEnabled = MutableStateFlow(prefs.getBoolean(KEY_LRCLIB_API_ENABLED, false))
     val lrclibApiEnabled: StateFlow<Boolean> = _lrclibApiEnabled.asStateFlow()
     
+    private val _musicCrawlerLyricsApiEnabled = MutableStateFlow(prefs.getBoolean(KEY_MUSIC_CRAWLER_LYRICS_API_ENABLED, false))
+    val musicCrawlerLyricsApiEnabled: StateFlow<Boolean> = _musicCrawlerLyricsApiEnabled.asStateFlow()
+    fun setMusicCrawlerLyricsApiEnabled(enabled: Boolean) {
+        prefs.edit { putBoolean(KEY_MUSIC_CRAWLER_LYRICS_API_ENABLED, enabled) }
+        _musicCrawlerLyricsApiEnabled.value = enabled
+    }
+
     private val _betterLyricsApiEnabled = MutableStateFlow(prefs.getBoolean(KEY_BETTERLYRICS_API_ENABLED, false))
     val betterLyricsApiEnabled: StateFlow<Boolean> = _betterLyricsApiEnabled.asStateFlow()
     
@@ -5595,6 +5604,7 @@ private val _autoCheckForUpdates = MutableStateFlow(prefs.getBoolean(KEY_AUTO_CH
         _integrationsEnabled.value = prefs.getBoolean(KEY_INTEGRATIONS_ENABLED, false)
         _deezerApiEnabled.value = prefs.getBoolean(KEY_DEEZER_API_ENABLED, false)
         _lrclibApiEnabled.value = prefs.getBoolean(KEY_LRCLIB_API_ENABLED, false)
+        _musicCrawlerLyricsApiEnabled.value = prefs.getBoolean(KEY_MUSIC_CRAWLER_LYRICS_API_ENABLED, false)
         _betterLyricsApiEnabled.value = prefs.getBoolean(KEY_BETTERLYRICS_API_ENABLED, false)
         _ytMusicApiEnabled.value = prefs.getBoolean(KEY_YTMUSIC_API_ENABLED, false)
         _spotifyApiEnabled.value = prefs.getBoolean(KEY_SPOTIFY_API_ENABLED, false)

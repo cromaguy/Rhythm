@@ -90,6 +90,10 @@ fun LyricsApiPriorityBottomSheet(
                 LyricsApiPriority.LRCLIB_FIRST to Pair(
                     "LRCLib First",
                     "Line-by-line synchronized lyrics"
+                ),
+                LyricsApiPriority.MUSIC_CRAWLER_FIRST to Pair(
+                    context.getString(R.string.catalog_lyrics_source),
+                    context.getString(R.string.catalog_lyrics_source_hint)
                 )
             )
 

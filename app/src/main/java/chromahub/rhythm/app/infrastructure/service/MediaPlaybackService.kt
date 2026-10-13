@@ -1107,6 +1107,8 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
             }
             
             override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+                chromahub.rhythm.app.features.local.data.metadata.CatalogEnrichmentService.get(this@MediaPlaybackService).setActiveSong(mediaItem?.mediaId)
+                chromahub.rhythm.app.infrastructure.worker.CatalogWriteWorker.enqueue(this@MediaPlaybackService)
                 if (::preloadController.isInitialized) {
                     val currentIndex = player.currentMediaItemIndex
                     if (currentIndex != androidx.media3.common.C.INDEX_UNSET) {
@@ -2434,6 +2436,8 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
     }
 
     override fun onDestroy() {
+        chromahub.rhythm.app.features.local.data.metadata.CatalogEnrichmentService.get(this).setActiveSong(null)
+        chromahub.rhythm.app.infrastructure.worker.CatalogWriteWorker.enqueue(this)
         instanceForWidgetAndLyricsOnly = null
         Log.d(TAG, "Service being destroyed")
 

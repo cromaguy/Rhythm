@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="catalog_album_description">앨범 소개</string>
+    <string name="catalog_artwork_fields">누락된 아트워크 채우기</string>
+    <string name="catalog_auto_lyrics">가사 파일 자동 저장</string>
+    <string name="catalog_batch_hint">필터를 통과한 전체 라이브러리의 누락된 정보를 채웁니다. 기존 항목은 유지하며, 요청 간격을 두고 진행 위치를 저장하여 일시 정지 후 재개할 수 있습니다.</string>
+    <string name="catalog_batch_progress">%1$d / %2$d · 갱신 %3$d · 건너뜀 %4$d · 실패 %5$d</string>
+    <string name="catalog_batch_start">전체 음원 정보 채우기</string>
+    <string name="catalog_batch_title">라이브러리 정보 및 가사</string>
+    <string name="catalog_embed_lyrics">음원에 가사 자동 저장</string>
+    <string name="catalog_empty_library">현재 라이브러리 필터에 해당하는 음원이 없습니다.</string>
+    <string name="catalog_enabled">음악 사이트 정보 사용</string>
+    <string name="catalog_export">저장한 정보 및 가사 내보내기</string>
+    <string name="catalog_export_error">내보내지 못했습니다. 쓰기 가능한 폴더를 선택하고 다시 시도하세요.</string>
+    <string name="catalog_export_saved">%1$s 저장 완료</string>
+    <string name="catalog_hybrid_hint">화이트리스트에 있는 음원 또는 폴더만 포함한 뒤 블랙리스트 항목을 제외합니다. 화이트리스트가 비어 있으면 음원을 포함하지 않습니다.</string>
+    <string name="catalog_hybrid_mode">하이브리드</string>
+    <string name="catalog_integrations_off">정보를 가져오려면 API 설정에서 온라인 연동을 켜세요.</string>
+    <string name="catalog_lyrics_fields">누락된 가사 가져오기</string>
+    <string name="catalog_lyrics_follow_settings">가사는 현재 가사 소스, API 우선순위 및 폴백 설정을 따릅니다. 크롤링을 사용하려면 가사 API 설정에서 음악 사이트를 켜세요. 음원 쓰기에는 Android 권한이 필요하며, 현재 곡에 대한 쓰기는 곡을 변경한 뒤 진행됩니다.</string>
+    <string name="catalog_lyrics_source">음악 사이트 (크롤링)</string>
+    <string name="catalog_lyrics_source_hint">사용 설정된 벅스, 지니, 멜론에서 일반 가사를 가져옵니다. 기존 가사 우선순위와 폴백 설정을 따릅니다.</string>
+    <string name="catalog_metadata_fields">누락된 곡 태그 채우기</string>
+    <string name="catalog_pause">일괄 작업 일시 정지</string>
+    <string name="catalog_pending_writes">음원 파일에 저장 (대기 %1$d개)</string>
+    <string name="catalog_permanent">정보와 아트워크 영구 저장</string>
+    <string name="catalog_permission_denied">음원 쓰기 권한이 거부되었습니다. 앱에 저장된 정보와 가사는 계속 사용할 수 있습니다.</string>
+    <string name="catalog_permission_error">음원 쓰기 권한을 요청하지 못했습니다. 다시 시도하세요.</string>
+    <string name="catalog_profile_fields">아티스트 및 앨범 정보 가져오기</string>
+    <string name="catalog_provider_hint">음악 사이트</string>
+    <string name="catalog_resume">일괄 작업 재개</string>
+    <string name="catalog_wifi_only">요금 없는 네트워크에서만 실행</string>
+    <string name="catalog_write_tags">채운 태그와 아트워크를 음원에 저장</string>
+</resources>

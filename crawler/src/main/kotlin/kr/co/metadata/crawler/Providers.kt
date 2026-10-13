@@ -37,6 +37,7 @@ interface MusicProvider {
 class PageClient(
     private val minInterval: Duration = Duration.ofMillis(1_200),
     private val maxBodyBytes: Long = 5L * 1024 * 1024,
+    private val backoff: HostBackoff = sharedBackoff,
     private val client: OkHttpClient = OkHttpClient.Builder()
         .connectTimeout(Duration.ofSeconds(10))
         .readTimeout(Duration.ofSeconds(15))
@@ -49,21 +50,36 @@ class PageClient(
         require(maxBodyBytes in 1..(20L * 1024 * 1024))
     }
 
-    private val hostLock = ConcurrentHashMap<String, Mutex>()
-    private val lastRequest = ConcurrentHashMap<String, Long>()
+    companion object {
+        private val hostLock = ConcurrentHashMap<String, Mutex>()
+        private val lastRequest = ConcurrentHashMap<String, Long>()
+        private val sharedBackoff = HostBackoff()
+        fun rateKey(url: String): String {
+            val uri = URI(url)
+            val host = uri.host.orEmpty().lowercase()
+            return when {
+                host == "bugs.co.kr" || host.endsWith(".bugs.co.kr") -> "bugs.co.kr"
+                host == "genie.co.kr" || host.endsWith(".genie.co.kr") -> "genie.co.kr"
+                host == "melon.com" || host.endsWith(".melon.com") -> "melon.com"
+                else -> "$host:${uri.port}"
+            }
+        }
+    }
+    fun cooldownUntil(url: String): Long = backoff.until(rateKey(url))
 
     suspend fun get(url: String): String? = withContext(Dispatchers.IO) {
         val uri = runCatching { URI(url) }.getOrNull() ?: return@withContext null
         val host = uri.host ?: return@withContext null
         if (uri.scheme !in listOf("http", "https") || uri.userInfo != null) return@withContext null
-        hostLock.computeIfAbsent(host) { Mutex() }.withLock {
-            val last = lastRequest[host]
+        val rateKey = rateKey(url)
+        hostLock.computeIfAbsent(rateKey) { Mutex() }.withLock {
+            if (backoff.until(rateKey) > System.currentTimeMillis()) return@withLock null
+            val last = lastRequest[rateKey]
             if (last != null) {
                 val remaining = minInterval.toNanos() - (System.nanoTime() - last)
                 if (remaining > 0) delay((remaining + 999_999) / 1_000_000)
             }
-            lastRequest[host] = System.nanoTime()
-        }
+            lastRequest[rateKey] = System.nanoTime()
         val userAgent = if (host == "m.bugs.co.kr") {
             "Mozilla/5.0 (Linux; Android 13; SM-S911N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Mobile Safari/537.36"
         } else {
@@ -80,18 +96,26 @@ class PageClient(
                 continuation.invokeOnCancellation { call.cancel() }
                 call.enqueue(object : Callback {
                     override fun onFailure(call: Call, e: IOException) {
-                        if (!continuation.isCancelled) continuation.resumeWithException(e)
+                        if (!continuation.isCancelled) {
+                            backoff.record(rateKey, 0)
+                            continuation.resumeWithException(e)
+                        }
                     }
                     override fun onResponse(call: Call, response: Response) {
                         try {
                             val text = response.use {
+                                backoff.record(rateKey, it.code, it.header("Retry-After"))
                                 if (!continuation.isActive || !it.isSuccessful) return@use null
                                 val body = it.body
                                 if (body.contentLength() > maxBodyBytes) return@use null
                                 val source = body.source()
                                 source.request(maxBodyBytes + 1)
                                 if (source.buffer.size > maxBodyBytes) return@use null
-                                source.readByteArray().toString(body.contentType()?.charset(Charsets.UTF_8) ?: Charsets.UTF_8)
+                                val html = source.readByteArray().toString(body.contentType()?.charset(Charsets.UTF_8) ?: Charsets.UTF_8)
+                                if (Regex("(?i)<title[^>]*>[^<]*(captcha|access denied|just a moment)").containsMatchIn(html)) {
+                                    backoff.record(rateKey, 403)
+                                    null
+                                } else html
                             }
                             if (continuation.isActive) continuation.resume(text)
                         } catch (e: Exception) {
@@ -100,6 +124,7 @@ class PageClient(
                     }
                 })
             }
+        }
         }
     }
 }

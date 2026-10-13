@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="catalog_album_description">Album description</string>
+    <string name="catalog_artwork_fields">Fill missing artwork</string>
+    <string name="catalog_auto_lyrics">Automatically save lyrics files</string>
+    <string name="catalog_batch_hint">Fill missing information across your filtered library. Existing fields are preserved. Requests are spaced out, and progress is saved so you can pause and resume.</string>
+    <string name="catalog_batch_progress">%1$d / %2$d · updated %3$d · skipped %4$d · failed %5$d</string>
+    <string name="catalog_batch_start">Fill library information</string>
+    <string name="catalog_batch_title">Library information and lyrics</string>
+    <string name="catalog_embed_lyrics">Automatically embed lyrics in audio</string>
+    <string name="catalog_empty_library">No songs match the current library filters.</string>
+    <string name="catalog_enabled">Enable music site information</string>
+    <string name="catalog_export">Export saved information and lyrics</string>
+    <string name="catalog_export_error">Could not export. Choose a writable folder and try again.</string>
+    <string name="catalog_export_saved">Saved %1$s</string>
+    <string name="catalog_hybrid_hint">Include only whitelisted songs or folders, then exclude anything blacklisted. An empty whitelist includes no songs.</string>
+    <string name="catalog_hybrid_mode">Hybrid</string>
+    <string name="catalog_integrations_off">Enable online integrations in API settings to fetch information.</string>
+    <string name="catalog_lyrics_fields">Fetch missing lyrics</string>
+    <string name="catalog_lyrics_follow_settings">Lyrics follow your current source, API priority and fallback settings. Enable Music sites in Lyrics API settings to use the crawler. Audio writes require Android permission; writes to the current track wait until you change tracks.</string>
+    <string name="catalog_lyrics_source">Music sites (crawler)</string>
+    <string name="catalog_lyrics_source_hint">Fetch plain lyrics from enabled Bugs, Genie and Melon sources. Follows the existing lyrics priority and fallback settings.</string>
+    <string name="catalog_metadata_fields">Fill missing song tags</string>
+    <string name="catalog_pause">Pause batch</string>
+    <string name="catalog_pending_writes">Save to audio files (%1$d pending)</string>
+    <string name="catalog_permanent">Keep information and artwork permanently</string>
+    <string name="catalog_permission_denied">Audio write permission was declined. Saved information and lyrics remain available in the app.</string>
+    <string name="catalog_permission_error">Could not request audio write permission. Try again.</string>
+    <string name="catalog_profile_fields">Load artist and album information</string>
+    <string name="catalog_provider_hint">Music sites</string>
+    <string name="catalog_resume">Resume batch</string>
+    <string name="catalog_wifi_only">Use unmetered networks only</string>
+    <string name="catalog_write_tags">Save filled tags and artwork to audio</string>
+</resources>

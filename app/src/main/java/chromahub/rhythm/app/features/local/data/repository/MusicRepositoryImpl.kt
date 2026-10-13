@@ -4,6 +4,8 @@
  */
 
 package chromahub.rhythm.app.features.local.data.repository
+
+import chromahub.rhythm.app.R
 import chromahub.rhythm.app.shared.data.model.ScanProgress
 import chromahub.rhythm.app.core.domain.scan.MediaScanEngine
 import chromahub.rhythm.app.core.domain.scan.StableDateAddedResolver
@@ -20,6 +22,7 @@ import android.os.Looper
 import android.provider.MediaStore
 import android.util.Log
 import android.util.LruCache
+import chromahub.rhythm.app.network.WikipediaProvider
 import chromahub.rhythm.app.network.NetworkClient
 import chromahub.rhythm.app.network.ITunesSearchApiService
 import chromahub.rhythm.app.network.RhythmLyricsApiService
@@ -147,6 +150,8 @@ data class FolderSuggestion(
 )
 
 class MusicRepository(context: Context) {
+    val catalog by lazy { chromahub.rhythm.app.features.local.data.metadata.CatalogEnrichmentService.get(context) }
+    private val autoLyrics by lazy { chromahub.rhythm.app.features.local.data.metadata.AutomaticLyricsStore.get(context) }
     private val TAG = "MusicRepository"
     // Use WeakReference to prevent context leaks, but store applicationContext which is safe
     private val contextRef = WeakReference(context.applicationContext)
@@ -845,17 +850,17 @@ class MusicRepository(context: Context) {
             cachedSongs != null && 
             System.currentTimeMillis() - cacheTimestamp < CACHE_VALIDITY_MS) {
             Log.d(TAG, "Returning cached songs (${cachedSongs!!.size})")
-            return@withContext cachedSongs!!
+            return@withContext storedSongs(cachedSongs!!)
         }
         
         // On cold start (no in-memory cache), try loading from Room cache
         if (!shouldForceRefresh && cachedSongs == null) {
             val diskCached = loadSongsFromRoom()
             if (diskCached != null) {
-                cachedSongs = diskCached
+                cachedSongs = storedSongs(diskCached)
                 cacheTimestamp = System.currentTimeMillis()
                 Log.d(TAG, "Restored ${diskCached.size} songs from Room cache")
-                return@withContext diskCached
+                return@withContext storedSongs(diskCached)
             }
             cachedSongs = emptyList()
             cacheTimestamp = System.currentTimeMillis()
@@ -882,9 +887,9 @@ class MusicRepository(context: Context) {
             allowedFormats = allowedFormats,
             minimumDuration = minimumDuration
         )
-        cachedSongs = scanned
+        cachedSongs = storedSongs(scanned)
         cacheTimestamp = System.currentTimeMillis()
-        return@withContext scanned
+        return@withContext storedSongs(scanned)
     }
 
     suspend fun performIncrementalScan(
@@ -2002,7 +2007,9 @@ class MusicRepository(context: Context) {
                     dateModified = dateModified
                 ))
             }
-        }.sortedBy { it.title.lowercase(Locale.ROOT) }
+        }.map { album -> album.copy(artworkUri = catalog.preferredArtwork(album.artworkUri,
+            catalog.image(catalog.read(kr.co.metadata.crawler.EntityKind.ALBUM, catalog.albumKey(album.title, album.artist))))) }
+            .sortedBy { it.title.lowercase(Locale.ROOT) }
 
         Log.d(TAG, "Loaded ${albums.size} albums from songs directly")
         albums
@@ -2032,7 +2039,7 @@ class MusicRepository(context: Context) {
         val cachedArtists = loadArtistsFromRoom(groupByAlbumArtist)
         if (cachedArtists != null && cachedArtists.isNotEmpty()) {
             Log.d(TAG, "Loaded ${cachedArtists.size} artists from Room cache (groupByAlbumArtist=$groupByAlbumArtist)")
-            return@withContext cachedArtists
+            return@withContext cachedArtists.map(::storedArtist)
         }
 
         Log.d(TAG, "Recomputing artists for ${currentSongs.size} songs (groupByAlbumArtist=$groupByAlbumArtist)")
@@ -2055,8 +2062,11 @@ class MusicRepository(context: Context) {
         saveArtistsToRoom(artists, groupByAlbumArtist)
         Log.d(TAG, "Cached ${artists.size} artists to Room (groupByAlbumArtist=$groupByAlbumArtist)")
 
-        artists
+        artists.map(::storedArtist)
     }
+
+    private fun storedArtist(artist: Artist): Artist = artist.copy(artworkUri = catalog.preferredArtwork(artist.artworkUri,
+        catalog.image(catalog.read(kr.co.metadata.crawler.EntityKind.ARTIST, catalog.artistKey(artist.name)))))
 
     private var cachedArtistSplitConfig: String? = appSettings.getArtistSeparatorCacheSignature()
 
@@ -2527,12 +2537,91 @@ class MusicRepository(context: Context) {
     /**
      * Fetches artist images from Deezer API for artists without images
      */
-    suspend fun fetchArtistImages(artists: List<Artist>): List<Artist> =
+    suspend fun fetchArtistImages(artists: List<Artist>): List<Artist> = withContext(Dispatchers.IO) {
+        if (appSettings.artistArtworkSource.value == chromahub.rhythm.app.shared.data.model.ArtistArtworkSource.DISABLED) return@withContext artists
+        artists.map { artist ->
+            val key = catalog.artistKey(artist.name)
+            var uri = artist.artworkUri?.takeIf(catalog::usableArtwork) ?: artistImageCache[artist.name]?.takeIf(catalog::usableArtwork)
+                ?: catalog.image(catalog.read(kr.co.metadata.crawler.EntityKind.ARTIST, key))
+            if (uri == null && appSettings.artistArtworkSource.value != chromahub.rhythm.app.shared.data.model.ArtistArtworkSource.API_ONLY) {
+                uri = findLocalArtistImage(artist.name) ?: findArtistImageInLibraryFolders(artist.name,
+                    cachedSongs ?: loadSongs(), appSettings.groupByAlbumArtist.value,
+                    if (appSettings.artistSeparatorEnabled.value) chromahub.rhythm.app.util.ArtistSeparator.parseDelimiters(appSettings.artistSeparatorDelimiters.value) else emptyList())
+            }
+            if (uri == null && catalog.preferences.options.value.artwork && appSettings.artistArtworkSource.value != chromahub.rhythm.app.shared.data.model.ArtistArtworkSource.LOCAL_ONLY) {
+                uri = catalog.fetchedImage(kr.co.metadata.crawler.EntityKind.ARTIST, key, artist.name)
+            }
+            if (uri == null) uri = fetchArtistImagesLegacy(listOf(artist)).firstOrNull()?.artworkUri
+            if (catalog.usableArtwork(uri)) uri = catalog.persistArtwork(kr.co.metadata.crawler.EntityKind.ARTIST, key, uri)
+            artist.copy(artworkUri = uri)
+        }
+    }
+
+    suspend fun fetchAlbumArtwork(albums: List<Album>): List<Album> = withContext(Dispatchers.IO) {
+        albums.map { album ->
+            val key = catalog.albumKey(album.title, album.artist)
+            var uri = album.artworkUri?.takeIf(catalog::usableArtwork) ?: albumImageCache["${album.artist}:${album.title}"]?.takeIf(catalog::usableArtwork)
+                ?: catalog.image(catalog.read(kr.co.metadata.crawler.EntityKind.ALBUM, key))
+            if (uri == null && catalog.preferences.options.value.artwork) uri = catalog.fetchedImage(kr.co.metadata.crawler.EntityKind.ALBUM, key, album.title, album.artist)
+            if (uri == null) uri = fetchAlbumArtworkLegacy(listOf(album)).firstOrNull()?.artworkUri
+            if (catalog.usableArtwork(uri)) uri = catalog.persistArtwork(kr.co.metadata.crawler.EntityKind.ALBUM, key, uri)
+            album.copy(artworkUri = uri)
+        }
+    }
+
+    suspend fun fetchTrackArtwork(songs: List<Song>): List<Song> = withContext(Dispatchers.IO) {
+        songs.map { original ->
+            val song = catalog.apply(original)
+            if (catalog.artworkRemoved(song)) return@map song.copy(artworkUri = null)
+            var uri = song.artworkUri?.takeIf(catalog::usableArtwork)
+            if (uri == null && catalog.preferences.options.value.artwork) uri = catalog.fetchedImage(kr.co.metadata.crawler.EntityKind.TRACK, catalog.songKey(song), song.title, song.artist)
+            if (uri == null) uri = fetchTrackArtworkLegacy(listOf(song)).firstOrNull()?.artworkUri
+            if (catalog.usableArtwork(uri)) uri = catalog.persistArtwork(kr.co.metadata.crawler.EntityKind.TRACK, catalog.songKey(song), uri)
+            song.copy(artworkUri = uri)
+        }
+    }
+
+    suspend fun loadArtistDescription(name: String, fetch: Boolean = true): String? = withContext(Dispatchers.IO) {
+        val kind = kr.co.metadata.crawler.EntityKind.ARTIST
+        val key = catalog.artistKey(name)
+        val fields = setOf(kr.co.metadata.crawler.CatalogField.ARTIST_DESCRIPTION, kr.co.metadata.crawler.CatalogField.ARTIST_DEBUT_DATE, kr.co.metadata.crawler.CatalogField.ARTIST_GENRES)
+        val record = if (fetch && catalog.preferences.options.value.profiles) catalog.collect(kind, key, name, null, fields) else catalog.read(kind, key)
+        var description = record?.document?.get(kr.co.metadata.crawler.CatalogField.ARTIST_DESCRIPTION)
+        if (fetch && description.isNullOrBlank() && NetworkClient.isWikipediaApiEnabled() && catalog.descriptionLookupAllowed(kind, key)) {
+            description = WikipediaProvider.getAlbumDescription(name, null)
+            description?.let { catalog.cacheDescription(kind, key, it) }
+        }
+        listOfNotNull(description,
+            record?.document?.get(kr.co.metadata.crawler.CatalogField.ARTIST_DEBUT_DATE)?.let { context.getString(R.string.catalog_debut_date) + ": " + it },
+            record?.document?.get(kr.co.metadata.crawler.CatalogField.ARTIST_GENRES)?.let { context.getString(R.string.bottomsheet_genre) + ": " + it })
+            .joinToString("\n\n").takeIf(String::isNotBlank)
+    }
+
+    suspend fun loadAlbumDescription(name: String, artist: String?, fetch: Boolean = true): String? = withContext(Dispatchers.IO) {
+        val kind = kr.co.metadata.crawler.EntityKind.ALBUM
+        val key = catalog.albumKey(name, artist.orEmpty())
+        catalog.read(kind, key)?.document?.get(kr.co.metadata.crawler.CatalogField.ALBUM_DESCRIPTION)?.let { return@withContext it }
+        if (!fetch || !catalog.descriptionLookupAllowed(kind, key)) return@withContext null
+        var description: String? = null
+        if (appSettings.integrationsEnabled.value && appSettings.appleCanvasEnabled.value && artist != null) {
+            description = chromahub.rhythm.app.network.AppleMusicCanvasProvider.getAlbumDescription(name, artist)
+        }
+        if (description.isNullOrBlank() && NetworkClient.isWikipediaApiEnabled()) description = WikipediaProvider.getAlbumDescription(name, artist)
+        description?.let { catalog.cacheDescription(kind, key, it) }
+        description
+    }
+
+    fun storedSongs(songs: List<Song>): List<Song> = songs.map { catalog.apply(it) }
+    fun peekLocalLyrics(song: Song): LyricsData? = autoLyrics.read(song)?.takeUnless { it.isErrorMessage() }
+        ?: findLocalLyrics(song.artist, song.title, song.id, song.uri)?.takeIf { it.hasLyrics() && !it.isErrorMessage() }
+        ?: getEmbeddedLyrics(song.uri)?.takeIf { it.hasLyrics() && !it.isErrorMessage() }
+
+    private suspend fun fetchArtistImagesLegacy(artists: List<Artist>): List<Artist> =
         withContext(Dispatchers.IO) {
             val updatedArtists = mutableListOf<Artist>()
             val placeholderArtists = mutableSetOf<String>()
 
-            val allSongsForLocalLookup = runCatching { loadSongs() }.getOrDefault(emptyList())
+            val allSongsForLocalLookup = cachedSongs ?: runCatching { loadSongs() }.getOrDefault(emptyList())
             val appSettings = AppSettings.getInstance(context)
             val groupByAlbumArtist = appSettings.groupByAlbumArtist.value
             val preloadedCharDelimiters: List<String> = if (appSettings.artistSeparatorEnabled.value) {
@@ -4490,7 +4579,8 @@ class MusicRepository(context: Context) {
 
         // Define source fetchers
         val fetchFromLocal: suspend () -> LyricsData? = {
-            findLocalLyrics(artist, title, songId, songUri)
+            cachedSongs?.firstOrNull { it.id == songId || (songUri != null && it.uri == songUri) }?.let(autoLyrics::read)
+                ?: findLocalLyrics(artist, title, songId, songUri)
         }
         
         val fetchFromEmbedded: suspend () -> LyricsData? = fetchFromEmbedded@{
@@ -4506,6 +4596,7 @@ class MusicRepository(context: Context) {
                         Log.d(TAG, "Found lyrics from streaming provider for: $artist - $title (source=${streamingLyrics.source})")
                         return@fetchFromEmbedded streamingLyrics
                     }
+                } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled
                 } catch (e: Exception) {
                     Log.w(TAG, "Failed to fetch streaming lyrics for $songId: ${e.message}")
                 }
@@ -4532,7 +4623,7 @@ class MusicRepository(context: Context) {
         
         val fetchFromAPI: suspend () -> LyricsData? = {
             if (isNetworkAvailable()) {
-                fetchLyricsFromAPIs(artist, title)
+                fetchLyricsFromAPIs(artist, title, songId, songUri)
             } else {
                 null
             }
@@ -4569,9 +4660,14 @@ class MusicRepository(context: Context) {
                     if (sourceName == "API") {
                         // Only save API-fetched lyrics to local cache
                         saveLocalLyrics(artist, title, lyricsWithSource)
+                        val target = cachedSongs?.firstOrNull { it.id == songId || (songUri != null && it.uri == songUri) }
+                            ?: songUri?.let { Song(id = songId ?: it.toString(), title = title, artist = artist, album = "",
+                                duration = 0, uri = it, path = getFilePathFromUri(it)) }
+                        target?.let { autoLyrics.saveFetched(it, lyricsWithSource) }
                     }
                     return@withContext lyricsWithSource
                 }
+            } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled
             } catch (e: Exception) {
                 Log.w(TAG, "Error fetching from source ${index + 1}: ${e.message}")
                 // Continue to next source
@@ -4609,7 +4705,7 @@ class MusicRepository(context: Context) {
      * Fetches lyrics from online APIs (LRCLib, etc.)
      * Extracted as a separate method for cleaner code
      */
-    private suspend fun fetchLyricsFromAPIs(artist: String, title: String): LyricsData? {
+    private suspend fun fetchLyricsFromAPIs(artist: String, title: String, songId: String? = null, songUri: Uri? = null): LyricsData? {
         val cleanArtist = sanitizeSearchQuery(artist)
         val cleanTitle = sanitizeSearchQuery(title)
 
@@ -4646,6 +4742,7 @@ class MusicRepository(context: Context) {
                             } else null
                         } else null
                     }
+                } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled
                 } catch (e: Exception) {
                     Log.e(TAG, "Better Lyrics lyrics fetch failed: ${e.message}", e)
                     null
@@ -4657,6 +4754,7 @@ class MusicRepository(context: Context) {
             if (NetworkClient.isLyricallyApiEnabled() && rhythmLyricsApiService != null) {
                 try {
                     fetchSourceLyrics("APPLE_MUSIC", artist, title, cleanArtist, cleanTitle, preferWordByWord = true)
+                } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled
                 } catch (e: Exception) {
                     Log.e(TAG, "Lyrically API fetch failed: ${e.message}", e)
                     null
@@ -4715,6 +4813,7 @@ class MusicRepository(context: Context) {
                             null
                         } else null
                     }
+                } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled
                 } catch (e: Exception) {
                     Log.e(TAG, "LRCLib lyrics fetch failed: ${e.message}", e)
                     null
@@ -4728,41 +4827,29 @@ class MusicRepository(context: Context) {
 
         Log.d(TAG, "fetchLyricsFromAPIs: priority=$apiPriority, isPrioritySet=$isPrioritySet, fallbackRetry=$fallbackRetry")
 
-        if (!isPrioritySet || apiPriority == LyricsApiPriority.BETTERLYRICS_FIRST) {
-            // Default first: Better Lyrics -> Lyrically -> LRCLib
-            val betterLyricsResult = fetchBetterLyrics()
-            if (betterLyricsResult != null) return betterLyricsResult
-            
-            val lyricallyResult = fetchLyrically()
-            if (lyricallyResult != null) return lyricallyResult
-            
-            val lrcResult = fetchLrcLib()
-            if (lrcResult != null) return lrcResult
-        } else {
-            // User explicitly set priority
-            if (apiPriority == LyricsApiPriority.LYRICALLY_FIRST) {
-                val lyricallyResult = fetchLyrically()
-                if (lyricallyResult != null) return lyricallyResult
-
-                if (fallbackRetry) {
-                    val betterLyricsResult = fetchBetterLyrics()
-                    if (betterLyricsResult != null) return betterLyricsResult
-                    
-                    val lrcResult = fetchLrcLib()
-                    if (lrcResult != null) return lrcResult
+        val fetchCrawler: suspend () -> LyricsData? = {
+            if (appSettings.integrationsEnabled.value && appSettings.musicCrawlerLyricsApiEnabled.value && catalog.enabled()) {
+                val song = cachedSongs?.firstOrNull { it.id == songId || (songUri != null && it.uri == songUri) }
+                val key = song?.let(catalog::songKey) ?: "lookup:${catalog.albumKey(title, artist)}"
+                val document = catalog.collect(kr.co.metadata.crawler.EntityKind.TRACK, key, title, artist,
+                    setOf(kr.co.metadata.crawler.CatalogField.TRACK_LYRICS))?.document
+                document?.get(kr.co.metadata.crawler.CatalogField.TRACK_LYRICS)?.let {
+                    LyricsData(it, null, source = "Music sites")
                 }
-            } else { // LRCLIB_FIRST
-                val lrcResult = fetchLrcLib()
-                if (lrcResult != null) return lrcResult
-
-                if (fallbackRetry) {
-                    val betterLyricsResult = fetchBetterLyrics()
-                    if (betterLyricsResult != null) return betterLyricsResult
-                    
-                    val lyricallyResult = fetchLyrically()
-                    if (lyricallyResult != null) return lyricallyResult
+            } else null
+        }
+        val order = chromahub.rhythm.app.shared.data.model.lyricsApiOrder(apiPriority, isPrioritySet, fallbackRetry)
+        for (source in order) {
+            val result = when (source) {
+                LyricsApiPriority.BETTERLYRICS_FIRST -> fetchBetterLyrics()
+                LyricsApiPriority.LYRICALLY_FIRST -> fetchLyrically()
+                LyricsApiPriority.LRCLIB_FIRST -> fetchLrcLib()
+                LyricsApiPriority.MUSIC_CRAWLER_FIRST -> {
+                    // Preserve an earlier plain-LRC fallback rather than replace it with another plain source.
+                    lrclibPlainBackup ?: lyricallyBackup ?: fetchCrawler()
                 }
             }
+            if (result != null) return result
         }
 
         if (lrclibPlainBackup != null) {
@@ -4804,7 +4891,8 @@ class MusicRepository(context: Context) {
                     try {
                         val resp = searchService.searchSongs(term = t, limit = 10)
                         allResults.addAll(resp.results)
-                    } catch (e: Exception) {
+                    } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled
+                } catch (e: Exception) {
                         Log.e(TAG, "iTunes search failed for term $t", e)
                     }
                 }
@@ -4822,7 +4910,8 @@ class MusicRepository(context: Context) {
                     try {
                         val response = apiService.getAppleMusicLyrics(track.trackId.toString())
                         parseLyricallyResponse(response, "Lyrically (Apple Music)")
-                    } catch (e: Exception) {
+                    } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled
+                } catch (e: Exception) {
                         Log.d(TAG, "Apple Music lyrics fetch failed: ${e.message}")
                         null
                     }
@@ -5344,7 +5433,7 @@ class MusicRepository(context: Context) {
     /**
      * Fetches album art from Deezer API for albums without artwork
      */
-    suspend fun fetchAlbumArtwork(albums: List<Album>): List<Album> = withContext(Dispatchers.IO) {
+    private suspend fun fetchAlbumArtworkLegacy(albums: List<Album>): List<Album> = withContext(Dispatchers.IO) {
         val updatedAlbums = mutableListOf<Album>()
 
         for (album in albums) {
@@ -5569,7 +5658,7 @@ class MusicRepository(context: Context) {
      * Fetches track/song images from YTMusic API for songs without artwork.
      * This is used as a fallback when local album art is absent and other APIs fail.
      */
-    suspend fun fetchTrackArtwork(songs: List<Song>): List<Song> = withContext(Dispatchers.IO) {
+    private suspend fun fetchTrackArtworkLegacy(songs: List<Song>): List<Song> = withContext(Dispatchers.IO) {
         val updatedSongs = mutableListOf<Song>()
 
         for (song in songs) {
@@ -5771,8 +5860,10 @@ class MusicRepository(context: Context) {
      * Finds locally stored artist image
      */
     private fun findLocalArtistImage(artistName: String): Uri? {
-        val fileName = "${artistName}.jpg".replace(Regex("[^a-zA-Z0-9._-]"), "_")
-        val file = File(context.filesDir, "artist_images/$fileName")
+        val fileName = kr.co.metadata.crawler.CatalogFileStore.hash(catalog.artistKey(artistName)) + ".jpg"
+        val hashed = File(context.filesDir, "artist_images/$fileName")
+        val legacy = File(context.filesDir, "artist_images/" + "${artistName}.jpg".replace(Regex("[^a-zA-Z0-9._-]"), "_"))
+        val file = if (hashed.exists()) hashed else legacy
         return if (file.exists()) {
             Uri.fromFile(file).buildUpon().appendQueryParameter("t", file.lastModified().toString()).build()
         } else {
@@ -5856,7 +5947,7 @@ class MusicRepository(context: Context) {
      */
     private fun saveLocalArtistImage(artistName: String, imageUrl: String) {
         try {
-            val fileName = "${artistName}.jpg".replace(Regex("[^a-zA-Z0-9._-]"), "_")
+            val fileName = kr.co.metadata.crawler.CatalogFileStore.hash(catalog.artistKey(artistName)) + ".jpg"
             val imageDir = File(context.filesDir, "artist_images")
             imageDir.mkdirs()
 
@@ -5878,7 +5969,7 @@ class MusicRepository(context: Context) {
      */
     suspend fun saveArtistArtwork(artistName: String, artworkUri: Uri?): Uri? = withContext(Dispatchers.IO) {
         try {
-            val fileName = "${artistName}.jpg".replace(Regex("[^a-zA-Z0-9._-]"), "_")
+            val fileName = kr.co.metadata.crawler.CatalogFileStore.hash(catalog.artistKey(artistName)) + ".jpg"
             val imageDir = File(context.filesDir, "artist_images")
             if (!imageDir.exists()) {
                 imageDir.mkdirs()

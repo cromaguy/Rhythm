@@ -302,6 +302,7 @@ fun AlbumDetailScreen(
         }
     }
 
+    val catalogRevision by chromahub.rhythm.app.features.local.data.metadata.CatalogEnrichmentService.get(context).changes.collectAsState()
     val integrationsEnabled by appSettings.integrationsEnabled.collectAsState()
     val wikipediaApiEnabled by appSettings.wikipediaApiEnabled.collectAsState()
     val wikipediaApiActive = wikipediaApiEnabled && integrationsEnabled
@@ -309,6 +310,12 @@ fun AlbumDetailScreen(
     val appleCanvasActive = appleCanvasEnabled && integrationsEnabled
     var description by remember(albumId) { mutableStateOf<String?>(null) }
     var isDescriptionLoading by remember(albumId) { mutableStateOf(false) }
+
+    LaunchedEffect(albumName, album?.artist, catalogRevision) {
+        val artist = album?.artist ?: allDisplaySongs.firstOrNull()?.artist
+        chromahub.rhythm.app.features.local.di.LocalMusicModule.provideMusicRepository(context)
+            .loadAlbumDescription(albumName, artist, fetch = false)?.let { description = it }
+    }
 
     LaunchedEffect(albumId, albumName, album?.artist, allDisplaySongs, wikipediaApiActive, appleCanvasActive) {
         val fallbackArtist = allDisplaySongs.firstOrNull()?.artist
@@ -318,13 +325,8 @@ fun AlbumDetailScreen(
         if (albumName.isNotBlank()) {
             isDescriptionLoading = true
             withContext(Dispatchers.IO) {
-                var desc: String? = null
-                if (effectiveArtistName != null && appleCanvasActive) {
-                    desc = AppleMusicCanvasProvider.getAlbumDescription(albumName, effectiveArtistName)
-                }
-                if (desc.isNullOrBlank() && wikipediaApiActive) {
-                    desc = WikipediaProvider.getAlbumDescription(albumName, effectiveArtistName)
-                }
+                val desc = chromahub.rhythm.app.features.local.di.LocalMusicModule.provideMusicRepository(context)
+                    .loadAlbumDescription(albumName, effectiveArtistName)
                 withContext(Dispatchers.Main) {
                     description = desc
                     isDescriptionLoading = false

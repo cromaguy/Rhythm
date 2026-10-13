@@ -17,5 +17,6 @@ enum class MediaScanMode {
     /**
      * Whitelist mode: Include only specified songs/folders, exclude everything else
      */
-    WHITELIST
+    WHITELIST,
+    HYBRID
 }

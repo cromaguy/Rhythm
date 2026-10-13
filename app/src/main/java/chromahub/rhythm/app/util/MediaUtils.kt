@@ -1337,6 +1337,28 @@ object MediaUtils {
      * @param lyrics The lyrics text (plain or LRC formatted) to embed
      * @return true if lyrics were successfully embedded, false otherwise
      */
+    /** Try actual granted write access, including MediaStore consent and SAF grants. */
+    fun embedLyricsAutomatically(context: Context, song: Song, lyrics: String): Boolean {
+        val uri = song.id.toLongOrNull()?.let { getSpecificVolumeUri(context, it) } ?: song.uri
+        if (uri.scheme !in listOf("content", "file")) return false
+        if (uri.scheme == "content" && !runCatching {
+                context.contentResolver.openFileDescriptor(uri, "rw")?.use { true } ?: false
+            }.getOrDefault(false)) return false
+        if (uri.scheme == "file" && uri.path?.let { File(it).canWrite() } != true) return false
+        val target = song.copy(uri = uri)
+        val tempPath = prepareTempFileWithLyrics(context, target, lyrics) ?: return false
+        val temp = File(tempPath)
+        return try {
+            val success = if (uri.scheme == "file") {
+                val destination = uri.path?.let(::File) ?: return false
+                if (!destination.canWrite()) false else { temp.inputStream().use { input -> destination.outputStream().use { input.copyTo(it) } }; true }
+            } else writeTempFileToContentUri(context.contentResolver, uri, temp)
+            if (success) target.path?.let { android.media.MediaScannerConnection.scanFile(context, arrayOf(it), null, null) }
+            success
+        } catch (_: Exception) { false }
+        finally { temp.delete() }
+    }
+
     fun embedLyricsInFile(
         context: Context,
         song: Song,
@@ -1371,9 +1393,7 @@ object MediaUtils {
             var fileWriteSucceeded = false
 
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
-                // Android 11+: Direct write will fail for external media files.
-                // Return false so ViewModel triggers createWriteRequest for proper permission UI.
-                return false
+                return embedLyricsAutomatically(context, song, lyrics)
             } else if (android.os.Build.VERSION.SDK_INT == android.os.Build.VERSION_CODES.Q) {
                 // Android 10: WRITE_EXTERNAL_STORAGE is granted; write via temp file + ContentResolver stream
                 try {
@@ -1523,18 +1543,16 @@ object MediaUtils {
         song: Song,
         lyrics: String
     ): String? {
+        var prepared: File? = null
+        var succeeded = false
         return try {
             val contentResolver = context.contentResolver
-            val filePath = contentResolver.query(
-                song.uri,
-                arrayOf(MediaStore.Audio.Media.DATA),
-                null, null, null
-            )?.use { cursor ->
-                if (cursor.moveToFirst()) cursor.getString(0) else null
-            }
-
+            val filePath = song.path ?: runCatching { contentResolver.query(
+                song.uri, arrayOf(MediaStore.Audio.Media.DATA), null, null, null
+            )?.use { cursor -> if (cursor.moveToFirst()) cursor.getString(0) else null } }.getOrNull()
             val extension = filePath?.substringAfterLast('.', "mp3") ?: "mp3"
-            var tempFile = File(context.cacheDir, "temp_lyrics_perm_${System.currentTimeMillis()}.$extension")
+            var tempFile = File(context.cacheDir, "temp_lyrics_perm_${java.util.UUID.randomUUID()}.$extension")
+            prepared = tempFile
 
             // Copy original file
             contentResolver.openInputStream(song.uri)?.use { input ->
@@ -1547,6 +1565,7 @@ object MediaUtils {
             }
 
             tempFile = adjustTempFileExtension(tempFile)
+            prepared = tempFile
 
             // Write lyrics to temp with format-aware routing
             if (!embedLyricsInAudioFile(tempFile, lyrics)) {
@@ -1554,11 +1573,12 @@ object MediaUtils {
                 return null
             }
 
+            succeeded = true
             tempFile.absolutePath
         } catch (e: Exception) {
             Log.e(TAG, "Error preparing temp file with lyrics", e)
             null
-        }
+        } finally { if (!succeeded) prepared?.delete() }
     }
 
     /**

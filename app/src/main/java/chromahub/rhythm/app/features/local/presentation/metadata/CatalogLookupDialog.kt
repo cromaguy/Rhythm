@@ -38,7 +38,7 @@ fun CatalogLookupDialog(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val repository = remember { CatalogImportRepository() }
+    val repository = remember { CatalogImportRepository(context.applicationContext) }
     var query by remember { mutableStateOf(initialQuery) }
     var kind by remember { mutableStateOf(EntityKind.TRACK) }
     var provider by remember { mutableStateOf(Provider.BUGS_MOBILE) }
@@ -52,7 +52,7 @@ fun CatalogLookupDialog(
 
     fun selectable(field: CatalogField) = if (lyricsOnly) field == CatalogField.TRACK_LYRICS else field !in setOf(
         CatalogField.TRACK_LYRICS, CatalogField.ARTIST_DESCRIPTION,
-        CatalogField.ARTIST_DEBUT_DATE, CatalogField.ARTIST_IMAGE,
+        CatalogField.ARTIST_DEBUT_DATE, CatalogField.ARTIST_IMAGE, CatalogField.ALBUM_DESCRIPTION,
     )
 
     fun preview(result: CatalogDocument?) {

@@ -8,6 +8,7 @@ import kotlinx.serialization.json.*
 data class CatalogValue(val field: CatalogField, val value: String, val sourceUrl: String)
 
 data class CatalogDocument(val kind: EntityKind, val values: List<CatalogValue>) {
+    fun has(field: CatalogField): Boolean = values.firstOrNull { it.field == field }?.hasValue() == true
     operator fun get(field: CatalogField): String? = values.firstOrNull { it.field == field }?.value
 
     companion object {
@@ -76,4 +77,9 @@ object CatalogDocumentCodec {
             CatalogValue(field, item.string("value"), item.string("sourceUrl"))
         }.also { require(it.map { value -> value.field }.distinct().size == it.size) })
     }
+}
+
+fun CatalogValue.hasValue(): Boolean = !CatalogIdentity.missing(value) && when (field) {
+    CatalogField.TRACK_RELEASE_DATE, CatalogField.ALBUM_RELEASE_DATE, CatalogField.ARTIST_DEBUT_DATE -> value.yearOrNull() != null
+    else -> true
 }

@@ -7,7 +7,11 @@ package chromahub.rhythm.app.shared.data.model
 
 enum class MediaScanMode(val value: String) {
     BLACKLIST("blacklist"),
-    WHITELIST("whitelist");
+    WHITELIST("whitelist"),
+    HYBRID("hybrid");
+
+    val usesWhitelist: Boolean get() = this != BLACKLIST
+    val usesBlacklist: Boolean get() = this != WHITELIST
 
     companion object {
         fun fromValue(value: String): MediaScanMode =

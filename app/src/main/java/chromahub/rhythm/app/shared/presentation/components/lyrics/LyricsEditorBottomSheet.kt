@@ -251,6 +251,10 @@ fun LyricsEditorBottomSheet(
                     selectedFormat = LyricFormat.SOURCE
                     editedSource = it
                     timeOffset = 0
+                    song?.let { target -> scope.launch {
+                        chromahub.rhythm.app.features.local.data.metadata.AutomaticLyricsStore.get(context)
+                            .saveFetched(target, LyricsData(it, null, source = "Music sites"))
+                    } }
                 }
                 showCatalogLookup = false
             },

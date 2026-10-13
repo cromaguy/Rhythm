@@ -29,6 +29,7 @@ enum class CatalogField(val kind: EntityKind, val image: Boolean = false) {
     ARTIST_DEBUT_DATE(EntityKind.ARTIST),
     ARTIST_GENRES(EntityKind.ARTIST),
     ALBUM_TITLE(EntityKind.ALBUM),
+    ALBUM_DESCRIPTION(EntityKind.ALBUM),
     ALBUM_ARTISTS(EntityKind.ALBUM),
     ALBUM_IMAGE(EntityKind.ALBUM, image = true),
     ALBUM_RELEASE_DATE(EntityKind.ALBUM),
