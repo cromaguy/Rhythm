@@ -60,6 +60,11 @@
             android:shell="true"
             tools:targetApi="29" />
 
+        <activity
+            android:name=".features.local.presentation.metadata.SelectorStudioActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+
         <!-- Media3 notification icon -->
         <meta-data
             android:name="androidx.media3.ui.PlayerNotificationManager.smallIcon"

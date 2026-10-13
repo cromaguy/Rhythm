@@ -89,6 +89,8 @@ import chromahub.rhythm.app.util.HapticUtils
 import chromahub.rhythm.app.util.HapticType
 import chromahub.rhythm.app.util.LyricsFileUtils
 import chromahub.rhythm.app.util.RhythmLyricsParser
+import chromahub.rhythm.app.features.local.presentation.metadata.CatalogLookupDialog
+import kr.co.metadata.crawler.CatalogField
 import chromahub.rhythm.app.shared.data.model.LyricsData
 import chromahub.rhythm.app.shared.data.model.Song
 import chromahub.rhythm.app.shared.data.model.AppSettings
@@ -238,6 +240,23 @@ fun LyricsEditorBottomSheet(
     }
     
     var timeOffset by remember { mutableIntStateOf(initialTimeOffset) }
+    var showCatalogLookup by remember(song?.id) { mutableStateOf(false) }
+    if (showCatalogLookup) {
+        CatalogLookupDialog(
+            initialQuery = listOfNotNull(songTitle, song?.artist).joinToString(" "),
+            lyricsOnly = true,
+            onDismiss = { showCatalogLookup = false },
+            onApply = { imported, _ ->
+                imported[CatalogField.TRACK_LYRICS]?.let {
+                    selectedFormat = LyricFormat.SOURCE
+                    editedSource = it
+                    timeOffset = 0
+                }
+                showCatalogLookup = false
+            },
+        )
+    }
+
     val sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded))
     
     // Helper functions for lyrics document handling
@@ -1067,6 +1086,10 @@ fun LyricsEditorBottomSheet(
                     .weight(1f)
                     .padding(horizontal = 24.dp)
             ) {
+                OutlinedButton(onClick = { showCatalogLookup = true }, modifier = Modifier.fillMaxWidth()) {
+                    Text(stringResource(R.string.catalog_find_lyrics))
+                }
+                Spacer(Modifier.height(8.dp))
                 OutlinedTextField(
                     value = editedLyrics,
                     onValueChange = { updateEditedLyrics(it) },

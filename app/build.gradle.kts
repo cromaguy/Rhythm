@@ -223,6 +223,8 @@ androidComponents {
 }
 
 dependencies {
+    implementation(project(":crawler"))
+    implementation("androidx.webkit:webkit:1.12.1")
     implementation(libs.androidx.compose.ui.unit)
     // Desugaring library
     coreLibraryDesugaring(libs.androidx.desugar.jdk.libs)
