@@ -2,40 +2,35 @@
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
-    android:viewportWidth="400"
-    android:viewportHeight="400">
+    android:viewportWidth="1280"
+    android:viewportHeight="1280">
 
     <group
-        android:pivotX="200"
-        android:pivotY="200"
-        android:scaleX="0.68"
-        android:scaleY="0.68"
-        android:translateY="-4">
-
+        android:pivotX="640"
+        android:pivotY="640"
+        android:scaleX="0.666667"
+        android:scaleY="0.666667">
+        <!-- Open lock and the ribbon beneath the play button. -->
         <path
-            android:pathData="M 100,240 C 100,50 300,50 300,240"
+            android:pathData="M469,690 L469,410 C469,193 803,193 803,426"
             android:fillColor="#00000000"
             android:strokeColor="#000000"
-            android:strokeWidth="28"
+            android:strokeWidth="70"
             android:strokeLineCap="round" />
-
         <path
-            android:pathData="M 100,180 A 37,37 0 0 1 137,217 L 137,268 A 37,37 0 0 1 100,305 A 37,37 0 0 1 63,268 L 63,217 A 37,37 0 0 1 100,180 Z"
+            android:pathData="M450,640 L450,830 C450,965 626,1032 703,915 L828,752 L676,802 L540,850 Z"
             android:fillColor="#000000" />
-
+        <!-- Play button with a transparent keyhole for themed launchers. -->
         <path
-            android:pathData="M 300,180 A 37,37 0 0 1 337,217 L 337,268 A 37,37 0 0 1 300,305 A 37,37 0 0 1 263,268 L 263,217 A 37,37 0 0 1 300,180 Z"
+            android:pathData="M485,456 C485,403 528,377 570,406 L888,603 C934,632 934,680 888,709 L570,894 C523,923 485,897 485,840 Z M612,697 A63,63 0,1 1,668 697 L692,768 Q696,780 682,780 L596,780 Q583,780 587,768 Z"
+            android:fillType="evenOdd"
             android:fillColor="#000000" />
-
+        <!-- Equalizer bars on either side. -->
         <path
-            android:pathData="M 180,185 L 220,185 A 40,40 0 0 1 260,225 L 260,265 A 40,40 0 0 1 220,305 L 180,305 A 40,40 0 0 1 140,265 L 140,225 A 40,40 0 0 1 180,185 Z"
+            android:pathData="M163,618 L163,660 M246,533 L246,743 M338,451 L338,827 M419,558 L419,694 M985,519 L985,761 M1062,594 L1062,698 M1132,638 L1132,656"
             android:fillColor="#00000000"
             android:strokeColor="#000000"
-            android:strokeWidth="16" />
-
-        <path
-            android:pathData="M 181,217 C 181,211 187,208 192,211 L 237,241 C 241,243 241,247 237,249 L 192,279 C 187,282 181,279 181,273 Z"
-            android:fillColor="#000000" />
+            android:strokeWidth="48"
+            android:strokeLineCap="round" />
     </group>
-
 </vector>

@@ -7,4 +7,5 @@
 
     <path
         android:pathData="M0,0 h108 v108 h-108 z"
-        android:fillColor="@color/launcher_bg" /> </vector>
+        android:fillColor="#000000" />
+</vector>
