@@ -1,0 +1,80 @@
+name: Publish prepared APK assets
+
+on:
+  workflow_dispatch:
+    inputs:
+      artifact_branch:
+        description: Branch containing prepared-apks/manifest.json and binary parts
+        required: true
+      source_revision:
+        description: Verified application source commit
+        required: true
+      tag:
+        description: Existing draft release tag
+        required: true
+      release_id:
+        description: Existing draft release ID
+        required: true
+
+permissions:
+  contents: write
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.artifact_branch }}
+          persist-credentials: false
+      - name: Reconstruct and verify prepared APKs
+        env:
+          EXPECTED_REVISION: ${{ inputs.source_revision }}
+        run: |
+          python3 - <<'PY'
+          import hashlib, json, os
+          from pathlib import Path
+          root = Path('prepared-apks').resolve()
+          manifest = json.loads((root / 'manifest.json').read_text())
+          assert manifest['source_revision'] == os.environ['EXPECTED_REVISION']
+          output = Path('release-assets')
+          output.mkdir()
+          checksums = []
+          for asset in manifest['assets']:
+              name = asset['name']
+              assert Path(name).name == name and name.endswith('.apk')
+              destination = output / name
+              digest = hashlib.sha256()
+              size = 0
+              with destination.open('wb') as target:
+                  for relative in asset['parts']:
+                      part = (root / relative).resolve()
+                      assert part.is_relative_to(root) and part.suffix == '.part'
+                      data = part.read_bytes()
+                      target.write(data)
+                      digest.update(data)
+                      size += len(data)
+              assert size == asset['size'] and digest.hexdigest() == asset['sha256']
+              checksums.append(f'{digest.hexdigest()}  {name}')
+          (output / 'SHA256SUMS').write_text('\n'.join(checksums) + '\n')
+          PY
+          signer=$(find "${ANDROID_HOME}/build-tools" -name apksigner -type f | sort -V | tail -1)
+          test -n "$signer"
+          for apk in release-assets/*.apk; do "$signer" verify "$apk"; done
+      - name: Upload assets and publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_ID: ${{ inputs.release_id }}
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          python3 - <<'PY'
+          import os
+          assert os.environ['RELEASE_ID'].isdigit()
+          PY
+          actual_tag=$(gh api "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID" --jq .tag_name)
+          test "$actual_tag" = "$RELEASE_TAG"
+          gh release upload "$RELEASE_TAG" release-assets/*.apk release-assets/SHA256SUMS --repo "$GITHUB_REPOSITORY" --clobber
+          gh api --method PATCH "repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID" -F draft=false --jq .html_url
