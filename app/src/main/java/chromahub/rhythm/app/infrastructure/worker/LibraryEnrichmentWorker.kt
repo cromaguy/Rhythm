@@ -40,7 +40,11 @@ class LibraryEnrichmentWorker(context: Context, params: WorkerParameters) : Coro
         while (plan.next < plan.keys.size && !isStopped) {
             // Bounded segments allow WorkManager to resume very large libraries without a huge single run.
             if (System.currentTimeMillis() - start > 8 * 60_000 || plan.next % 25 == 0 && System.currentTimeMillis() - start > 60_000) {
-                plan.save(applicationContext); return@withContext Result.retry()
+                plan.save(applicationContext)
+                // A successful checkpoint is not a failure: retries would grow to five-hour gaps.
+                // APPEND also preserves cancellation of the current job and its dependent segments.
+                enqueue(applicationContext, continuation = true)
+                return@withContext Result.success(workDataOf("done" to plan.next, "total" to plan.keys.size))
             }
             val song = songs[plan.keys[plan.next]]
             val policy = LibraryFilterPolicy(settings.mediaScanMode.value, settings.blacklistedSongs.value,
@@ -127,11 +131,12 @@ class LibraryEnrichmentWorker(context: Context, params: WorkerParameters) : Coro
     }
     companion object {
         const val WORK_NAME = "library_catalog_enrichment"
-        fun enqueue(context: Context) {
+        fun enqueue(context: Context, continuation: Boolean = false) {
             val options = CatalogEnrichmentService.get(context).preferences.options.value
             val constraints = Constraints.Builder().setRequiredNetworkType(if (options.wifiOnly) NetworkType.UNMETERED else NetworkType.CONNECTED)
                 .setRequiresStorageNotLow(true).setRequiresBatteryNotLow(true).build()
-            WorkManager.getInstance(context).enqueueUniqueWork(WORK_NAME, ExistingWorkPolicy.KEEP,
+            WorkManager.getInstance(context).enqueueUniqueWork(WORK_NAME,
+                if (continuation) ExistingWorkPolicy.APPEND else ExistingWorkPolicy.KEEP,
                 OneTimeWorkRequestBuilder<LibraryEnrichmentWorker>().setConstraints(constraints)
                     .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 30, TimeUnit.SECONDS).build())
         }
