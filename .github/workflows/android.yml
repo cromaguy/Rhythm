@@ -62,6 +62,9 @@ jobs:
         APPLE_MUSIC_FALLBACK_TOKEN: ${{ secrets.APPLE_MUSIC_FALLBACK_TOKEN }}
       run: ./gradlew assembleGithubRelease assembleGithubDebug
 
+    - name: Run unit tests
+      run: ./gradlew :crawler:test :app:testGithubDebugUnitTest
+
     - name: Generate build info
       if: github.event_name == 'pull_request'
       run: |
