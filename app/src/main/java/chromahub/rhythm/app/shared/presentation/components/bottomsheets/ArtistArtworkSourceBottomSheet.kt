@@ -79,6 +79,7 @@ fun ArtistArtworkSourceBottomSheet(
                     .padding(start = 24.dp, end = 24.dp + endPadding, bottom = 24.dp),
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
+                chromahub.rhythm.app.features.local.presentation.metadata.CatalogSourceSettings()
                 // Options
                 val options = listOf(
                     ArtistArtworkSource.PREFER_LOCAL_THEN_API to Triple(

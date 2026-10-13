@@ -107,7 +107,10 @@ enum class LyricsApiPriority(val displayName: String) {
     LYRICALLY_FIRST("Lyrically"),
     LRCLIB_FIRST("LRCLib"),
     BETTERLYRICS_FIRST("Better Lyrics"),
-    MUSIC_CRAWLER_FIRST("Music sites");
+    MUSIC_CRAWLER_FIRST("Bugs → Melon → Genie"),
+    BUGS_FIRST("Bugs"),
+    MELON_FIRST("Melon"),
+    GENIE_FIRST("Genie");
 
     companion object {
         fun fromOrdinal(ordinal: Int): LyricsApiPriority {
@@ -4498,9 +4501,9 @@ private val _autoCheckForUpdates = MutableStateFlow(prefs.getBoolean(KEY_AUTO_CH
     
     // Helper method to check if a song would be filtered by current whitelist rules
     fun isEffectivelyWhitelisted(songId: String, songPath: String?): Boolean {
-        // If no whitelist exists, all songs are effectively whitelisted
+        // Empty inclusion lists select no songs in whitelist and hybrid modes.
         if (_whitelistedSongs.value.isEmpty() && _whitelistedFolders.value.isEmpty()) {
-            return true
+            return false
         }
         
         // Check individual song whitelist

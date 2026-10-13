@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Rhythm</string>
+    <string name="app_name">T2Rhythm</string>
     <!-- Common Labels -->
     <string name="home">Thuis</string>
     <string name="library">Bibliotheek</string>
     <string name="search">Zoeken</string>
     <!-- Media3 notification configuration -->
-    <string name="media3_notification_channel_name">Rhythm Muziek</string>
+    <string name="media3_notification_channel_name">T2Rhythm Muziek</string>
     <string name="media3_notification_channel_description">Bedieningselementen voor het afspelen van media</string>
     <!-- Widget strings -->
-    <string name="widget_description_glance">Rhythm Muziek - Regel het afspelen met 9 responsieve lay-outs, Material 3 ontwerp en realtime statusupdates</string>
-    <string name="widget_name_glance">Rhythm Muziek</string>
+    <string name="widget_description_glance">T2Rhythm Muziek - Regel het afspelen met 9 responsieve lay-outs, Material 3 ontwerp en realtime statusupdates</string>
+    <string name="widget_name_glance">T2Rhythm Muziek</string>
     <string name="unknown_artist">Onbekende kunstenaar</string>
     <string name="play_pause">Afspelen/pauzeren</string>
     <!-- Widget Settings -->
@@ -25,17 +25,17 @@
     <!-- Settings - Notifications -->
     <string name="settings_notifications">Meldingen</string>
     <string name="settings_notifications_updates_group">App-updates</string>
-    <string name="settings_notifications_rhythm_guard_group">Rhythm Bewaker</string>
-    <string name="settings_notifications_rhythm_pulse_group">Rhythm Tips</string>
+    <string name="settings_notifications_rhythm_guard_group">T2Rhythm Bewaker</string>
+    <string name="settings_notifications_rhythm_pulse_group">T2Rhythm Tips</string>
     <string name="settings_update_notifications_merged_desc">Ontvang meldingen voor nieuwe versies en resultaten van achtergrondupdatecontroles</string>
     <string name="settings_rhythm_guard_alert_notifications">Veiligheidswaarschuwingen</string>
-    <string name="settings_rhythm_guard_alert_notifications_desc">Toon een melding wanneer Rhythm Guard een riskant volume of blootstelling detecteert</string>
+    <string name="settings_rhythm_guard_alert_notifications_desc">Toon een melding wanneer T2Rhythm Guard een riskant volume of blootstelling detecteert</string>
     <string name="settings_rhythm_guard_timer_notifications">Pauzetimermeldingen</string>
     <string name="settings_rhythm_guard_timer_notifications_desc">Toon meldingen voor geplande pauzes en actieve time-outaftellingen</string>
-    <string name="settings_rhythm_pulse_notifications">Rhythm Tipsmeldingen</string>
+    <string name="settings_rhythm_pulse_notifications">T2Rhythm Tipsmeldingen</string>
     <string name="settings_rhythm_pulse_notifications_desc">Ontvang vriendelijke herinneringen en luistertips.</string>
     <string name="settings_rhythm_pulse_interval">Tips-interval</string>
-    <string name="settings_rhythm_pulse_interval_dialog_title">Rhythm Fooi-interval</string>
+    <string name="settings_rhythm_pulse_interval_dialog_title">T2Rhythm Fooi-interval</string>
     <!-- Settings - Queue & Playback -->
     <!-- Settings - Queue -->
     <string name="settings_queue">Wachtrij</string>
@@ -114,18 +114,18 @@
     <string name="operation_exporting_playlists">Een back-up maken van uw aangepaste afspeellijsten…</string>
     <string name="operation_exporting_playlists_location">Een back-up maken van afspeellijsten naar opslag…</string>
     <string name="operation_importing_playlist">Afspeellijstbestand importeren…</string>
-    <string name="notification_operations_channel_name">Rhythm Bibliotheek</string>
+    <string name="notification_operations_channel_name">T2Rhythm Bibliotheek</string>
     <string name="notification_operations_channel_desc">Voortgang en resultaten voor bibliotheekscans en afspeellijstacties</string>
-    <string name="notification_media_scan_title">Rhythm Bibliotheekscan</string>
+    <string name="notification_media_scan_title">T2Rhythm Bibliotheekscan</string>
     <string name="notification_media_scan_stage_songs">Apparaatopslag scannen voor audiotracks…</string>
     <string name="notification_media_scan_stage_saving">Audiotrackdatabase optimaliseren en opslaan…</string>
     <string name="notification_media_scan_stage_finishing">Audio-indexering voltooien…</string>
     <string name="notification_media_scan_complete_pending_setup">Audioscannen voltooid, achtergrondtaken worden geïnitialiseerd…</string>
     <string name="notification_media_scan_cancelled">Bibliotheekscan is geannuleerd.</string>
     <string name="notification_media_scan_failed">Bibliotheekscan mislukt. Controleer de opslagrechten en probeer het opnieuw.</string>
-    <string name="notification_playlist_export_title">Rhythm Bibliotheekexport</string>
-    <string name="notification_playlist_import_title">Rhythm Bibliotheekimport</string>
-    <string name="notification_library_setup_title">Rhythm Bibliotheekinstellingen</string>
+    <string name="notification_playlist_export_title">T2Rhythm Bibliotheekexport</string>
+    <string name="notification_playlist_import_title">T2Rhythm Bibliotheekimport</string>
+    <string name="notification_library_setup_title">T2Rhythm Bibliotheekinstellingen</string>
     <plurals name="notification_library_setup_complete_summary">
         <item quantity="one">Bibliotheek is geoptimaliseerd en klaar: %1$d nummers, %2$d albums, %3$d artiesten</item>
         <item quantity="other">Bibliotheek is geoptimaliseerd en klaar: %1$d nummers, %2$d albums, %3$d artiesten</item>
@@ -144,20 +144,20 @@
         <item quantity="other">Succesvol geïmporteerd \"%1$s\" met %2$d nummers.</item>
     </plurals>
     <string name="notification_playlist_import_failed">Importeren van afspeellijst mislukt. Controleer het bestandsformaat.</string>
-    <string name="notification_updater_channel_name">Rhythm Updater</string>
+    <string name="notification_updater_channel_name">T2Rhythm Updater</string>
     <string name="notification_updater_channel_desc">Downloadstatus voor app-updates</string>
-    <string name="notification_updater_title">Rhythm Updater</string>
+    <string name="notification_updater_title">T2Rhythm Updater</string>
     <string name="notification_updater_downloading">⬇ Downloaden: %1$d%%</string>
     <string name="notification_updater_download_complete">✓ Klaar om te installeren. Tik om te updaten.</string>
     <string name="notification_updater_available_title">Update beschikbaar!</string>
-    <string name="notification_updater_available_text">🆕 Er is een nieuwe versie van Rhythm.</string>
-    <string name="notification_sleep_timer_channel_name">Rhythm Slaaptimer</string>
+    <string name="notification_updater_available_text">🆕 Er is een nieuwe versie van T2Rhythm.</string>
+    <string name="notification_sleep_timer_channel_name">T2Rhythm Slaaptimer</string>
     <string name="notification_sleep_timer_channel_desc">Aftellen en status voor slaaptimeracties</string>
-    <string name="notification_sleep_timer_title">Rhythm Slaaptimer</string>
+    <string name="notification_sleep_timer_title">T2Rhythm Slaaptimer</string>
     <string name="notification_sleep_timer_pause_in">⏸ Pauzeren over %1$s</string>
     <string name="notification_sleep_timer_stop_in">⏹ Stoppen over %1$s</string>
     <!-- Streaming Notifications -->
-    <string name="notification_streaming_channel_name">Rhythm Go</string>
+    <string name="notification_streaming_channel_name">T2Rhythm Go</string>
     <string name="notification_streaming_channel_desc">Status van streamingdiensten en synchronisatie-updates</string>
     <!-- Streaming Authentication -->
     <string name="notification_streaming_auth_title">Streaming verbonden</string>
@@ -302,7 +302,7 @@
     <!-- Status Labels -->
     <string name="status_disabled">Uitgeschakeld</string>
     <!-- HomeScreen -->
-    <string name="home_title">Rhythm</string>
+    <string name="home_title">T2Rhythm</string>
     <string name="home_settings_cd">Instellingen</string>
     <string name="home_no_featured_albums">Geen aanbevolen albums</string>
     <string name="home_no_featured_albums_desc">Voeg enkele albums toe aan je bibliotheek om aanbevolen inhoud te bekijken</string>
@@ -331,7 +331,7 @@
     <string name="home_no_recommendations">Geen aanbevelingen</string>
     <string name="home_no_recommendations_desc">Luister naar muziek om gepersonaliseerde aanbevelingen te krijgen</string>
     <!-- Listening Stats -->
-    <string name="home_listening_stats">Je Rhythm statistieken</string>
+    <string name="home_listening_stats">Je T2Rhythm statistieken</string>
     <!-- Mood & Moments -->
     
     <!-- Recently Played -->
@@ -387,7 +387,7 @@
     <string name="sort_song_count">Nummertelling</string>
     <!-- Storage Permission -->
     <string name="storage_permission_required">Opslagtoestemming vereist</string>
-    <string name="storage_permission_desc">Om door je muziekbestanden te bladeren en de opslag van je apparaat te verkennen, heeft Rhythm toestemming nodig voor toegang tot je bestanden en media.</string>
+    <string name="storage_permission_desc">Om door je muziekbestanden te bladeren en de opslag van je apparaat te verkennen, heeft T2Rhythm toestemming nodig voor toegang tot je bestanden en media.</string>
     <string name="storage_permission_audio_only">Hierdoor is alleen toegang mogelijk tot audiobestanden en mappen die muziek bevatten.</string>
     <!-- PlayerScreen -->
     <string name="player_loading_lyrics">Songtekst laden…</string>
@@ -402,11 +402,11 @@
     <!-- Common UI -->
     <string name="ui_dismiss">Afwijzen</string>
     <!-- Common Terms -->
-    <string name="common_rhythm">Rhythm</string>
+    <string name="common_rhythm">T2Rhythm</string>
     <string name="common_home">Thuis</string>
     <string name="common_library">Bibliotheek</string>
     <!-- Splash/Loading -->
-    <string name="splash_tagline">Jouw muziek, jouw Rhythm</string>
+    <string name="splash_tagline">Jouw muziek, jouw T2Rhythm</string>
     <string name="splash_ready">Klaar om te grooven!</string>
     <!-- Audio Quality -->
     
@@ -434,7 +434,7 @@
     <string name="updates_channel_desc">Kies welk updatekanaal je wilt volgen:</string>
     <!-- Onboarding -->
     <string name="onboarding_welcome_to">Welkom bij</string>
-    <string name="onboarding_welcome_subtitle">Jouw muziek, jouw Rhythm</string>
+    <string name="onboarding_welcome_subtitle">Jouw muziek, jouw T2Rhythm</string>
     <string name="onboarding_get_started">Aan de slag</string>
     <string name="onboarding_android13_notice">Android 13+ Let op</string>
     <string name="onboarding_android13_desc">In nieuwere Android-versies zie je meerdere toestemmingsverzoeken. Geef toegang tot audiobestanden en meldingen voor de beste ervaring.</string>
@@ -458,15 +458,15 @@
     <string name="onboarding_library_how_works">Hoe bibliotheekorganisatie werkt</string>
     <string name="onboarding_library_1">Pas de tabvolgorde in Bibliotheek aan voor snelle toegang tot uw favorieten</string>
     <string name="onboarding_library_2">Maak en beheer afspeellijsten rechtstreeks vanuit het bibliotheekscherm</string>
-    <string name="onboarding_theme_title">Maak Rhythm van jou</string>
-    <string name="onboarding_theme_desc">Personaliseer het uiterlijk van Rhythm zodat het bij jouw stijl past. Kies uw systeemthema, lettertype of Material uw dynamische kleuren (Android 12+).</string>
+    <string name="onboarding_theme_title">Maak T2Rhythm van jou</string>
+    <string name="onboarding_theme_desc">Personaliseer het uiterlijk van T2Rhythm zodat het bij jouw stijl past. Kies uw systeemthema, lettertype of Material uw dynamische kleuren (Android 12+).</string>
     <string name="onboarding_more_tuner">Meer maatwerk in Instellingen</string>
     <string name="onboarding_tuner_1">Aangepaste kleurenschema\'s en kleurextractie van albumhoezen</string>
     <string name="onboarding_tuner_2">Lettertypeaanpassing en typografie-instellingen</string>
     <string name="onboarding_rhythm_guard_title">Bescherm uw gehoor</string>
-    <string name="onboarding_rhythm_guard_desc">Stel Rhythm Guard in om uw luisterervaring veiliger te maken met leeftijdsbewuste standaardinstellingen en handmatige beveiligingsopties.</string>
-    <string name="onboarding_rhythm_guard_mode_title">Rhythm Bewakingsmodus</string>
-    <string name="onboarding_rhythm_guard_age_hint">Leeftijdsprofiel helpt Rhythm Guard om veiligere luisterlimieten aan te bevelen.</string>
+    <string name="onboarding_rhythm_guard_desc">Stel T2Rhythm Guard in om uw luisterervaring veiliger te maken met leeftijdsbewuste standaardinstellingen en handmatige beveiligingsopties.</string>
+    <string name="onboarding_rhythm_guard_mode_title">T2Rhythm Bewakingsmodus</string>
+    <string name="onboarding_rhythm_guard_age_hint">Leeftijdsprofiel helpt T2Rhythm Guard om veiligere luisterlimieten aan te bevelen.</string>
     <string name="onboarding_rhythm_guard_tip_1">De automatische modus past veiligere standaardinstellingen toe met minimale instellingen.</string>
     <string name="onboarding_rhythm_guard_tip_3">De handmatige modus geeft u volledige controle over waarschuwingen en drempels.</string>
     <string name="onboarding_full_tour_prompt_title">Volledige installatierondleiding voortzetten?</string>
@@ -482,7 +482,7 @@
     <string name="onboarding_media_scan_blacklist">Blacklist-modus: specifieke nummers en mappen verbergen (beltonen, meldingen)</string>
     <string name="onboarding_media_scan_whitelist">Witte lijstmodus: toon alleen nummers uit geselecteerde mappen</string>
     <string name="onboarding_complete_title">Je bent helemaal klaar!</string>
-    <string name="onboarding_complete_desc">Rhythm is klaar om te spelen! Uw muziekbibliotheek wordt op de achtergrond gescand. Dit is wat er is geconfigureerd:</string>
+    <string name="onboarding_complete_desc">T2Rhythm is klaar om te spelen! Uw muziekbibliotheek wordt op de achtergrond gescand. Dit is wat er is geconfigureerd:</string>
     <string name="onboarding_whats_next">Wat is het volgende?</string>
     <string name="onboarding_next_browse">Blader door je nummers, albums en artiesten</string>
     <string name="onboarding_next_create">Maak je eerste afspeellijst</string>
@@ -503,8 +503,8 @@
     <string name="onboarding_grant_permissions">Verleen machtigingen</string>
     <string name="onboarding_permissions_granted_desc">Alle noodzakelijke toestemmingen zijn verleend. Je bent klaar om verder te gaan!</string>
     <string name="onboarding_redirect_settings_desc">Om de vereiste rechten te verlenen, navigeert u naar de app-instellingen op uw apparaat.</string>
-    <string name="onboarding_rationale_desc">Rhythm vereist bepaalde machtigingen om correct te kunnen functioneren. Geef ze alstublieft toestemming om door te gaan.</string>
-    <string name="onboarding_permissions_required_desc">Om de functies van Rhythm volledig te kunnen benutten, hebben we uw toestemming nodig voor toegang tot bepaalde apparaatmogelijkheden.</string>
+    <string name="onboarding_rationale_desc">T2Rhythm vereist bepaalde machtigingen om correct te kunnen functioneren. Geef ze alstublieft toestemming om door te gaan.</string>
+    <string name="onboarding_permissions_required_desc">Om de functies van T2Rhythm volledig te kunnen benutten, hebben we uw toestemming nodig voor toegang tot bepaalde apparaatmogelijkheden.</string>
     <string name="onboarding_permission_music_title">Toegang tot muziekbibliotheek</string>
     <string name="onboarding_permission_music_desc">Lees uw lokale muziekbestanden en geef ze weer in de app</string>
     <string name="onboarding_permission_bluetooth_title">Bluetooth-connectiviteit</string>
@@ -517,9 +517,9 @@
     <string name="onboarding_permission_tip_2">Je kunt de rechten later wijzigen in Instellingen</string>
     <!-- Onboarding Audio &amp; Playback -->
     <string name="onboarding_default_screen_title">Standaard landingsscherm</string>
-    <string name="onboarding_default_screen_desc">Kies welk scherm wordt geopend wanneer je Rhythm start</string>
+    <string name="onboarding_default_screen_desc">Kies welk scherm wordt geopend wanneer je T2Rhythm start</string>
     <string name="onboarding_system_volume_title">Systeemvolumeregeling</string>
-    <string name="onboarding_system_volume_desc">Sta toe dat de fysieke volumeknoppen van uw apparaat het afspeelvolume van Rhythm regelen.</string>
+    <string name="onboarding_system_volume_desc">Sta toe dat de fysieke volumeknoppen van uw apparaat het afspeelvolume van T2Rhythm regelen.</string>
     <string name="onboarding_auto_queue_title">Automatisch toevoegen aan wachtrij</string>
     <string name="onboarding_auto_queue_desc">Creëer automatisch een contextuele wachtrij van het album/de artiest tijdens het afspelen van een nummer.</string>
     <string name="onboarding_show_lyrics_title">Songteksten weergeven</string>
@@ -530,7 +530,7 @@
     
     <!-- Onboarding Theming -->
     <string name="onboarding_player_theme_title">Thema\'s voor afspelen en minispelers</string>
-    <string name="onboarding_player_theme_desc">Personaliseer uw afspeelinterfaces. Schakel tussen het strakke, moderne Rhythm-ontwerp of het levendige, vloeiende, expressieve ontwerp.</string>
+    <string name="onboarding_player_theme_desc">Personaliseer uw afspeelinterfaces. Schakel tussen het strakke, moderne T2Rhythm-ontwerp of het levendige, vloeiende, expressieve ontwerp.</string>
     <!-- Onboarding Updater -->
     <string name="onboarding_update_check_failed">Updatecontrole mislukt</string>
     <string name="onboarding_ready_to_install">Klaar voor installatie</string>
@@ -542,7 +542,7 @@
     <string name="onboarding_enable_updates_title">Updates inschakelen</string>
     <string name="onboarding_enable_updates_desc">Sta toe dat de app updates controleert en downloadt</string>
     <string name="onboarding_periodic_check_title">Periodieke controle</string>
-    <string name="onboarding_periodic_check_desc">Automatisch controleren op updates uit de GitHub-opslagplaats van Rhythm</string>
+    <string name="onboarding_periodic_check_desc">Automatisch controleren op updates uit de GitHub-opslagplaats van T2Rhythm</string>
     <string name="onboarding_update_notifications_title">Updatemeldingen</string>
     <string name="onboarding_update_notifications_desc">Ontvang een melding wanneer er nieuwe versies beschikbaar zijn</string>
     <string name="onboarding_check_interval_desc">Hoe vaak controleren op updates</string>
@@ -585,7 +585,7 @@
     <string name="onboarding_gesture_tip_1">Veeggebaren werken in beide richtingen</string>
     <!-- Onboarding: Widgets Step -->
     <string name="onboarding_widgets_title">Launcher-widgets</string>
-    <string name="onboarding_widgets_desc">Voeg Rhythm widgets toe aan je opstartprogramma voor snelle muziekbediening. Pas aan welke informatie wordt weergegeven en hoe de widget eruitziet.</string>
+    <string name="onboarding_widgets_desc">Voeg T2Rhythm widgets toe aan je opstartprogramma voor snelle muziekbediening. Pas aan welke informatie wordt weergegeven en hoe de widget eruitziet.</string>
     <string name="onboarding_widget_artist">Naam artiest tonen</string>
     <string name="onboarding_widget_artist_desc">Geef de huidige artiest weer in de widget</string>
     <string name="onboarding_widget_album">Albumnaam tonen</string>
@@ -600,8 +600,8 @@
     <string name="onboarding_integration_ytmusic">YouTube Music</string>
     <string name="onboarding_integrations_info_title">Privacyopmerking</string>
     <string name="onboarding_integrations_info_desc">Deze functies sturen beperkte gegevens (titels van nummers, artiesten) naar externe diensten. Uw persoonlijke gegevens en muziekbestanden blijven op uw apparaat staan. U kunt deze op elk gewenst moment in- of uitschakelen via Instellingen.</string>
-    <!-- Onboarding: Rhythm Stats Step -->
-    <string name="onboarding_stats_title">Rhythm Statistieken</string>
+    <!-- Onboarding: T2Rhythm Stats Step -->
+    <string name="onboarding_stats_title">T2Rhythm Statistieken</string>
     <string name="onboarding_stats_desc">Ontdek inzichten over je muziekgewoonten. Houd uw luistertijd, meest gespeelde nummers, favoriete artiesten en meer bij met prachtige visualisaties.</string>
     <string name="onboarding_stats_show_home">Statistieken op Home weergeven</string>
     <string name="onboarding_stats_show_home_desc">Geef een luisterstatistiekenwidget weer op uw startscherm</string>
@@ -622,9 +622,9 @@
     <string name="settings_tip_gestures_swipe">Veeg omhoog over de minispeler om de volledige speler te openen en veeg vervolgens omlaag om te sluiten als je klaar bent.</string>
     <string name="settings_tip_gestures_artwork">Veeg over de illustraties om van nummer te wisselen en dubbeltik op albumhoezen om snel af te spelen of te pauzeren.</string>
     <string name="settings_tip_media_scan">Gebruik mediascan om ongewenste bestanden uit uw bibliotheek te verbergen</string>
-    <string name="settings_tip_rhythm_guard_off">Bescherm uw gehoor door Rhythm Guard in te schakelen</string>
-    <string name="settings_tip_rhythm_guard_auto">Rhythm Guard beheert automatisch de veilige luisterlimieten</string>
-    <string name="settings_tip_rhythm_guard_manual">Je beheert handmatig Rhythm Guard-limieten</string>
+    <string name="settings_tip_rhythm_guard_off">Bescherm uw gehoor door T2Rhythm Guard in te schakelen</string>
+    <string name="settings_tip_rhythm_guard_auto">T2Rhythm Guard beheert automatisch de veilige luisterlimieten</string>
+    <string name="settings_tip_rhythm_guard_manual">Je beheert handmatig T2Rhythm Guard-limieten</string>
     <string name="settings_default_screen">Standaard landingsscherm</string>
     <string name="settings_default_screen_desc">Kies je startscherm</string>
     <string name="settings_home_desc">Ontdek nieuwe muziek en aanbevelingen</string>
@@ -694,7 +694,7 @@
     <string name="lyrics_editor_title">Songteksteditor</string>
     <!-- Components: Song Info -->
     <string name="song_info_title">Nummerinformatie</string>
-    <string name="rhythm_stats">Rhythm Statistieken</string>
+    <string name="rhythm_stats">T2Rhythm Statistieken</string>
     <string name="file_info">Bestandsinfo</string>
     <!-- Components: Add to Playlist -->
     <string name="add_to_playlists">Toevoegen aan afspeellijsten</string>
@@ -725,7 +725,7 @@
     <string name="updates_disabled_message">App-updates zijn uitgeschakeld in de instellingen</string>
     <string name="updates_auto_disabled">Automatische updatecontrole is uitgeschakeld. U kunt nog steeds handmatig controleren.</string>
     <string name="updates_up_to_date_message">Je bent op de hoogte!</string>
-    <string name="updates_check_frequency">Hoe vaak moet Rhythm controleren op updates?</string>
+    <string name="updates_check_frequency">Hoe vaak moet T2Rhythm controleren op updates?</string>
     <string name="updates_experimental_coming">Binnenkort meer experimentele functies in toekomstige updates</string>
     <string name="settings_interval_every_48_hours">Elke 48 uur</string>
     <string name="settings_interval_every_72_hours">Elke 72 uur</string>
@@ -868,7 +868,7 @@
     <string name="updates_enable_auto_check">Automatische controle</string>
     <string name="updates_channel_title">Kanaal bijwerken</string>
     <string name="updates_source_title">Bron bijwerken</string>
-    <string name="updates_source_desc">Kies welke releasefamilie Rhythm moet gebruiken voor OTA-updates.</string>
+    <string name="updates_source_desc">Kies welke releasefamilie T2Rhythm moet gebruiken voor OTA-updates.</string>
     <string name="updates_source_installed">Match geïnstalleerde build</string>
     <string name="updates_source_installed_label">Geïnstalleerde build</string>
     <string name="updates_source_github_label">GitHub-builds</string>
@@ -916,7 +916,7 @@
     <string name="cd_reorder_chips">Chips opnieuw ordenen</string>
     <string name="cd_search">Zoeken</string>
     <string name="cd_view_all">Bekijk alles</string>
-    <string name="cd_rhythm_splash">Rhythm</string>
+    <string name="cd_rhythm_splash">T2Rhythm</string>
     <string name="cd_remove_from_playlist">Verwijderen uit afspeellijst</string>
     <string name="cd_change_language">Taal wijzigen</string>
     <string name="cd_open_settings">Openen</string>
@@ -989,18 +989,18 @@
     <!-- Fallback Metadata -->
     
     <!-- Service Notifications -->
-    <string name="service_app_updates">Rhythm Updater</string>
-    <string name="service_update_status">Rhythm Updaterstatus</string>
-    <string name="service_rhythm_pulse">Rhythm Tips</string>
-    <string name="service_rhythm_guard_alerts">Rhythm Bewakingswaarschuwingen</string>
-    <string name="service_rhythm_guard_timers">Rhythm Bewakingstimers</string>
-    <string name="service_rhythm_music">Rhythm Muziek</string>
+    <string name="service_app_updates">T2Rhythm Updater</string>
+    <string name="service_update_status">T2Rhythm Updaterstatus</string>
+    <string name="service_rhythm_pulse">T2Rhythm Tips</string>
+    <string name="service_rhythm_guard_alerts">T2Rhythm Bewakingswaarschuwingen</string>
+    <string name="service_rhythm_guard_timers">T2Rhythm Bewakingstimers</string>
+    <string name="service_rhythm_music">T2Rhythm Muziek</string>
     <string name="service_update_status_desc">Statusresultaten voor controles van achtergrondupdates</string>
-    <string name="service_rhythm_pulse_desc">Herinneringen en tips voor vriendelijk luisteren van Rhythm</string>
-    <string name="service_rhythm_guard_alerts_desc">Veiligheidswaarschuwingen van Rhythm Guard</string>
-    <string name="service_rhythm_guard_timers_desc">Rhythm Herinneringen voor bewakersbreuk en time-out</string>
-    <string name="service_ready">Rhythm is gereed.</string>
-    <string name="service_init_failed">Rhythm kon niet starten. Open de app opnieuw.</string>
+    <string name="service_rhythm_pulse_desc">Herinneringen en tips voor vriendelijk luisteren van T2Rhythm</string>
+    <string name="service_rhythm_guard_alerts_desc">Veiligheidswaarschuwingen van T2Rhythm Guard</string>
+    <string name="service_rhythm_guard_timers_desc">T2Rhythm Herinneringen voor bewakersbreuk en time-out</string>
+    <string name="service_ready">T2Rhythm is gereed.</string>
+    <string name="service_init_failed">T2Rhythm kon niet starten. Open de app opnieuw.</string>
     <!-- Crash Activity -->
     <string name="crash_bug_report">Bugrapport</string>
     <string name="crash_restart_app">App opnieuw starten</string>
@@ -1030,12 +1030,12 @@
     <string name="settings_artwork_cache_size">Grootte van de artworkcache</string>
     <string name="settings_artist_parsing">Artiesten</string>
     <string name="settings_artist_parsing_desc">Scheidingsschotten, display</string>
-    <string name="settings_rhythm_stats">Rhythm Statistieken</string>
+    <string name="settings_rhythm_stats">T2Rhythm Statistieken</string>
     <string name="settings_rhythm_stats_desc">Luistertijd, topnummers en trends</string>
-    <string name="settings_rhythm_guard">Rhythm Bewaker</string>
-    <string name="settings_rhythm_guard_list_desc">Luistergezondheidsbescherming mogelijk gemaakt door Rhythm Stats</string>
+    <string name="settings_rhythm_guard">T2Rhythm Bewaker</string>
+    <string name="settings_rhythm_guard_list_desc">Luistergezondheidsbescherming mogelijk gemaakt door T2Rhythm Stats</string>
     <string name="settings_rhythm_guard_mode_title">Beveiligingsmodus</string>
-    <string name="settings_rhythm_guard_mode_desc">Kies hoe Rhythm Guard de luistergezondheid beheert</string>
+    <string name="settings_rhythm_guard_mode_desc">Kies hoe T2Rhythm Guard de luistergezondheid beheert</string>
     <string name="settings_rhythm_guard_mode_auto">Automatisch</string>
     <string name="settings_rhythm_guard_mode_manual">Handleiding</string>
     <string name="settings_rhythm_guard_age_label">Leeftijdsprofiel: %1$d</string>
@@ -1052,10 +1052,10 @@
     <string name="settings_rhythm_guard_manual_warning_toggle">Veiligheidswaarschuwingen tonen</string>
     <string name="settings_rhythm_guard_manual_warning_toggle_desc">Waarschuw wanneer live volume of handmatig schakelen riskant kan zijn</string>
     <string name="settings_rhythm_guard_manual_threshold_title">Waarschuwingsdrempel voor hoog volume: %1$d%%</string>
-    <string name="settings_rhythm_guard_manual_threshold_desc">Stel in wanneer Rhythm Guard moet waarschuwen voor mogelijk schadelijk volume.</string>
+    <string name="settings_rhythm_guard_manual_threshold_desc">Stel in wanneer T2Rhythm Guard moet waarschuwen voor mogelijk schadelijk volume.</string>
     <string name="settings_rhythm_guard_device_controls_title">Uitgangsbedieningen</string>
     <string name="settings_rhythm_guard_device_controls_speaker_limit_title">Volumelimieten toepassen op telefoonluidspreker</string>
-    <string name="settings_rhythm_guard_device_controls_speaker_limit_desc">Als Rhythm Guard is uitgeschakeld, worden volumebeperkingen en volumewaarschuwingen op de ingebouwde luidsprekeruitgang overgeslagen.</string>
+    <string name="settings_rhythm_guard_device_controls_speaker_limit_desc">Als T2Rhythm Guard is uitgeschakeld, worden volumebeperkingen en volumewaarschuwingen op de ingebouwde luidsprekeruitgang overgeslagen.</string>
     <string name="settings_rhythm_guard_alert_controls_title">Bediening voor luisterwaarschuwingen</string>
     <string name="settings_rhythm_guard_alert_threshold_title">Blootstellingswaarschuwingsdrempel: %1$s</string>
     <string name="settings_rhythm_guard_alert_threshold_policy_default">Beleidsstandaard</string>
@@ -1065,7 +1065,7 @@
     <string name="settings_rhythm_guard_warning_title">Veiligheidswaarschuwing voor luisteren</string>
     <string name="settings_rhythm_guard_warning_high_volume">Het huidige volume ligt boven uw waarschuwingsdrempel (%1$d%%). Overweeg om het volume te verminderen.</string>
     <string name="settings_rhythm_guard_warning_daily_exposure">Je hebt vandaag %1$s bereikt, boven de voorgestelde %2$s. Overweeg een luisterpauze te nemen.</string>
-    <string name="settings_rhythm_guard_warning_dialog_title">Rhythm Beveiligingswaarschuwing</string>
+    <string name="settings_rhythm_guard_warning_dialog_title">T2Rhythm Beveiligingswaarschuwing</string>
     <string name="settings_rhythm_guard_warning_dialog_volume_message">Het mediavolume van het systeem is %1$d%% in realtime, boven uw huidige beveiligingslimiet van %2$d%%. Verlaag het volume om het gehoorrisico te verminderen.</string>
     <string name="settings_rhythm_guard_risk_level_label">Ernst van het risico: %1$s</string>
     <string name="settings_rhythm_guard_risk_action_label">Aanbevolen actie: %1$s</string>
@@ -1095,8 +1095,8 @@
     <string name="settings_rhythm_guard_start_countdown_value">Begint over %1$s</string>
     <string name="settings_rhythm_guard_snapshot_widget_above_limit">Boven de aanbevolen limiet</string>
     <string name="settings_rhythm_guard_snapshot_widget_within_limit">Binnen de aanbevolen limiet</string>
-    <string name="settings_rhythm_guard_state_active">Rhythm Bewaking is actief</string>
-    <string name="settings_rhythm_guard_state_inactive">Rhythm Bewaking is inactief</string>
+    <string name="settings_rhythm_guard_state_active">T2Rhythm Bewaking is actief</string>
+    <string name="settings_rhythm_guard_state_inactive">T2Rhythm Bewaking is inactief</string>
     <string name="settings_rhythm_guard_state_timeout_active">Er wordt een time-out voor luisteren uitgevoerd</string>
     <string name="settings_rhythm_guard_state_cooldown_active">Respijtperiode actief</string>
     <string name="settings_rhythm_guard_state_timeout_remaining">Pauze eindigt over %1$s</string>
@@ -1108,8 +1108,8 @@
     <string name="settings_rhythm_guard_protection_preset_strict">Strikt</string>
     <string name="settings_rhythm_guard_protection_preset_custom">Aangepast</string>
     <string name="settings_rhythm_guard_timeout_activity_title">Luistertime-out actief</string>
-    <string name="settings_rhythm_guard_timeout_activity_default_reason">Plotwending: je oren begonnen een unie en riepen om een snackpauze. Rhythm Guard heeft het afspelen gepauzeerd zodat iedereen kan afkoelen.</string>
-    <string name="settings_rhythm_guard_timeout_activity_comic_desc">Plotwending: je oren begonnen een unie en riepen om een ​​snackpauze. Rhythm Guard heeft het afspelen gepauzeerd zodat iedereen kan afkoelen.</string>
+    <string name="settings_rhythm_guard_timeout_activity_default_reason">Plotwending: je oren begonnen een unie en riepen om een snackpauze. T2Rhythm Guard heeft het afspelen gepauzeerd zodat iedereen kan afkoelen.</string>
+    <string name="settings_rhythm_guard_timeout_activity_comic_desc">Plotwending: je oren begonnen een unie en riepen om een ​​snackpauze. T2Rhythm Guard heeft het afspelen gepauzeerd zodat iedereen kan afkoelen.</string>
     <string name="settings_rhythm_guard_timeout_activity_extend">Pauze verlengen (+%1$d min)</string>
     <string name="settings_rhythm_guard_timeout_activity_exit">Time-outscherm sluiten</string>
     <string name="settings_rhythm_guard_timeout_activity_close_app">Sluit app</string>
@@ -1120,23 +1120,23 @@
     <string name="settings_rhythm_guard_alert_threshold_search_title">Blootstellingswaarschuwingsdrempel</string>
     <string name="settings_rhythm_guard_alert_threshold_search_desc">Stel in hoeveel dagelijks luisteren een veiligheidswaarschuwing activeert</string>
     <string name="settings_rhythm_guard_warning_timeout_search_title">Afkoelperiode voor waarschuwingen</string>
-    <string name="settings_rhythm_guard_warning_timeout_search_desc">Stel de cooldown in tussen herhaalde Rhythm Guard-waarschuwingen</string>
+    <string name="settings_rhythm_guard_warning_timeout_search_desc">Stel de cooldown in tussen herhaalde T2Rhythm Guard-waarschuwingen</string>
     <string name="settings_rhythm_guard_post_timeout_cooldown_search_title">Afkoeling na time-out</string>
     <string name="settings_rhythm_guard_post_timeout_cooldown_search_desc">Stel de cooldown in nadat een time-out is afgelopen voordat een nieuwe belichtingstime-out kan worden geactiveerd</string>
     <string name="settings_rhythm_guard_protection_presets_search_title">Beveiligingsvoorinstellingen</string>
     <string name="settings_rhythm_guard_protection_presets_search_desc">Breng zachte, gebalanceerde of strikte leuningbundels aan met één tik</string>
     <string name="settings_rhythm_guard_break_resume_search_title">Standaard pauze hervatten</string>
     <string name="settings_rhythm_guard_break_resume_search_desc">Stel standaard in hoe lang geplande luisterpauzes duren</string>
-    <string name="settings_rhythm_guard_enable_search_title">Rhythm Bewakingskracht</string>
-    <string name="settings_rhythm_guard_enable_search_desc">Schakel Rhythm Guard-beveiligingen in of uit</string>
-    <string name="settings_rhythm_guard_notification_alert_title">Rhythm Veiligheidswaarschuwing voor bewakers</string>
-    <string name="settings_rhythm_guard_notification_timer_active_title">Rhythm Time-out bewaker actief</string>
+    <string name="settings_rhythm_guard_enable_search_title">T2Rhythm Bewakingskracht</string>
+    <string name="settings_rhythm_guard_enable_search_desc">Schakel T2Rhythm Guard-beveiligingen in of uit</string>
+    <string name="settings_rhythm_guard_notification_alert_title">T2Rhythm Veiligheidswaarschuwing voor bewakers</string>
+    <string name="settings_rhythm_guard_notification_timer_active_title">T2Rhythm Time-out bewaker actief</string>
     <string name="settings_rhythm_guard_notification_timer_active_text">Het afspelen wordt hervat over %1$s.</string>
-    <string name="settings_rhythm_guard_notification_timer_scheduled_title">Rhythm Afweerbreker gepland</string>
+    <string name="settings_rhythm_guard_notification_timer_scheduled_title">T2Rhythm Afweerbreker gepland</string>
     <string name="settings_rhythm_guard_notification_timer_scheduled_text">Een luisterpauze begint over %1$s.</string>
     <string name="settings_rhythm_guard_notification_tap_open">Tik om time-outdetails te bekijken.</string>
-    <!-- Rhythm Stats Screen -->
-    <string name="stats_title">Rhythm Statistieken</string>
+    <!-- T2Rhythm Stats Screen -->
+    <string name="stats_title">T2Rhythm Statistieken</string>
     <string name="stats_today">Vandaag</string>
     <string name="stats_this_week">Deze week</string>
     <string name="stats_this_month">Deze maand</string>
@@ -1158,7 +1158,7 @@
     <!-- Content Descriptions (additional) -->
     <string name="cd_reorder_home_sections">Home-secties opnieuw ordenen</string>
     <string name="cd_remove">Verwijderen</string>
-    <string name="cd_rhythm_logo">Rhythm-logo</string>
+    <string name="cd_rhythm_logo">T2Rhythm-logo</string>
     <string name="cd_telegram_support">Telegram-ondersteuning</string>
     <!-- Queue &amp; Playlist Dialogs -->
     <!-- Artist Settings -->
@@ -1326,7 +1326,7 @@
     <string name="settings_snowflake_display_area">Sneeuwvlokweergavegebied</string>
     <string name="settings_snowflake_size">Sneeuwvlokgrootte</string>
     <string name="settings_toggle_decoration_elements">Schakel individuele decoratie-elementen op positie in</string>
-    <string name="settings_multi_artist_parsing_info">Indien ingeschakeld, splitst Rhythm automatisch artiestentags die meerdere artiesten bevatten. Dit is handig voor nummers die zijn gedownload met yt-dlp of andere tools die scheidingstekens zoals \'/\' gebruiken om artiesten te scheiden.\n\nBackslash (\\) kan worden gebruikt om scheidingstekens te ontwijken.</string>
+    <string name="settings_multi_artist_parsing_info">Indien ingeschakeld, splitst T2Rhythm automatisch artiestentags die meerdere artiesten bevatten. Dit is handig voor nummers die zijn gedownload met yt-dlp of andere tools die scheidingstekens zoals \'/\' gebruiken om artiesten te scheiden.\n\nBackslash (\\) kan worden gebruikt om scheidingstekens te ontwijken.</string>
     <!-- Format Strings with Placeholders -->
     <string name="settings_cache_size_2gb">2 GB</string>
     <string name="settings_cache_size_64mb">64MB</string>
@@ -1408,7 +1408,7 @@
     <string name="settings_cache_info_4">Automatische clearing zorgt voor optimale prestaties</string>
     <!-- Updates Settings -->
     <string name="updates_status_error">Fout</string>
-    <string name="updates_rhythm_logo_cd">Rhythm-logo</string>
+    <string name="updates_rhythm_logo_cd">T2Rhythm-logo</string>
     <string name="updates_version_prefix">V%1$s</string>
     <string name="updates_released_prefix">Uitgebracht: %1$s</string>
     <string name="updates_unknown_error">Er is een onbekende fout opgetreden</string>
@@ -1426,7 +1426,7 @@
     <string name="settings_interval_once_a_day">Eén keer per dag</string>
     <string name="settings_interval_once_a_week">Eén keer per week</string>
     <!-- Experimental Features -->
-    <string name="streaming_integration_title">Rhythm Go</string>
+    <string name="streaming_integration_title">T2Rhythm Go</string>
     <string name="streaming_integration_services">Integratiediensten</string>
     <string name="streaming_integration_services_empty">Nog geen services verbonden</string>
     <string name="streaming_settings_title">Instellingen</string>
@@ -1434,7 +1434,7 @@
     <string name="streaming_settings_group_actions">Acties</string>
     <string name="streaming_settings_preferred_service">Voorkeursservice</string>
     <string name="streaming_settings_quality">Streamingkwaliteit</string>
-    <string name="streaming_settings_service_sheet_desc">Kies welke verbonden service Rhythm Go standaard prioriteit moet krijgen.</string>
+    <string name="streaming_settings_service_sheet_desc">Kies welke verbonden service T2Rhythm Go standaard prioriteit moet krijgen.</string>
     <string name="streaming_settings_quality_sheet_desc">Selecteer de gewenste audiokwaliteit voor streaming afspelen.</string>
     <string name="streaming_quality_low">Laag</string>
     <string name="streaming_quality_normal">Normaal</string>
@@ -1444,7 +1444,7 @@
     <string name="streaming_quality_normal_desc">Evenwichtige kwaliteit en datagebruik (~160 kbps).</string>
     <string name="streaming_quality_high_desc">Audio van hoge kwaliteit (~320 kbps).</string>
     <string name="streaming_quality_lossless_desc">Beste kwaliteit indien ondersteund (FLAC/ALAC).</string>
-    <string name="streaming_settings_group_wellbeing">Rhythm Inzichten</string>
+    <string name="streaming_settings_group_wellbeing">T2Rhythm Inzichten</string>
     <string name="streaming_open_full_settings">Open Volledige instellingen</string>
     <string name="streaming_open_full_settings_desc">Open instellingen voor de hele app, gedeeld in verschillende modi</string>
     <string name="streaming_switch_to_local_mode">Schakel over naar de lokale modus</string>
@@ -1468,7 +1468,7 @@
     <string name="streaming_service_setup_password">Wachtwoord</string>
     <string name="streaming_service_setup_password_hint">Voer uw accountwachtwoord in</string>
     <string name="streaming_service_setup_remember_password">Onthoud het wachtwoord op dit apparaat</string>
-    <string name="streaming_service_setup_remember_password_desc">Sla inloggegevens lokaal op, zodat Rhythm later automatisch opnieuw verbinding kan maken.</string>
+    <string name="streaming_service_setup_remember_password_desc">Sla inloggegevens lokaal op, zodat T2Rhythm later automatisch opnieuw verbinding kan maken.</string>
     <string name="streaming_service_setup_connecting">Verbinden…</string>
     <string name="streaming_service_setup_disconnecting">Verbinding verbreken…</string>
     <string name="streaming_service_setup_action_hint">Vul de verplichte velden in om verbinding te maken met deze dienst.</string>
@@ -1656,7 +1656,7 @@
     <string name="settings_bluetooth_lyrics_enabled">Bluetooth-lyricsmodus</string>
     <string name="settings_bluetooth_lyrics_enabled_desc">Zend de huidige tekstregel uit via Bluetooth-metagegevens</string>
     <string name="exp_go_mode">Go Mode</string>
-    <string name="exp_go_mode_desc">Schakel over naar Rhythm Go streaming mode</string>
+    <string name="exp_go_mode_desc">Schakel over naar T2Rhythm Go streaming mode</string>
     <!-- Home Screen Search Strings -->
     <string name="settings_home_section_order">Sectievolgorde</string>
     <string name="settings_home_section_order_desc">Home-secties opnieuw ordenen</string>
@@ -1669,13 +1669,13 @@
     <string name="settings_home_carousel_auto_scroll">Carrousel automatisch scrollen</string>
     <string name="settings_home_carousel_auto_scroll_desc">Carrousel met automatisch scrollen</string>
     <!-- Notifications Search Strings -->
-    <string name="settings_notifications_rhythm_guard_alerts">Rhythm Veiligheidswaarschuwingen voor bewakers</string>
+    <string name="settings_notifications_rhythm_guard_alerts">T2Rhythm Veiligheidswaarschuwingen voor bewakers</string>
     <string name="settings_notifications_rhythm_guard_alerts_desc">Waarschuw wanneer luisterrisicowaarschuwingen worden geactiveerd</string>
-    <string name="settings_notifications_rhythm_guard_timers">Rhythm Timers voor afweerbrekers</string>
+    <string name="settings_notifications_rhythm_guard_timers">T2Rhythm Timers voor afweerbrekers</string>
     <string name="settings_notifications_rhythm_guard_timers_desc">Waarschuw voor geplande pauzes en aftellingen van time-outs</string>
-    <string name="settings_notifications_rhythm_pulse">Rhythm Tips</string>
+    <string name="settings_notifications_rhythm_pulse">T2Rhythm Tips</string>
     <string name="settings_notifications_rhythm_pulse_desc">Vriendelijke herinneringen en luistertips.</string>
-    <string name="settings_notifications_rhythm_pulse_interval">Rhythm Tips-interval</string>
+    <string name="settings_notifications_rhythm_pulse_interval">T2Rhythm Tips-interval</string>
     <string name="settings_notifications_rhythm_pulse_interval_desc">Hoe vaak tipsmeldingen worden afgeleverd</string>
     <!-- Expressive Shapes Search Strings -->
     <string name="settings_expressive_shapes_enabled">Expressieve vormen</string>
@@ -1759,7 +1759,7 @@
     <!-- Library Screen scanning overlay -->
     <string name="settings_scanning">Scannen</string>
     <!-- Settings Search -->
-    <string name="search_settings_hint">Zoeken in Rhythm-instellingen…</string>
+    <string name="search_settings_hint">Zoeken in T2Rhythm-instellingen…</string>
     <string name="clear_search">Zoekopdracht wissen</string>
     <string name="no_results_found">Geen resultaten gevonden</string>
     <string name="try_different_search">Probeer een andere zoekterm</string>
@@ -1798,7 +1798,7 @@
     <string name="theme_font_imported">Lettertype succesvol geïmporteerd</string>
     <string name="theme_font_invalid">Ongeldig lettertypebestandsformaat</string>
     <string name="ui_apply">Toepassen</string>
-    <string name="crashactivity_uh_oh_looks_like">Oeh! Het lijkt erop dat Rhythm een zure noot heeft geraakt!</string>
+    <string name="crashactivity_uh_oh_looks_like">Oeh! Het lijkt erop dat T2Rhythm een zure noot heeft geraakt!</string>
     <string name="crashactivity_dont_fret_our_app">Maak je geen zorgen! Onze app had net een kleine \'oopsie\'. Deel de details van de crash hieronder. Het is als een geheime boodschap voor onze ontwikkelaars om dingen op te lossen! Laten we dat dan nog eens proberen, oké?</string>
     <string name="crashactivity_secret_crash_scrolls">Geheime crash-scrolls</string>
     <string name="crashactivity_share">Deel</string>
@@ -1892,7 +1892,7 @@
     <string name="streamingmusicviewmodel_failed_to_play_next">Kan volgende niet afspelen: kan URL niet omzetten</string>
     <string name="streamingmusicviewmodel_failed_to_add_to">Kan niet toevoegen aan wachtrij: kan URL niet omzetten</string>
     <string name="rhythmmusicwidget_album_art_placeholder">Tijdelijke aanduiding voor albumhoezen</string>
-    <string name="rhythmwidgetpreview_rhythm_glance_widget_previews">Rhythm Glance Widgetvoorbeelden</string>
+    <string name="rhythmwidgetpreview_rhythm_glance_widget_previews">T2Rhythm Glance Widgetvoorbeelden</string>
     <string name="rhythmwidgetpreview_str_11_compact_widget">1×1 compacte widget</string>
     <string name="rhythmwidgetpreview_str_21_horizontal_strip">2×1 horizontale strook</string>
     <string name="rhythmwidgetpreview_str_22_small_widget">2×2 kleine widget</string>
@@ -1934,7 +1934,7 @@
     <string name="betaprogrampopup_early_access">Vroege toegang</string>
     <string name="betaprogrampopup_shape_the_future">Vorm de toekomst</string>
     <string name="betaprogrampopup_direct_feedback">Directe feedback</string>
-    <string name="betaprogrampopup_youre_part_of_an">Je maakt deel uit van een exclusieve groep die de toekomst van de Rhythm-muziekspeler helpt vormgeven</string>
+    <string name="betaprogrampopup_youre_part_of_an">Je maakt deel uit van een exclusieve groep die de toekomst van de T2Rhythm-muziekspeler helpt vormgeven</string>
     <string name="betaprogrampopup_start_exploring">Begin met verkennen</string>
     <string name="switchmodedialog_switch_play">Schakelen en spelen</string>
     <string name="fullscreenlyricsview_cover_artwork">Omslagillustratie</string>
@@ -2000,7 +2000,7 @@
     <string name="lyricssourcesettingsscreen_retry_using_fallbacks">Probeer het opnieuw met fallbacks</string>
     <string name="lyricssourcesettingsscreen_embedded_lyrics_are_stored">• Embedded lyrics are stored in your audio files</string>
     <string name="miniplayercustomizationsettingsscreen_miniplayer_theme">MiniPlayer-thema</string>
-    <string name="miniplayercustomizationsettingsscreen_choose_between_rhythm_default">Kies tussen Rhythm Standaard of Expressief thema</string>
+    <string name="miniplayercustomizationsettingsscreen_choose_between_rhythm_default">Kies tussen T2Rhythm Standaard of Expressief thema</string>
     <string name="miniplayercustomizationsettingsscreen_integrated_directly_into_the">Rechtstreeks geïntegreerd in de MiniPlayer-achtergrond</string>
     <string name="performancesettingsscreen_performance">Lite-modus</string>
     <string name="performancesettingsscreen_disable_haptics">Schakel haptiek uit</string>
@@ -2017,7 +2017,7 @@
     <string name="rhythmguardsettingsscreen_none">Geen</string>
     <string name="rhythmguardsettingsscreen_general_settings">Algemene instellingen</string>
     <string name="rhythmguardsettingsscreen_library_data">Bibliotheekgegevens</string>
-    <string name="rhythmguardsettingsscreen_stats_rhythm_guard">Statistieken en Rhythm bewaker</string>
+    <string name="rhythmguardsettingsscreen_stats_rhythm_guard">Statistieken en T2Rhythm bewaker</string>
     <string name="settingsscreen_audio_offload">Audio-offload</string>
     <string name="settingsscreen_personalization">Personalisatie</string>
     <string name="settingsscreen_library_focus">Bibliotheekfocus</string>
@@ -2114,7 +2114,7 @@
     <string name="pulse_marathon">Marathonmodus</string>
     <!-- Settings Tips Details -->
     <string name="settings_tip_theme_desc_1">Verfris je muziekspeler met levendig AMOLED-zwart en prachtige pastelkleuren.</string>
-    <string name="settings_tip_theme_desc_2">Maak Rhythm echt van u door het accent van de app af te stemmen op uw systeem.</string>
+    <string name="settings_tip_theme_desc_2">Maak T2Rhythm echt van u door het accent van de app af te stemmen op uw systeem.</string>
     <string name="settings_tip_media_scan_desc_1">Vermijd ongewenste audiofragmenten. Definieer expliciet welke mappen we moeten scannen op muziek.</string>
     <string name="settings_tip_media_scan_desc_2">Houd spraaknotities en beltonen uit uw afspeellijsten met behulp van focusmappen.</string>
     <string name="settings_tip_sleep_timer_desc_1">Val in slaap terwijl je muziek speelt. Wij pauzeren het automatisch.</string>
@@ -2123,7 +2123,7 @@
     <string name="settings_tip_equalizer_desc_2">Stem het geluid veilig af op je hoofdtelefoon met onze geavanceerde audio-effecten.</string>
     <string name="settings_tip_backup_active_desc_1">Automatische back-up is actief. Controleer uw back-upsecties, zodat herstelprocessen schoon blijven.</string>
     <string name="settings_tip_backup_active_desc_2">Beveiliging ingeschakeld: schema ziet er goed uit. Voer een handmatige back-up uit vóór grote bewerkingen.</string>
-    <string name="settings_tip_backup_inactive_desc_1">Automatische back-up is uitgeschakeld. Schakel het in om afspeellijsten en Rhythm Guard-statistieken te beschermen.</string>
+    <string name="settings_tip_backup_inactive_desc_1">Automatische back-up is uitgeschakeld. Schakel het in om afspeellijsten en T2Rhythm Guard-statistieken te beschermen.</string>
     <string name="settings_tip_backup_inactive_desc_2">Nog geen vangnet. Schakel back-ups in om te voorkomen dat u uw instellingen kwijtraakt.</string>
     <string name="settings_tip_updates_active_desc_1">Updates zijn ingeschakeld. Houd ze ingeschakeld voor oplossingen en prestatieverbeteringen.</string>
     <string name="settings_tip_updates_active_desc_2">U bent ingesteld om updates te ontvangen. Controleer kanaalvoorkeuren op stabiliteit versus versheid.</string>
@@ -2166,7 +2166,7 @@
     <string name="font_jetbrains_desc">Monospace-lettertype, perfect voor technische inhoud</string>
     <string name="font_quicksand_desc">Rond lettertype met een zachtere, vriendelijkere uitstraling</string>
     <!-- Predefined Color Schemes -->
-    <string name="color_scheme_default_title">Rhythm Standaard</string>
+    <string name="color_scheme_default_title">T2Rhythm Standaard</string>
     <string name="color_scheme_default_desc">Material 3 basislijn paars met roze roze accenten</string>
     <string name="color_scheme_warm_title">Warme zonsondergang</string>
     <string name="color_scheme_warm_desc">Gezellige oranje en rode tinten voor een warme sfeer</string>
@@ -2201,7 +2201,7 @@
     <string name="lyrics_settings_embedded_first">Eerst ingebed</string>
     <string name="lyrics_settings_embedded_first_desc">Geef de voorkeur aan songteksten die zijn ingebed in audiobestanden, val terug op online API\'s</string>
     <string name="lyrics_settings_online_first">Online eerst</string>
-    <string name="lyrics_settings_online_first_desc">Geef de voorkeur aan online API\'s (Rhythm woord-voor-woord, LRCLib), terugval op embedded</string>
+    <string name="lyrics_settings_online_first_desc">Geef de voorkeur aan online API\'s (T2Rhythm woord-voor-woord, LRCLib), terugval op embedded</string>
     <string name="lyrics_settings_local_first">Lokale primeur</string>
     <string name="lyrics_settings_local_first_desc">Geef de voorkeur aan lokale .lrc-bestanden, dan aan ingebedde songteksten en dan aan online API\'s</string>
     <string name="lyrics_settings_lyrically_first">Lyrically First</string>
@@ -2227,7 +2227,7 @@
     <string name="lyrics_settings_disable_animations_desc">Schakel overgangen en animaties uit in de songtekstweergave</string>
     <string name="lyrics_settings_word_by_word_translation">Automatische woordsynchronisatie</string>
     <string name="lyrics_settings_word_by_word_translation_desc">Genereer automatisch timing op woordniveau voor regelgesynchroniseerde songteksten door de duur proportioneel te verdelen</string>
-    <string name="lyrics_settings_info_bullets">Aanvullende synchronisatiedetails:\n• Online API\'s bieden gesynchroniseerde songteksten van hoge kwaliteit\n• Rhythm biedt woord-voor-woord-synchronisatie\n• LRCLib biedt gratis regel-voor-regel synchronisatie</string>
+    <string name="lyrics_settings_info_bullets">Aanvullende synchronisatiedetails:\n• Online API\'s bieden gesynchroniseerde songteksten van hoge kwaliteit\n• T2Rhythm biedt woord-voor-woord-synchronisatie\n• LRCLib biedt gratis regel-voor-regel synchronisatie</string>
     <!-- AutoEQ Preset Picker additions -->
     <string name="autoeqpresetpickerbottomsheet_search_presets">Voorinstellingen zoeken…</string>
     <string name="autoeqpresetpickerbottomsheet_disable">Geen / AutoEQ uitschakelen</string>
@@ -2245,7 +2245,7 @@
     <string name="device_configuration_custom_preset">Aangepaste voorinstelling</string>
     <string name="device_configuration_custom">Aangepast</string>
     <string name="device_configuration_active_profile_label">Actief profiel: %1$s</string>
-    <string name="device_configuration_share_subject">Rhythm EQ-profiel: %1$s</string>
+    <string name="device_configuration_share_subject">T2Rhythm EQ-profiel: %1$s</string>
     <string name="device_configuration_share_title">EQ-profiel delen</string>
     <string name="device_configuration_edit_device">Apparaat bewerken</string>
     <string name="device_configuration_add_device">Apparaat toevoegen</string>
@@ -2293,9 +2293,9 @@
         <item quantity="other">Exporteer %1$d afspeellijsten naar:</item>
     </plurals>
     <!-- Mode dialog strings -->
-    <string name="dialog_switch_to_go">Switch to Rhythm Go?</string>
+    <string name="dialog_switch_to_go">Switch to T2Rhythm Go?</string>
     <string name="dialog_switch_to_local">Overschakelen naar lokaal?</string>
-    <string name="dialog_switch_to_go_desc">This item belongs to Rhythm Go. Nu overschakelen naar de streamingmodus om het te streamen en af ​​te spelen?</string>
+    <string name="dialog_switch_to_go_desc">This item belongs to T2Rhythm Go. Nu overschakelen naar de streamingmodus om het te streamen en af ​​te spelen?</string>
     <string name="dialog_switch_to_local_desc">Dit item behoort tot uw lokale bibliotheek. Nu overschakelen naar de lokale modus om je offline nummers af te spelen?</string>
     <!-- Section order content descriptions -->
 
@@ -2472,7 +2472,7 @@
     <string name="carousel_style_hero">Held</string>
     <string name="carousel_style_hero_desc">1 side peek-album</string>
     <!-- Theme names -->
-    <string name="theme_rhythm">Rhythm</string>
+    <string name="theme_rhythm">T2Rhythm</string>
     <string name="theme_expressive">Expressief</string>
     <string name="settings_managed_by_expressive_shapes">Beheerd door expressieve vormen</string>
     <!-- Shape targets -->
@@ -2518,7 +2518,7 @@
     <string name="backup_restore_section_collection">Verzameling</string>
     <string name="backup_restore_section_collection_desc">Afspeellijsten, favorieten, zwarte/witte lijst, vastgezette mappen.</string>
     <string name="backup_restore_section_insight">Inzicht</string>
-    <string name="backup_restore_section_insight_desc">Aantal keren gespeeld, dagelijkse statistieken, genres en Rhythm Guard-configuratie.</string>
+    <string name="backup_restore_section_insight_desc">Aantal keren gespeeld, dagelijkse statistieken, genres en T2Rhythm Guard-configuratie.</string>
     <string name="backup_restore_status_included">Inbegrepen</string>
     <string name="backup_restore_status_excluded">Uitgesloten</string>
     <plurals name="backup_restore_sections_enabled">
@@ -2539,7 +2539,7 @@
     <string name="library_bottom_bar_select_songs">Selecteer nummers</string>
     <string name="library_bottom_bar_more_actions">Meer acties</string>
     <string name="library_play_selected">Afspelen (%1$d)</string>
-    <!-- Rhythm Guard Comic Status Subtitles -->
+    <!-- T2Rhythm Guard Comic Status Subtitles -->
     <!-- Player, Bottomsheet, and Popup translations -->
     <string name="unknown_track">Onbekend nummer</string>
     <string name="unknown_song">Onbekend nummer</string>

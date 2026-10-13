@@ -19,12 +19,13 @@ class ProviderParsingTest {
 
     @Test fun `Bugs SSR preserves lyric lines and provenance in editor document`() = runBlocking {
         val html = """<script>window.__INITIAL_STATE__ = {"1":{"data":{"track":{"result":{
-            "track_id":"7","track_title":"테스트 곡","artists":[{"artist_nm":"가수"}],
+            "track_id":"7","track_title":"테스트 곡","play_time":"181","artists":[{"artist_nm":"가수"}],
             "lyrics":{"normal":"첫 줄\n둘째 줄"},
             "album":{"title":"앨범","release_ymd":"20261013","image":{"path":"cover.jpg"}}
         }}}}};</script>"""
         val track = assertNotNull(BugsMobileProvider(fixture(html)).track("7"))
         assertEquals("첫 줄\n둘째 줄", track.lyrics?.value)
+        assertEquals(181_000L, track.durationMs?.value)
         assertEquals(2026, track.releaseDate?.value.yearOrNull())
         val document = CatalogDocument.from(track)
         assertEquals("테스트 곡", document[CatalogField.TRACK_TITLE])

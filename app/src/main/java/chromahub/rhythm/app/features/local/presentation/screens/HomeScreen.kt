@@ -1391,6 +1391,8 @@ private fun ModernScrollableContent(
     val heightSizeClass = windowSizeClass.heightSizeClass
     val scrollState = rememberScrollState()
     val allSongs by musicViewModel.filteredSongs.collectAsState()
+    val tasteRevision by remember { chromahub.rhythm.app.features.local.data.experience.ListeningLedger.get(context).changes }.collectAsState()
+    val playingForRecommendations by musicViewModel.currentSong.collectAsState()
 
     // Home Screen Customization Settings
     val appSettings = AppSettings.getInstance(context)
@@ -1733,43 +1735,15 @@ private fun ModernScrollableContent(
                 "RECOMMENDED" -> {
                     if (showRecommended) {
                         val favoriteSongsState = musicViewModel.favoriteSongs.collectAsState()
-                        val recommendedSongs by rememberOffMain(emptyList<Song>(), recentlyPlayed, songs, recommendedCount, favoriteSongsState.value) {
-                            val favoriteIds = favoriteSongsState.value
-                            val favoriteSongsList = songs.filter { it.id in favoriteIds }
-
-                            var result = if (recentlyPlayed.isNotEmpty()) {
-                                val playedArtists = recentlyPlayed.map { it.artist }.distinct()
-                                val playedAlbums = recentlyPlayed.map { it.album }.distinct()
-
-                                songs.filter { song ->
-                                    (song.artist in playedArtists || song.album in playedAlbums) &&
-                                            !recentlyPlayed.contains(song)
-                                }.shuffled()
-                            } else {
-                                emptyList()
-                            }
-
-                            if (result.isEmpty() && recentlyPlayed.isNotEmpty()) {
-                                val playedArtists = recentlyPlayed.map { it.artist }.distinct()
-                                val playedAlbums = recentlyPlayed.map { it.album }.distinct()
-                                result = songs.filter { song ->
-                                    song.artist in playedArtists || song.album in playedAlbums
-                                }.shuffled()
-                            }
-
-                            if (result.isEmpty()) {
-                                result = favoriteSongsList.shuffled()
-                            }
-
-                            if (result.isEmpty()) {
-                                result = songs.shuffled()
-                            }
-
-                            result.take(recommendedCount)
+                        val recommendedSongs by rememberOffMain(emptyList<Song>(), recentlyPlayed, songs, recommendedCount, favoriteSongsState.value, tasteRevision, playingForRecommendations?.id) {
+                            chromahub.rhythm.app.features.local.data.experience.PersonalTasteRepository.recommend(
+                                context, songs, favoriteSongsState.value.toList(), playingForRecommendations?.id, recommendedCount
+                            )
                         }
 
                         ModernRecommendedSection(
                             recommendedSongs = recommendedSongs,
+                            personalized = true,
                             artists = availableArtists,
                             onSongClick = onSongClick,
                             onPlayClick = { songsToPlay ->
@@ -3065,7 +3039,8 @@ private fun ModernRecommendedSection(
     recommendedSongs: List<Song>,
     artists: List<Artist>,
     onSongClick: (Song) -> Unit,
-    onPlayClick: (List<Song>) -> Unit
+    onPlayClick: (List<Song>) -> Unit,
+    personalized: Boolean = false
 ) {
     val context = LocalContext.current
     val haptics = LocalHapticFeedback.current
@@ -3079,9 +3054,15 @@ private fun ModernRecommendedSection(
     ) {
         ModernSectionTitle(
             title = context.getString(R.string.home_recommended_title),
-            subtitle = context.getString(R.string.home_recommended_subtitle)
+            subtitle = context.getString(if (personalized) R.string.personal_recommendation_hint else R.string.home_recommended_subtitle)
         )
 
+        if (personalized) recommendedSongs.firstOrNull()?.let { song ->
+            val reasons = chromahub.rhythm.app.features.local.data.experience.PersonalTasteRepository.reasons(song.uri.toString()).map { reason ->
+                context.getString(when (reason) { "time" -> R.string.personal_reason_time; "transition" -> R.string.personal_reason_transition; "routine" -> R.string.personal_reason_routine; "artist" -> R.string.personal_reason_artist; "genre" -> R.string.personal_reason_genre; "audio" -> R.string.personal_reason_audio; "favorite" -> R.string.personal_reason_favorite; "rediscovery" -> R.string.personal_reason_rediscovery; else -> R.string.personal_reason_unplayed })
+            }
+            if (reasons.isNotEmpty()) Text(reasons.joinToString(" · "), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+        }
         Spacer(modifier = Modifier.height(20.dp))
 
         if (recommendedSongs.isNotEmpty()) {
@@ -3131,7 +3112,7 @@ private fun ModernRecommendedSection(
                         .padding(24.dp)
                 ) {
                     RecommendedArtistHeadline(
-                        artistName = artistName,
+                        artistName = if (personalized) context.getString(R.string.personal_mix_title) else artistName,
                         style = artistNameStyle,
                         color = onCardBgColor,
                         modifier = Modifier

@@ -9,7 +9,10 @@ fun lyricsApiOrder(priority: LyricsApiPriority, explicitlySet: Boolean, fallback
         LyricsApiPriority.LYRICALLY_FIRST -> listOf(primary, LyricsApiPriority.BETTERLYRICS_FIRST, LyricsApiPriority.LRCLIB_FIRST)
         LyricsApiPriority.LRCLIB_FIRST -> listOf(primary, LyricsApiPriority.BETTERLYRICS_FIRST, LyricsApiPriority.LYRICALLY_FIRST)
         LyricsApiPriority.MUSIC_CRAWLER_FIRST -> listOf(primary, LyricsApiPriority.BETTERLYRICS_FIRST, LyricsApiPriority.LYRICALLY_FIRST, LyricsApiPriority.LRCLIB_FIRST)
+        LyricsApiPriority.BUGS_FIRST, LyricsApiPriority.MELON_FIRST, LyricsApiPriority.GENIE_FIRST ->
+            listOf(primary) + listOf(LyricsApiPriority.BUGS_FIRST, LyricsApiPriority.MELON_FIRST, LyricsApiPriority.GENIE_FIRST)
+                .filter { it != primary } + listOf(LyricsApiPriority.BETTERLYRICS_FIRST, LyricsApiPriority.LYRICALLY_FIRST, LyricsApiPriority.LRCLIB_FIRST)
     }
     val selected = if (fallback || primary == LyricsApiPriority.BETTERLYRICS_FIRST) oldOrder else oldOrder.take(1)
-    return if (fallback && LyricsApiPriority.MUSIC_CRAWLER_FIRST !in selected) selected + LyricsApiPriority.MUSIC_CRAWLER_FIRST else selected
+    return if (fallback && selected.none { it in setOf(LyricsApiPriority.MUSIC_CRAWLER_FIRST, LyricsApiPriority.BUGS_FIRST, LyricsApiPriority.MELON_FIRST, LyricsApiPriority.GENIE_FIRST) }) selected + LyricsApiPriority.MUSIC_CRAWLER_FIRST else selected
 }

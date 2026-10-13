@@ -7,8 +7,8 @@ import java.time.Instant
 enum class Provider(val label: String, val priority: Int) {
     BUGS_MOBILE("Bugs mobile", 100),
     BUGS_PC("Bugs PC", 95),
-    GENIE("Genie", 80),
-    MELON("Melon", 75),
+    GENIE("Genie", 75),
+    MELON("Melon", 80),
 }
 
 data class Evidence<T>(
@@ -37,6 +37,7 @@ data class AlbumMetadata(
     val releaseDate: Evidence<String>? = null,
     val genres: Evidence<List<String>>? = null,
     val sourceUrl: String? = null,
+    val description: Evidence<String>? = null,
 )
 
 data class TrackMetadata(
@@ -49,6 +50,7 @@ data class TrackMetadata(
     val genres: Evidence<List<String>>? = null,
     val albumTitle: Evidence<String>? = null,
     val sourceUrl: String? = null,
+    val durationMs: Evidence<Long>? = null,
 )
 
 fun String?.yearOrNull(): Int? {
@@ -85,6 +87,7 @@ object MetadataMerger {
         releaseDate = items.mapNotNull { it.releaseDate }.reduceOrNull(::choose),
         genres = items.mapNotNull { it.genres }.reduceOrNull(::choose),
         sourceUrl = items.firstNotNullOfOrNull { it.sourceUrl },
+        description = items.mapNotNull { it.description }.reduceOrNull(::choose),
     )
 
     fun tracks(items: List<TrackMetadata>): TrackMetadata = TrackMetadata(
@@ -97,5 +100,6 @@ object MetadataMerger {
         genres = items.mapNotNull { it.genres }.reduceOrNull(::choose),
         albumTitle = items.mapNotNull { it.albumTitle }.reduceOrNull(::choose),
         sourceUrl = items.firstNotNullOfOrNull { it.sourceUrl },
+        durationMs = items.mapNotNull { it.durationMs }.reduceOrNull(::choose),
     )
 }

@@ -23,6 +23,7 @@ data class CatalogDocument(val kind: EntityKind, val values: List<CatalogValue>)
             value(CatalogField.TRACK_RELEASE_DATE, track.releaseDate) { it },
             value(CatalogField.TRACK_IMAGE, track.imageUrl) { it },
             value(CatalogField.TRACK_LYRICS, track.lyrics) { it },
+            value(CatalogField.TRACK_DURATION_MS, track.durationMs) { it.toString() },
         ))
 
         fun from(album: AlbumMetadata) = CatalogDocument(EntityKind.ALBUM, listOfNotNull(
@@ -31,6 +32,7 @@ data class CatalogDocument(val kind: EntityKind, val values: List<CatalogValue>)
             value(CatalogField.ALBUM_GENRES, album.genres) { it.joinToString(", ") },
             value(CatalogField.ALBUM_RELEASE_DATE, album.releaseDate) { it },
             value(CatalogField.ALBUM_IMAGE, album.imageUrl) { it },
+            value(CatalogField.ALBUM_DESCRIPTION, album.description) { it },
         ))
 
         fun from(artist: ArtistMetadata) = CatalogDocument(EntityKind.ARTIST, listOfNotNull(

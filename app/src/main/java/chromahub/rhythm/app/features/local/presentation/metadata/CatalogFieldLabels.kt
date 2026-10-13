@@ -14,6 +14,7 @@ fun EntityKind.label(context: Context): String = context.getString(when (this) {
 })
 
 fun CatalogField.label(context: Context): String = context.getString(when (this) {
+    CatalogField.TRACK_DURATION_MS -> R.string.catalog_track_duration
     CatalogField.TRACK_TITLE -> R.string.bottomsheet_title
     CatalogField.ARTIST_NAME, CatalogField.TRACK_ARTISTS, CatalogField.ALBUM_ARTISTS -> R.string.player_chip_artist
     CatalogField.TRACK_ALBUM_TITLE, CatalogField.ALBUM_TITLE -> R.string.player_chip_album

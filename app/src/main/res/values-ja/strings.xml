@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Rhythm</string>
+    <string name="app_name">T2Rhythm</string>
     <!-- Common Labels -->
     <string name="home">ホーム</string>
     <string name="library">ライブラリー</string>
     <string name="search">検索</string>
     <!-- Media3 notification configuration -->
-    <string name="media3_notification_channel_name">Rhythm 再生中</string>
+    <string name="media3_notification_channel_name">T2Rhythm 再生中</string>
     <string name="media3_notification_channel_description">メディア再生コントロール</string>
     <!-- Widget strings -->
-    <string name="widget_description_glance">Rhythm 音楽プレーヤー、Material 3 デザインやリアルタイムの状態更新による再生の制御</string>
-    <string name="widget_name_glance">Rhythm 音楽</string>
+    <string name="widget_description_glance">T2Rhythm 音楽プレーヤー、Material 3 デザインやリアルタイムの状態更新による再生の制御</string>
+    <string name="widget_name_glance">T2Rhythm 音楽</string>
     <string name="unknown_artist">不明なアーティスト</string>
     <string name="play_pause">再生/一時停止</string>
     <!-- Widget Settings -->
@@ -25,11 +25,11 @@
     <!-- Settings - Notifications -->
     <string name="settings_notifications">お知らせ</string>
     <string name="settings_notifications_updates_group">アプリのアップデート</string>
-    <string name="settings_notifications_rhythm_guard_group">Rhythm ガードと安全性</string>
-    <string name="settings_notifications_rhythm_pulse_group">Rhythm 個のヒント</string>
+    <string name="settings_notifications_rhythm_guard_group">T2Rhythm ガードと安全性</string>
+    <string name="settings_notifications_rhythm_pulse_group">T2Rhythm 個のヒント</string>
     <string name="settings_update_notifications_merged_desc">新しいバージョンとバックグラウンド更新チェック結果の通知を受け取る</string>
     <string name="settings_rhythm_guard_alert_notifications">安全上の注意通知</string>
-    <string name="settings_rhythm_guard_alert_notifications_desc">Rhythm Guard が危険な音量または音響暴露を検出したときに通知を表示します</string>
+    <string name="settings_rhythm_guard_alert_notifications_desc">T2Rhythm Guard が危険な音量または音響暴露を検出したときに通知を表示します</string>
     <string name="settings_rhythm_guard_timer_notifications">休憩のお知らせ</string>
     <string name="settings_rhythm_guard_timer_notifications_desc">休憩通知とアクティブなタイマーの通知を表示します</string>
     <string name="settings_rhythm_pulse_notifications">Rhythmのヒント通知</string>
@@ -113,18 +113,18 @@
     <string name="operation_exporting_playlists">カスタム プレイリストをバックアップしています…</string>
     <string name="operation_exporting_playlists_location">プレイリストをストレージにバックアップしています…</string>
     <string name="operation_importing_playlist">プレイリストファイルをインポート中…</string>
-    <string name="notification_operations_channel_name">Rhythm ライブラリ</string>
+    <string name="notification_operations_channel_name">T2Rhythm ライブラリ</string>
     <string name="notification_operations_channel_desc">ライブラリスキャンとプレイリストアクションの進行状況と結果</string>
-    <string name="notification_media_scan_title">Rhythm ライブラリ スキャン</string>
+    <string name="notification_media_scan_title">T2Rhythm ライブラリ スキャン</string>
     <string name="notification_media_scan_stage_songs">オーディオ トラックのデバイス ストレージをスキャン中…</string>
     <string name="notification_media_scan_stage_saving">オーディオトラックデータベースの最適化と保存…</string>
     <string name="notification_media_scan_stage_finishing">オーディオのインデックス作成を完了しています…</string>
     <string name="notification_media_scan_complete_pending_setup">オーディオのスキャンが終了し、バックグラウンド タスクを初期化しています…</string>
     <string name="notification_media_scan_cancelled">ライブラリのスキャンがキャンセルされました。</string>
     <string name="notification_media_scan_failed">ライブラリのスキャンに失敗しました。ストレージのアクセス許可を確認して、再試行してください。</string>
-    <string name="notification_playlist_export_title">Rhythm ライブラリのエクスポート</string>
-    <string name="notification_playlist_import_title">Rhythm ライブラリのインポート</string>
-    <string name="notification_library_setup_title">Rhythm ライブラリのセットアップ</string>
+    <string name="notification_playlist_export_title">T2Rhythm ライブラリのエクスポート</string>
+    <string name="notification_playlist_import_title">T2Rhythm ライブラリのインポート</string>
+    <string name="notification_library_setup_title">T2Rhythm ライブラリのセットアップ</string>
     <plurals name="notification_library_setup_complete_summary">
         <item quantity="other">ライブラリが最適化され準備完了: %1$d トラック、%2$d アルバム、%3$d アーティスト</item>
     </plurals>
@@ -140,20 +140,20 @@
         <item quantity="other">%2$d 曲を含む「%1$s」を正常にインポートしました。</item>
     </plurals>
     <string name="notification_playlist_import_failed">プレイリストのインポートに失敗しました。ファイル形式を確認してください。</string>
-    <string name="notification_updater_channel_name">Rhythm アップデーター</string>
+    <string name="notification_updater_channel_name">T2Rhythm アップデーター</string>
     <string name="notification_updater_channel_desc">アプリアップデートのダウンロード状況</string>
-    <string name="notification_updater_title">Rhythm アップデーター</string>
+    <string name="notification_updater_title">T2Rhythm アップデーター</string>
     <string name="notification_updater_downloading">⬇ ダウンロード中: %1$d%%</string>
     <string name="notification_updater_download_complete">✓ インストールの準備ができました。タップして更新します。</string>
     <string name="notification_updater_available_title">アップデートあり！</string>
-    <string name="notification_updater_available_text">🆕 Rhythm の新しいバージョンが登場しました。</string>
-    <string name="notification_sleep_timer_channel_name">Rhythm スリープタイマー</string>
+    <string name="notification_updater_available_text">🆕 T2Rhythm の新しいバージョンが登場しました。</string>
+    <string name="notification_sleep_timer_channel_name">T2Rhythm スリープタイマー</string>
     <string name="notification_sleep_timer_channel_desc">スリープタイマーアクションのカウントダウンとステータス</string>
-    <string name="notification_sleep_timer_title">Rhythm スリープタイマー</string>
+    <string name="notification_sleep_timer_title">T2Rhythm スリープタイマー</string>
     <string name="notification_sleep_timer_pause_in">⏸ %1$s で一時停止中</string>
     <string name="notification_sleep_timer_stop_in">⏹ %1$s に停車中</string>
     <!-- Streaming Notifications -->
-    <string name="notification_streaming_channel_name">Rhythm Go</string>
+    <string name="notification_streaming_channel_name">T2Rhythm Go</string>
     <string name="notification_streaming_channel_desc">ストリーミング サービスのステータスと同期の更新</string>
     <!-- Streaming Authentication -->
     <string name="notification_streaming_auth_title">ストリーミング接続中</string>
@@ -293,7 +293,7 @@
     <!-- Status Labels -->
     <string name="status_disabled">無効</string>
     <!-- HomeScreen -->
-    <string name="home_title">Rhythm</string>
+    <string name="home_title">T2Rhythm</string>
     <string name="home_settings_cd">設定</string>
     <string name="home_no_featured_albums">注目のアルバムはありません</string>
     <string name="home_no_featured_albums_desc">ライブラリにアルバムを追加して、注目のコンテンツを表示します</string>
@@ -322,7 +322,7 @@
     <string name="home_no_recommendations">推奨事項はありません</string>
     <string name="home_no_recommendations_desc">音楽を聴いて、パーソナライズされたおすすめを取得します</string>
     <!-- Listening Stats -->
-    <string name="home_listening_stats">あなたの Rhythm 統計情報</string>
+    <string name="home_listening_stats">あなたの T2Rhythm 統計情報</string>
     <!-- Mood & Moments -->
     
     <!-- Recently Played -->
@@ -376,7 +376,7 @@
     <string name="sort_song_count">曲数</string>
     <!-- Storage Permission -->
     <string name="storage_permission_required">ストレージ許可が必要です</string>
-    <string name="storage_permission_desc">音楽ファイルを参照してデバイスのストレージを探索するには、Rhythm がファイルとメディアにアクセスする権限が必要です。</string>
+    <string name="storage_permission_desc">音楽ファイルを参照してデバイスのストレージを探索するには、T2Rhythm がファイルとメディアにアクセスする権限が必要です。</string>
     <string name="storage_permission_audio_only">これにより、オーディオ ファイルと音楽を含むフォルダーへのアクセスのみが許可されます。</string>
     <!-- PlayerScreen -->
     <string name="player_loading_lyrics">歌詞を読み込み中…</string>
@@ -391,11 +391,11 @@
     <!-- Common UI -->
     <string name="ui_dismiss">却下</string>
     <!-- Common Terms -->
-    <string name="common_rhythm">Rhythm</string>
+    <string name="common_rhythm">T2Rhythm</string>
     <string name="common_home">ホーム</string>
     <string name="common_library">ライブラリ</string>
     <!-- Splash/Loading -->
-    <string name="splash_tagline">あなたの音楽、あなたの Rhythm</string>
+    <string name="splash_tagline">あなたの音楽、あなたの T2Rhythm</string>
     <string name="splash_ready">準備完了!</string>
     <!-- Audio Quality -->
     
@@ -423,7 +423,7 @@
     <string name="updates_channel_desc">フォローする更新チャネルを選択します:</string>
     <!-- Onboarding -->
     <string name="onboarding_welcome_to">ようこそ</string>
-    <string name="onboarding_welcome_subtitle">あなたの音楽、あなたの Rhythm</string>
+    <string name="onboarding_welcome_subtitle">あなたの音楽、あなたの T2Rhythm</string>
     <string name="onboarding_get_started">始めましょう</string>
     <string name="onboarding_android13_notice">Android 13以降の通知</string>
     <string name="onboarding_android13_desc">新しい Android バージョンでは、複数の権限リクエストが表示されます。最高のエクスペリエンスを得るために、オーディオ ファイルと通知へのアクセスを許可してください。</string>
@@ -447,15 +447,15 @@
     <string name="onboarding_library_how_works">ライブラリ組織の仕組み</string>
     <string name="onboarding_library_1">ライブラリのタブ順序をカスタマイズして、お気に入りにすばやくアクセスできるようにする</string>
     <string name="onboarding_library_2">ライブラリ画面から直接プレイリストを作成・管理</string>
-    <string name="onboarding_theme_title">Rhythm を自分のものにしましょう</string>
-    <string name="onboarding_theme_desc">Rhythm の外観を自分のスタイルに合わせてカスタマイズします。システム テーマ、フォント、または Material You ダイナミック カラー (Android 12+) を選択してください。</string>
+    <string name="onboarding_theme_title">T2Rhythm を自分のものにしましょう</string>
+    <string name="onboarding_theme_desc">T2Rhythm の外観を自分のスタイルに合わせてカスタマイズします。システム テーマ、フォント、または Material You ダイナミック カラー (Android 12+) を選択してください。</string>
     <string name="onboarding_more_tuner">設定のさらなるカスタマイズ</string>
     <string name="onboarding_tuner_1">カスタム配色とジャケットの色の抽出</string>
     <string name="onboarding_tuner_2">フォントのカスタマイズとタイポグラフィの設定</string>
     <string name="onboarding_rhythm_guard_title">聴覚を守る</string>
-    <string name="onboarding_rhythm_guard_desc">Rhythm ガードをセットアップして、年齢を考慮したデフォルトと手動の保護制御でリスニングをより安全に保ちます。</string>
-    <string name="onboarding_rhythm_guard_mode_title">Rhythm ガードモード</string>
-    <string name="onboarding_rhythm_guard_age_hint">年齢プロフィールは、Rhythm 警備員がより安全なリスニング制限を推奨するのに役立ちます。</string>
+    <string name="onboarding_rhythm_guard_desc">T2Rhythm ガードをセットアップして、年齢を考慮したデフォルトと手動の保護制御でリスニングをより安全に保ちます。</string>
+    <string name="onboarding_rhythm_guard_mode_title">T2Rhythm ガードモード</string>
+    <string name="onboarding_rhythm_guard_age_hint">年齢プロフィールは、T2Rhythm 警備員がより安全なリスニング制限を推奨するのに役立ちます。</string>
     <string name="onboarding_rhythm_guard_tip_1">自動モードでは、最小限のセットアップでより安全なデフォルトが適用されます。</string>
     <string name="onboarding_rhythm_guard_tip_3">手動モードでは、警告としきい値を完全に制御できます。</string>
     <string name="onboarding_full_tour_prompt_title">フルセットアップツアーを続けますか?</string>
@@ -471,7 +471,7 @@
     <string name="onboarding_media_scan_blacklist">ブラックリストモード：特定の曲とフォルダー（着信音、通知）を非表示にします</string>
     <string name="onboarding_media_scan_whitelist">ホワイトリストモード: 選択したフォルダーの曲のみを表示します</string>
     <string name="onboarding_complete_title">これで準備は完了です。</string>
-    <string name="onboarding_complete_desc">Rhythm をプレイする準備ができました!音楽ライブラリはバックグラウンドでスキャンされています。設定内容は次のとおりです。</string>
+    <string name="onboarding_complete_desc">T2Rhythm をプレイする準備ができました!音楽ライブラリはバックグラウンドでスキャンされています。設定内容は次のとおりです。</string>
     <string name="onboarding_whats_next">次は何ですか?</string>
     <string name="onboarding_next_browse">曲、アルバム、アーティストを参照する</string>
     <string name="onboarding_next_create">最初のプレイリストを作成する</string>
@@ -492,8 +492,8 @@
     <string name="onboarding_grant_permissions">権限の付与</string>
     <string name="onboarding_permissions_granted_desc">必要な権限はすべて付与されています。続行する準備ができました。</string>
     <string name="onboarding_redirect_settings_desc">必要な権限を付与するには、デバイスのアプリ設定に移動してください。</string>
-    <string name="onboarding_rationale_desc">Rhythm が正しく機能するには、特定の権限が必要です。続行を許可してください。</string>
-    <string name="onboarding_permissions_required_desc">Rhythm の機能を最大限に活用するには、特定のデバイス機能にアクセスする許可が必要です。</string>
+    <string name="onboarding_rationale_desc">T2Rhythm が正しく機能するには、特定の権限が必要です。続行を許可してください。</string>
+    <string name="onboarding_permissions_required_desc">T2Rhythm の機能を最大限に活用するには、特定のデバイス機能にアクセスする許可が必要です。</string>
     <string name="onboarding_permission_music_title">ミュージックライブラリへのアクセス</string>
     <string name="onboarding_permission_music_desc">ローカルの音楽ファイルを読み取り、アプリに表示します</string>
     <string name="onboarding_permission_bluetooth_title">Bluetooth接続</string>
@@ -506,9 +506,9 @@
     <string name="onboarding_permission_tip_2">後で [設定] で権限を変更できます</string>
     <!-- Onboarding Audio &amp; Playback -->
     <string name="onboarding_default_screen_title">起動時のデフォルト画面</string>
-    <string name="onboarding_default_screen_desc">Rhythm を起動したときに開く画面を選択します</string>
+    <string name="onboarding_default_screen_desc">T2Rhythm を起動したときに開く画面を選択します</string>
     <string name="onboarding_system_volume_title">システムボリュームコントロール</string>
-    <string name="onboarding_system_volume_desc">デバイスの物理音量ボタンで Rhythm の再生音量を制御できるようにします。</string>
+    <string name="onboarding_system_volume_desc">デバイスの物理音量ボタンで T2Rhythm の再生音量を制御できるようにします。</string>
     <string name="onboarding_auto_queue_title">キューに自動追加</string>
     <string name="onboarding_auto_queue_desc">曲の再生時にアルバム/アーティストからコンテキストキューを自動的に作成します。</string>
     <string name="onboarding_show_lyrics_title">歌詞を表示</string>
@@ -519,7 +519,7 @@
     
     <!-- Onboarding Theming -->
     <string name="onboarding_player_theme_title">再生およびミニプレーヤーのテーマ</string>
-    <string name="onboarding_player_theme_desc">再生インターフェイスをパーソナライズします。クリーンでモダンな Rhythm デザインと、鮮やかで流動的な表現力豊かなデザインを切り替えます。</string>
+    <string name="onboarding_player_theme_desc">再生インターフェイスをパーソナライズします。クリーンでモダンな T2Rhythm デザインと、鮮やかで流動的な表現力豊かなデザインを切り替えます。</string>
     <!-- Onboarding Updater -->
     <string name="onboarding_update_check_failed">更新チェックに失敗しました</string>
     <string name="onboarding_ready_to_install">インストールの準備ができました</string>
@@ -531,7 +531,7 @@
     <string name="onboarding_enable_updates_title">アップデートを有効にする</string>
     <string name="onboarding_enable_updates_desc">アプリにアップデートの確認とダウンロードを許可する</string>
     <string name="onboarding_periodic_check_title">自動更新</string>
-    <string name="onboarding_periodic_check_desc">Rhythm の GitHub リポジトリからの更新を自動的に確認します</string>
+    <string name="onboarding_periodic_check_desc">T2Rhythm の GitHub リポジトリからの更新を自動的に確認します</string>
     <string name="onboarding_update_notifications_title">アップデートのお知らせ</string>
     <string name="onboarding_update_notifications_desc">新しいバージョンが利用可能になったときに通知を受け取る</string>
     <string name="onboarding_check_interval_desc">アップデートを確認する頻度</string>
@@ -574,7 +574,7 @@
     <string name="onboarding_gesture_tip_1">スワイプ ジェスチャは両方向に機能します</string>
     <!-- Onboarding: Widgets Step -->
     <string name="onboarding_widgets_title">ランチャーウィジェット</string>
-    <string name="onboarding_widgets_desc">素早い音楽コントロールのために、ランチャーに Rhythm ウィジェットを追加します。表示される情報とウィジェットの外観をカスタマイズします。</string>
+    <string name="onboarding_widgets_desc">素早い音楽コントロールのために、ランチャーに T2Rhythm ウィジェットを追加します。表示される情報とウィジェットの外観をカスタマイズします。</string>
     <string name="onboarding_widget_artist">アーティスト名を表示</string>
     <string name="onboarding_widget_artist_desc">現在のアーティストをウィジェットに表示</string>
     <string name="onboarding_widget_album">アルバム名を表示</string>
@@ -589,8 +589,8 @@
     <string name="onboarding_integration_ytmusic">YouTube Music</string>
     <string name="onboarding_integrations_info_title">プライバシーに関する注意事項</string>
     <string name="onboarding_integrations_info_desc">これらの機能は、限られたデータ (曲名、アーティスト) を外部サービスに送信します。個人データと音楽ファイルはデバイス上に残ります。これらは、[設定]でいつでも有効または無効にできます。</string>
-    <!-- Onboarding: Rhythm Stats Step -->
-    <string name="onboarding_stats_title">Rhythm 統計</string>
+    <!-- Onboarding: T2Rhythm Stats Step -->
+    <string name="onboarding_stats_title">T2Rhythm 統計</string>
     <string name="onboarding_stats_desc">自分の音楽習慣についての洞察を発見します。再生時間、最も再生された曲、お気に入りのアーティストなどを美しい視覚化で追跡します。</string>
     <string name="onboarding_stats_show_home">ホームで統計を表示</string>
     <string name="onboarding_stats_show_home_desc">ホーム画面にリスニング統計ウィジェットを表示する</string>
@@ -611,9 +611,9 @@
     <string name="settings_tip_gestures_swipe">ミニ プレーヤーを上にスワイプして完全なプレーヤーを開き、完了したら下にスワイプして閉じます。</string>
     <string name="settings_tip_gestures_artwork">アートワークをスワイプしてトラックを切り替え、ジャケットをダブルタップしてクイック再生または一時停止します。</string>
     <string name="settings_tip_media_scan">メディア スキャンを使用してライブラリから不要なファイルを非表示にします</string>
-    <string name="settings_tip_rhythm_guard_off">Rhythm ガードを有効にして聴覚を保護します</string>
-    <string name="settings_tip_rhythm_guard_auto">Rhythm Guard は安全なリスニング制限を自動的に管理します</string>
-    <string name="settings_tip_rhythm_guard_manual">Rhythm のガード制限を手動で制御しています</string>
+    <string name="settings_tip_rhythm_guard_off">T2Rhythm ガードを有効にして聴覚を保護します</string>
+    <string name="settings_tip_rhythm_guard_auto">T2Rhythm Guard は安全なリスニング制限を自動的に管理します</string>
+    <string name="settings_tip_rhythm_guard_manual">T2Rhythm のガード制限を手動で制御しています</string>
     <string name="settings_default_screen">起動時に表示されるデフォルトのページ</string>
     <string name="settings_default_screen_desc">起動時に自動で開くページを選択する</string>
     <string name="settings_home_desc">新しい音楽とおすすめを発見する</string>
@@ -683,7 +683,7 @@
     <string name="lyrics_editor_title">歌詞エディター</string>
     <!-- Components: Song Info -->
     <string name="song_info_title">楽曲情報</string>
-    <string name="rhythm_stats">Rhythm の統計</string>
+    <string name="rhythm_stats">T2Rhythm の統計</string>
     <string name="file_info">ファイル情報</string>
     <!-- Components: Add to Playlist -->
     <string name="add_to_playlists">プレイリストに追加</string>
@@ -714,7 +714,7 @@
     <string name="updates_disabled_message">アプリのアップデートが設定で無効になっています</string>
     <string name="updates_auto_disabled">自動更新チェックは無効になっています。手動で確認することもできます。</string>
     <string name="updates_up_to_date_message">アプリは最新です！</string>
-    <string name="updates_check_frequency">Rhythm が自動で更新を確認する頻度を選んでください</string>
+    <string name="updates_check_frequency">T2Rhythm が自動で更新を確認する頻度を選んでください</string>
     <string name="updates_experimental_coming">今後のアップデートでさらに試験的な機能が追加される予定です</string>
     <string name="settings_interval_every_48_hours">48時間ごと</string>
     <string name="settings_interval_every_72_hours">72時間ごと</string>
@@ -832,7 +832,7 @@
     <string name="settings_section_updates_info">アップデートと情報</string>
     <string name="settings_updates_title">アップデート</string>
     <string name="settings_updates_desc">アプリのアップデート</string>
-    <string name="settings_about_title">Rhythm について</string>
+    <string name="settings_about_title">T2Rhythm について</string>
     <string name="settings_about_desc">バージョン情報</string>
     <string name="settings_section_advanced">高度な設定</string>
     <string name="settings_crash_log_history">クラッシュログ履歴</string>
@@ -857,7 +857,7 @@
     <string name="updates_enable_auto_check">アップデートの自動チェック</string>
     <string name="updates_channel_title">チャンネルを更新する</string>
     <string name="updates_source_title">アップデートソース</string>
-    <string name="updates_source_desc">Rhythm が OTA アップデートに使用するリリース ファミリーを選択します。</string>
+    <string name="updates_source_desc">T2Rhythm が OTA アップデートに使用するリリース ファミリーを選択します。</string>
     <string name="updates_source_installed">インストールされているビルドと一致する</string>
     <string name="updates_source_installed_label">インストールされているビルド</string>
     <string name="updates_source_github_label">GitHub ビルド</string>
@@ -905,7 +905,7 @@
     <string name="cd_reorder_chips">チップの並べ替え</string>
     <string name="cd_search">検索</string>
     <string name="cd_view_all">全て見る</string>
-    <string name="cd_rhythm_splash">Rhythm</string>
+    <string name="cd_rhythm_splash">T2Rhythm</string>
     <string name="cd_remove_from_playlist">プレイリストから削除する</string>
     <string name="cd_change_language">言語を変更する</string>
     <string name="cd_open_settings">開く</string>
@@ -978,18 +978,18 @@
     <!-- Fallback Metadata -->
     
     <!-- Service Notifications -->
-    <string name="service_app_updates">Rhythm アップデーター</string>
-    <string name="service_update_status">Rhythm アップデーターのステータス</string>
-    <string name="service_rhythm_pulse">Rhythm のヒント</string>
-    <string name="service_rhythm_guard_alerts">Rhythm ガードアラート</string>
-    <string name="service_rhythm_guard_timers">Rhythm ガードタイマー</string>
-    <string name="service_rhythm_music">Rhythm 音楽</string>
+    <string name="service_app_updates">T2Rhythm アップデーター</string>
+    <string name="service_update_status">T2Rhythm アップデーターのステータス</string>
+    <string name="service_rhythm_pulse">T2Rhythm のヒント</string>
+    <string name="service_rhythm_guard_alerts">T2Rhythm ガードアラート</string>
+    <string name="service_rhythm_guard_timers">T2Rhythm ガードタイマー</string>
+    <string name="service_rhythm_music">T2Rhythm 音楽</string>
     <string name="service_update_status_desc">バックグラウンド更新チェックのステータス結果</string>
-    <string name="service_rhythm_pulse_desc">Rhythm からのフレンドリーなリスニングのリマインダーとヒント</string>
-    <string name="service_rhythm_guard_alerts_desc">Rhythm 警備員からの安全警告</string>
-    <string name="service_rhythm_guard_timers_desc">Rhythm ガードブレイクとタイムアウトのリマインダー</string>
-    <string name="service_ready">Rhythm の準備ができました。</string>
-    <string name="service_init_failed">Rhythm を開始できませんでした。アプリを再度開いてください。</string>
+    <string name="service_rhythm_pulse_desc">T2Rhythm からのフレンドリーなリスニングのリマインダーとヒント</string>
+    <string name="service_rhythm_guard_alerts_desc">T2Rhythm 警備員からの安全警告</string>
+    <string name="service_rhythm_guard_timers_desc">T2Rhythm ガードブレイクとタイムアウトのリマインダー</string>
+    <string name="service_ready">T2Rhythm の準備ができました。</string>
+    <string name="service_init_failed">T2Rhythm を開始できませんでした。アプリを再度開いてください。</string>
     <!-- Crash Activity -->
     <string name="crash_bug_report">バグレポート</string>
     <string name="crash_restart_app">アプリを再起動する</string>
@@ -1019,12 +1019,12 @@
     <string name="settings_artwork_cache_size">アートワークのキャッシュサイズ</string>
     <string name="settings_artist_parsing">アーティスト</string>
     <string name="settings_artist_parsing_desc">セパレータ、表示</string>
-    <string name="settings_rhythm_stats">Rhythm 統計</string>
+    <string name="settings_rhythm_stats">T2Rhythm 統計</string>
     <string name="settings_rhythm_stats_desc">再生時間、よく聴いている曲、トレンド</string>
     <string name="settings_rhythm_guard">Rhythmガード</string>
-    <string name="settings_rhythm_guard_list_desc">Rhythm 統計を活用したリスニング健康ガードレール</string>
+    <string name="settings_rhythm_guard_list_desc">T2Rhythm 統計を活用したリスニング健康ガードレール</string>
     <string name="settings_rhythm_guard_mode_title">保護モード</string>
-    <string name="settings_rhythm_guard_mode_desc">Rhythm Guard がリスニング状態を管理する方法を選択します</string>
+    <string name="settings_rhythm_guard_mode_desc">T2Rhythm Guard がリスニング状態を管理する方法を選択します</string>
     <string name="settings_rhythm_guard_mode_auto">オート</string>
     <string name="settings_rhythm_guard_mode_manual">マニュアル</string>
     <string name="settings_rhythm_guard_age_label">年齢: %1$d歳</string>
@@ -1040,10 +1040,10 @@
     <string name="settings_rhythm_guard_manual_warning_toggle">安全上の警告を表示する</string>
     <string name="settings_rhythm_guard_manual_warning_toggle_desc">ライブボリュームまたは手動切り替えが危険な場合に警告する</string>
     <string name="settings_rhythm_guard_manual_threshold_title">大量警告しきい値: %1$d%%</string>
-    <string name="settings_rhythm_guard_manual_threshold_desc">Rhythm ガードが有害な可能性のあるボリュームについて警告する時期を設定します。</string>
+    <string name="settings_rhythm_guard_manual_threshold_desc">T2Rhythm ガードが有害な可能性のあるボリュームについて警告する時期を設定します。</string>
     <string name="settings_rhythm_guard_device_controls_title">音量の制限</string>
     <string name="settings_rhythm_guard_device_controls_speaker_limit_title">音量を制限する</string>
-    <string name="settings_rhythm_guard_device_controls_speaker_limit_desc">オフの場合、Rhythm ガードは内蔵スピーカー出力の音量クランプと音量警告をスキップします。</string>
+    <string name="settings_rhythm_guard_device_controls_speaker_limit_desc">オフの場合、T2Rhythm ガードは内蔵スピーカー出力の音量クランプと音量警告をスキップします。</string>
     <string name="settings_rhythm_guard_alert_controls_title">リスニングアラートコントロール</string>
     <string name="settings_rhythm_guard_alert_threshold_title">暴露警告しきい値: %1$s</string>
     <string name="settings_rhythm_guard_alert_threshold_policy_default">ポリシーのデフォルト</string>
@@ -1053,7 +1053,7 @@
     <string name="settings_rhythm_guard_warning_title">リスニングに関する安全上の警告</string>
     <string name="settings_rhythm_guard_warning_high_volume">現在の音量は警告しきい値 (%1$d%%) を超えています。音量を下げることを検討してください。</string>
     <string name="settings_rhythm_guard_warning_daily_exposure">今日、提案された %2$s を上回る %1$s に到達しました。リスニングの休憩を取ることを検討してください。</string>
-    <string name="settings_rhythm_guard_warning_dialog_title">Rhythm ガード保護アラート</string>
+    <string name="settings_rhythm_guard_warning_dialog_title">T2Rhythm ガード保護アラート</string>
     <string name="settings_rhythm_guard_warning_dialog_volume_message">システム メディア ボリュームはリアルタイムで %1$d%% で、現在の保護制限の %2$d%% を超えています。聴覚リスクを軽減するには、音量を下げてください。</string>
     <string name="settings_rhythm_guard_risk_level_label">リスク重大度: %1$s</string>
     <string name="settings_rhythm_guard_risk_action_label">推奨されるアクション: %1$s</string>
@@ -1083,8 +1083,8 @@
     <string name="settings_rhythm_guard_start_countdown_value">%1$s から始まります</string>
     <string name="settings_rhythm_guard_snapshot_widget_above_limit">推奨制限を超えています</string>
     <string name="settings_rhythm_guard_snapshot_widget_within_limit">推奨限度内</string>
-    <string name="settings_rhythm_guard_state_active">Rhythm ガードは有効です</string>
-    <string name="settings_rhythm_guard_state_inactive">Rhythm ガードは無効です</string>
+    <string name="settings_rhythm_guard_state_active">T2Rhythm ガードは有効です</string>
+    <string name="settings_rhythm_guard_state_inactive">T2Rhythm ガードは無効です</string>
     <string name="settings_rhythm_guard_state_timeout_active">リスニングタイムアウトが進行中です</string>
     <string name="settings_rhythm_guard_state_cooldown_active">猶予期間が有効です</string>
     <string name="settings_rhythm_guard_state_timeout_remaining">%1$s で休憩が終了します</string>
@@ -1096,8 +1096,8 @@
     <string name="settings_rhythm_guard_protection_preset_strict">厳格</string>
     <string name="settings_rhythm_guard_protection_preset_custom">カスタム</string>
     <string name="settings_rhythm_guard_timeout_activity_title">リスニングタイムアウトがアクティブです</string>
-    <string name="settings_rhythm_guard_timeout_activity_default_reason">どんでん返し: あなたの耳が結合を開始し、おやつ休憩を求めました。 Rhythm ガードは全員がクールダウンできるように再生を一時停止しました。</string>
-    <string name="settings_rhythm_guard_timeout_activity_comic_desc">どんでん返し: あなたの耳が結合を開始し、おやつ休憩を求めました。 Rhythm ガードは全員がクールダウンできるように再生を一時停止しました。</string>
+    <string name="settings_rhythm_guard_timeout_activity_default_reason">どんでん返し: あなたの耳が結合を開始し、おやつ休憩を求めました。 T2Rhythm ガードは全員がクールダウンできるように再生を一時停止しました。</string>
+    <string name="settings_rhythm_guard_timeout_activity_comic_desc">どんでん返し: あなたの耳が結合を開始し、おやつ休憩を求めました。 T2Rhythm ガードは全員がクールダウンできるように再生を一時停止しました。</string>
     <string name="settings_rhythm_guard_timeout_activity_extend">休憩を延長します (+%1$d 分)</string>
     <string name="settings_rhythm_guard_timeout_activity_exit">タイムアウト画面を閉じる</string>
     <string name="settings_rhythm_guard_timeout_activity_close_app">アプリを閉じる</string>
@@ -1108,22 +1108,22 @@
     <string name="settings_rhythm_guard_alert_threshold_search_title">暴露警告しきい値</string>
     <string name="settings_rhythm_guard_alert_threshold_search_desc">毎日どれだけ聞くと安全警告がトリガーされるかを設定します</string>
     <string name="settings_rhythm_guard_warning_timeout_search_title">アラートクールダウン</string>
-    <string name="settings_rhythm_guard_warning_timeout_search_desc">Rhythm 回のガード アラート間のクールダウンを設定します</string>
+    <string name="settings_rhythm_guard_warning_timeout_search_desc">T2Rhythm 回のガード アラート間のクールダウンを設定します</string>
     <string name="settings_rhythm_guard_post_timeout_cooldown_search_title">タイムアウト後のクールダウン</string>
     <string name="settings_rhythm_guard_post_timeout_cooldown_search_desc">タイムアウトが終了した後、別の露出タイムアウトがトリガーされる前にクールダウンを設定します</string>
     <string name="settings_rhythm_guard_protection_presets_search_title">保護プリセット</string>
     <string name="settings_rhythm_guard_protection_presets_search_desc">ワンタップで穏やか、バランスの取れた、または厳格なガードレール バンドルを適用します</string>
     <string name="settings_rhythm_guard_break_resume_search_title">デフォルトの中断再開</string>
     <string name="settings_rhythm_guard_break_resume_search_desc">スケジュールされたリスニングの休憩時間がデフォルトでどのくらい続くかを設定する</string>
-    <string name="settings_rhythm_guard_enable_search_title">Rhythm ガードパワー</string>
-    <string name="settings_rhythm_guard_enable_search_desc">Rhythm ガード保護を有効または無効にします</string>
-    <string name="settings_rhythm_guard_notification_alert_title">Rhythm ガードの安全警告</string>
-    <string name="settings_rhythm_guard_notification_timer_active_title">Rhythm ガード タイムアウトがアクティブです</string>
+    <string name="settings_rhythm_guard_enable_search_title">T2Rhythm ガードパワー</string>
+    <string name="settings_rhythm_guard_enable_search_desc">T2Rhythm ガード保護を有効または無効にします</string>
+    <string name="settings_rhythm_guard_notification_alert_title">T2Rhythm ガードの安全警告</string>
+    <string name="settings_rhythm_guard_notification_timer_active_title">T2Rhythm ガード タイムアウトがアクティブです</string>
     <string name="settings_rhythm_guard_notification_timer_active_text">再生は %1$s で再開されます。</string>
-    <string name="settings_rhythm_guard_notification_timer_scheduled_title">Rhythm ガードブレイク予定</string>
+    <string name="settings_rhythm_guard_notification_timer_scheduled_title">T2Rhythm ガードブレイク予定</string>
     <string name="settings_rhythm_guard_notification_timer_scheduled_text">リスニングの休憩は %1$s で始まります。</string>
     <string name="settings_rhythm_guard_notification_tap_open">タップしてタイムアウトの詳細を表示します。</string>
-    <!-- Rhythm Stats Screen -->
+    <!-- T2Rhythm Stats Screen -->
     <string name="stats_title">再生時間</string>
     <string name="stats_today">今日</string>
     <string name="stats_this_week">今週</string>
@@ -1146,7 +1146,7 @@
     <!-- Content Descriptions (additional) -->
     <string name="cd_reorder_home_sections">ホームセクションを並べ替える</string>
     <string name="cd_remove">取り除く</string>
-    <string name="cd_rhythm_logo">Rhythm ロゴ</string>
+    <string name="cd_rhythm_logo">T2Rhythm ロゴ</string>
     <string name="cd_telegram_support">Telegram サポート</string>
     <!-- Queue &amp; Playlist Dialogs -->
     <!-- Artist Settings -->
@@ -1314,7 +1314,7 @@
     <string name="settings_snowflake_display_area">雪の結晶表示エリア</string>
     <string name="settings_snowflake_size">雪の結晶のサイズ</string>
     <string name="settings_toggle_decoration_elements">位置ごとに個別の装飾要素を切り替えます</string>
-    <string name="settings_multi_artist_parsing_info">有効にすると、Rhythm は複数のアーティストを含むアーティスト タグを自動的に分割します。これは、yt-dlp または「/」などの区切り文字を使用してアーティストを区切るその他のツールでダウンロードした曲に便利です。\n\nバックスラッシュ (\\) を使用して区切り文字をエスケープできます。</string>
+    <string name="settings_multi_artist_parsing_info">有効にすると、T2Rhythm は複数のアーティストを含むアーティスト タグを自動的に分割します。これは、yt-dlp または「/」などの区切り文字を使用してアーティストを区切るその他のツールでダウンロードした曲に便利です。\n\nバックスラッシュ (\\) を使用して区切り文字をエスケープできます。</string>
     <!-- Format Strings with Placeholders -->
     <string name="settings_cache_size_2gb">2GB</string>
     <string name="settings_cache_size_64mb">64MB</string>
@@ -1411,7 +1411,7 @@
     <string name="settings_interval_once_a_day">1日1回</string>
     <string name="settings_interval_once_a_week">週に1回</string>
     <!-- Experimental Features -->
-    <string name="streaming_integration_title">Rhythm Go</string>
+    <string name="streaming_integration_title">T2Rhythm Go</string>
     <string name="streaming_integration_services">統合サービス</string>
     <string name="streaming_integration_services_empty">まだ接続されているサービスはありません</string>
     <string name="streaming_settings_title">設定</string>
@@ -1419,7 +1419,7 @@
     <string name="streaming_settings_group_actions">アクション</string>
     <string name="streaming_settings_preferred_service">優先サービス</string>
     <string name="streaming_settings_quality">ストリーミング品質</string>
-    <string name="streaming_settings_service_sheet_desc">Rhythm Go がデフォルトで優先する接続サービスを選択します。</string>
+    <string name="streaming_settings_service_sheet_desc">T2Rhythm Go がデフォルトで優先する接続サービスを選択します。</string>
     <string name="streaming_settings_quality_sheet_desc">ストリーミング再生の好みの音質を選択します。</string>
     <string name="streaming_quality_low">低い</string>
     <string name="streaming_quality_normal">ノーマル</string>
@@ -1429,7 +1429,7 @@
     <string name="streaming_quality_normal_desc">バランスの取れた品質とデータ使用量 (~160 kbps)。</string>
     <string name="streaming_quality_high_desc">高品質オーディオ (~320 kbps)。</string>
     <string name="streaming_quality_lossless_desc">サポートされている場合は最高の品質 (FLAC/ALAC)。</string>
-    <string name="streaming_settings_group_wellbeing">Rhythm の洞察</string>
+    <string name="streaming_settings_group_wellbeing">T2Rhythm の洞察</string>
     <string name="streaming_open_full_settings">すべての設定を開く</string>
     <string name="streaming_open_full_settings_desc">モード間で共有されるアプリ全体の設定を開く</string>
     <string name="streaming_switch_to_local_mode">ローカルモードに切り替える</string>
@@ -1453,7 +1453,7 @@
     <string name="streaming_service_setup_password">パスワード</string>
     <string name="streaming_service_setup_password_hint">アカウントのパスワードを入力してください</string>
     <string name="streaming_service_setup_remember_password">このデバイスにパスワードを記憶する</string>
-    <string name="streaming_service_setup_remember_password_desc">Rhythm が後で自動的に再接続できるように、資格情報をローカルに保存します。</string>
+    <string name="streaming_service_setup_remember_password_desc">T2Rhythm が後で自動的に再接続できるように、資格情報をローカルに保存します。</string>
     <string name="streaming_service_setup_connecting">接続中…</string>
     <string name="streaming_service_setup_disconnecting">切断中…</string>
     <string name="streaming_service_setup_action_hint">このサービスに接続するには、必須フィールドに入力します。</string>
@@ -1641,7 +1641,7 @@
     <string name="settings_bluetooth_lyrics_enabled">Bluetooth歌詞モード</string>
     <string name="settings_bluetooth_lyrics_enabled_desc">Bluetooth メタデータ経由で現在の歌詞ラインをブロードキャストする</string>
     <string name="exp_go_mode">Go Mode</string>
-    <string name="exp_go_mode_desc">Rhythm Go streaming mode に切り替えます</string>
+    <string name="exp_go_mode_desc">T2Rhythm Go streaming mode に切り替えます</string>
     <!-- Home Screen Search Strings -->
     <string name="settings_home_section_order">セクションの順序</string>
     <string name="settings_home_section_order_desc">ホームセクションを並べ替える</string>
@@ -1654,13 +1654,13 @@
     <string name="settings_home_carousel_auto_scroll">カルーセル自動スクロール</string>
     <string name="settings_home_carousel_auto_scroll_desc">自動スクロールカルーセル</string>
     <!-- Notifications Search Strings -->
-    <string name="settings_notifications_rhythm_guard_alerts">Rhythm ガードの安全警告</string>
+    <string name="settings_notifications_rhythm_guard_alerts">T2Rhythm ガードの安全警告</string>
     <string name="settings_notifications_rhythm_guard_alerts_desc">リスニングのリスク警告がトリガーされたときに通知する</string>
-    <string name="settings_notifications_rhythm_guard_timers">Rhythm ガードブレイクタイマー</string>
+    <string name="settings_notifications_rhythm_guard_timers">T2Rhythm ガードブレイクタイマー</string>
     <string name="settings_notifications_rhythm_guard_timers_desc">予定された休憩とタイムアウトのカウントダウンを通知する</string>
-    <string name="settings_notifications_rhythm_pulse">Rhythm のヒント</string>
+    <string name="settings_notifications_rhythm_pulse">T2Rhythm のヒント</string>
     <string name="settings_notifications_rhythm_pulse_desc">フレンドリーなリマインダーと聞き方のヒント。</string>
-    <string name="settings_notifications_rhythm_pulse_interval">Rhythm ヒント間隔</string>
+    <string name="settings_notifications_rhythm_pulse_interval">T2Rhythm ヒント間隔</string>
     <string name="settings_notifications_rhythm_pulse_interval_desc">チップ通知が配信される頻度</string>
     <!-- Expressive Shapes Search Strings -->
     <string name="settings_expressive_shapes_enabled">表情豊かな形状</string>
@@ -1783,7 +1783,7 @@
     <string name="theme_font_imported">フォントが正常にインポートされました</string>
     <string name="theme_font_invalid">無効なフォント ファイル形式です</string>
     <string name="ui_apply">適用する</string>
-    <string name="crashactivity_uh_oh_looks_like">ああああ！ Rhythm が不機嫌になったようです!</string>
+    <string name="crashactivity_uh_oh_looks_like">ああああ！ T2Rhythm が不機嫌になったようです!</string>
     <string name="crashactivity_dont_fret_our_app">心配しないでください！私たちのアプリにはちょっとした「おっとり」がありました。以下のクラッシュの詳細を共有してください。これは開発者に対する問題を修正するための秘密のメッセージのようなものです。じゃあ、もう一度やってみましょうか？</string>
     <string name="crashactivity_secret_crash_scrolls">シークレットクラッシュスクロール</string>
     <string name="crashactivity_share">シェア</string>
@@ -1877,7 +1877,7 @@
     <string name="streamingmusicviewmodel_failed_to_play_next">次の再生に失敗しました: URL を解決できません</string>
     <string name="streamingmusicviewmodel_failed_to_add_to">キューに追加できませんでした: URL を解決できません</string>
     <string name="rhythmmusicwidget_album_art_placeholder">アルバム アート プレースホルダー</string>
-    <string name="rhythmwidgetpreview_rhythm_glance_widget_previews">Rhythm Glance ウィジェットのプレビュー</string>
+    <string name="rhythmwidgetpreview_rhythm_glance_widget_previews">T2Rhythm Glance ウィジェットのプレビュー</string>
     <string name="rhythmwidgetpreview_str_11_compact_widget">1×1コンパクトウィジェット</string>
     <string name="rhythmwidgetpreview_str_21_horizontal_strip">2×1 水平ストリップ</string>
     <string name="rhythmwidgetpreview_str_22_small_widget">2×2の小さなウィジェット</string>
@@ -1919,7 +1919,7 @@
     <string name="betaprogrampopup_early_access">早期アクセス</string>
     <string name="betaprogrampopup_shape_the_future">未来を形作る</string>
     <string name="betaprogrampopup_direct_feedback">ダイレクトフィードバック</string>
-    <string name="betaprogrampopup_youre_part_of_an">あなたは、Rhythm 音楽プレーヤーの未来の形成を支援する独占的なグループの一員です</string>
+    <string name="betaprogrampopup_youre_part_of_an">あなたは、T2Rhythm 音楽プレーヤーの未来の形成を支援する独占的なグループの一員です</string>
     <string name="betaprogrampopup_start_exploring">探検を始める</string>
     <string name="switchmodedialog_switch_play">スイッチ＆プレイ</string>
     <string name="fullscreenlyricsview_cover_artwork">表紙絵</string>
@@ -1985,7 +1985,7 @@
     <string name="lyricssourcesettingsscreen_retry_using_fallbacks">フォールバックを使用したリトライ</string>
     <string name="lyricssourcesettingsscreen_embedded_lyrics_are_stored">• Embedded lyrics are stored in your audio files</string>
     <string name="miniplayercustomizationsettingsscreen_miniplayer_theme">ミニプレーヤーのテーマ</string>
-    <string name="miniplayercustomizationsettingsscreen_choose_between_rhythm_default">Rhythm のデフォルト テーマまたは表現力豊かなテーマから選択します</string>
+    <string name="miniplayercustomizationsettingsscreen_choose_between_rhythm_default">T2Rhythm のデフォルト テーマまたは表現力豊かなテーマから選択します</string>
     <string name="miniplayercustomizationsettingsscreen_integrated_directly_into_the">MiniPlayer の背景に直接統合</string>
     <string name="performancesettingsscreen_performance">ライトモード</string>
     <string name="performancesettingsscreen_disable_haptics">ハプティクスを無効にする</string>
@@ -2002,7 +2002,7 @@
     <string name="rhythmguardsettingsscreen_none">なし</string>
     <string name="rhythmguardsettingsscreen_general_settings">一般設定</string>
     <string name="rhythmguardsettingsscreen_library_data">ライブラリデータ</string>
-    <string name="rhythmguardsettingsscreen_stats_rhythm_guard">ステータスと Rhythm ガード</string>
+    <string name="rhythmguardsettingsscreen_stats_rhythm_guard">ステータスと T2Rhythm ガード</string>
     <string name="settingsscreen_audio_offload">オーディオオフロード</string>
     <string name="settingsscreen_personalization">パーソナライゼーション</string>
     <string name="settingsscreen_library_focus">ライブラリーフォーカス</string>
@@ -2097,7 +2097,7 @@
     <string name="pulse_marathon">マラソンモード</string>
     <!-- Settings Tips Details -->
     <string name="settings_tip_theme_desc_1">生き生きとした AMOLED ブラックと美しいパステルカラーで音楽プレーヤーをリフレッシュします。</string>
-    <string name="settings_tip_theme_desc_2">アプリのアクセントをシステムに合わせて、Rhythm を本当に自分のものにしましょう。</string>
+    <string name="settings_tip_theme_desc_2">アプリのアクセントをシステムに合わせて、T2Rhythm を本当に自分のものにしましょう。</string>
     <string name="settings_tip_media_scan_desc_1">不要なオーディオクリップを避けてください。音楽をスキャンするためにどのフォルダーをスキャンするかを明示的に定義します。</string>
     <string name="settings_tip_media_scan_desc_2">フォーカス フォルダーを使用して、ボイス メモと着信音をプレイリストから遠ざけます。</string>
     <string name="settings_tip_sleep_timer_desc_1">音楽を再生しながら眠りに就きます。自動的に一時停止させていただきます。</string>
@@ -2106,7 +2106,7 @@
     <string name="settings_tip_equalizer_desc_2">高度なオーディオエフェクトを使用して、ヘッドフォンのサウンドを安全に調整します。</string>
     <string name="settings_tip_backup_active_desc_1">自動バックアップが有効になっています。復元がクリーンな状態に保たれるように、バックアップ セクションを検証します。</string>
     <string name="settings_tip_backup_active_desc_2">保護が有効になっています: スケジュールは問題ないようです。大規模な編集を行う前に手動バックアップを実行してください。</string>
-    <string name="settings_tip_backup_inactive_desc_1">自動バックアップがオフになっています。有効にすると、プレイリストと Rhythm Guard の統計情報が保護されます。</string>
+    <string name="settings_tip_backup_inactive_desc_1">自動バックアップがオフになっています。有効にすると、プレイリストと T2Rhythm Guard の統計情報が保護されます。</string>
     <string name="settings_tip_backup_inactive_desc_2">セーフティネットはまだありません。セットアップが失われないようにバックアップを有効にしてください。</string>
     <string name="settings_tip_updates_active_desc_1">アップデートが有効になります。修正とパフォーマンスの向上のためにオンにしておきます。</string>
     <string name="settings_tip_updates_active_desc_2">アップデートを受信するように設定されました。安定性と鮮度についてチャンネルの設定を確認してください。</string>
@@ -2149,7 +2149,7 @@
     <string name="font_jetbrains_desc">技術的な内容に最適な等幅フォント</string>
     <string name="font_quicksand_desc">丸みを帯びた、柔らかく親しみやすいフォント</string>
     <!-- Predefined Color Schemes -->
-    <string name="color_scheme_default_title">Rhythm デフォルト</string>
+    <string name="color_scheme_default_title">T2Rhythm デフォルト</string>
     <string name="color_scheme_default_desc">Material 3 ベースラインのパープルとバラ色のピンクのアクセント</string>
     <string name="color_scheme_warm_title">暖かい夕日</string>
     <string name="color_scheme_warm_desc">温かみのあるオレンジと赤のトーンで温かみのある雰囲気を演出</string>
@@ -2184,7 +2184,7 @@
     <string name="lyrics_settings_embedded_first">曲に埋め込まれた歌詞を優先的に表示させる</string>
     <string name="lyrics_settings_embedded_first_desc">オーディオ ファイルに埋め込まれた歌詞を好み、オンライン API にフォールバックする</string>
     <string name="lyrics_settings_online_first">オンラインの歌詞提供サービスを優先させる</string>
-    <string name="lyrics_settings_online_first_desc">オンライン API (Rhythm ワードごと、LRCLib) を優先し、組み込みにフォールバックします</string>
+    <string name="lyrics_settings_online_first_desc">オンライン API (T2Rhythm ワードごと、LRCLib) を優先し、組み込みにフォールバックします</string>
     <string name="lyrics_settings_local_first">LRC形式のファイルの歌詞の表示を優先する</string>
     <string name="lyrics_settings_local_first_desc">ローカルの .lrc ファイル、次に埋め込み歌詞、次にオンライン API を優先します</string>
     <string name="lyrics_settings_lyrically_first">Lyrically First</string>
@@ -2210,7 +2210,7 @@
     <string name="lyrics_settings_disable_animations_desc">歌詞ビューのトランジションとアニメーションを無効にする</string>
     <string name="lyrics_settings_word_by_word_translation">自動ワード同期</string>
     <string name="lyrics_settings_word_by_word_translation_desc">デュレーションを比例的に分配することで、ライン同期歌詞のワードレベルのタイミングを自動生成</string>
-    <string name="lyrics_settings_info_bullets">追加の同期詳細:\n• オンライン API は高品質の同期歌詞を提供します\n• Rhythm は単語ごとの同期を提供します\n• LRCLib は無料の行ごとの同期を提供します</string>
+    <string name="lyrics_settings_info_bullets">追加の同期詳細:\n• オンライン API は高品質の同期歌詞を提供します\n• T2Rhythm は単語ごとの同期を提供します\n• LRCLib は無料の行ごとの同期を提供します</string>
     <!-- AutoEQ Preset Picker additions -->
     <string name="autoeqpresetpickerbottomsheet_search_presets">プリセットを検索…</string>
     <string name="autoeqpresetpickerbottomsheet_disable">なし / AutoEQ を無効にする</string>
@@ -2228,7 +2228,7 @@
     <string name="device_configuration_custom_preset">カスタムプリセット</string>
     <string name="device_configuration_custom">カスタム</string>
     <string name="device_configuration_active_profile_label">アクティブなプロファイル: %1$s</string>
-    <string name="device_configuration_share_subject">Rhythm EQ プロファイル: %1$s</string>
+    <string name="device_configuration_share_subject">T2Rhythm EQ プロファイル: %1$s</string>
     <string name="device_configuration_share_title">EQプロファイルを共有する</string>
     <string name="device_configuration_edit_device">デバイスの編集</string>
     <string name="device_configuration_add_device">デバイスの追加</string>
@@ -2274,9 +2274,9 @@
         <item quantity="other">%1$d プレイリストを次の場所にエクスポートします:</item>
     </plurals>
     <!-- Mode dialog strings -->
-    <string name="dialog_switch_to_go">Switch to Rhythm Go?</string>
+    <string name="dialog_switch_to_go">Switch to T2Rhythm Go?</string>
     <string name="dialog_switch_to_local">ローカルに切り替えますか?</string>
-    <string name="dialog_switch_to_go_desc">This item belongs to Rhythm Go。今すぐストリーミング モードに切り替えてストリーミングして再生しますか?</string>
+    <string name="dialog_switch_to_go_desc">This item belongs to T2Rhythm Go。今すぐストリーミング モードに切り替えてストリーミングして再生しますか?</string>
     <string name="dialog_switch_to_local_desc">このアイテムはあなたの地元のライブラリに属します。今すぐローカル モードに切り替えて、オフライン トラックを再生しますか?</string>
     <!-- Section order content descriptions -->
 
@@ -2451,7 +2451,7 @@
     <string name="carousel_style_hero">ヒーロー</string>
     <string name="carousel_style_hero_desc">サイドピークアルバム1枚</string>
     <!-- Theme names -->
-    <string name="theme_rhythm">Rhythm</string>
+    <string name="theme_rhythm">T2Rhythm</string>
     <string name="theme_expressive">Expressive</string>
     <string name="settings_managed_by_expressive_shapes">表現力豊かな形状による管理</string>
     <!-- Shape targets -->
@@ -2497,7 +2497,7 @@
     <string name="backup_restore_section_collection">コレクション</string>
     <string name="backup_restore_section_collection_desc">プレイリスト、お気に入り、ブラックリスト/ホワイトリスト、固定フォルダー。</string>
     <string name="backup_restore_section_insight">洞察力</string>
-    <string name="backup_restore_section_insight_desc">再生数、毎日の統計、ジャンル、および Rhythm ガードの構成。</string>
+    <string name="backup_restore_section_insight_desc">再生数、毎日の統計、ジャンル、および T2Rhythm ガードの構成。</string>
     <string name="backup_restore_status_included">同梱</string>
     <string name="backup_restore_status_excluded">除外</string>
     <plurals name="backup_restore_sections_enabled">
@@ -2517,7 +2517,7 @@
     <string name="library_bottom_bar_select_songs">曲を選択する</string>
     <string name="library_bottom_bar_more_actions">その他のアクション</string>
     <string name="library_play_selected">プレイ (%1$d)</string>
-    <!-- Rhythm Guard Comic Status Subtitles -->
+    <!-- T2Rhythm Guard Comic Status Subtitles -->
     <!-- Player, Bottomsheet, and Popup translations -->
     <string name="unknown_track">未知の軌跡</string>
     <string name="unknown_song">未知の曲</string>

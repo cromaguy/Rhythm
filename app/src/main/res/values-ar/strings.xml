@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Rhythm</string>
+    <string name="app_name">T2Rhythm</string>
     <!-- Common Labels -->
     <string name="home">الصفحة الرئيسية</string>
     <string name="library">المكتبة</string>
     <string name="search">بحث</string>
     <!-- Media3 notification configuration -->
-    <string name="media3_notification_channel_name">Rhythm موسيقى</string>
+    <string name="media3_notification_channel_name">T2Rhythm موسيقى</string>
     <string name="media3_notification_channel_description">عناصر التحكم في تشغيل الوسائط</string>
     <!-- Widget strings -->
-    <string name="widget_description_glance">موسيقى Rhythm - التحكم في التشغيل باستخدام 9 تخطيطات سريعة الاستجابة وتصميم Material 3 وتحديثات الحالة في الوقت الفعلي</string>
-    <string name="widget_name_glance">Rhythm موسيقى</string>
+    <string name="widget_description_glance">موسيقى T2Rhythm - التحكم في التشغيل باستخدام 9 تخطيطات سريعة الاستجابة وتصميم Material 3 وتحديثات الحالة في الوقت الفعلي</string>
+    <string name="widget_name_glance">T2Rhythm موسيقى</string>
     <string name="unknown_artist">فنان غير معروف</string>
     <string name="play_pause">تشغيل/إيقاف مؤقت</string>
     <!-- Widget Settings -->
@@ -25,17 +25,17 @@
     <!-- Settings - Notifications -->
     <string name="settings_notifications">الإخطارات</string>
     <string name="settings_notifications_updates_group">تحديثات التطبيق</string>
-    <string name="settings_notifications_rhythm_guard_group">Rhythm حارس</string>
-    <string name="settings_notifications_rhythm_pulse_group">Rhythm نصائح</string>
+    <string name="settings_notifications_rhythm_guard_group">T2Rhythm حارس</string>
+    <string name="settings_notifications_rhythm_pulse_group">T2Rhythm نصائح</string>
     <string name="settings_update_notifications_merged_desc">احصل على تنبيهات للإصدارات الجديدة ونتائج فحص التحديث في الخلفية</string>
     <string name="settings_rhythm_guard_alert_notifications">إشعارات تنبيهات السلامة</string>
-    <string name="settings_rhythm_guard_alert_notifications_desc">عرض إشعار عندما يكتشف Rhythm Guard حجمًا أو تعرضًا خطيرًا</string>
+    <string name="settings_rhythm_guard_alert_notifications_desc">عرض إشعار عندما يكتشف T2Rhythm Guard حجمًا أو تعرضًا خطيرًا</string>
     <string name="settings_rhythm_guard_timer_notifications">كسر إخطارات الموقت</string>
     <string name="settings_rhythm_guard_timer_notifications_desc">عرض إشعارات فترات الراحة المجدولة والعد التنازلي للمهلة النشطة</string>
-    <string name="settings_rhythm_pulse_notifications">Rhythm إشعارات النصائح</string>
+    <string name="settings_rhythm_pulse_notifications">T2Rhythm إشعارات النصائح</string>
     <string name="settings_rhythm_pulse_notifications_desc">احصل على رسائل تذكير ودية ونصائح استماع.</string>
     <string name="settings_rhythm_pulse_interval">الفاصل الزمني للنصائح</string>
-    <string name="settings_rhythm_pulse_interval_dialog_title">Rhythm الفاصل الزمني للنصائح</string>
+    <string name="settings_rhythm_pulse_interval_dialog_title">T2Rhythm الفاصل الزمني للنصائح</string>
     <!-- Settings - Queue & Playback -->
     <!-- Settings - Queue -->
     <string name="settings_queue">قائمة الانتظار</string>
@@ -118,18 +118,18 @@
     <string name="operation_exporting_playlists">النسخ الاحتياطي لقوائم التشغيل المخصصة…</string>
     <string name="operation_exporting_playlists_location">النسخ الاحتياطي لقوائم التشغيل للتخزين…</string>
     <string name="operation_importing_playlist">جارٍ استيراد ملف قائمة التشغيل…</string>
-    <string name="notification_operations_channel_name">مكتبة Rhythm.</string>
+    <string name="notification_operations_channel_name">مكتبة T2Rhythm.</string>
     <string name="notification_operations_channel_desc">التقدم والنتائج لعمليات مسح المكتبة وإجراءات قائمة التشغيل</string>
-    <string name="notification_media_scan_title">Rhythm مسح المكتبة</string>
+    <string name="notification_media_scan_title">T2Rhythm مسح المكتبة</string>
     <string name="notification_media_scan_stage_songs">مسح مساحة تخزين الجهاز بحثًا عن المسارات الصوتية…</string>
     <string name="notification_media_scan_stage_saving">تحسين وحفظ قاعدة بيانات المسارات الصوتية…</string>
     <string name="notification_media_scan_stage_finishing">استكمال الفهرسة الصوتية…</string>
     <string name="notification_media_scan_complete_pending_setup">تم الانتهاء من المسح الصوتي، وتهيئة مهام الخلفية…</string>
     <string name="notification_media_scan_cancelled">تم إلغاء فحص المكتبة.</string>
     <string name="notification_media_scan_failed">فشل فحص المكتبة. تحقق من أذونات التخزين وحاول مرة أخرى.</string>
-    <string name="notification_playlist_export_title">تصدير المكتبة Rhythm.</string>
-    <string name="notification_playlist_import_title">استيراد المكتبة Rhythm.</string>
-    <string name="notification_library_setup_title">إعداد المكتبة Rhythm.</string>
+    <string name="notification_playlist_export_title">تصدير المكتبة T2Rhythm.</string>
+    <string name="notification_playlist_import_title">استيراد المكتبة T2Rhythm.</string>
+    <string name="notification_library_setup_title">إعداد المكتبة T2Rhythm.</string>
     <plurals name="notification_library_setup_complete_summary">
         <item quantity="zero">المكتبة محسنة وجاهزة: %1$d مقطع صوتي، %2$d ألبوم، %3$d فنان</item>
         <item quantity="one">المكتبة محسنة وجاهزة: %1$d مقطع صوتي، %2$d ألبوم، %3$d فنان</item>
@@ -160,20 +160,20 @@
         <item quantity="other">تم بنجاح استيراد \"%1$s\" مع أغاني %2$d.</item>
     </plurals>
     <string name="notification_playlist_import_failed">فشل استيراد قائمة التشغيل. الرجاء التحقق من تنسيق الملف.</string>
-    <string name="notification_updater_channel_name">محدث Rhythm.</string>
+    <string name="notification_updater_channel_name">محدث T2Rhythm.</string>
     <string name="notification_updater_channel_desc">حالة التنزيل لتحديثات التطبيق</string>
-    <string name="notification_updater_title">محدث Rhythm.</string>
+    <string name="notification_updater_title">محدث T2Rhythm.</string>
     <string name="notification_updater_downloading">⬇ التنزيل: %1$d%%</string>
     <string name="notification_updater_download_complete">✓ جاهز للتثبيت. انقر للتحديث.</string>
     <string name="notification_updater_available_title">التحديث متاح!</string>
-    <string name="notification_updater_available_text">🆕 هنا نسخة جديدة من Rhythm.</string>
-    <string name="notification_sleep_timer_channel_name">Rhythm مؤقت النوم</string>
+    <string name="notification_updater_available_text">🆕 هنا نسخة جديدة من T2Rhythm.</string>
+    <string name="notification_sleep_timer_channel_name">T2Rhythm مؤقت النوم</string>
     <string name="notification_sleep_timer_channel_desc">العد التنازلي وحالة إجراءات مؤقت النوم</string>
-    <string name="notification_sleep_timer_title">Rhythm مؤقت النوم</string>
+    <string name="notification_sleep_timer_title">T2Rhythm مؤقت النوم</string>
     <string name="notification_sleep_timer_pause_in">⏸ الوقف في %1$s</string>
     <string name="notification_sleep_timer_stop_in">⏹ التوقف في %1$s</string>
     <!-- Streaming Notifications -->
-    <string name="notification_streaming_channel_name">Rhythm Go</string>
+    <string name="notification_streaming_channel_name">T2Rhythm Go</string>
     <string name="notification_streaming_channel_desc">حالة خدمة البث وتحديثات المزامنة</string>
     <!-- Streaming Authentication -->
     <string name="notification_streaming_auth_title">البث متصل</string>
@@ -338,7 +338,7 @@
     <!-- Status Labels -->
     <string name="status_disabled">معطل</string>
     <!-- HomeScreen -->
-    <string name="home_title">Rhythm</string>
+    <string name="home_title">T2Rhythm</string>
     <string name="home_settings_cd">الإعدادات</string>
     <string name="home_no_featured_albums">لا توجد ألبومات مميزة</string>
     <string name="home_no_featured_albums_desc">أضف بعض الألبومات إلى مكتبتك لرؤية المحتوى المميز</string>
@@ -367,7 +367,7 @@
     <string name="home_no_recommendations">لا توجد توصيات</string>
     <string name="home_no_recommendations_desc">استمع إلى بعض الموسيقى للحصول على توصيات مخصصة</string>
     <!-- Listening Stats -->
-    <string name="home_listening_stats">إحصائيات Rhythm الخاصة بك</string>
+    <string name="home_listening_stats">إحصائيات T2Rhythm الخاصة بك</string>
     <!-- Mood & Moments -->
     
     <!-- Recently Played -->
@@ -431,7 +431,7 @@
     <string name="sort_song_count">عدد الأغاني</string>
     <!-- Storage Permission -->
     <string name="storage_permission_required">مطلوب إذن التخزين</string>
-    <string name="storage_permission_desc">لتصفح ملفات الموسيقى الخاصة بك واستكشاف سعة تخزين جهازك، يحتاج Rhythm إلى إذن للوصول إلى ملفاتك ووسائطك.</string>
+    <string name="storage_permission_desc">لتصفح ملفات الموسيقى الخاصة بك واستكشاف سعة تخزين جهازك، يحتاج T2Rhythm إلى إذن للوصول إلى ملفاتك ووسائطك.</string>
     <string name="storage_permission_audio_only">يسمح هذا بالوصول فقط إلى الملفات الصوتية والمجلدات التي تحتوي على موسيقى.</string>
     <!-- PlayerScreen -->
     <string name="player_loading_lyrics">جارٍ تحميل كلمات الأغاني…</string>
@@ -446,11 +446,11 @@
     <!-- Common UI -->
     <string name="ui_dismiss">استبعد</string>
     <!-- Common Terms -->
-    <string name="common_rhythm">Rhythm</string>
+    <string name="common_rhythm">T2Rhythm</string>
     <string name="common_home">الصفحة الرئيسية</string>
     <string name="common_library">المكتبة</string>
     <!-- Splash/Loading -->
-    <string name="splash_tagline">الموسيقى الخاصة بك، Rhythm</string>
+    <string name="splash_tagline">الموسيقى الخاصة بك، T2Rhythm</string>
     <string name="splash_ready">جاهز للانطلاق</string>
     <!-- Audio Quality -->
     
@@ -478,7 +478,7 @@
     <string name="updates_channel_desc">اختر قناة التحديث التي تريد متابعتها:</string>
     <!-- Onboarding -->
     <string name="onboarding_welcome_to">مرحبا بكم في</string>
-    <string name="onboarding_welcome_subtitle">الموسيقى الخاصة بك، Rhythm</string>
+    <string name="onboarding_welcome_subtitle">الموسيقى الخاصة بك، T2Rhythm</string>
     <string name="onboarding_get_started">ابدأ</string>
     <string name="onboarding_android13_notice">Android 13+ إشعار</string>
     <string name="onboarding_android13_desc">في إصدارات Android الأحدث، سترى طلبات أذونات متعددة. يرجى منح حق الوصول إلى الملفات الصوتية والإخطارات للحصول على أفضل تجربة.</string>
@@ -502,15 +502,15 @@
     <string name="onboarding_library_how_works">كيف يعمل تنظيم المكتبة</string>
     <string name="onboarding_library_1">قم بتخصيص ترتيب علامات التبويب في المكتبة للوصول السريع إلى المفضلة لديك</string>
     <string name="onboarding_library_2">قم بإنشاء قوائم التشغيل وإدارتها مباشرة من شاشة المكتبة</string>
-    <string name="onboarding_theme_title">اجعل Rhythm ملكًا لك</string>
-    <string name="onboarding_theme_desc">قم بتخصيص مظهر Rhythm ليتناسب مع أسلوبك. اختر سمة النظام أو الخط أو Material الألوان الديناميكية (Android 12+).</string>
+    <string name="onboarding_theme_title">اجعل T2Rhythm ملكًا لك</string>
+    <string name="onboarding_theme_desc">قم بتخصيص مظهر T2Rhythm ليتناسب مع أسلوبك. اختر سمة النظام أو الخط أو Material الألوان الديناميكية (Android 12+).</string>
     <string name="onboarding_more_tuner">مزيد من التخصيص في الإعدادات</string>
     <string name="onboarding_tuner_1">أنظمة الألوان المخصصة واستخراج ألوان صورة الألبوم</string>
     <string name="onboarding_tuner_2">تخصيص الخط وإعدادات الطباعة</string>
     <string name="onboarding_rhythm_guard_title">احمي سمعك</string>
-    <string name="onboarding_rhythm_guard_desc">قم بإعداد Rhythm Guard للحفاظ على استماعك أكثر أمانًا من خلال الإعدادات الافتراضية التي تراعي العمر وعناصر التحكم في الحماية اليدوية.</string>
-    <string name="onboarding_rhythm_guard_mode_title">Rhythm وضع الحماية</string>
-    <string name="onboarding_rhythm_guard_age_hint">يساعد ملف تعريف العمر Rhythm Guard في التوصية بحدود استماع أكثر أمانًا.</string>
+    <string name="onboarding_rhythm_guard_desc">قم بإعداد T2Rhythm Guard للحفاظ على استماعك أكثر أمانًا من خلال الإعدادات الافتراضية التي تراعي العمر وعناصر التحكم في الحماية اليدوية.</string>
+    <string name="onboarding_rhythm_guard_mode_title">T2Rhythm وضع الحماية</string>
+    <string name="onboarding_rhythm_guard_age_hint">يساعد ملف تعريف العمر T2Rhythm Guard في التوصية بحدود استماع أكثر أمانًا.</string>
     <string name="onboarding_rhythm_guard_tip_1">يطبق الوضع التلقائي إعدادات افتراضية أكثر أمانًا بأقل قدر من الإعداد.</string>
     <string name="onboarding_rhythm_guard_tip_3">يمنحك الوضع اليدوي التحكم الكامل في التحذيرات والحدود.</string>
     <string name="onboarding_full_tour_prompt_title">هل تريد متابعة جولة الإعداد الكاملة؟</string>
@@ -526,7 +526,7 @@
     <string name="onboarding_media_scan_blacklist">وضع القائمة السوداء: إخفاء أغانٍ ومجلدات محددة (نغمات الرنين والإشعارات)</string>
     <string name="onboarding_media_scan_whitelist">وضع القائمة البيضاء: عرض الأغاني من المجلدات المحددة فقط</string>
     <string name="onboarding_complete_title">أنت جاهز تمامًا!</string>
-    <string name="onboarding_complete_desc">Rhythm جاهز للعب! يتم الآن فحص مكتبة الموسيقى الخاصة بك في الخلفية. إليك ما تم تكوينه:</string>
+    <string name="onboarding_complete_desc">T2Rhythm جاهز للعب! يتم الآن فحص مكتبة الموسيقى الخاصة بك في الخلفية. إليك ما تم تكوينه:</string>
     <string name="onboarding_whats_next">ما هي الخطوة التالية؟</string>
     <string name="onboarding_next_browse">تصفح أغانيك وألبوماتك وفنانيك</string>
     <string name="onboarding_next_create">قم بإنشاء قائمة التشغيل الأولى الخاصة بك</string>
@@ -547,8 +547,8 @@
     <string name="onboarding_grant_permissions">منح الأذونات</string>
     <string name="onboarding_permissions_granted_desc">تم منح جميع الأذونات اللازمة. أنت على استعداد للمضي قدما!</string>
     <string name="onboarding_redirect_settings_desc">لمنح الأذونات المطلوبة، يرجى الانتقال إلى إعدادات التطبيق على جهازك.</string>
-    <string name="onboarding_rationale_desc">يتطلب Rhythm أذونات معينة ليعمل بشكل صحيح. يرجى منحهم الاستمرار.</string>
-    <string name="onboarding_permissions_required_desc">للاستفادة الكاملة من ميزات Rhythm، نحتاج إلى إذنك للوصول إلى إمكانات معينة في الجهاز.</string>
+    <string name="onboarding_rationale_desc">يتطلب T2Rhythm أذونات معينة ليعمل بشكل صحيح. يرجى منحهم الاستمرار.</string>
+    <string name="onboarding_permissions_required_desc">للاستفادة الكاملة من ميزات T2Rhythm، نحتاج إلى إذنك للوصول إلى إمكانات معينة في الجهاز.</string>
     <string name="onboarding_permission_music_title">الوصول إلى مكتبة الموسيقى</string>
     <string name="onboarding_permission_music_desc">اقرأ ملفات الموسيقى المحلية لديك واعرضها في التطبيق</string>
     <string name="onboarding_permission_bluetooth_title">اتصال بلوتوث</string>
@@ -561,9 +561,9 @@
     <string name="onboarding_permission_tip_2">يمكنك تغيير الأذونات لاحقًا في الإعدادات</string>
     <!-- Onboarding Audio &amp; Playback -->
     <string name="onboarding_default_screen_title">الشاشة المقصودة الافتراضية</string>
-    <string name="onboarding_default_screen_desc">اختر الشاشة التي سيتم فتحها عند تشغيل Rhythm</string>
+    <string name="onboarding_default_screen_desc">اختر الشاشة التي سيتم فتحها عند تشغيل T2Rhythm</string>
     <string name="onboarding_system_volume_title">التحكم في مستوى صوت النظام</string>
-    <string name="onboarding_system_volume_desc">اسمح لأزرار الصوت الفعلية بجهازك بالتحكم في مستوى صوت تشغيل Rhythm.</string>
+    <string name="onboarding_system_volume_desc">اسمح لأزرار الصوت الفعلية بجهازك بالتحكم في مستوى صوت تشغيل T2Rhythm.</string>
     <string name="onboarding_auto_queue_title">إضافة تلقائية إلى قائمة الانتظار</string>
     <string name="onboarding_auto_queue_desc">إنشاء قائمة انتظار سياقية تلقائيًا من الألبوم/الفنان عند تشغيل أغنية.</string>
     <string name="onboarding_show_lyrics_title">عرض كلمات الأغاني</string>
@@ -574,7 +574,7 @@
     
     <!-- Onboarding Theming -->
     <string name="onboarding_player_theme_title">سمات التشغيل والمشغل الصغير</string>
-    <string name="onboarding_player_theme_desc">قم بتخصيص واجهات التشغيل الخاصة بك. يمكنك التبديل بين تصميم Rhythm النظيف والحديث أو التصميم المعبّر النابض بالحياة والسلس.</string>
+    <string name="onboarding_player_theme_desc">قم بتخصيص واجهات التشغيل الخاصة بك. يمكنك التبديل بين تصميم T2Rhythm النظيف والحديث أو التصميم المعبّر النابض بالحياة والسلس.</string>
     <!-- Onboarding Updater -->
     <string name="onboarding_update_check_failed">فشل التحقق من التحديث</string>
     <string name="onboarding_ready_to_install">جاهز للتثبيت</string>
@@ -586,7 +586,7 @@
     <string name="onboarding_enable_updates_title">تمكين التحديثات</string>
     <string name="onboarding_enable_updates_desc">السماح للتطبيق بالتحقق من التحديثات وتنزيلها</string>
     <string name="onboarding_periodic_check_title">الفحص الدوري</string>
-    <string name="onboarding_periodic_check_desc">تحقق من وجود تحديثات من GitHub repo الخاص بـ Rhythm تلقائيًا</string>
+    <string name="onboarding_periodic_check_desc">تحقق من وجود تحديثات من GitHub repo الخاص بـ T2Rhythm تلقائيًا</string>
     <string name="onboarding_update_notifications_title">تحديث الإخطارات</string>
     <string name="onboarding_update_notifications_desc">احصل على إشعار عند توفر إصدارات جديدة</string>
     <string name="onboarding_check_interval_desc">عدد مرات التحقق من وجود تحديثات</string>
@@ -629,7 +629,7 @@
     <string name="onboarding_gesture_tip_1">تعمل إيماءات السحب في كلا الاتجاهين</string>
     <!-- Onboarding: Widgets Step -->
     <string name="onboarding_widgets_title">الحاجيات قاذفة</string>
-    <string name="onboarding_widgets_desc">أضف عناصر واجهة المستخدم Rhythm إلى المشغل الخاص بك للتحكم السريع في الموسيقى. قم بتخصيص المعلومات التي يتم عرضها وكيف تبدو الأداة.</string>
+    <string name="onboarding_widgets_desc">أضف عناصر واجهة المستخدم T2Rhythm إلى المشغل الخاص بك للتحكم السريع في الموسيقى. قم بتخصيص المعلومات التي يتم عرضها وكيف تبدو الأداة.</string>
     <string name="onboarding_widget_artist">إظهار اسم الفنان</string>
     <string name="onboarding_widget_artist_desc">عرض الفنان الحالي في القطعة</string>
     <string name="onboarding_widget_album">عرض اسم الألبوم</string>
@@ -644,8 +644,8 @@
     <string name="onboarding_integration_ytmusic">YouTube Music</string>
     <string name="onboarding_integrations_info_title">مذكرة الخصوصية</string>
     <string name="onboarding_integrations_info_desc">ترسل هذه الميزات بيانات محدودة (عناوين الأغاني والفنانين) إلى الخدمات الخارجية. تبقى بياناتك الشخصية وملفات الموسيقى على جهازك. يمكنك تمكينها أو تعطيلها في أي وقت في الإعدادات.</string>
-    <!-- Onboarding: Rhythm Stats Step -->
-    <string name="onboarding_stats_title">إحصائيات Rhythm.</string>
+    <!-- Onboarding: T2Rhythm Stats Step -->
+    <string name="onboarding_stats_title">إحصائيات T2Rhythm.</string>
     <string name="onboarding_stats_desc">اكتشف رؤى حول عاداتك الموسيقية. تتبع وقت الاستماع والأغاني الأكثر تشغيلًا والفنانين المفضلين والمزيد باستخدام تصورات جميلة.</string>
     <string name="onboarding_stats_show_home">عرض الإحصائيات على الصفحة الرئيسية</string>
     <string name="onboarding_stats_show_home_desc">قم بعرض أداة إحصائيات الاستماع على شاشتك الرئيسية</string>
@@ -666,9 +666,9 @@
     <string name="settings_tip_gestures_swipe">اسحب لأعلى على المشغل الصغير لفتح المشغل الكامل، ثم اسحب لأسفل للرفض عند الانتهاء.</string>
     <string name="settings_tip_gestures_artwork">قم بتمرير العمل الفني لتبديل المسارات وانقر نقرًا مزدوجًا على صورة الألبوم للتشغيل السريع أو الإيقاف المؤقت.</string>
     <string name="settings_tip_media_scan">استخدم فحص الوسائط لإخفاء الملفات غير المرغوب فيها من مكتبتك</string>
-    <string name="settings_tip_rhythm_guard_off">قم بحماية سمعك من خلال تمكين Rhythm Guard</string>
-    <string name="settings_tip_rhythm_guard_auto">يقوم Rhythm Guard تلقائيًا بإدارة حدود الاستماع الآمنة</string>
-    <string name="settings_tip_rhythm_guard_manual">أنت تتحكم يدويًا في حدود الحماية Rhythm.</string>
+    <string name="settings_tip_rhythm_guard_off">قم بحماية سمعك من خلال تمكين T2Rhythm Guard</string>
+    <string name="settings_tip_rhythm_guard_auto">يقوم T2Rhythm Guard تلقائيًا بإدارة حدود الاستماع الآمنة</string>
+    <string name="settings_tip_rhythm_guard_manual">أنت تتحكم يدويًا في حدود الحماية T2Rhythm.</string>
     <string name="settings_default_screen">الشاشة المقصودة الافتراضية</string>
     <string name="settings_default_screen_desc">اختر شاشة البداية الخاصة بك</string>
     <string name="settings_home_desc">اكتشف الموسيقى والتوصيات الجديدة</string>
@@ -738,7 +738,7 @@
     <string name="lyrics_editor_title">محرر الأغاني</string>
     <!-- Components: Song Info -->
     <string name="song_info_title">معلومات الأغنية</string>
-    <string name="rhythm_stats">إحصائيات Rhythm.</string>
+    <string name="rhythm_stats">إحصائيات T2Rhythm.</string>
     <string name="file_info">معلومات الملف</string>
     <!-- Components: Add to Playlist -->
     <string name="add_to_playlists">أضف إلى قوائم التشغيل</string>
@@ -769,7 +769,7 @@
     <string name="updates_disabled_message">تم تعطيل تحديثات التطبيق في الإعدادات</string>
     <string name="updates_auto_disabled">تم تعطيل التحقق من التحديث التلقائي. لا يزال بإمكانك التحقق يدويًا.</string>
     <string name="updates_up_to_date_message">أنت على اطلاع!</string>
-    <string name="updates_check_frequency">كم مرة يجب على Rhythm التحقق من التحديثات؟</string>
+    <string name="updates_check_frequency">كم مرة يجب على T2Rhythm التحقق من التحديثات؟</string>
     <string name="updates_experimental_coming">المزيد من الميزات التجريبية قريبًا في التحديثات المستقبلية</string>
     <string name="settings_interval_every_48_hours">كل 48 ساعة</string>
     <string name="settings_interval_every_72_hours">كل 72 ساعة</string>
@@ -912,7 +912,7 @@
     <string name="updates_enable_auto_check">الفحص التلقائي</string>
     <string name="updates_channel_title">تحديث القناة</string>
     <string name="updates_source_title">مصدر التحديث</string>
-    <string name="updates_source_desc">اختر عائلة الإصدار Rhythm التي يجب استخدامها لتحديثات OTA.</string>
+    <string name="updates_source_desc">اختر عائلة الإصدار T2Rhythm التي يجب استخدامها لتحديثات OTA.</string>
     <string name="updates_source_installed">مطابقة البناء المثبت</string>
     <string name="updates_source_installed_label">البناء المثبت</string>
     <string name="updates_source_github_label">إصدارات GitHub</string>
@@ -960,7 +960,7 @@
     <string name="cd_reorder_chips">إعادة ترتيب الرقائق</string>
     <string name="cd_search">بحث</string>
     <string name="cd_view_all">عرض الكل</string>
-    <string name="cd_rhythm_splash">Rhythm</string>
+    <string name="cd_rhythm_splash">T2Rhythm</string>
     <string name="cd_remove_from_playlist">إزالة من قائمة التشغيل</string>
     <string name="cd_change_language">تغيير اللغة</string>
     <string name="cd_open_settings">مفتوح</string>
@@ -1033,18 +1033,18 @@
     <!-- Fallback Metadata -->
     
     <!-- Service Notifications -->
-    <string name="service_app_updates">محدث Rhythm.</string>
-    <string name="service_update_status">Rhythm حالة التحديث</string>
-    <string name="service_rhythm_pulse">Rhythm نصائح</string>
-    <string name="service_rhythm_guard_alerts">Rhythm تنبيهات الحراسة</string>
-    <string name="service_rhythm_guard_timers">Rhythm مؤقتات الحراسة</string>
-    <string name="service_rhythm_music">Rhythm موسيقى</string>
+    <string name="service_app_updates">محدث T2Rhythm.</string>
+    <string name="service_update_status">T2Rhythm حالة التحديث</string>
+    <string name="service_rhythm_pulse">T2Rhythm نصائح</string>
+    <string name="service_rhythm_guard_alerts">T2Rhythm تنبيهات الحراسة</string>
+    <string name="service_rhythm_guard_timers">T2Rhythm مؤقتات الحراسة</string>
+    <string name="service_rhythm_music">T2Rhythm موسيقى</string>
     <string name="service_update_status_desc">نتائج الحالة الخاصة بعمليات التحقق من التحديث في الخلفية</string>
-    <string name="service_rhythm_pulse_desc">تذكيرات ونصائح استماع ودية من Rhythm</string>
-    <string name="service_rhythm_guard_alerts_desc">تنبيهات السلامة من حارس Rhythm.</string>
-    <string name="service_rhythm_guard_timers_desc">Rhythm تذكيرات باستراحة الحراسة والمهلة</string>
-    <string name="service_ready">Rhythm جاهز.</string>
-    <string name="service_init_failed">تعذر بدء تشغيل Rhythm. يرجى إعادة فتح التطبيق.</string>
+    <string name="service_rhythm_pulse_desc">تذكيرات ونصائح استماع ودية من T2Rhythm</string>
+    <string name="service_rhythm_guard_alerts_desc">تنبيهات السلامة من حارس T2Rhythm.</string>
+    <string name="service_rhythm_guard_timers_desc">T2Rhythm تذكيرات باستراحة الحراسة والمهلة</string>
+    <string name="service_ready">T2Rhythm جاهز.</string>
+    <string name="service_init_failed">تعذر بدء تشغيل T2Rhythm. يرجى إعادة فتح التطبيق.</string>
     <!-- Crash Activity -->
     <string name="crash_bug_report">تقرير الأخطاء</string>
     <string name="crash_restart_app">إعادة تشغيل التطبيق</string>
@@ -1074,12 +1074,12 @@
     <string name="settings_artwork_cache_size">حجم ذاكرة التخزين المؤقت للعمل الفني</string>
     <string name="settings_artist_parsing">الفنانين</string>
     <string name="settings_artist_parsing_desc">الفواصل، العرض</string>
-    <string name="settings_rhythm_stats">إحصائيات Rhythm.</string>
+    <string name="settings_rhythm_stats">إحصائيات T2Rhythm.</string>
     <string name="settings_rhythm_stats_desc">وقت الاستماع وأهم المقاطع الصوتية والاتجاهات</string>
-    <string name="settings_rhythm_guard">Rhythm حارس</string>
-    <string name="settings_rhythm_guard_list_desc">الاستماع إلى حواجز الحماية الصحية المدعومة بإحصائيات Rhythm.</string>
+    <string name="settings_rhythm_guard">T2Rhythm حارس</string>
+    <string name="settings_rhythm_guard_list_desc">الاستماع إلى حواجز الحماية الصحية المدعومة بإحصائيات T2Rhythm.</string>
     <string name="settings_rhythm_guard_mode_title">وضع الحماية</string>
-    <string name="settings_rhythm_guard_mode_desc">اختر كيفية إدارة Rhythm Guard لسلامة الاستماع</string>
+    <string name="settings_rhythm_guard_mode_desc">اختر كيفية إدارة T2Rhythm Guard لسلامة الاستماع</string>
     <string name="settings_rhythm_guard_mode_auto">تلقائي</string>
     <string name="settings_rhythm_guard_mode_manual">الدليل</string>
     <string name="settings_rhythm_guard_age_label">ملف تعريف العمر: %1$d</string>
@@ -1100,10 +1100,10 @@
     <string name="settings_rhythm_guard_manual_warning_toggle">عرض تحذيرات السلامة</string>
     <string name="settings_rhythm_guard_manual_warning_toggle_desc">تحذير عندما يكون الحجم المباشر أو التبديل اليدوي محفوفًا بالمخاطر</string>
     <string name="settings_rhythm_guard_manual_threshold_title">عتبة التحذير ذات الحجم الكبير: %1$d%%</string>
-    <string name="settings_rhythm_guard_manual_threshold_desc">قم بتعيين الوقت الذي يجب أن يحذر فيه حارس Rhythm من الحجم الضار المحتمل.</string>
+    <string name="settings_rhythm_guard_manual_threshold_desc">قم بتعيين الوقت الذي يجب أن يحذر فيه حارس T2Rhythm من الحجم الضار المحتمل.</string>
     <string name="settings_rhythm_guard_device_controls_title">ضوابط الإخراج</string>
     <string name="settings_rhythm_guard_device_controls_speaker_limit_title">تطبيق حدود مستوى الصوت على مكبر صوت الهاتف</string>
-    <string name="settings_rhythm_guard_device_controls_speaker_limit_desc">عند إيقاف التشغيل، يتخطى Rhythm Guard تثبيت مستوى الصوت وتحذيرات مستوى الصوت على مخرج مكبر الصوت المدمج.</string>
+    <string name="settings_rhythm_guard_device_controls_speaker_limit_desc">عند إيقاف التشغيل، يتخطى T2Rhythm Guard تثبيت مستوى الصوت وتحذيرات مستوى الصوت على مخرج مكبر الصوت المدمج.</string>
     <string name="settings_rhythm_guard_alert_controls_title">ضوابط تنبيه الاستماع</string>
     <string name="settings_rhythm_guard_alert_threshold_title">عتبة تنبيه التعرض: %1$s</string>
     <string name="settings_rhythm_guard_alert_threshold_policy_default">السياسة الافتراضية</string>
@@ -1113,7 +1113,7 @@
     <string name="settings_rhythm_guard_warning_title">تحذير سلامة الاستماع</string>
     <string name="settings_rhythm_guard_warning_high_volume">الحجم الحالي أعلى من حد التحذير الخاص بك (%1$d%%). فكر في تقليل الحجم.</string>
     <string name="settings_rhythm_guard_warning_daily_exposure">لقد وصلت اليوم إلى %1$s أعلى من %2$s المقترح. فكر في أخذ استراحة للاستماع.</string>
-    <string name="settings_rhythm_guard_warning_dialog_title">Rhythm تنبيه حماية الحرس</string>
+    <string name="settings_rhythm_guard_warning_dialog_title">T2Rhythm تنبيه حماية الحرس</string>
     <string name="settings_rhythm_guard_warning_dialog_volume_message">يبلغ حجم وسائط النظام %1$d%% في الوقت الفعلي، وهو أعلى من حد الحماية الحالي الذي يبلغ %2$d%%. خفض مستوى الصوت للحد من مخاطر السمع.</string>
     <string name="settings_rhythm_guard_risk_level_label">شدة الخطر: %1$s</string>
     <string name="settings_rhythm_guard_risk_action_label">الإجراء الموصى به: %1$s</string>
@@ -1143,8 +1143,8 @@
     <string name="settings_rhythm_guard_start_countdown_value">يبدأ في %1$s</string>
     <string name="settings_rhythm_guard_snapshot_widget_above_limit">فوق الحد الموصى به</string>
     <string name="settings_rhythm_guard_snapshot_widget_within_limit">ضمن الحد الموصى به</string>
-    <string name="settings_rhythm_guard_state_active">Rhythm الحارس نشط</string>
-    <string name="settings_rhythm_guard_state_inactive">الحرس Rhythm غير نشط</string>
+    <string name="settings_rhythm_guard_state_active">T2Rhythm الحارس نشط</string>
+    <string name="settings_rhythm_guard_state_inactive">الحرس T2Rhythm غير نشط</string>
     <string name="settings_rhythm_guard_state_timeout_active">جاري تنفيذ مهلة الاستماع</string>
     <string name="settings_rhythm_guard_state_cooldown_active">فترة السماح نشطة</string>
     <string name="settings_rhythm_guard_state_timeout_remaining">نهاية الاستراحة في %1$s</string>
@@ -1156,8 +1156,8 @@
     <string name="settings_rhythm_guard_protection_preset_strict">صارم</string>
     <string name="settings_rhythm_guard_protection_preset_custom">العرف</string>
     <string name="settings_rhythm_guard_timeout_activity_title">انتهاء مهلة الاستماع النشطة</string>
-    <string name="settings_rhythm_guard_timeout_activity_default_reason">تطور الحبكة: بدأت أذناك في الاتحاد ودعت إلى استراحة لتناول الوجبات الخفيفة. Rhythm قام الحرس بإيقاف التشغيل مؤقتًا حتى يتمكن الجميع من التهدئة.</string>
-    <string name="settings_rhythm_guard_timeout_activity_comic_desc">تطور الحبكة: بدأت أذناك في الاتحاد ودعت إلى استراحة لتناول الوجبات الخفيفة. Rhythm قام الحرس بإيقاف التشغيل مؤقتًا حتى يتمكن الجميع من التهدئة.</string>
+    <string name="settings_rhythm_guard_timeout_activity_default_reason">تطور الحبكة: بدأت أذناك في الاتحاد ودعت إلى استراحة لتناول الوجبات الخفيفة. T2Rhythm قام الحرس بإيقاف التشغيل مؤقتًا حتى يتمكن الجميع من التهدئة.</string>
+    <string name="settings_rhythm_guard_timeout_activity_comic_desc">تطور الحبكة: بدأت أذناك في الاتحاد ودعت إلى استراحة لتناول الوجبات الخفيفة. T2Rhythm قام الحرس بإيقاف التشغيل مؤقتًا حتى يتمكن الجميع من التهدئة.</string>
     <string name="settings_rhythm_guard_timeout_activity_extend">تمديد الفاصل (+%1$d دقيقة)</string>
     <string name="settings_rhythm_guard_timeout_activity_exit">إغلاق شاشة المهلة</string>
     <string name="settings_rhythm_guard_timeout_activity_close_app">إغلاق التطبيق</string>
@@ -1168,23 +1168,23 @@
     <string name="settings_rhythm_guard_alert_threshold_search_title">عتبة تنبيه التعرض</string>
     <string name="settings_rhythm_guard_alert_threshold_search_desc">قم بتعيين مقدار الاستماع اليومي الذي يؤدي إلى تنبيه السلامة</string>
     <string name="settings_rhythm_guard_warning_timeout_search_title">تنبيه التهدئة</string>
-    <string name="settings_rhythm_guard_warning_timeout_search_desc">اضبط فترة التهدئة بين تنبيهات الحرس Rhythm المتكررة</string>
+    <string name="settings_rhythm_guard_warning_timeout_search_desc">اضبط فترة التهدئة بين تنبيهات الحرس T2Rhythm المتكررة</string>
     <string name="settings_rhythm_guard_post_timeout_cooldown_search_title">فترة التهدئة بعد انتهاء المهلة</string>
     <string name="settings_rhythm_guard_post_timeout_cooldown_search_desc">اضبط فترة التهدئة بعد انتهاء المهلة قبل أن يتم تشغيل مهلة تعريض أخرى</string>
     <string name="settings_rhythm_guard_protection_presets_search_title">إعدادات الحماية المسبقة</string>
     <string name="settings_rhythm_guard_protection_presets_search_desc">قم بتطبيق حزم الدرابزين اللطيفة أو المتوازنة أو الصارمة بنقرة واحدة</string>
     <string name="settings_rhythm_guard_break_resume_search_title">استئناف الاستراحة الافتراضية</string>
     <string name="settings_rhythm_guard_break_resume_search_desc">قم بتعيين المدة التي تستغرقها فترات استراحة الاستماع المجدولة افتراضيًا</string>
-    <string name="settings_rhythm_guard_enable_search_title">Rhythm قوة الحراسة</string>
-    <string name="settings_rhythm_guard_enable_search_desc">تمكين أو تعطيل عمليات الحماية Rhythm.</string>
-    <string name="settings_rhythm_guard_notification_alert_title">Rhythm تنبيه سلامة الحارس</string>
-    <string name="settings_rhythm_guard_notification_timer_active_title">Rhythm مهلة الحراسة نشطة</string>
+    <string name="settings_rhythm_guard_enable_search_title">T2Rhythm قوة الحراسة</string>
+    <string name="settings_rhythm_guard_enable_search_desc">تمكين أو تعطيل عمليات الحماية T2Rhythm.</string>
+    <string name="settings_rhythm_guard_notification_alert_title">T2Rhythm تنبيه سلامة الحارس</string>
+    <string name="settings_rhythm_guard_notification_timer_active_title">T2Rhythm مهلة الحراسة نشطة</string>
     <string name="settings_rhythm_guard_notification_timer_active_text">يتم استئناف التشغيل في %1$s.</string>
-    <string name="settings_rhythm_guard_notification_timer_scheduled_title">Rhythm تمت جدولة Guard Break</string>
+    <string name="settings_rhythm_guard_notification_timer_scheduled_title">T2Rhythm تمت جدولة Guard Break</string>
     <string name="settings_rhythm_guard_notification_timer_scheduled_text">تبدأ استراحة الاستماع في %1$s.</string>
     <string name="settings_rhythm_guard_notification_tap_open">اضغط لعرض تفاصيل المهلة.</string>
-    <!-- Rhythm Stats Screen -->
-    <string name="stats_title">إحصائيات Rhythm.</string>
+    <!-- T2Rhythm Stats Screen -->
+    <string name="stats_title">إحصائيات T2Rhythm.</string>
     <string name="stats_today">اليوم</string>
     <string name="stats_this_week">هذا الأسبوع</string>
     <string name="stats_this_month">هذا الشهر</string>
@@ -1206,7 +1206,7 @@
     <!-- Content Descriptions (additional) -->
     <string name="cd_reorder_home_sections">إعادة ترتيب أقسام المنزل</string>
     <string name="cd_remove">إزالة</string>
-    <string name="cd_rhythm_logo">شعار Rhythm.</string>
+    <string name="cd_rhythm_logo">شعار T2Rhythm.</string>
     <string name="cd_telegram_support">دعم برقية</string>
     <!-- Queue &amp; Playlist Dialogs -->
     <!-- Artist Settings -->
@@ -1374,7 +1374,7 @@
     <string name="settings_snowflake_display_area">منطقة عرض ندفة الثلج</string>
     <string name="settings_snowflake_size">حجم ندفة الثلج</string>
     <string name="settings_toggle_decoration_elements">تبديل عناصر الزخرفة الفردية حسب الموضع</string>
-    <string name="settings_multi_artist_parsing_info">عند التمكين، سيقوم Rhythm تلقائيًا بتقسيم علامات الفنان التي تحتوي على فنانين متعددين. يعد هذا مفيدًا للأغاني التي تم تنزيلها باستخدام yt-dlp أو الأدوات الأخرى التي تستخدم محددات مثل \"/\" للفصل بين الفنانين. يمكن استخدام الخط المائل العكسي\n\n(\\) للهروب من المحددات.</string>
+    <string name="settings_multi_artist_parsing_info">عند التمكين، سيقوم T2Rhythm تلقائيًا بتقسيم علامات الفنان التي تحتوي على فنانين متعددين. يعد هذا مفيدًا للأغاني التي تم تنزيلها باستخدام yt-dlp أو الأدوات الأخرى التي تستخدم محددات مثل \"/\" للفصل بين الفنانين. يمكن استخدام الخط المائل العكسي\n\n(\\) للهروب من المحددات.</string>
     <!-- Format Strings with Placeholders -->
     <string name="settings_cache_size_2gb">2 جيجابايت</string>
     <string name="settings_cache_size_64mb">64 ميجابايت</string>
@@ -1464,7 +1464,7 @@
     <string name="settings_cache_info_4">يساعد المسح التلقائي في الحفاظ على الأداء الأمثل</string>
     <!-- Updates Settings -->
     <string name="updates_status_error">خطأ</string>
-    <string name="updates_rhythm_logo_cd">شعار Rhythm.</string>
+    <string name="updates_rhythm_logo_cd">شعار T2Rhythm.</string>
     <string name="updates_version_prefix">الخامس %1$s</string>
     <string name="updates_released_prefix">صدر: %1$s</string>
     <string name="updates_unknown_error">حدث خطأ غير معروف</string>
@@ -1486,7 +1486,7 @@
     <string name="settings_interval_once_a_day">مرة واحدة في اليوم</string>
     <string name="settings_interval_once_a_week">مرة واحدة في الأسبوع</string>
     <!-- Experimental Features -->
-    <string name="streaming_integration_title">Rhythm Go</string>
+    <string name="streaming_integration_title">T2Rhythm Go</string>
     <string name="streaming_integration_services">خدمات التكامل</string>
     <string name="streaming_integration_services_empty">لم يتم توصيل أي خدمات حتى الآن</string>
     <string name="streaming_settings_title">الإعدادات</string>
@@ -1494,7 +1494,7 @@
     <string name="streaming_settings_group_actions">الإجراءات</string>
     <string name="streaming_settings_preferred_service">الخدمة المفضلة</string>
     <string name="streaming_settings_quality">جودة البث</string>
-    <string name="streaming_settings_service_sheet_desc">اختر الخدمة المتصلة Rhythm Go التي يجب أن تعطي الأولوية لها بشكل افتراضي.</string>
+    <string name="streaming_settings_service_sheet_desc">اختر الخدمة المتصلة T2Rhythm Go التي يجب أن تعطي الأولوية لها بشكل افتراضي.</string>
     <string name="streaming_settings_quality_sheet_desc">حدد جودة الصوت المفضلة لديك لتشغيل البث.</string>
     <string name="streaming_quality_low">منخفض</string>
     <string name="streaming_quality_normal">عادي</string>
@@ -1504,7 +1504,7 @@
     <string name="streaming_quality_normal_desc">الجودة المتوازنة واستخدام البيانات (~160 كيلوبت في الثانية).</string>
     <string name="streaming_quality_high_desc">صوت عالي الجودة (~320 كيلوبت في الثانية).</string>
     <string name="streaming_quality_lossless_desc">أفضل جودة عندما تكون مدعومة (FLAC/ALAC).</string>
-    <string name="streaming_settings_group_wellbeing">رؤى Rhythm.</string>
+    <string name="streaming_settings_group_wellbeing">رؤى T2Rhythm.</string>
     <string name="streaming_open_full_settings">افتح الإعدادات الكاملة</string>
     <string name="streaming_open_full_settings_desc">افتح الإعدادات على مستوى التطبيق والتي تتم مشاركتها عبر الأوضاع</string>
     <string name="streaming_switch_to_local_mode">قم بالتبديل إلى الوضع المحلي</string>
@@ -1528,7 +1528,7 @@
     <string name="streaming_service_setup_password">كلمة المرور</string>
     <string name="streaming_service_setup_password_hint">أدخل كلمة مرور حسابك</string>
     <string name="streaming_service_setup_remember_password">تذكر كلمة المرور على هذا الجهاز</string>
-    <string name="streaming_service_setup_remember_password_desc">قم بتخزين بيانات الاعتماد محليًا حتى يتمكن Rhythm من إعادة الاتصال تلقائيًا لاحقًا.</string>
+    <string name="streaming_service_setup_remember_password_desc">قم بتخزين بيانات الاعتماد محليًا حتى يتمكن T2Rhythm من إعادة الاتصال تلقائيًا لاحقًا.</string>
     <string name="streaming_service_setup_connecting">الاتصال…</string>
     <string name="streaming_service_setup_disconnecting">قطع الاتصال…</string>
     <string name="streaming_service_setup_action_hint">قم بتعبئة الحقول المطلوبة لتوصيل هذه الخدمة.</string>
@@ -1716,7 +1716,7 @@
     <string name="settings_bluetooth_lyrics_enabled">وضع كلمات الأغاني عبر البلوتوث</string>
     <string name="settings_bluetooth_lyrics_enabled_desc">بث الخط الغنائي الحالي عبر بيانات تعريف البلوتوث</string>
     <string name="exp_go_mode">Go Mode</string>
-    <string name="exp_go_mode_desc">التبديل إلى Rhythm Go streaming mode</string>
+    <string name="exp_go_mode_desc">التبديل إلى T2Rhythm Go streaming mode</string>
     <!-- Home Screen Search Strings -->
     <string name="settings_home_section_order">أمر القسم</string>
     <string name="settings_home_section_order_desc">إعادة ترتيب أقسام المنزل</string>
@@ -1729,13 +1729,13 @@
     <string name="settings_home_carousel_auto_scroll">التمرير التلقائي الدائري</string>
     <string name="settings_home_carousel_auto_scroll_desc">دائرة التمرير التلقائي</string>
     <!-- Notifications Search Strings -->
-    <string name="settings_notifications_rhythm_guard_alerts">Rhythm تنبيهات سلامة الحرس</string>
+    <string name="settings_notifications_rhythm_guard_alerts">T2Rhythm تنبيهات سلامة الحرس</string>
     <string name="settings_notifications_rhythm_guard_alerts_desc">قم بالإخطار عند تشغيل تحذيرات مخاطر الاستماع</string>
-    <string name="settings_notifications_rhythm_guard_timers">Rhythm مؤقتات Guard Break</string>
+    <string name="settings_notifications_rhythm_guard_timers">T2Rhythm مؤقتات Guard Break</string>
     <string name="settings_notifications_rhythm_guard_timers_desc">الإخطار بالفواصل المجدولة والعد التنازلي للمهلة</string>
-    <string name="settings_notifications_rhythm_pulse">Rhythm نصائح</string>
+    <string name="settings_notifications_rhythm_pulse">T2Rhythm نصائح</string>
     <string name="settings_notifications_rhythm_pulse_desc">تذكيرات ودية ونصائح للاستماع.</string>
-    <string name="settings_notifications_rhythm_pulse_interval">Rhythm الفاصل الزمني للنصائح</string>
+    <string name="settings_notifications_rhythm_pulse_interval">T2Rhythm الفاصل الزمني للنصائح</string>
     <string name="settings_notifications_rhythm_pulse_interval_desc">عدد مرات تسليم إشعارات النصائح</string>
     <!-- Expressive Shapes Search Strings -->
     <string name="settings_expressive_shapes_enabled">الأشكال التعبيرية</string>
@@ -1819,7 +1819,7 @@
     <!-- Library Screen scanning overlay -->
     <string name="settings_scanning">المسح</string>
     <!-- Settings Search -->
-    <string name="search_settings_hint">ابحث عن إعدادات Rhythm…</string>
+    <string name="search_settings_hint">ابحث عن إعدادات T2Rhythm…</string>
     <string name="clear_search">مسح البحث</string>
     <string name="no_results_found">لم يتم العثور على نتائج</string>
     <string name="try_different_search">حاول استخدام مصطلح بحث مختلف</string>
@@ -1858,14 +1858,14 @@
     <string name="theme_font_imported">تم استيراد الخط بنجاح</string>
     <string name="theme_font_invalid">تنسيق ملف الخط غير صالح</string>
     <string name="ui_apply">تطبيق</string>
-    <string name="crashactivity_uh_oh_looks_like">اه اه! يبدو أن Rhythm قد تلقى ملاحظة سيئة!</string>
+    <string name="crashactivity_uh_oh_looks_like">اه اه! يبدو أن T2Rhythm قد تلقى ملاحظة سيئة!</string>
     <string name="crashactivity_dont_fret_our_app">لا تقلق! كان تطبيقنا يحتوي على القليل من \"oopsie\". يرجى مشاركة تفاصيل الأعطال أدناه - إنها بمثابة رسالة سرية للمطورين لدينا لإصلاح الأمور! ثم، دعونا نحاول ذلك مرة أخرى، أليس كذلك؟</string>
     <string name="crashactivity_secret_crash_scrolls">مخطوطات الأعطال السرية</string>
     <string name="crashactivity_share">شارك</string>
     <string name="externalplaybackactivity_unable_to_open_audio">غير قادر على فتح الملف الصوتي</string>
     <string name="externalplaybackactivity_unsupported_or_unreadable_audio">ملف صوتي غير مدعوم أو غير قابل للقراءة</string>
     <string name="externalplaybackactivity_failed_to_play_audio">فشل في تشغيل الملف الصوتي</string>
-    <string name="externalplaybackactivity_open_rhythm">افتح Rhythm</string>
+    <string name="externalplaybackactivity_open_rhythm">افتح T2Rhythm</string>
     <string name="mainactivity_error_opening_file">خطأ في فتح الملف</string>
     <string name="mainactivity_unsupported_file_format">تنسيق الملف غير مدعوم</string>
     <string name="mainactivity_failed_to_initialize_media">فشل في تهيئة مشغل الوسائط</string>
@@ -1952,7 +1952,7 @@
     <string name="streamingmusicviewmodel_failed_to_play_next">فشل التشغيل التالي: غير قادر على حل عنوان URL</string>
     <string name="streamingmusicviewmodel_failed_to_add_to">فشلت الإضافة إلى قائمة الانتظار: غير قادر على حل عنوان URL</string>
     <string name="rhythmmusicwidget_album_art_placeholder">العنصر النائب لصورة الألبوم</string>
-    <string name="rhythmwidgetpreview_rhythm_glance_widget_previews">معاينات عناصر واجهة المستخدم Rhythm Glance.</string>
+    <string name="rhythmwidgetpreview_rhythm_glance_widget_previews">معاينات عناصر واجهة المستخدم T2Rhythm Glance.</string>
     <string name="rhythmwidgetpreview_str_11_compact_widget">1×1 القطعة المدمجة</string>
     <string name="rhythmwidgetpreview_str_21_horizontal_strip">شريط أفقي 2×1</string>
     <string name="rhythmwidgetpreview_str_22_small_widget">القطعة الصغيرة 2×2</string>
@@ -1994,7 +1994,7 @@
     <string name="betaprogrampopup_early_access">الوصول المبكر</string>
     <string name="betaprogrampopup_shape_the_future">تشكيل المستقبل</string>
     <string name="betaprogrampopup_direct_feedback">ردود الفعل المباشرة</string>
-    <string name="betaprogrampopup_youre_part_of_an">أنت جزء من مجموعة حصرية تساعد في تشكيل مستقبل مشغل الموسيقى Rhythm.</string>
+    <string name="betaprogrampopup_youre_part_of_an">أنت جزء من مجموعة حصرية تساعد في تشكيل مستقبل مشغل الموسيقى T2Rhythm.</string>
     <string name="betaprogrampopup_start_exploring">ابدأ الاستكشاف</string>
     <string name="switchmodedialog_switch_play">التبديل والتشغيل</string>
     <string name="fullscreenlyricsview_cover_artwork">غلاف فني</string>
@@ -2060,7 +2060,7 @@
     <string name="lyricssourcesettingsscreen_retry_using_fallbacks">أعد المحاولة باستخدام الإجراءات الاحتياطية</string>
     <string name="lyricssourcesettingsscreen_embedded_lyrics_are_stored">• Embedded lyrics are stored in your audio files</string>
     <string name="miniplayercustomizationsettingsscreen_miniplayer_theme">موضوع MiniPlayer</string>
-    <string name="miniplayercustomizationsettingsscreen_choose_between_rhythm_default">اختر بين Rhythm السمة الافتراضية أو التعبيرية</string>
+    <string name="miniplayercustomizationsettingsscreen_choose_between_rhythm_default">اختر بين T2Rhythm السمة الافتراضية أو التعبيرية</string>
     <string name="miniplayercustomizationsettingsscreen_integrated_directly_into_the">مدمج مباشرة في خلفية MiniPlayer</string>
     <string name="performancesettingsscreen_performance">الوضع البسيط</string>
     <string name="performancesettingsscreen_disable_haptics">تعطيل اللمس</string>
@@ -2077,7 +2077,7 @@
     <string name="rhythmguardsettingsscreen_none">لا شيء</string>
     <string name="rhythmguardsettingsscreen_general_settings">الإعدادات العامة</string>
     <string name="rhythmguardsettingsscreen_library_data">بيانات المكتبة</string>
-    <string name="rhythmguardsettingsscreen_stats_rhythm_guard">الإحصائيات والحارس Rhythm.</string>
+    <string name="rhythmguardsettingsscreen_stats_rhythm_guard">الإحصائيات والحارس T2Rhythm.</string>
     <string name="settingsscreen_audio_offload">تفريغ الصوت</string>
     <string name="settingsscreen_personalization">التخصيص</string>
     <string name="settingsscreen_library_focus">التركيز على المكتبة</string>
@@ -2182,7 +2182,7 @@
     <string name="pulse_marathon">وضع الماراثون</string>
     <!-- Settings Tips Details -->
     <string name="settings_tip_theme_desc_1">قم بتحديث مشغل الموسيقى الخاص بك باستخدام شاشة AMOLED باللون الأسود النابضة بالحياة وألوان الباستيل الجميلة.</string>
-    <string name="settings_tip_theme_desc_2">اجعل Rhythm ملكًا لك حقًا من خلال مطابقة لهجة التطبيق مع نظامك.</string>
+    <string name="settings_tip_theme_desc_2">اجعل T2Rhythm ملكًا لك حقًا من خلال مطابقة لهجة التطبيق مع نظامك.</string>
     <string name="settings_tip_media_scan_desc_1">تجنب المقاطع الصوتية غير المرغوب فيها. حدد بوضوح المجلدات التي يجب علينا فحصها بحثًا عن الموسيقى.</string>
     <string name="settings_tip_media_scan_desc_2">احتفظ بالملاحظات الصوتية ونغمات الرنين بعيدًا عن قوائم التشغيل الخاصة بك باستخدام مجلدات التركيز.</string>
     <string name="settings_tip_sleep_timer_desc_1">انجرف إلى النوم أثناء تشغيل الموسيقى. سنقوم بإيقافه مؤقتًا تلقائيًا.</string>
@@ -2191,7 +2191,7 @@
     <string name="settings_tip_equalizer_desc_2">قم بضبط الصوت على سماعات الرأس الخاصة بك بشكل آمن باستخدام تأثيراتنا الصوتية المتقدمة.</string>
     <string name="settings_tip_backup_active_desc_1">النسخ الاحتياطي التلقائي نشط. تحقق من أقسام النسخ الاحتياطي الخاصة بك حتى تظل عمليات الاستعادة نظيفة.</string>
     <string name="settings_tip_backup_active_desc_2">تم تمكين الحماية: يبدو الجدول الزمني جيدًا. قم بإجراء نسخة احتياطية يدوية قبل إجراء التعديلات الكبيرة.</string>
-    <string name="settings_tip_backup_inactive_desc_1">تم إيقاف النسخ الاحتياطي التلقائي. قم بتمكينه لحماية قوائم التشغيل وإحصائيات الحماية Rhythm.</string>
+    <string name="settings_tip_backup_inactive_desc_1">تم إيقاف النسخ الاحتياطي التلقائي. قم بتمكينه لحماية قوائم التشغيل وإحصائيات الحماية T2Rhythm.</string>
     <string name="settings_tip_backup_inactive_desc_2">لا توجد شبكة أمان حتى الآن. قم بتشغيل النسخ الاحتياطية لتجنب فقدان الإعداد.</string>
     <string name="settings_tip_updates_active_desc_1">تم تمكين التحديثات. احتفظ بها لإجراء الإصلاحات وتحسينات الأداء.</string>
     <string name="settings_tip_updates_active_desc_2">أنت جاهز لتلقي التحديثات. تحقق من تفضيلات القناة للتأكد من الاستقرار مقابل الحداثة.</string>
@@ -2234,7 +2234,7 @@
     <string name="font_jetbrains_desc">خط Monospace مثالي للمحتوى التقني</string>
     <string name="font_quicksand_desc">خط مستدير بمظهر أكثر نعومة وأكثر ودية</string>
     <!-- Predefined Color Schemes -->
-    <string name="color_scheme_default_title">Rhythm افتراضي</string>
+    <string name="color_scheme_default_title">T2Rhythm افتراضي</string>
     <string name="color_scheme_default_desc">Material 3 لون أرجواني أساسي مع لمسات من اللون الوردي الوردي</string>
     <string name="color_scheme_warm_title">غروب الشمس الدافئ</string>
     <string name="color_scheme_warm_desc">درجات اللون البرتقالي والأحمر المريحة لجو دافئ</string>
@@ -2269,7 +2269,7 @@
     <string name="lyrics_settings_embedded_first">جزءا لا يتجزأ أولا</string>
     <string name="lyrics_settings_embedded_first_desc">تفضيل الكلمات المضمنة في الملفات الصوتية، والرجوع إلى واجهات برمجة التطبيقات عبر الإنترنت</string>
     <string name="lyrics_settings_online_first">على الإنترنت أولاً</string>
-    <string name="lyrics_settings_online_first_desc">تفضيل واجهات برمجة التطبيقات عبر الإنترنت (Rhythm كلمة بكلمة، LRCLib)، والرجوع إلى المضمنة</string>
+    <string name="lyrics_settings_online_first_desc">تفضيل واجهات برمجة التطبيقات عبر الإنترنت (T2Rhythm كلمة بكلمة، LRCLib)، والرجوع إلى المضمنة</string>
     <string name="lyrics_settings_local_first">المحلية أولاً</string>
     <string name="lyrics_settings_local_first_desc">تفضل ملفات .lrc المحلية، ثم كلمات الأغاني المضمنة، ثم واجهات برمجة التطبيقات عبر الإنترنت</string>
     <string name="lyrics_settings_lyrically_first">Lyrically First</string>
@@ -2295,7 +2295,7 @@
     <string name="lyrics_settings_disable_animations_desc">تعطيل التحولات والرسوم المتحركة في عرض كلمات الأغاني</string>
     <string name="lyrics_settings_word_by_word_translation">مزامنة الكلمات تلقائيًا</string>
     <string name="lyrics_settings_word_by_word_translation_desc">يتم إنشاء التوقيت تلقائيًا على مستوى الكلمة للكلمات التي تتم مزامنتها عبر توزيع المدة بشكل متناسب</string>
-    <string name="lyrics_settings_info_bullets">تفاصيل المزامنة الإضافية:\n• توفر واجهات برمجة التطبيقات عبر الإنترنت كلمات متزامنة عالية الجودة\n• يقدم Rhythm مزامنة كلمة بكلمة\n• يوفر LRCLib مزامنة مجانية سطرًا تلو الآخر</string>
+    <string name="lyrics_settings_info_bullets">تفاصيل المزامنة الإضافية:\n• توفر واجهات برمجة التطبيقات عبر الإنترنت كلمات متزامنة عالية الجودة\n• يقدم T2Rhythm مزامنة كلمة بكلمة\n• يوفر LRCLib مزامنة مجانية سطرًا تلو الآخر</string>
     <!-- AutoEQ Preset Picker additions -->
     <string name="autoeqpresetpickerbottomsheet_search_presets">إعدادات البحث المسبقة…</string>
     <string name="autoeqpresetpickerbottomsheet_disable">لا يوجد / تعطيل AutoEQ</string>
@@ -2313,7 +2313,7 @@
     <string name="device_configuration_custom_preset">الإعداد المسبق المخصص</string>
     <string name="device_configuration_custom">العرف</string>
     <string name="device_configuration_active_profile_label">ملف التعريف النشط: %1$s</string>
-    <string name="device_configuration_share_subject">ملف تعريف معادل الصوت Rhythm: %1$s</string>
+    <string name="device_configuration_share_subject">ملف تعريف معادل الصوت T2Rhythm: %1$s</string>
     <string name="device_configuration_share_title">مشاركة ملف تعريف EQ</string>
     <string name="device_configuration_edit_device">تحرير الجهاز</string>
     <string name="device_configuration_add_device">إضافة جهاز</string>
@@ -2369,9 +2369,9 @@
         <item quantity="other">تصدير قوائم التشغيل %1$d إلى:</item>
     </plurals>
     <!-- Mode dialog strings -->
-    <string name="dialog_switch_to_go">Switch to Rhythm Go؟</string>
+    <string name="dialog_switch_to_go">Switch to T2Rhythm Go؟</string>
     <string name="dialog_switch_to_local">هل تريد التبديل إلى المستوى المحلي؟</string>
-    <string name="dialog_switch_to_go_desc">This item belongs to Rhythm Go. هل تريد التبديل إلى وضع البث الآن لبثه وتشغيله؟</string>
+    <string name="dialog_switch_to_go_desc">This item belongs to T2Rhythm Go. هل تريد التبديل إلى وضع البث الآن لبثه وتشغيله؟</string>
     <string name="dialog_switch_to_local_desc">ينتمي هذا العنصر إلى مكتبتك المحلية. هل تريد التبديل إلى الوضع المحلي الآن لتشغيل مقطوعاتك غير المتصلة بالإنترنت؟</string>
     <!-- Section order content descriptions -->
 
@@ -2556,7 +2556,7 @@
     <string name="carousel_style_hero">البطل</string>
     <string name="carousel_style_hero_desc">1 ألبوم نظرة خاطفة جانبية</string>
     <!-- Theme names -->
-    <string name="theme_rhythm">Rhythm</string>
+    <string name="theme_rhythm">T2Rhythm</string>
     <string name="theme_expressive">معبرة</string>
     <string name="settings_managed_by_expressive_shapes">تدار بواسطة الأشكال التعبيرية</string>
     <!-- Shape targets -->
@@ -2602,7 +2602,7 @@
     <string name="backup_restore_section_collection">المجموعة</string>
     <string name="backup_restore_section_collection_desc">قوائم التشغيل، المفضلة، القائمة السوداء/القائمة البيضاء، المجلدات المثبتة.</string>
     <string name="backup_restore_section_insight">البصيرة</string>
-    <string name="backup_restore_section_insight_desc">عدد مرات اللعب والإحصائيات اليومية والأنواع وتكوين الحرس Rhythm.</string>
+    <string name="backup_restore_section_insight_desc">عدد مرات اللعب والإحصائيات اليومية والأنواع وتكوين الحرس T2Rhythm.</string>
     <string name="backup_restore_status_included">متضمن</string>
     <string name="backup_restore_status_excluded">مستبعد</string>
     <plurals name="backup_restore_sections_enabled">
@@ -2627,7 +2627,7 @@
     <string name="library_bottom_bar_select_songs">اختر الأغاني</string>
     <string name="library_bottom_bar_more_actions">مزيد من الإجراءات</string>
     <string name="library_play_selected">تشغيل (%1$d)</string>
-    <!-- Rhythm Guard Comic Status Subtitles -->
+    <!-- T2Rhythm Guard Comic Status Subtitles -->
     <!-- Player, Bottomsheet, and Popup translations -->
     <string name="unknown_track">مسار غير معروف</string>
     <string name="unknown_song">أغنية غير معروفة</string>

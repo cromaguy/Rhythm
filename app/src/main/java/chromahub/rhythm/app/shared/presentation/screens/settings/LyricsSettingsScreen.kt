@@ -444,7 +444,8 @@ fun LyricsSettingsScreen(onBackClick: () -> Unit) {
                     modifier = Modifier.padding(start = 16.dp, bottom = 8.dp)
                 )
 
-                val apiPriority by appSettings.lyricsApiPriority.collectAsState()
+                val savedPriority by appSettings.lyricsApiPriority.collectAsState()
+    val apiPriority = if (appSettings.isLyricsApiPrioritySet()) savedPriority else chromahub.rhythm.app.shared.data.model.LyricsApiPriority.BETTERLYRICS_FIRST
                 val apiFallback by appSettings.lyricsApiFallbackRetry.collectAsState()
 
                 Material3SettingsGroup(
@@ -456,6 +457,9 @@ fun LyricsSettingsScreen(onBackClick: () -> Unit) {
                                 icon = MaterialSymbolIcon("lyrics"),
                                 title = stringResource(R.string.lyricssourcesettingsscreen_lyrics_api_priority),
                                 description = when (apiPriority) {
+                                    chromahub.rhythm.app.shared.data.model.LyricsApiPriority.BUGS_FIRST -> "Bugs · 벅스"
+                                    chromahub.rhythm.app.shared.data.model.LyricsApiPriority.MELON_FIRST -> "Melon · 멜론"
+                                    chromahub.rhythm.app.shared.data.model.LyricsApiPriority.GENIE_FIRST -> "Genie · 지니"
                                     chromahub.rhythm.app.shared.data.model.LyricsApiPriority.MUSIC_CRAWLER_FIRST -> context.getString(R.string.catalog_lyrics_source)
                                     chromahub.rhythm.app.shared.data.model.LyricsApiPriority.BETTERLYRICS_FIRST -> context.getString(R.string.lyrics_settings_betterlyrics_first)
                                     chromahub.rhythm.app.shared.data.model.LyricsApiPriority.LYRICALLY_FIRST -> context.getString(R.string.lyrics_settings_lyrically_first)

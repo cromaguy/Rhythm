@@ -1,0 +1,6 @@
+{
+  "schemaVersion": 1,
+  "version": 1,
+  "recommendation": { "artist": 0.30, "genre": 0.25, "novelty": 0.20, "repeat": 0.10, "audio": 0.15 },
+  "homeSections": []
+}

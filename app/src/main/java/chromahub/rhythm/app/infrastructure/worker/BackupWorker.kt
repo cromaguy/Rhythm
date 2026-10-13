@@ -58,35 +58,16 @@ class BackupWorker(
             // Create backup JSON
             val backupJson = appSettings.createBackup()
             
-            // Get or create backup directory in public Documents folder
-            val backupDir = getBackupDirectory()
-            if (!backupDir.exists()) {
-                backupDir.mkdirs()
-                Log.d(TAG, "Created backup directory: ${backupDir.absolutePath}")
-            }
-            
-            // Create backup file with timestamp
             val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-            val backupFile = File(backupDir, "auto_backup_$timestamp.json")
-            
-            // Write backup to file
-            backupFile.writeText(backupJson)
-            if (backupFile.length() <= 0L) {
-                throw IllegalStateException("Written auto-backup file is empty (0 bytes)")
-            }
-            Log.d(TAG, "Auto-backup saved to: ${backupFile.absolutePath}")
-            Log.d(TAG, "Backup file size: ${backupFile.length()} bytes")
-            
-            // Update last backup timestamp and location
-            val currentTime = System.currentTimeMillis()
-            appSettings.setLastBackupTimestamp(currentTime)
-            appSettings.setBackupLocation(backupFile.absolutePath)
-            
-            Log.d(TAG, "Updated last backup timestamp: $currentTime")
-            
-            // Clean up old backups (keep only the most recent ones)
-            cleanupOldBackups(backupDir)
-            
+            val directory = File(applicationContext.filesDir, "music_metadata/settings").apply { mkdirs() }
+            val file = File(directory, "auto_backup_$timestamp.json")
+            chromahub.rhythm.app.features.local.data.metadata.PersonalArchive.atomicWrite(file, backupJson.toByteArray())
+            val archive = chromahub.rhythm.app.features.local.data.metadata.PersonalArchive(applicationContext)
+            archive.sync()
+            appSettings.setLastBackupTimestamp(System.currentTimeMillis())
+            appSettings.setBackupLocation(archive.tree ?: "Documents/RhythmBackups/T2Rhythm/music_metadata/settings/${file.name}")
+            // Personal metadata and listening journals are never subject to the legacy 30-day cleanup.
+
             Log.d(TAG, "Automatic backup completed successfully")
             Result.success()
         } catch (e: Exception) {

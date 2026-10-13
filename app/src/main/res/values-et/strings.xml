@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Rhythm</string>
+    <string name="app_name">T2Rhythm</string>
     <string name="home">Avaleht</string>
     <string name="library">Muusikakogu</string>
     <string name="search">Otsi</string>
-    <string name="media3_notification_channel_name">Hetkel esitamisel Rhythm\'is</string>
+    <string name="media3_notification_channel_name">Hetkel esitamisel T2Rhythm\'is</string>
     <string name="media3_notification_channel_description">Esiplaanil olevad taasesituse juhtnupud, kerimine ja kaanepildid</string>
-    <string name="widget_name_glance">Rhythm\'i Muusika</string>
+    <string name="widget_name_glance">T2Rhythm\'i Muusika</string>
     <string name="unknown_artist">Tundmatu esitaja</string>
     <string name="play_pause">Esita/Peata esitus</string>
     <string name="settings_widget">Vidin</string>

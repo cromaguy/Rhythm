@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Rhythm</string>
+    <string name="app_name">T2Rhythm</string>
     <!-- Common Labels -->
     <string name="home">Hem</string>
     <string name="library">Bibliotek</string>
     <string name="search">Sök</string>
     <!-- Media3 notification configuration -->
-    <string name="media3_notification_channel_name">Rhythm Musik</string>
+    <string name="media3_notification_channel_name">T2Rhythm Musik</string>
     <string name="media3_notification_channel_description">Medieuppspelningskontroller</string>
     <!-- Widget strings -->
-    <string name="widget_description_glance">Rhythm Musik - Styr uppspelningen med 9 responsiva layouter, Material 3 design och realtidsuppdateringar</string>
-    <string name="widget_name_glance">Rhythm Musik</string>
+    <string name="widget_description_glance">T2Rhythm Musik - Styr uppspelningen med 9 responsiva layouter, Material 3 design och realtidsuppdateringar</string>
+    <string name="widget_name_glance">T2Rhythm Musik</string>
     <string name="unknown_artist">Okänd artist</string>
     <string name="play_pause">Spela/pausa</string>
     <!-- Widget Settings -->
@@ -25,17 +25,17 @@
     <!-- Settings - Notifications -->
     <string name="settings_notifications">Meddelanden</string>
     <string name="settings_notifications_updates_group">Appuppdateringar</string>
-    <string name="settings_notifications_rhythm_guard_group">Rhythm Skydd</string>
-    <string name="settings_notifications_rhythm_pulse_group">Rhythm Tips</string>
+    <string name="settings_notifications_rhythm_guard_group">T2Rhythm Skydd</string>
+    <string name="settings_notifications_rhythm_pulse_group">T2Rhythm Tips</string>
     <string name="settings_update_notifications_merged_desc">Få aviseringar för nya versioner och resultat av bakgrundsuppdateringar</string>
     <string name="settings_rhythm_guard_alert_notifications">Säkerhetsvarningsmeddelanden</string>
-    <string name="settings_rhythm_guard_alert_notifications_desc">Visa ett meddelande när Rhythm Guard upptäcker riskfylld volym eller exponering</string>
+    <string name="settings_rhythm_guard_alert_notifications_desc">Visa ett meddelande när T2Rhythm Guard upptäcker riskfylld volym eller exponering</string>
     <string name="settings_rhythm_guard_timer_notifications">Aviseringar om paustimer</string>
     <string name="settings_rhythm_guard_timer_notifications_desc">Visa aviseringar för schemalagda raster och aktiva timeout-nedräkningar</string>
-    <string name="settings_rhythm_pulse_notifications">Rhythm Tipsmeddelanden</string>
+    <string name="settings_rhythm_pulse_notifications">T2Rhythm Tipsmeddelanden</string>
     <string name="settings_rhythm_pulse_notifications_desc">Ta emot vänliga påminnelser och lyssnande tips.</string>
     <string name="settings_rhythm_pulse_interval">Tipsintervall</string>
-    <string name="settings_rhythm_pulse_interval_dialog_title">Rhythm Tipsintervall</string>
+    <string name="settings_rhythm_pulse_interval_dialog_title">T2Rhythm Tipsintervall</string>
     <!-- Settings - Queue & Playback -->
     <!-- Settings - Queue -->
     <string name="settings_queue">Kö</string>
@@ -114,18 +114,18 @@
     <string name="operation_exporting_playlists">Säkerhetskopierar dina anpassade spellistor…</string>
     <string name="operation_exporting_playlists_location">Säkerhetskopierar spellistor till lagring…</string>
     <string name="operation_importing_playlist">Importerar spellistafil…</string>
-    <string name="notification_operations_channel_name">Rhythm Bibliotek</string>
+    <string name="notification_operations_channel_name">T2Rhythm Bibliotek</string>
     <string name="notification_operations_channel_desc">Framsteg och resultat för biblioteksskanningar och spelliståtgärder</string>
-    <string name="notification_media_scan_title">Rhythm Biblioteksskanning</string>
+    <string name="notification_media_scan_title">T2Rhythm Biblioteksskanning</string>
     <string name="notification_media_scan_stage_songs">Skannar enhetslagring för ljudspår…</string>
     <string name="notification_media_scan_stage_saving">Optimera och spara ljudspårdatabasen…</string>
     <string name="notification_media_scan_stage_finishing">Slutför ljudindexering…</string>
     <string name="notification_media_scan_complete_pending_setup">Ljudskanning avslutad, initiering av bakgrundsuppgifter…</string>
     <string name="notification_media_scan_cancelled">Biblioteksskanningen avbröts.</string>
     <string name="notification_media_scan_failed">Bibliotekssökning misslyckades. Kontrollera lagringsbehörigheterna och försök igen.</string>
-    <string name="notification_playlist_export_title">Rhythm Biblioteksexport</string>
-    <string name="notification_playlist_import_title">Rhythm Biblioteksimport</string>
-    <string name="notification_library_setup_title">Rhythm Biblioteksinställningar</string>
+    <string name="notification_playlist_export_title">T2Rhythm Biblioteksexport</string>
+    <string name="notification_playlist_import_title">T2Rhythm Biblioteksimport</string>
+    <string name="notification_library_setup_title">T2Rhythm Biblioteksinställningar</string>
     <plurals name="notification_library_setup_complete_summary">
         <item quantity="one">Biblioteket är optimerat och klart: %1$d spår, %2$d album, %3$d artister</item>
         <item quantity="other">Biblioteket är optimerat och klart: %1$d spår, %2$d album, %3$d artister</item>
@@ -144,20 +144,20 @@
         <item quantity="other">\"%1$s\" har importerats med %2$d låtar.</item>
     </plurals>
     <string name="notification_playlist_import_failed">Import av spellista misslyckades. Vänligen verifiera filformatet.</string>
-    <string name="notification_updater_channel_name">Rhythm Uppdaterare</string>
+    <string name="notification_updater_channel_name">T2Rhythm Uppdaterare</string>
     <string name="notification_updater_channel_desc">Nedladdningsstatus för appuppdateringar</string>
-    <string name="notification_updater_title">Rhythm Uppdaterare</string>
+    <string name="notification_updater_title">T2Rhythm Uppdaterare</string>
     <string name="notification_updater_downloading">⬇ Nedladdning: %1$d%%</string>
     <string name="notification_updater_download_complete">✓ Klar att installera. Tryck för att uppdatera.</string>
     <string name="notification_updater_available_title">Uppdatering tillgänglig!</string>
-    <string name="notification_updater_available_text">🆕 En ny version av Rhythm är här.</string>
-    <string name="notification_sleep_timer_channel_name">Rhythm Insomningstimer</string>
+    <string name="notification_updater_available_text">🆕 En ny version av T2Rhythm är här.</string>
+    <string name="notification_sleep_timer_channel_name">T2Rhythm Insomningstimer</string>
     <string name="notification_sleep_timer_channel_desc">Nedräkning och status för sömntimeråtgärder</string>
-    <string name="notification_sleep_timer_title">Rhythm Insomningstimer</string>
+    <string name="notification_sleep_timer_title">T2Rhythm Insomningstimer</string>
     <string name="notification_sleep_timer_pause_in">⏸ Pausar om %1$s</string>
     <string name="notification_sleep_timer_stop_in">⏹ Slutar om %1$s</string>
     <!-- Streaming Notifications -->
-    <string name="notification_streaming_channel_name">Rhythm Go</string>
+    <string name="notification_streaming_channel_name">T2Rhythm Go</string>
     <string name="notification_streaming_channel_desc">Streamingtjänstens status och synkroniseringsuppdateringar</string>
     <!-- Streaming Authentication -->
     <string name="notification_streaming_auth_title">Streaming ansluten</string>
@@ -302,7 +302,7 @@
     <!-- Status Labels -->
     <string name="status_disabled">Inaktiverad</string>
     <!-- HomeScreen -->
-    <string name="home_title">Rhythm</string>
+    <string name="home_title">T2Rhythm</string>
     <string name="home_settings_cd">Inställningar</string>
     <string name="home_no_featured_albums">Inga utvalda album</string>
     <string name="home_no_featured_albums_desc">Lägg till några album i ditt bibliotek för att se utvalt innehåll</string>
@@ -331,7 +331,7 @@
     <string name="home_no_recommendations">Inga rekommendationer</string>
     <string name="home_no_recommendations_desc">Lyssna på lite musik för att få personliga rekommendationer</string>
     <!-- Listening Stats -->
-    <string name="home_listening_stats">Din Rhythm-statistik</string>
+    <string name="home_listening_stats">Din T2Rhythm-statistik</string>
     <!-- Mood & Moments -->
     
     <!-- Recently Played -->
@@ -387,7 +387,7 @@
     <string name="sort_song_count">Sångräkning</string>
     <!-- Storage Permission -->
     <string name="storage_permission_required">Lagringstillstånd krävs</string>
-    <string name="storage_permission_desc">För att bläddra bland dina musikfiler och utforska din enhets lagring behöver Rhythm behörighet att komma åt dina filer och media.</string>
+    <string name="storage_permission_desc">För att bläddra bland dina musikfiler och utforska din enhets lagring behöver T2Rhythm behörighet att komma åt dina filer och media.</string>
     <string name="storage_permission_audio_only">Detta tillåter endast åtkomst till ljudfiler och mappar som innehåller musik.</string>
     <!-- PlayerScreen -->
     <string name="player_loading_lyrics">Laddar sångtexter…</string>
@@ -402,11 +402,11 @@
     <!-- Common UI -->
     <string name="ui_dismiss">Avvisa</string>
     <!-- Common Terms -->
-    <string name="common_rhythm">Rhythm</string>
+    <string name="common_rhythm">T2Rhythm</string>
     <string name="common_home">Hem</string>
     <string name="common_library">Bibliotek</string>
     <!-- Splash/Loading -->
-    <string name="splash_tagline">Din musik, din Rhythm</string>
+    <string name="splash_tagline">Din musik, din T2Rhythm</string>
     <string name="splash_ready">Redo att groove!</string>
     <!-- Audio Quality -->
     
@@ -434,7 +434,7 @@
     <string name="updates_channel_desc">Välj vilken uppdateringskanal du vill följa:</string>
     <!-- Onboarding -->
     <string name="onboarding_welcome_to">Välkommen till</string>
-    <string name="onboarding_welcome_subtitle">Din musik, din Rhythm</string>
+    <string name="onboarding_welcome_subtitle">Din musik, din T2Rhythm</string>
     <string name="onboarding_get_started">Kom igång</string>
     <string name="onboarding_android13_notice">Android 13+ meddelande</string>
     <string name="onboarding_android13_desc">På nyare Android-versioner kommer du att se flera behörighetsförfrågningar. Bevilja åtkomst till ljudfiler och aviseringar för den bästa upplevelsen.</string>
@@ -458,15 +458,15 @@
     <string name="onboarding_library_how_works">Hur biblioteksorganisationen fungerar</string>
     <string name="onboarding_library_1">Anpassa flikordningen i biblioteket för snabb åtkomst till dina favoriter</string>
     <string name="onboarding_library_2">Skapa och hantera spellistor direkt från biblioteksskärmen</string>
-    <string name="onboarding_theme_title">Gör Rhythm till din</string>
+    <string name="onboarding_theme_title">Gör T2Rhythm till din</string>
     <string name="onboarding_theme_desc">Anpassa Rhythms utseende för att matcha din stil. Välj ditt systemtema, typsnitt eller Material dina dynamiska färger (Android 12+).</string>
     <string name="onboarding_more_tuner">Mer anpassning i Inställningar</string>
     <string name="onboarding_tuner_1">Anpassade färgscheman och färgextraktion för albumomslag</string>
     <string name="onboarding_tuner_2">Teckensnittsanpassning och typografiinställningar</string>
     <string name="onboarding_rhythm_guard_title">Skydda din hörsel</string>
-    <string name="onboarding_rhythm_guard_desc">Konfigurera Rhythm Guard för att hålla ditt lyssnande säkrare med åldersmedvetna standardinställningar och manuella skyddskontroller.</string>
-    <string name="onboarding_rhythm_guard_mode_title">Rhythm Bevakningsläge</string>
-    <string name="onboarding_rhythm_guard_age_hint">Åldersprofilen hjälper Rhythm Guard att rekommendera säkrare lyssningsgränser.</string>
+    <string name="onboarding_rhythm_guard_desc">Konfigurera T2Rhythm Guard för att hålla ditt lyssnande säkrare med åldersmedvetna standardinställningar och manuella skyddskontroller.</string>
+    <string name="onboarding_rhythm_guard_mode_title">T2Rhythm Bevakningsläge</string>
+    <string name="onboarding_rhythm_guard_age_hint">Åldersprofilen hjälper T2Rhythm Guard att rekommendera säkrare lyssningsgränser.</string>
     <string name="onboarding_rhythm_guard_tip_1">Autoläget tillämpar säkrare standardinställningar med minimal inställning.</string>
     <string name="onboarding_rhythm_guard_tip_3">Manuellt läge ger dig full kontroll över varningar och trösklar.</string>
     <string name="onboarding_full_tour_prompt_title">Fortsätt med hela installationsturen?</string>
@@ -482,7 +482,7 @@
     <string name="onboarding_media_scan_blacklist">Svartlistläge: Dölj specifika låtar och mappar (ringsignaler, aviseringar)</string>
     <string name="onboarding_media_scan_whitelist">Vitlistläge: Visa endast låtar från valda mappar</string>
     <string name="onboarding_complete_title">Du är redo!</string>
-    <string name="onboarding_complete_desc">Rhythm är redo att spela! Ditt musikbibliotek skannas i bakgrunden. Här är vad som är konfigurerat:</string>
+    <string name="onboarding_complete_desc">T2Rhythm är redo att spela! Ditt musikbibliotek skannas i bakgrunden. Här är vad som är konfigurerat:</string>
     <string name="onboarding_whats_next">Vad är nästa?</string>
     <string name="onboarding_next_browse">Bläddra bland dina låtar, album och artister</string>
     <string name="onboarding_next_create">Skapa din första spellista</string>
@@ -503,7 +503,7 @@
     <string name="onboarding_grant_permissions">Bevilja tillstånd</string>
     <string name="onboarding_permissions_granted_desc">Alla nödvändiga tillstånd har beviljats. Du är redo att fortsätta!</string>
     <string name="onboarding_redirect_settings_desc">För att ge de nödvändiga behörigheterna, vänligen navigera till appinställningarna på din enhet.</string>
-    <string name="onboarding_rationale_desc">Rhythm kräver vissa behörigheter för att fungera korrekt. Vänligen ge dem att fortsätta.</string>
+    <string name="onboarding_rationale_desc">T2Rhythm kräver vissa behörigheter för att fungera korrekt. Vänligen ge dem att fortsätta.</string>
     <string name="onboarding_permissions_required_desc">För att kunna använda Rhythms funktioner fullt ut behöver vi ditt tillstånd för att få åtkomst till vissa enhetsfunktioner.</string>
     <string name="onboarding_permission_music_title">Tillgång till musikbibliotek</string>
     <string name="onboarding_permission_music_desc">Läs dina lokala musikfiler och visa dem i appen</string>
@@ -517,7 +517,7 @@
     <string name="onboarding_permission_tip_2">Du kan ändra behörigheter senare i Inställningar</string>
     <!-- Onboarding Audio &amp; Playback -->
     <string name="onboarding_default_screen_title">Standard landningsskärm</string>
-    <string name="onboarding_default_screen_desc">Välj vilken skärm som öppnas när du startar Rhythm</string>
+    <string name="onboarding_default_screen_desc">Välj vilken skärm som öppnas när du startar T2Rhythm</string>
     <string name="onboarding_system_volume_title">Systemvolymkontroll</string>
     <string name="onboarding_system_volume_desc">Låt enhetens fysiska volymknappar styra Rhythms uppspelningsvolym.</string>
     <string name="onboarding_auto_queue_title">Lägg till automatiskt i kö</string>
@@ -530,7 +530,7 @@
     
     <!-- Onboarding Theming -->
     <string name="onboarding_player_theme_title">Uppspelning och minispelare teman</string>
-    <string name="onboarding_player_theme_desc">Anpassa dina uppspelningsgränssnitt. Växla mellan den rena, moderna Rhythm-designen eller den livfulla, flytande uttrycksfulla designen.</string>
+    <string name="onboarding_player_theme_desc">Anpassa dina uppspelningsgränssnitt. Växla mellan den rena, moderna T2Rhythm-designen eller den livfulla, flytande uttrycksfulla designen.</string>
     <!-- Onboarding Updater -->
     <string name="onboarding_update_check_failed">Uppdateringskontrollen misslyckades</string>
     <string name="onboarding_ready_to_install">Klar att installera</string>
@@ -542,7 +542,7 @@
     <string name="onboarding_enable_updates_title">Aktivera uppdateringar</string>
     <string name="onboarding_enable_updates_desc">Tillåt appen att söka efter och ladda ner uppdateringar</string>
     <string name="onboarding_periodic_check_title">Periodisk kontroll</string>
-    <string name="onboarding_periodic_check_desc">Sök efter uppdateringar från Rhythm:s GitHub-repo automatiskt</string>
+    <string name="onboarding_periodic_check_desc">Sök efter uppdateringar från T2Rhythm:s GitHub-repo automatiskt</string>
     <string name="onboarding_update_notifications_title">Uppdateringsmeddelanden</string>
     <string name="onboarding_update_notifications_desc">Få ett meddelande när nya versioner är tillgängliga</string>
     <string name="onboarding_check_interval_desc">Hur ofta ska man leta efter uppdateringar</string>
@@ -585,7 +585,7 @@
     <string name="onboarding_gesture_tip_1">Svepgester fungerar i båda riktningarna</string>
     <!-- Onboarding: Widgets Step -->
     <string name="onboarding_widgets_title">Launcher-widgets</string>
-    <string name="onboarding_widgets_desc">Lägg till Rhythm-widgets i startprogrammet för snabb musikkontroll. Anpassa vilken information som visas och hur widgeten ser ut.</string>
+    <string name="onboarding_widgets_desc">Lägg till T2Rhythm-widgets i startprogrammet för snabb musikkontroll. Anpassa vilken information som visas och hur widgeten ser ut.</string>
     <string name="onboarding_widget_artist">Visa artistnamn</string>
     <string name="onboarding_widget_artist_desc">Visa den aktuella artisten i widgeten</string>
     <string name="onboarding_widget_album">Visa albumnamn</string>
@@ -600,8 +600,8 @@
     <string name="onboarding_integration_ytmusic">YouTube Music</string>
     <string name="onboarding_integrations_info_title">Sekretessmeddelande</string>
     <string name="onboarding_integrations_info_desc">Dessa funktioner skickar begränsad data (låttitlar, artister) till externa tjänster. Dina personliga data och musikfiler finns kvar på din enhet. Du kan aktivera eller inaktivera dessa när som helst i Inställningar.</string>
-    <!-- Onboarding: Rhythm Stats Step -->
-    <string name="onboarding_stats_title">Rhythm Statistik</string>
+    <!-- Onboarding: T2Rhythm Stats Step -->
+    <string name="onboarding_stats_title">T2Rhythm Statistik</string>
     <string name="onboarding_stats_desc">Upptäck insikter om dina musikvanor. Spåra din lyssningstid, mest spelade låtar, favoritartister och mer med vackra visualiseringar.</string>
     <string name="onboarding_stats_show_home">Visa statistik på Home</string>
     <string name="onboarding_stats_show_home_desc">Visa en lyssningsstatistikwidget på din startskärm</string>
@@ -622,9 +622,9 @@
     <string name="settings_tip_gestures_swipe">Svep uppåt på minispelaren för att öppna hela spelaren, svep sedan nedåt för att ta bort när du är klar.</string>
     <string name="settings_tip_gestures_artwork">Dra konstverk för att byta spår och dubbeltryck på albumomslag för snabb uppspelning eller paus.</string>
     <string name="settings_tip_media_scan">Använd mediaskanning för att dölja oönskade filer från ditt bibliotek</string>
-    <string name="settings_tip_rhythm_guard_off">Skydda din hörsel genom att aktivera Rhythm Guard</string>
-    <string name="settings_tip_rhythm_guard_auto">Rhythm Guard hanterar automatiskt säkra lyssningsgränser</string>
-    <string name="settings_tip_rhythm_guard_manual">Du kontrollerar manuellt Rhythm Guard-gränser</string>
+    <string name="settings_tip_rhythm_guard_off">Skydda din hörsel genom att aktivera T2Rhythm Guard</string>
+    <string name="settings_tip_rhythm_guard_auto">T2Rhythm Guard hanterar automatiskt säkra lyssningsgränser</string>
+    <string name="settings_tip_rhythm_guard_manual">Du kontrollerar manuellt T2Rhythm Guard-gränser</string>
     <string name="settings_default_screen">Standard landningsskärm</string>
     <string name="settings_default_screen_desc">Välj din startskärm</string>
     <string name="settings_home_desc">Upptäck ny musik och rekommendationer</string>
@@ -694,7 +694,7 @@
     <string name="lyrics_editor_title">Textredigerare</string>
     <!-- Components: Song Info -->
     <string name="song_info_title">Låtinformation</string>
-    <string name="rhythm_stats">Rhythm Statistik</string>
+    <string name="rhythm_stats">T2Rhythm Statistik</string>
     <string name="file_info">Filinformation</string>
     <!-- Components: Add to Playlist -->
     <string name="add_to_playlists">Lägg till i spellistor</string>
@@ -725,7 +725,7 @@
     <string name="updates_disabled_message">Appuppdateringar har inaktiverats i inställningarna</string>
     <string name="updates_auto_disabled">Automatisk uppdateringskontroll är inaktiverad. Du kan fortfarande kontrollera manuellt.</string>
     <string name="updates_up_to_date_message">Du är uppdaterad!</string>
-    <string name="updates_check_frequency">Hur ofta ska Rhythm söka efter uppdateringar?</string>
+    <string name="updates_check_frequency">Hur ofta ska T2Rhythm söka efter uppdateringar?</string>
     <string name="updates_experimental_coming">Fler experimentella funktioner kommer snart i framtida uppdateringar</string>
     <string name="settings_interval_every_48_hours">Var 48:e timme</string>
     <string name="settings_interval_every_72_hours">Var 72:e timme</string>
@@ -868,7 +868,7 @@
     <string name="updates_enable_auto_check">Autokontroll</string>
     <string name="updates_channel_title">Uppdatera kanal</string>
     <string name="updates_source_title">Uppdateringskälla</string>
-    <string name="updates_source_desc">Välj vilken versionsfamilj Rhythm ska använda för OTA-uppdateringar.</string>
+    <string name="updates_source_desc">Välj vilken versionsfamilj T2Rhythm ska använda för OTA-uppdateringar.</string>
     <string name="updates_source_installed">Match installerad byggnad</string>
     <string name="updates_source_installed_label">Installerad byggnad</string>
     <string name="updates_source_github_label">GitHub-byggen</string>
@@ -916,7 +916,7 @@
     <string name="cd_reorder_chips">Beställ om chips</string>
     <string name="cd_search">Sök</string>
     <string name="cd_view_all">Visa alla</string>
-    <string name="cd_rhythm_splash">Rhythm</string>
+    <string name="cd_rhythm_splash">T2Rhythm</string>
     <string name="cd_remove_from_playlist">Ta bort från spellistan</string>
     <string name="cd_change_language">Ändra språk</string>
     <string name="cd_open_settings">Öppna</string>
@@ -989,18 +989,18 @@
     <!-- Fallback Metadata -->
     
     <!-- Service Notifications -->
-    <string name="service_app_updates">Rhythm Uppdaterare</string>
-    <string name="service_update_status">Rhythm Updater Status</string>
-    <string name="service_rhythm_pulse">Rhythm Tips</string>
-    <string name="service_rhythm_guard_alerts">Rhythm Vaktvarningar</string>
-    <string name="service_rhythm_guard_timers">Rhythm Vakttimer</string>
-    <string name="service_rhythm_music">Rhythm Musik</string>
+    <string name="service_app_updates">T2Rhythm Uppdaterare</string>
+    <string name="service_update_status">T2Rhythm Updater Status</string>
+    <string name="service_rhythm_pulse">T2Rhythm Tips</string>
+    <string name="service_rhythm_guard_alerts">T2Rhythm Vaktvarningar</string>
+    <string name="service_rhythm_guard_timers">T2Rhythm Vakttimer</string>
+    <string name="service_rhythm_music">T2Rhythm Musik</string>
     <string name="service_update_status_desc">Statusresultat för bakgrundsuppdateringskontroller</string>
-    <string name="service_rhythm_pulse_desc">Vänliga lyssnande påminnelser och tips från Rhythm</string>
-    <string name="service_rhythm_guard_alerts_desc">Säkerhetsvarningar från Rhythm Guard</string>
-    <string name="service_rhythm_guard_timers_desc">Rhythm Påminnelser om vaktavbrott och timeout</string>
-    <string name="service_ready">Rhythm är klar.</string>
-    <string name="service_init_failed">Rhythm kunde inte starta. Öppna appen igen.</string>
+    <string name="service_rhythm_pulse_desc">Vänliga lyssnande påminnelser och tips från T2Rhythm</string>
+    <string name="service_rhythm_guard_alerts_desc">Säkerhetsvarningar från T2Rhythm Guard</string>
+    <string name="service_rhythm_guard_timers_desc">T2Rhythm Påminnelser om vaktavbrott och timeout</string>
+    <string name="service_ready">T2Rhythm är klar.</string>
+    <string name="service_init_failed">T2Rhythm kunde inte starta. Öppna appen igen.</string>
     <!-- Crash Activity -->
     <string name="crash_bug_report">Felrapport</string>
     <string name="crash_restart_app">Starta om appen</string>
@@ -1030,12 +1030,12 @@
     <string name="settings_artwork_cache_size">Artwork Cache Storlek</string>
     <string name="settings_artist_parsing">Konstnärer</string>
     <string name="settings_artist_parsing_desc">Avskiljare, display</string>
-    <string name="settings_rhythm_stats">Rhythm Statistik</string>
+    <string name="settings_rhythm_stats">T2Rhythm Statistik</string>
     <string name="settings_rhythm_stats_desc">Lyssningstid, topplåtar och trender</string>
-    <string name="settings_rhythm_guard">Rhythm Vakt</string>
-    <string name="settings_rhythm_guard_list_desc">Lyssnande hälsoskydd som drivs av Rhythm-statistik</string>
+    <string name="settings_rhythm_guard">T2Rhythm Vakt</string>
+    <string name="settings_rhythm_guard_list_desc">Lyssnande hälsoskydd som drivs av T2Rhythm-statistik</string>
     <string name="settings_rhythm_guard_mode_title">Skyddsläge</string>
-    <string name="settings_rhythm_guard_mode_desc">Välj hur Rhythm Guard hanterar lyssnarhälsan</string>
+    <string name="settings_rhythm_guard_mode_desc">Välj hur T2Rhythm Guard hanterar lyssnarhälsan</string>
     <string name="settings_rhythm_guard_mode_auto">Auto</string>
     <string name="settings_rhythm_guard_mode_manual">Manual</string>
     <string name="settings_rhythm_guard_age_label">Åldersprofil: %1$d</string>
@@ -1052,10 +1052,10 @@
     <string name="settings_rhythm_guard_manual_warning_toggle">Visa säkerhetsvarningar</string>
     <string name="settings_rhythm_guard_manual_warning_toggle_desc">Varna när livevolym eller manuella växlar kan vara riskfyllda</string>
     <string name="settings_rhythm_guard_manual_threshold_title">Varningströskel för hög volym: %1$d%%</string>
-    <string name="settings_rhythm_guard_manual_threshold_desc">Ställ in när Rhythm Guard ska varna för potentiellt skadlig volym.</string>
+    <string name="settings_rhythm_guard_manual_threshold_desc">Ställ in när T2Rhythm Guard ska varna för potentiellt skadlig volym.</string>
     <string name="settings_rhythm_guard_device_controls_title">Utgångskontroller</string>
     <string name="settings_rhythm_guard_device_controls_speaker_limit_title">Tillämpa volymgränser på telefonens högtalare</string>
-    <string name="settings_rhythm_guard_device_controls_speaker_limit_desc">När den är avstängd hoppar Rhythm Guard över volymklämning och volymvarningar på den inbyggda högtalarutgången.</string>
+    <string name="settings_rhythm_guard_device_controls_speaker_limit_desc">När den är avstängd hoppar T2Rhythm Guard över volymklämning och volymvarningar på den inbyggda högtalarutgången.</string>
     <string name="settings_rhythm_guard_alert_controls_title">Reglage för lyssningsvarning</string>
     <string name="settings_rhythm_guard_alert_threshold_title">Exponeringsvarningströskel: %1$s</string>
     <string name="settings_rhythm_guard_alert_threshold_policy_default">Policy Standard</string>
@@ -1065,7 +1065,7 @@
     <string name="settings_rhythm_guard_warning_title">Lyssningssäkerhetsvarning</string>
     <string name="settings_rhythm_guard_warning_high_volume">Aktuell volym är över din varningströskel (%1$d%%). Överväg att minska volymen.</string>
     <string name="settings_rhythm_guard_warning_daily_exposure">Du nådde %1$s idag, ovanför det föreslagna %2$s. Överväg att ta en lyssnarpaus.</string>
-    <string name="settings_rhythm_guard_warning_dialog_title">Rhythm Vaktskyddsvarning</string>
+    <string name="settings_rhythm_guard_warning_dialog_title">T2Rhythm Vaktskyddsvarning</string>
     <string name="settings_rhythm_guard_warning_dialog_volume_message">Systemets mediavolym är %1$d%% i realtid, över din nuvarande skyddsgräns på %2$d%%. Sänk volymen för att minska hörselrisken.</string>
     <string name="settings_rhythm_guard_risk_level_label">Riskallvarlighet: %1$s</string>
     <string name="settings_rhythm_guard_risk_action_label">Rekommenderad åtgärd: %1$s</string>
@@ -1095,8 +1095,8 @@
     <string name="settings_rhythm_guard_start_countdown_value">Börjar om %1$s</string>
     <string name="settings_rhythm_guard_snapshot_widget_above_limit">Över rekommenderad gräns</string>
     <string name="settings_rhythm_guard_snapshot_widget_within_limit">Inom den rekommenderade gränsen</string>
-    <string name="settings_rhythm_guard_state_active">Rhythm Guard är aktiv</string>
-    <string name="settings_rhythm_guard_state_inactive">Rhythm Guard är inaktiv</string>
+    <string name="settings_rhythm_guard_state_active">T2Rhythm Guard är aktiv</string>
+    <string name="settings_rhythm_guard_state_inactive">T2Rhythm Guard är inaktiv</string>
     <string name="settings_rhythm_guard_state_timeout_active">Lyssningstimeout pågår</string>
     <string name="settings_rhythm_guard_state_cooldown_active">Respitperiod aktiv</string>
     <string name="settings_rhythm_guard_state_timeout_remaining">Paus slutar om %1$s</string>
@@ -1108,8 +1108,8 @@
     <string name="settings_rhythm_guard_protection_preset_strict">Strikt</string>
     <string name="settings_rhythm_guard_protection_preset_custom">Custom</string>
     <string name="settings_rhythm_guard_timeout_activity_title">Lyssningstidsgräns aktiv</string>
-    <string name="settings_rhythm_guard_timeout_activity_default_reason">Plottvändning: dina öron startade en fackförening och bad om ett mellanmål. Rhythm Guard pausade uppspelningen så att alla kan svalka sig.</string>
-    <string name="settings_rhythm_guard_timeout_activity_comic_desc">Plottvändning: dina öron startade en fackförening och uppmanade till ett mellanmål. Rhythm Guard pausade uppspelningen så att alla kan svalka sig.</string>
+    <string name="settings_rhythm_guard_timeout_activity_default_reason">Plottvändning: dina öron startade en fackförening och bad om ett mellanmål. T2Rhythm Guard pausade uppspelningen så att alla kan svalka sig.</string>
+    <string name="settings_rhythm_guard_timeout_activity_comic_desc">Plottvändning: dina öron startade en fackförening och uppmanade till ett mellanmål. T2Rhythm Guard pausade uppspelningen så att alla kan svalka sig.</string>
     <string name="settings_rhythm_guard_timeout_activity_extend">Förläng paus (+%1$d min)</string>
     <string name="settings_rhythm_guard_timeout_activity_exit">Stäng Timeout-skärmen</string>
     <string name="settings_rhythm_guard_timeout_activity_close_app">Stäng appen</string>
@@ -1120,23 +1120,23 @@
     <string name="settings_rhythm_guard_alert_threshold_search_title">Tröskelvärde för exponeringsvarning</string>
     <string name="settings_rhythm_guard_alert_threshold_search_desc">Ställ in hur mycket daglig lyssning som utlöser en säkerhetsvarning</string>
     <string name="settings_rhythm_guard_warning_timeout_search_title">Larmnedkylning</string>
-    <string name="settings_rhythm_guard_warning_timeout_search_desc">Ställ in nedkylningen mellan upprepade Rhythm Guard-varningar</string>
+    <string name="settings_rhythm_guard_warning_timeout_search_desc">Ställ in nedkylningen mellan upprepade T2Rhythm Guard-varningar</string>
     <string name="settings_rhythm_guard_post_timeout_cooldown_search_title">Nedkylning efter timeout</string>
     <string name="settings_rhythm_guard_post_timeout_cooldown_search_desc">Ställ in nedkylning efter att en timeout har slutat innan en annan exponeringstimeout kan utlösas</string>
     <string name="settings_rhythm_guard_protection_presets_search_title">Skyddsförinställningar</string>
     <string name="settings_rhythm_guard_protection_presets_search_desc">Applicera mjuka, balanserade eller strikta skyddsräcksbuntar i en kran</string>
     <string name="settings_rhythm_guard_break_resume_search_title">Standard Break Resume</string>
     <string name="settings_rhythm_guard_break_resume_search_desc">Ställ in hur länge schemalagda lyssningspauser varar som standard</string>
-    <string name="settings_rhythm_guard_enable_search_title">Rhythm Guard Power</string>
-    <string name="settings_rhythm_guard_enable_search_desc">Aktivera eller inaktivera Rhythm Guard-skydd</string>
-    <string name="settings_rhythm_guard_notification_alert_title">Rhythm Säkerhetslarm</string>
-    <string name="settings_rhythm_guard_notification_timer_active_title">Rhythm Vakttidsgräns aktiv</string>
+    <string name="settings_rhythm_guard_enable_search_title">T2Rhythm Guard Power</string>
+    <string name="settings_rhythm_guard_enable_search_desc">Aktivera eller inaktivera T2Rhythm Guard-skydd</string>
+    <string name="settings_rhythm_guard_notification_alert_title">T2Rhythm Säkerhetslarm</string>
+    <string name="settings_rhythm_guard_notification_timer_active_title">T2Rhythm Vakttidsgräns aktiv</string>
     <string name="settings_rhythm_guard_notification_timer_active_text">Uppspelningen återupptas om %1$s.</string>
-    <string name="settings_rhythm_guard_notification_timer_scheduled_title">Rhythm Guard Break Schemalagd</string>
+    <string name="settings_rhythm_guard_notification_timer_scheduled_title">T2Rhythm Guard Break Schemalagd</string>
     <string name="settings_rhythm_guard_notification_timer_scheduled_text">En lyssningspaus börjar om %1$s.</string>
     <string name="settings_rhythm_guard_notification_tap_open">Tryck för att se timeoutdetaljer.</string>
-    <!-- Rhythm Stats Screen -->
-    <string name="stats_title">Rhythm Statistik</string>
+    <!-- T2Rhythm Stats Screen -->
+    <string name="stats_title">T2Rhythm Statistik</string>
     <string name="stats_today">Idag</string>
     <string name="stats_this_week">Denna vecka</string>
     <string name="stats_this_month">Denna månad</string>
@@ -1158,7 +1158,7 @@
     <!-- Content Descriptions (additional) -->
     <string name="cd_reorder_home_sections">Ordna om hemsektioner</string>
     <string name="cd_remove">Ta bort</string>
-    <string name="cd_rhythm_logo">Logotyp för Rhythm</string>
+    <string name="cd_rhythm_logo">Logotyp för T2Rhythm</string>
     <string name="cd_telegram_support">Telegramstöd</string>
     <!-- Queue &amp; Playlist Dialogs -->
     <!-- Artist Settings -->
@@ -1326,7 +1326,7 @@
     <string name="settings_snowflake_display_area">Snöflingavisningsområde</string>
     <string name="settings_snowflake_size">Snöflinga storlek</string>
     <string name="settings_toggle_decoration_elements">Växla individuella dekorationselement efter position</string>
-    <string name="settings_multi_artist_parsing_info">När det är aktiverat kommer Rhythm automatiskt att dela upp artisttaggar som innehåller flera artister. Detta är användbart för låtar som laddas ner med yt-dlp eller andra verktyg som använder avgränsare som \'/\' för att separera artister.\n\nOmvänt snedstreck (\\) kan användas för att undvika avgränsare.</string>
+    <string name="settings_multi_artist_parsing_info">När det är aktiverat kommer T2Rhythm automatiskt att dela upp artisttaggar som innehåller flera artister. Detta är användbart för låtar som laddas ner med yt-dlp eller andra verktyg som använder avgränsare som \'/\' för att separera artister.\n\nOmvänt snedstreck (\\) kan användas för att undvika avgränsare.</string>
     <!-- Format Strings with Placeholders -->
     <string name="settings_cache_size_2gb">2 GB</string>
     <string name="settings_cache_size_64mb">64 MB</string>
@@ -1408,7 +1408,7 @@
     <string name="settings_cache_info_4">Auto-clearing hjälper till att bibehålla optimal prestanda</string>
     <!-- Updates Settings -->
     <string name="updates_status_error">Fel</string>
-    <string name="updates_rhythm_logo_cd">Rhythm Logotyp</string>
+    <string name="updates_rhythm_logo_cd">T2Rhythm Logotyp</string>
     <string name="updates_version_prefix">V %1$s</string>
     <string name="updates_released_prefix">Släppt: %1$s</string>
     <string name="updates_unknown_error">Okänt fel uppstod</string>
@@ -1426,7 +1426,7 @@
     <string name="settings_interval_once_a_day">En gång om dagen</string>
     <string name="settings_interval_once_a_week">En gång i veckan</string>
     <!-- Experimental Features -->
-    <string name="streaming_integration_title">Rhythm Go</string>
+    <string name="streaming_integration_title">T2Rhythm Go</string>
     <string name="streaming_integration_services">Integrationstjänster</string>
     <string name="streaming_integration_services_empty">Inga tjänster anslutna ännu</string>
     <string name="streaming_settings_title">Inställningar</string>
@@ -1434,7 +1434,7 @@
     <string name="streaming_settings_group_actions">Åtgärder</string>
     <string name="streaming_settings_preferred_service">Önskad tjänst</string>
     <string name="streaming_settings_quality">Strömningskvalitet</string>
-    <string name="streaming_settings_service_sheet_desc">Välj vilken ansluten tjänst Rhythm Go ska prioritera som standard.</string>
+    <string name="streaming_settings_service_sheet_desc">Välj vilken ansluten tjänst T2Rhythm Go ska prioritera som standard.</string>
     <string name="streaming_settings_quality_sheet_desc">Välj önskad ljudkvalitet för strömmande uppspelning.</string>
     <string name="streaming_quality_low">Låg</string>
     <string name="streaming_quality_normal">Normal</string>
@@ -1444,7 +1444,7 @@
     <string name="streaming_quality_normal_desc">Balanserad kvalitet och dataanvändning (~160 kbps).</string>
     <string name="streaming_quality_high_desc">Ljud av hög kvalitet (~320 kbps).</string>
     <string name="streaming_quality_lossless_desc">Bästa kvalitet där stöds (FLAC/ALAC).</string>
-    <string name="streaming_settings_group_wellbeing">Rhythm Insikter</string>
+    <string name="streaming_settings_group_wellbeing">T2Rhythm Insikter</string>
     <string name="streaming_open_full_settings">Öppna Fullständiga inställningar</string>
     <string name="streaming_open_full_settings_desc">Öppna app-omfattande inställningar som delas mellan olika lägen</string>
     <string name="streaming_switch_to_local_mode">Växla till lokalt läge</string>
@@ -1468,7 +1468,7 @@
     <string name="streaming_service_setup_password">Lösenord</string>
     <string name="streaming_service_setup_password_hint">Ange ditt kontolösenord</string>
     <string name="streaming_service_setup_remember_password">Kom ihåg lösenordet på den här enheten</string>
-    <string name="streaming_service_setup_remember_password_desc">Lagra autentiseringsuppgifter lokalt så att Rhythm kan återansluta automatiskt senare.</string>
+    <string name="streaming_service_setup_remember_password_desc">Lagra autentiseringsuppgifter lokalt så att T2Rhythm kan återansluta automatiskt senare.</string>
     <string name="streaming_service_setup_connecting">Ansluter…</string>
     <string name="streaming_service_setup_disconnecting">Kopplar bort…</string>
     <string name="streaming_service_setup_action_hint">Fyll i de obligatoriska fälten för att ansluta denna tjänst.</string>
@@ -1656,7 +1656,7 @@
     <string name="settings_bluetooth_lyrics_enabled">Bluetooth-textläge</string>
     <string name="settings_bluetooth_lyrics_enabled_desc">Sänd aktuell lyrisk linje via Bluetooth-metadata</string>
     <string name="exp_go_mode">Go Mode</string>
-    <string name="exp_go_mode_desc">Byt till Rhythm Go streaming mode</string>
+    <string name="exp_go_mode_desc">Byt till T2Rhythm Go streaming mode</string>
     <!-- Home Screen Search Strings -->
     <string name="settings_home_section_order">Sektionsordning</string>
     <string name="settings_home_section_order_desc">Ändra ordning på hemsektioner</string>
@@ -1669,13 +1669,13 @@
     <string name="settings_home_carousel_auto_scroll">Carousel Auto Scroll</string>
     <string name="settings_home_carousel_auto_scroll_desc">Karusell för automatisk rullning</string>
     <!-- Notifications Search Strings -->
-    <string name="settings_notifications_rhythm_guard_alerts">Rhythm Säkerhetslarm</string>
+    <string name="settings_notifications_rhythm_guard_alerts">T2Rhythm Säkerhetslarm</string>
     <string name="settings_notifications_rhythm_guard_alerts_desc">Meddela när lyssningsriskvarningar utlöses</string>
-    <string name="settings_notifications_rhythm_guard_timers">Rhythm Vaktavbrottstimer</string>
+    <string name="settings_notifications_rhythm_guard_timers">T2Rhythm Vaktavbrottstimer</string>
     <string name="settings_notifications_rhythm_guard_timers_desc">Meddela för schemalagda pauser och nedräkningar av timeout</string>
-    <string name="settings_notifications_rhythm_pulse">Rhythm Tips</string>
+    <string name="settings_notifications_rhythm_pulse">T2Rhythm Tips</string>
     <string name="settings_notifications_rhythm_pulse_desc">Vänliga påminnelser och lyssningstips.</string>
-    <string name="settings_notifications_rhythm_pulse_interval">Rhythm Tipsintervall</string>
+    <string name="settings_notifications_rhythm_pulse_interval">T2Rhythm Tipsintervall</string>
     <string name="settings_notifications_rhythm_pulse_interval_desc">Hur ofta tipsaviseringar levereras</string>
     <!-- Expressive Shapes Search Strings -->
     <string name="settings_expressive_shapes_enabled">Expressiva former</string>
@@ -1759,7 +1759,7 @@
     <!-- Library Screen scanning overlay -->
     <string name="settings_scanning">Skanning</string>
     <!-- Settings Search -->
-    <string name="search_settings_hint">Sök i Rhythm-inställningar…</string>
+    <string name="search_settings_hint">Sök i T2Rhythm-inställningar…</string>
     <string name="clear_search">Rensa sökning</string>
     <string name="no_results_found">Inga resultat hittades</string>
     <string name="try_different_search">Försök med en annan sökterm</string>
@@ -1798,14 +1798,14 @@
     <string name="theme_font_imported">Teckensnittet har importerats</string>
     <string name="theme_font_invalid">Ogiltigt teckensnittsfilformat</string>
     <string name="ui_apply">Ansök</string>
-    <string name="crashactivity_uh_oh_looks_like">Åh åh! Det verkar som att Rhythm slog en sur ton!</string>
+    <string name="crashactivity_uh_oh_looks_like">Åh åh! Det verkar som att T2Rhythm slog en sur ton!</string>
     <string name="crashactivity_dont_fret_our_app">Oroa dig inte! Vår app hade bara en liten \"oopsie\". Vänligen dela kraschinformationen nedan – det är som ett hemligt meddelande för våra utvecklare att fixa saker! Då ska vi försöka igen, eller hur?</string>
     <string name="crashactivity_secret_crash_scrolls">Secret Crash Scrolls</string>
     <string name="crashactivity_share">Dela</string>
     <string name="externalplaybackactivity_unable_to_open_audio">Det går inte att öppna ljudfilen</string>
     <string name="externalplaybackactivity_unsupported_or_unreadable_audio">Ljudfil som inte stöds eller är oläsbar</string>
     <string name="externalplaybackactivity_failed_to_play_audio">Det gick inte att spela upp ljudfilen</string>
-    <string name="externalplaybackactivity_open_rhythm">Öppna Rhythm</string>
+    <string name="externalplaybackactivity_open_rhythm">Öppna T2Rhythm</string>
     <string name="mainactivity_error_opening_file">Fel vid öppning av filen</string>
     <string name="mainactivity_unsupported_file_format">Filformat som inte stöds</string>
     <string name="mainactivity_failed_to_initialize_media">Det gick inte att initiera mediaspelaren</string>
@@ -1892,7 +1892,7 @@
     <string name="streamingmusicviewmodel_failed_to_play_next">Det gick inte att spela nästa: Det gick inte att lösa URL</string>
     <string name="streamingmusicviewmodel_failed_to_add_to">Det gick inte att lägga till i kön: Det gick inte att lösa URL</string>
     <string name="rhythmmusicwidget_album_art_placeholder">Platshållare för albumkonst</string>
-    <string name="rhythmwidgetpreview_rhythm_glance_widget_previews">Rhythm Glance Widget-förhandsvisningar</string>
+    <string name="rhythmwidgetpreview_rhythm_glance_widget_previews">T2Rhythm Glance Widget-förhandsvisningar</string>
     <string name="rhythmwidgetpreview_str_11_compact_widget">1×1 kompakt widget</string>
     <string name="rhythmwidgetpreview_str_21_horizontal_strip">2×1 horisontell remsa</string>
     <string name="rhythmwidgetpreview_str_22_small_widget">2×2 liten widget</string>
@@ -1934,7 +1934,7 @@
     <string name="betaprogrampopup_early_access">Tidig tillgång</string>
     <string name="betaprogrampopup_shape_the_future">Forma framtiden</string>
     <string name="betaprogrampopup_direct_feedback">Direkt feedback</string>
-    <string name="betaprogrampopup_youre_part_of_an">Du är en del av en exklusiv grupp som hjälper till att forma framtiden för musikspelaren Rhythm</string>
+    <string name="betaprogrampopup_youre_part_of_an">Du är en del av en exklusiv grupp som hjälper till att forma framtiden för musikspelaren T2Rhythm</string>
     <string name="betaprogrampopup_start_exploring">Börja utforska</string>
     <string name="switchmodedialog_switch_play">Växla och spela</string>
     <string name="fullscreenlyricsview_cover_artwork">Omslagskonstverk</string>
@@ -2000,7 +2000,7 @@
     <string name="lyricssourcesettingsscreen_retry_using_fallbacks">Försök igen med reservalternativ</string>
     <string name="lyricssourcesettingsscreen_embedded_lyrics_are_stored">• Embedded lyrics are stored in your audio files</string>
     <string name="miniplayercustomizationsettingsscreen_miniplayer_theme">MiniPlayer-tema</string>
-    <string name="miniplayercustomizationsettingsscreen_choose_between_rhythm_default">Välj mellan Rhythm Standard eller Expressive tema</string>
+    <string name="miniplayercustomizationsettingsscreen_choose_between_rhythm_default">Välj mellan T2Rhythm Standard eller Expressive tema</string>
     <string name="miniplayercustomizationsettingsscreen_integrated_directly_into_the">Integrerad direkt i MiniPlayer-bakgrunden</string>
     <string name="performancesettingsscreen_performance">Litet läge</string>
     <string name="performancesettingsscreen_disable_haptics">Inaktivera Haptics</string>
@@ -2017,7 +2017,7 @@
     <string name="rhythmguardsettingsscreen_none">Inga</string>
     <string name="rhythmguardsettingsscreen_general_settings">Allmänna inställningar</string>
     <string name="rhythmguardsettingsscreen_library_data">Biblioteksdata</string>
-    <string name="rhythmguardsettingsscreen_stats_rhythm_guard">Statistik &amp; Rhythm Guard</string>
+    <string name="rhythmguardsettingsscreen_stats_rhythm_guard">Statistik &amp; T2Rhythm Guard</string>
     <string name="settingsscreen_audio_offload">Ljudavladdning</string>
     <string name="settingsscreen_personalization">Personalisering</string>
     <string name="settingsscreen_library_focus">Biblioteksfokus</string>
@@ -2114,7 +2114,7 @@
     <string name="pulse_marathon">Maratonläge</string>
     <!-- Settings Tips Details -->
     <string name="settings_tip_theme_desc_1">Uppdatera din musikspelare med livlig AMOLED-svart och vackra pastellfärger.</string>
-    <string name="settings_tip_theme_desc_2">Gör Rhythm riktigt din genom att matcha appens accent med ditt system.</string>
+    <string name="settings_tip_theme_desc_2">Gör T2Rhythm riktigt din genom att matcha appens accent med ditt system.</string>
     <string name="settings_tip_media_scan_desc_1">Undvik oönskade ljudklipp. Definiera uttryckligen vilka mappar vi ska skanna efter musik.</string>
     <string name="settings_tip_media_scan_desc_2">Håll röstanteckningar och ringsignaler borta från dina spellistor med fokusmappar.</string>
     <string name="settings_tip_sleep_timer_desc_1">Gå i viloläge medan din musik spelas. Vi pausar det automatiskt.</string>
@@ -2123,7 +2123,7 @@
     <string name="settings_tip_equalizer_desc_2">Ställ in ljudet till dina hörlurar säkert med våra avancerade ljudeffekter.</string>
     <string name="settings_tip_backup_active_desc_1">Automatisk säkerhetskopiering är aktiv. Verifiera dina säkerhetskopior så att återställningar förblir rena.</string>
     <string name="settings_tip_backup_active_desc_2">Skydd aktiverat: schemat ser bra ut. Kör en manuell säkerhetskopiering innan stora ändringar.</string>
-    <string name="settings_tip_backup_inactive_desc_1">Automatisk säkerhetskopiering är avstängd. Aktivera det för att skydda spellistor och Rhythm Guard-statistik.</string>
+    <string name="settings_tip_backup_inactive_desc_1">Automatisk säkerhetskopiering är avstängd. Aktivera det för att skydda spellistor och T2Rhythm Guard-statistik.</string>
     <string name="settings_tip_backup_inactive_desc_2">Inget skyddsnät ännu. Aktivera säkerhetskopior för att undvika att förlora din installation.</string>
     <string name="settings_tip_updates_active_desc_1">Uppdateringar är aktiverade. Behåll dem på för korrigeringar och prestandaförbättringar.</string>
     <string name="settings_tip_updates_active_desc_2">Du är inställd på att ta emot uppdateringar. Kontrollera kanalpreferenser för stabilitet kontra färskhet.</string>
@@ -2166,7 +2166,7 @@
     <string name="font_jetbrains_desc">Monospace-teckensnitt perfekt för tekniskt innehåll</string>
     <string name="font_quicksand_desc">Rundat typsnitt med ett mjukare, vänligare utseende</string>
     <!-- Predefined Color Schemes -->
-    <string name="color_scheme_default_title">Rhythm Standard</string>
+    <string name="color_scheme_default_title">T2Rhythm Standard</string>
     <string name="color_scheme_default_desc">Material 3 baslinje lila med rosa accenter</string>
     <string name="color_scheme_warm_title">Varm solnedgång</string>
     <string name="color_scheme_warm_desc">Mysiga orange och röda toner för en varm atmosfär</string>
@@ -2201,7 +2201,7 @@
     <string name="lyrics_settings_embedded_first">Inbäddad först</string>
     <string name="lyrics_settings_embedded_first_desc">Föredrar texter inbäddade i ljudfiler, reserv till online-API:er</string>
     <string name="lyrics_settings_online_first">Online först</string>
-    <string name="lyrics_settings_online_first_desc">Föredrar online-API:er (Rhythm ord-för-ord, LRCLib), reserv till inbäddade</string>
+    <string name="lyrics_settings_online_first_desc">Föredrar online-API:er (T2Rhythm ord-för-ord, LRCLib), reserv till inbäddade</string>
     <string name="lyrics_settings_local_first">Lokal först</string>
     <string name="lyrics_settings_local_first_desc">Föredrar lokala .lrc-filer, sedan inbäddade sångtexter, sedan online-API:er</string>
     <string name="lyrics_settings_lyrically_first">Lyrically First</string>
@@ -2227,7 +2227,7 @@
     <string name="lyrics_settings_disable_animations_desc">Inaktivera övergångar och animationer i sångtextvyn</string>
     <string name="lyrics_settings_word_by_word_translation">Automatisk ordsynkronisering</string>
     <string name="lyrics_settings_word_by_word_translation_desc">Autogenerera timing på ordnivå för radsynkroniserade texter genom att fördela varaktigheten proportionellt</string>
-    <string name="lyrics_settings_info_bullets">Ytterligare synkroniseringsdetaljer:\n• Online-API:er tillhandahåller synkroniserade texter av hög kvalitet\n• Rhythm erbjuder ord-för-ord-synkronisering\n• LRCLib ger gratis rad-för-rad-synkronisering</string>
+    <string name="lyrics_settings_info_bullets">Ytterligare synkroniseringsdetaljer:\n• Online-API:er tillhandahåller synkroniserade texter av hög kvalitet\n• T2Rhythm erbjuder ord-för-ord-synkronisering\n• LRCLib ger gratis rad-för-rad-synkronisering</string>
     <!-- AutoEQ Preset Picker additions -->
     <string name="autoeqpresetpickerbottomsheet_search_presets">Sök förinställningar…</string>
     <string name="autoeqpresetpickerbottomsheet_disable">Ingen / Avaktivera AutoEQ</string>
@@ -2245,7 +2245,7 @@
     <string name="device_configuration_custom_preset">Anpassad förinställning</string>
     <string name="device_configuration_custom">Custom</string>
     <string name="device_configuration_active_profile_label">Aktiv profil: %1$s</string>
-    <string name="device_configuration_share_subject">Rhythm EQ-profil: %1$s</string>
+    <string name="device_configuration_share_subject">T2Rhythm EQ-profil: %1$s</string>
     <string name="device_configuration_share_title">Dela EQ-profil</string>
     <string name="device_configuration_edit_device">Redigera enhet</string>
     <string name="device_configuration_add_device">Lägg till enhet</string>
@@ -2293,9 +2293,9 @@
         <item quantity="other">Exportera %1$d spellistor till:</item>
     </plurals>
     <!-- Mode dialog strings -->
-    <string name="dialog_switch_to_go">Switch to Rhythm Go?</string>
+    <string name="dialog_switch_to_go">Switch to T2Rhythm Go?</string>
     <string name="dialog_switch_to_local">Byt till lokalt?</string>
-    <string name="dialog_switch_to_go_desc">This item belongs to Rhythm Go. Byt till streamingläge nu för att streama och spela upp det?</string>
+    <string name="dialog_switch_to_go_desc">This item belongs to T2Rhythm Go. Byt till streamingläge nu för att streama och spela upp det?</string>
     <string name="dialog_switch_to_local_desc">Det här objektet tillhör ditt lokala bibliotek. Byt till lokalt läge nu för att spela dina offlinelåtar?</string>
     <!-- Section order content descriptions -->
 
@@ -2472,7 +2472,7 @@
     <string name="carousel_style_hero">Hjälte</string>
     <string name="carousel_style_hero_desc">1 sidtittalbum</string>
     <!-- Theme names -->
-    <string name="theme_rhythm">Rhythm</string>
+    <string name="theme_rhythm">T2Rhythm</string>
     <string name="theme_expressive">Uttrycksfull</string>
     <string name="settings_managed_by_expressive_shapes">Hanteras av Expressive Shapes</string>
     <!-- Shape targets -->
@@ -2518,7 +2518,7 @@
     <string name="backup_restore_section_collection">Samling</string>
     <string name="backup_restore_section_collection_desc">Spellistor, favoriter, svartlista/vitlista, fästade mappar.</string>
     <string name="backup_restore_section_insight">Insikt</string>
-    <string name="backup_restore_section_insight_desc">Antal spelningar, daglig statistik, genrer och Rhythm Guard-konfiguration.</string>
+    <string name="backup_restore_section_insight_desc">Antal spelningar, daglig statistik, genrer och T2Rhythm Guard-konfiguration.</string>
     <string name="backup_restore_status_included">Ingår</string>
     <string name="backup_restore_status_excluded">Utesluten</string>
     <plurals name="backup_restore_sections_enabled">
@@ -2539,7 +2539,7 @@
     <string name="library_bottom_bar_select_songs">Välj låtar</string>
     <string name="library_bottom_bar_more_actions">Fler åtgärder</string>
     <string name="library_play_selected">Spela (%1$d)</string>
-    <!-- Rhythm Guard Comic Status Subtitles -->
+    <!-- T2Rhythm Guard Comic Status Subtitles -->
     <!-- Player, Bottomsheet, and Popup translations -->
     <string name="unknown_track">Okänt spår</string>
     <string name="unknown_song">Okänd låt</string>

@@ -53,18 +53,20 @@ class LibraryEnrichmentWorker(context: Context, params: WorkerParameters) : Coro
             var failed = false
             if (song != null && policy.includes(song.id, song.path ?: song.uri.path)) {
                 try {
+                    if (options.writeTags || options.embedLyrics) PersonalArchive(applicationContext).captureSong(song)
                     var updated = catalog.apply(song)
                     if (options.metadata) {
                         val wanted = buildSet {
-                            if (CatalogIdentity.missing(updated.title)) add(CatalogField.TRACK_TITLE)
-                            if (CatalogIdentity.missing(updated.artist)) add(CatalogField.TRACK_ARTISTS)
-                            if (CatalogIdentity.missing(updated.album)) add(CatalogField.TRACK_ALBUM_TITLE)
-                            if (CatalogIdentity.missing(updated.genre)) add(CatalogField.TRACK_GENRES)
-                            if (updated.year <= 0) add(CatalogField.TRACK_RELEASE_DATE)
+                            if (CatalogIdentity.missing(updated.title) || options.replaces(CatalogField.TRACK_TITLE)) add(CatalogField.TRACK_TITLE)
+                            if (CatalogIdentity.missing(updated.artist) || options.replaces(CatalogField.TRACK_ARTISTS)) add(CatalogField.TRACK_ARTISTS)
+                            if (CatalogIdentity.missing(updated.album) || options.replaces(CatalogField.TRACK_ALBUM_TITLE)) add(CatalogField.TRACK_ALBUM_TITLE)
+                            if (CatalogIdentity.missing(updated.genre) || options.replaces(CatalogField.TRACK_GENRES)) add(CatalogField.TRACK_GENRES)
+                            if (updated.year <= 0 || options.replaces(CatalogField.TRACK_RELEASE_DATE)) add(CatalogField.TRACK_RELEASE_DATE)
                         }
-                        if (wanted.isNotEmpty()) catalog.collect(EntityKind.TRACK, catalog.songKey(updated), updated.title, updated.artist, wanted)
+                        if (wanted.isNotEmpty()) catalog.collect(EntityKind.TRACK, catalog.songKey(updated), updated.title, updated.artist, wanted, updated.duration, updated.album, replace = wanted.any(options::replaces))
                         updated = catalog.apply(updated, fillMissingManual = true)
                     }
+                    if (options.artwork && options.replaces(CatalogField.TRACK_IMAGE)) catalog.collect(EntityKind.TRACK, catalog.songKey(updated), updated.title, updated.artist, setOf(CatalogField.TRACK_IMAGE), updated.duration, updated.album, replace = true)
                     if (options.artwork) updated = repository.fetchTrackArtwork(listOf(updated)).single()
                     val albumKey = catalog.albumKey(updated.album, catalog.effectiveAlbumArtist(updated))
                     if (albums.add(albumKey) && !CatalogIdentity.missing(updated.album)) {
@@ -81,11 +83,11 @@ class LibraryEnrichmentWorker(context: Context, params: WorkerParameters) : Coro
                     }
                     if (options.lyrics) {
                         // Use existing local/embedded information first in bulk; otherwise keep the configured API/source chain.
-                        val known = repository.peekLocalLyrics(updated)
+                        val known = if (options.replaces(CatalogField.TRACK_LYRICS)) null else repository.peekLocalLyrics(updated)
                         if (known != null && lyricsStore.read(updated) == null) lyricsStore.saveFetched(updated, known, embed = false)
                         if (known == null) {
                             val fetched = repository.fetchLyrics(updated.artist, updated.title, updated.id, updated.uri,
-                                sourcePreference = settings.lyricsSourcePreference.value)
+                                sourcePreference = settings.lyricsSourcePreference.value, forceRefresh = options.replaces(CatalogField.TRACK_LYRICS), forceOnline = options.replaces(CatalogField.TRACK_LYRICS))
                             if (fetched != null && fetched.hasLyrics() && !fetched.isErrorMessage()) {
                                 lyricsStore.saveFetched(updated, fetched); changed = true
                             }
@@ -98,7 +100,7 @@ class LibraryEnrichmentWorker(context: Context, params: WorkerParameters) : Coro
                         updated = catalog.apply(updated, fillMissingManual = true)
                         val tagsChanged = updated.title != song.title || updated.artist != song.artist || updated.album != song.album ||
                             updated.genre != song.genre || updated.year != song.year ||
-                            (!catalog.usableArtwork(song.artworkUri) && catalog.usableArtwork(updated.artworkUri))
+                            (updated.artworkUri != song.artworkUri && catalog.usableArtwork(updated.artworkUri))
                         if (options.writeTags && tagsChanged) { writes.add(updated); writes.attempt(updated) }
                     }
                     delay(2_000) // Also space legacy API fallbacks between library items.
@@ -113,6 +115,7 @@ class LibraryEnrichmentWorker(context: Context, params: WorkerParameters) : Coro
             setForeground(notification(plan))
         }
         catalog.notifyChanged()
+        PersonalArchive.enqueue(applicationContext)
         CatalogWriteWorker.enqueue(applicationContext)
         Result.success(workDataOf("done" to plan.next, "total" to plan.keys.size, "changed" to plan.changed,
             "skipped" to plan.skipped, "failed" to plan.failed))

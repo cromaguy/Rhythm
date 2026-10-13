@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Rhythm</string>
+    <string name="app_name">T2Rhythm</string>
     <!-- Common Labels -->
     <string name="home">Rumah</string>
     <string name="library">Perpustakaan</string>
     <string name="search">Cari</string>
     <!-- Media3 notification configuration -->
-    <string name="media3_notification_channel_name">Sedang Diputar di Rhythm</string>
+    <string name="media3_notification_channel_name">Sedang Diputar di T2Rhythm</string>
     <string name="media3_notification_channel_description">Kontrol pemutaran latar depan, tindakan pencarian posisi, dan sampul album</string>
     <!-- Widget strings -->
     <string name="widget_description_glance">Lihat yang sedang diputar dan kendalikan musik dari layar utama — putar, jeda, lewati, dan lainnya.</string>
-    <string name="widget_name_glance">Rhythm Musik</string>
+    <string name="widget_name_glance">T2Rhythm Musik</string>
     <string name="unknown_artist">Artis tidak dikenal</string>
     <string name="play_pause">Putar/Jeda</string>
     <!-- Widget Settings -->
@@ -25,9 +25,9 @@
     <!-- Settings - Notifications -->
     <string name="settings_notifications">Pemberitahuan</string>
     <string name="settings_notifications_updates_group">Pembaruan Aplikasi</string>
-    <string name="settings_notifications_rhythm_guard_group">Keamanan Rhythm Guard</string>
+    <string name="settings_notifications_rhythm_guard_group">Keamanan T2Rhythm Guard</string>
     <string name="settings_notifications_rhythm_pulse_group">Sorotan &amp; Tips Mendengarkan</string>
-    <string name="settings_update_notifications_merged_desc">Dapatkan peringatan saat pembaruan Rhythm baru siap dipasang</string>
+    <string name="settings_update_notifications_merged_desc">Dapatkan peringatan saat pembaruan T2Rhythm baru siap dipasang</string>
     <string name="settings_rhythm_guard_alert_notifications">Peringatan Keamanan Pendengaran</string>
     <string name="settings_rhythm_guard_alert_notifications_desc">Tampilkan peringatan instan saat volume atau paparan suara melampaui ambang aman</string>
     <string name="settings_rhythm_guard_timer_notifications">Asisten Istirahat Mendengarkan</string>
@@ -113,7 +113,7 @@
     <string name="operation_exporting_playlists">Mencadangkan daftar putar khusus Anda…</string>
     <string name="operation_exporting_playlists_location">Mencadangkan daftar putar ke penyimpanan…</string>
     <string name="operation_importing_playlist">Mengimpor file daftar putar…</string>
-    <string name="notification_operations_channel_name">Sinkronisasi Perpustakaan Rhythm</string>
+    <string name="notification_operations_channel_name">Sinkronisasi Perpustakaan T2Rhythm</string>
     <string name="notification_operations_channel_desc">Notifikasi progres untuk pemindaian perpustakaan, pengindeksan, dan cadangan playlist</string>
     <string name="notification_media_scan_title">Pemindaian &amp; Pengindeksan Perpustakaan</string>
     <string name="notification_media_scan_stage_songs">Memindai penyimpanan untuk file audio…</string>
@@ -140,20 +140,20 @@
         <item quantity="other">Berhasil mengimpor \"%1$s\" (%2$d trek).</item>
     </plurals>
     <string name="notification_playlist_import_failed">Impor playlist gagal. Verifikasi format file.</string>
-    <string name="notification_updater_channel_name">Pembaruan Sistem Rhythm</string>
+    <string name="notification_updater_channel_name">Pembaruan Sistem T2Rhythm</string>
     <string name="notification_updater_channel_desc">Progres unduhan dan peringatan rilis untuk pembaruan aplikasi</string>
-    <string name="notification_updater_title">Pembaruan Perangkat Lunak Rhythm</string>
+    <string name="notification_updater_title">Pembaruan Perangkat Lunak T2Rhythm</string>
     <string name="notification_updater_downloading">Mengunduh pembaruan: %1$d%%</string>
     <string name="notification_updater_download_complete">Pembaruan siap dipasang. Ketuk untuk melanjutkan.</string>
     <string name="notification_updater_available_title">Pembaruan Baru Tersedia</string>
-    <string name="notification_updater_available_text">Versi baru Rhythm tersedia.</string>
-    <string name="notification_sleep_timer_channel_name">Asisten Tidur Rhythm</string>
+    <string name="notification_updater_available_text">Versi baru T2Rhythm tersedia.</string>
+    <string name="notification_sleep_timer_channel_name">Asisten Tidur T2Rhythm</string>
     <string name="notification_sleep_timer_channel_desc">Hitung mundur dan peringatan status untuk timer tidur aktif</string>
     <string name="notification_sleep_timer_title">Timer Tidur Aktif</string>
     <string name="notification_sleep_timer_pause_in">Menjeda pemutaran dalam %1$s</string>
     <string name="notification_sleep_timer_stop_in">Menghentikan pemutaran dalam %1$s</string>
     <!-- Streaming Notifications -->
-    <string name="notification_streaming_channel_name">Layanan Cloud Rhythm</string>
+    <string name="notification_streaming_channel_name">Layanan Cloud T2Rhythm</string>
     <string name="notification_streaming_channel_desc">Status koneksi dan progres sinkronisasi untuk layanan musik online</string>
     <!-- Streaming Authentication -->
     <string name="notification_streaming_auth_title">Layanan Cloud Terhubung</string>
@@ -293,7 +293,7 @@
     <!-- Status Labels -->
     <string name="status_disabled">Dinonaktifkan</string>
     <!-- HomeScreen -->
-    <string name="home_title">Rhythm</string>
+    <string name="home_title">T2Rhythm</string>
     <string name="home_settings_cd">Pengaturan</string>
     <string name="home_no_featured_albums">Tidak Ada Album Unggulan</string>
     <string name="home_no_featured_albums_desc">Tambahkan beberapa album ke perpustakaan Anda untuk melihat konten unggulan</string>
@@ -322,7 +322,7 @@
     <string name="home_no_recommendations">Tidak Ada Rekomendasi</string>
     <string name="home_no_recommendations_desc">Dengarkan musik untuk mendapatkan rekomendasi hasil personalisasi</string>
     <!-- Listening Stats -->
-    <string name="home_listening_stats">Statistik Rhythm Anda</string>
+    <string name="home_listening_stats">Statistik T2Rhythm Anda</string>
     <!-- Mood & Moments -->
     
     <!-- Recently Played -->
@@ -376,7 +376,7 @@
     <string name="sort_song_count">Jumlah Lagu</string>
     <!-- Storage Permission -->
     <string name="storage_permission_required">Izin Penyimpanan Diperlukan</string>
-    <string name="storage_permission_desc">Untuk menelusuri file musik dan menjelajahi penyimpanan perangkat Anda, Rhythm memerlukan izin untuk mengakses file dan media Anda.</string>
+    <string name="storage_permission_desc">Untuk menelusuri file musik dan menjelajahi penyimpanan perangkat Anda, T2Rhythm memerlukan izin untuk mengakses file dan media Anda.</string>
     <string name="storage_permission_audio_only">Ini memungkinkan akses hanya ke file audio dan folder yang berisi musik.</string>
     <!-- PlayerScreen -->
     <string name="player_loading_lyrics">Memuat lirik…</string>
@@ -391,11 +391,11 @@
     <!-- Common UI -->
     <string name="ui_dismiss">Singkirkan</string>
     <!-- Common Terms -->
-    <string name="common_rhythm">Rhythm</string>
+    <string name="common_rhythm">T2Rhythm</string>
     <string name="common_home">Rumah</string>
     <string name="common_library">Perpustakaan</string>
     <!-- Splash/Loading -->
-    <string name="splash_tagline">Musik Anda, Rhythm Anda</string>
+    <string name="splash_tagline">Musik Anda, T2Rhythm Anda</string>
     <string name="splash_ready">Siap beraksi!</string>
     <!-- Audio Quality -->
     
@@ -423,7 +423,7 @@
     <string name="updates_channel_desc">Pilih saluran pembaruan mana yang akan diikuti:</string>
     <!-- Onboarding -->
     <string name="onboarding_welcome_to">Selamat datang di</string>
-    <string name="onboarding_welcome_subtitle">Musik Anda, Rhythm Anda</string>
+    <string name="onboarding_welcome_subtitle">Musik Anda, T2Rhythm Anda</string>
     <string name="onboarding_get_started">Memulai</string>
     <string name="onboarding_android13_notice">Android 13+ Pemberitahuan</string>
     <string name="onboarding_android13_desc">Pada versi Android yang lebih baru, Anda akan melihat beberapa permintaan izin. Harap berikan akses ke file audio dan notifikasi untuk pengalaman terbaik.</string>
@@ -447,15 +447,15 @@
     <string name="onboarding_library_how_works">Cara Kerja Organisasi Perpustakaan</string>
     <string name="onboarding_library_1">Sesuaikan urutan tab di Perpustakaan untuk akses cepat ke favorit Anda</string>
     <string name="onboarding_library_2">Buat dan kelola daftar putar langsung dari layar Perpustakaan</string>
-    <string name="onboarding_theme_title">Jadikan Rhythm milik Anda</string>
-    <string name="onboarding_theme_desc">Personalisasikan tampilan Rhythm agar sesuai dengan gaya Anda. Pilih sumber warna, skema warna, atau ganti font.</string>
+    <string name="onboarding_theme_title">Jadikan T2Rhythm milik Anda</string>
+    <string name="onboarding_theme_desc">Personalisasikan tampilan T2Rhythm agar sesuai dengan gaya Anda. Pilih sumber warna, skema warna, atau ganti font.</string>
     <string name="onboarding_more_tuner">Lebih Banyak Kustomisasi di Pengaturan</string>
     <string name="onboarding_tuner_1">Skema warna khusus dan ekstraksi warna sampul album</string>
     <string name="onboarding_tuner_2">Kustomisasi font dan pengaturan tipografi</string>
     <string name="onboarding_rhythm_guard_title">Lindungi Pendengaran Anda</string>
-    <string name="onboarding_rhythm_guard_desc">Siapkan Rhythm Guard agar pendengaran Anda lebih aman dengan default yang sesuai usia dan kontrol perlindungan manual.</string>
-    <string name="onboarding_rhythm_guard_mode_title">Rhythm Mode Penjaga</string>
-    <string name="onboarding_rhythm_guard_age_hint">Profil usia membantu Rhythm Guard merekomendasikan batas mendengarkan yang lebih aman.</string>
+    <string name="onboarding_rhythm_guard_desc">Siapkan T2Rhythm Guard agar pendengaran Anda lebih aman dengan default yang sesuai usia dan kontrol perlindungan manual.</string>
+    <string name="onboarding_rhythm_guard_mode_title">T2Rhythm Mode Penjaga</string>
+    <string name="onboarding_rhythm_guard_age_hint">Profil usia membantu T2Rhythm Guard merekomendasikan batas mendengarkan yang lebih aman.</string>
     <string name="onboarding_rhythm_guard_tip_1">Mode otomatis menerapkan default yang lebih aman dengan pengaturan minimal.</string>
     <string name="onboarding_rhythm_guard_tip_3">Mode manual memberi Anda kendali penuh atas peringatan dan ambang batas.</string>
     <string name="onboarding_full_tour_prompt_title">Lanjutkan Tur Pengaturan Penuh?</string>
@@ -471,7 +471,7 @@
     <string name="onboarding_media_scan_blacklist">Mode Daftar Hitam: Sembunyikan lagu dan folder tertentu (nada dering, notifikasi)</string>
     <string name="onboarding_media_scan_whitelist">Mode Daftar Putih: Hanya menampilkan lagu dari folder yang dipilih</string>
     <string name="onboarding_complete_title">Anda Sudah Siap!</string>
-    <string name="onboarding_complete_desc">Rhythm siap dimainkan! Perpustakaan musik Anda sedang dipindai di latar belakang. Inilah yang dikonfigurasi:</string>
+    <string name="onboarding_complete_desc">T2Rhythm siap dimainkan! Perpustakaan musik Anda sedang dipindai di latar belakang. Inilah yang dikonfigurasi:</string>
     <string name="onboarding_whats_next">Apa Selanjutnya?</string>
     <string name="onboarding_next_browse">Telusuri lagu, album, dan artis Anda</string>
     <string name="onboarding_next_create">Buat daftar putar pertama Anda</string>
@@ -492,8 +492,8 @@
     <string name="onboarding_grant_permissions">Berikan Izin</string>
     <string name="onboarding_permissions_granted_desc">Semua izin yang diperlukan telah diberikan. Anda siap untuk melanjutkan!</string>
     <string name="onboarding_redirect_settings_desc">Untuk memberikan izin yang diperlukan, silakan navigasikan ke pengaturan aplikasi pada perangkat Anda.</string>
-    <string name="onboarding_rationale_desc">Rhythm memerlukan izin tertentu agar dapat berfungsi dengan benar. Mohon ijinkan mereka untuk melanjutkan.</string>
-    <string name="onboarding_permissions_required_desc">Untuk memanfaatkan sepenuhnya fitur Rhythm, kami memerlukan izin Anda untuk mengakses kemampuan perangkat tertentu.</string>
+    <string name="onboarding_rationale_desc">T2Rhythm memerlukan izin tertentu agar dapat berfungsi dengan benar. Mohon ijinkan mereka untuk melanjutkan.</string>
+    <string name="onboarding_permissions_required_desc">Untuk memanfaatkan sepenuhnya fitur T2Rhythm, kami memerlukan izin Anda untuk mengakses kemampuan perangkat tertentu.</string>
     <string name="onboarding_permission_music_title">Akses Perpustakaan Musik</string>
     <string name="onboarding_permission_music_desc">Baca file musik lokal Anda dan tampilkan di aplikasi</string>
     <string name="onboarding_permission_bluetooth_title">Konektivitas Bluetooth</string>
@@ -506,9 +506,9 @@
     <string name="onboarding_permission_tip_2">Anda dapat mengubah izin nanti di Pengaturan</string>
     <!-- Onboarding Audio &amp; Playback -->
     <string name="onboarding_default_screen_title">Layar Pendaratan Default</string>
-    <string name="onboarding_default_screen_desc">Pilih layar mana yang terbuka saat Anda meluncurkan Rhythm</string>
+    <string name="onboarding_default_screen_desc">Pilih layar mana yang terbuka saat Anda meluncurkan T2Rhythm</string>
     <string name="onboarding_system_volume_title">Kontrol Volume Sistem</string>
-    <string name="onboarding_system_volume_desc">Izinkan tombol volume fisik perangkat Anda mengontrol volume pemutaran Rhythm.</string>
+    <string name="onboarding_system_volume_desc">Izinkan tombol volume fisik perangkat Anda mengontrol volume pemutaran T2Rhythm.</string>
     <string name="onboarding_auto_queue_title">Tambahkan Otomatis ke Antrean</string>
     <string name="onboarding_auto_queue_desc">Secara otomatis membuat antrian kontekstual dari album/artis saat memutar lagu.</string>
     <string name="onboarding_show_lyrics_title">Tampilkan Lirik</string>
@@ -519,7 +519,7 @@
     
     <!-- Onboarding Theming -->
     <string name="onboarding_player_theme_title">Pemutaran &amp; Tema Pemutar Mini</string>
-    <string name="onboarding_player_theme_desc">Personalisasikan pemutaran dan mini player. Pilih desain Rhythm yang bersih atau desain Expressive yang cerah, lalu sesuaikan kontrol, tata letak, dan gaya progres.</string>
+    <string name="onboarding_player_theme_desc">Personalisasikan pemutaran dan mini player. Pilih desain T2Rhythm yang bersih atau desain Expressive yang cerah, lalu sesuaikan kontrol, tata letak, dan gaya progres.</string>
     <!-- Onboarding Updater -->
     <string name="onboarding_update_check_failed">Pemeriksaan Pembaruan Gagal</string>
     <string name="onboarding_ready_to_install">Siap Dipasang</string>
@@ -531,7 +531,7 @@
     <string name="onboarding_enable_updates_title">Aktifkan Pembaruan</string>
     <string name="onboarding_enable_updates_desc">Izinkan aplikasi memeriksa dan mengunduh pembaruan</string>
     <string name="onboarding_periodic_check_title">Pemeriksaan Berkala</string>
-    <string name="onboarding_periodic_check_desc">Periksa pembaruan dari repo GitHub Rhythm secara otomatis</string>
+    <string name="onboarding_periodic_check_desc">Periksa pembaruan dari repo GitHub T2Rhythm secara otomatis</string>
     <string name="onboarding_update_notifications_title">Perbarui Notifikasi</string>
     <string name="onboarding_update_notifications_desc">Dapatkan pemberitahuan ketika versi baru tersedia</string>
     <string name="onboarding_check_interval_desc">Seberapa sering memeriksa pembaruan</string>
@@ -574,7 +574,7 @@
     <string name="onboarding_gesture_tip_1">Gerakan menggesek berfungsi di kedua arah</string>
     <!-- Onboarding: Widgets Step -->
     <string name="onboarding_widgets_title">Widget Peluncur</string>
-    <string name="onboarding_widgets_desc">Tambahkan widget Rhythm Cookie dan Statistik ke launcher untuk mengontrol musik secara sekilas. Pilih fungsi sudut cookie dan statistik yang ditampilkan oleh widget.</string>
+    <string name="onboarding_widgets_desc">Tambahkan widget T2Rhythm Cookie dan Statistik ke launcher untuk mengontrol musik secara sekilas. Pilih fungsi sudut cookie dan statistik yang ditampilkan oleh widget.</string>
     <string name="onboarding_widget_artist">Tampilkan Nama Artis</string>
     <string name="onboarding_widget_artist_desc">Tampilkan artis saat ini di widget</string>
     <string name="onboarding_widget_album">Tampilkan Nama Album</string>
@@ -589,8 +589,8 @@
     <string name="onboarding_integration_ytmusic">YouTube Music</string>
     <string name="onboarding_integrations_info_title">Catatan Privasi</string>
     <string name="onboarding_integrations_info_desc">Fitur ini mengirimkan data terbatas (judul lagu, artis) ke layanan eksternal. Data pribadi dan file musik Anda tetap ada di perangkat Anda. Anda dapat mengaktifkan atau menonaktifkannya kapan saja di Pengaturan.</string>
-    <!-- Onboarding: Rhythm Stats Step -->
-    <string name="onboarding_stats_title">Rhythm Statistik</string>
+    <!-- Onboarding: T2Rhythm Stats Step -->
+    <string name="onboarding_stats_title">T2Rhythm Statistik</string>
     <string name="onboarding_stats_desc">Temukan wawasan tentang kebiasaan musik Anda. Lacak waktu mendengarkan Anda, lagu yang paling sering diputar, artis favorit, dan banyak lagi dengan visualisasi yang indah.</string>
     <string name="onboarding_stats_show_home">Tampilkan Statistik di Beranda</string>
     <string name="onboarding_stats_show_home_desc">Tampilkan widget statistik mendengarkan di layar beranda Anda</string>
@@ -611,9 +611,9 @@
     <string name="settings_tip_gestures_swipe">Geser ke atas pada pemutar mini untuk membuka pemutar penuh, lalu geser ke bawah untuk menutupnya setelah selesai.</string>
     <string name="settings_tip_gestures_artwork">Gesek karya seni untuk berpindah trek dan ketuk dua kali sampul album untuk memutar atau menjeda dengan cepat.</string>
     <string name="settings_tip_media_scan">Gunakan pemindaian media untuk menyembunyikan file yang tidak diinginkan dari perpustakaan Anda</string>
-    <string name="settings_tip_rhythm_guard_off">Lindungi pendengaran Anda dengan mengaktifkan Rhythm Guard</string>
-    <string name="settings_tip_rhythm_guard_auto">Rhythm Guard secara otomatis mengelola batas mendengarkan yang aman</string>
-    <string name="settings_tip_rhythm_guard_manual">Anda mengontrol batas Penjaga Rhythm secara manual</string>
+    <string name="settings_tip_rhythm_guard_off">Lindungi pendengaran Anda dengan mengaktifkan T2Rhythm Guard</string>
+    <string name="settings_tip_rhythm_guard_auto">T2Rhythm Guard secara otomatis mengelola batas mendengarkan yang aman</string>
+    <string name="settings_tip_rhythm_guard_manual">Anda mengontrol batas Penjaga T2Rhythm secara manual</string>
     <string name="settings_default_screen">Layar Pendaratan Default</string>
     <string name="settings_default_screen_desc">Pilih layar awal Anda</string>
     <string name="settings_home_desc">Temukan musik dan rekomendasi baru</string>
@@ -683,7 +683,7 @@
     <string name="lyrics_editor_title">Editor Lirik</string>
     <!-- Components: Song Info -->
     <string name="song_info_title">Informasi Lagu</string>
-    <string name="rhythm_stats">Rhythm Statistik</string>
+    <string name="rhythm_stats">T2Rhythm Statistik</string>
     <string name="file_info">Informasi Berkas</string>
     <!-- Components: Add to Playlist -->
     <string name="add_to_playlists">Tambahkan ke Daftar Putar</string>
@@ -697,7 +697,7 @@
     <string name="backup_all_settings_placeholder">Semua pengaturan, daftar putar, tema, dan penyesuaian perpustakaan</string>
     <string name="backup_restore_tap_placeholder">Pulihkan dari file atau clipboard dengan satu ketukan</string>
     <string name="backup_local_storage_placeholder">Cadangan disimpan secara lokal di perangkat Anda untuk privasi</string>
-    <string name="external_services_desc">Aktifkan atau nonaktifkan layanan online yang digunakan Rhythm untuk lirik, gambar artis, dan sampul album animasi. Nonaktifkan layanan yang tidak diperlukan untuk mengurangi penggunaan data.</string>
+    <string name="external_services_desc">Aktifkan atau nonaktifkan layanan online yang digunakan T2Rhythm untuk lirik, gambar artis, dan sampul album animasi. Nonaktifkan layanan yang tidak diperlukan untuk mengurangi penggunaan data.</string>
     <string name="lyrics_source_priority_title">Prioritas Sumber Lirik</string>
     <string name="queue_action_title">Menambahkan lagu</string>
     <string name="queue_action_choose">Apa yang harus dilakukan terhadap antrean saat ini?</string>
@@ -714,7 +714,7 @@
     <string name="updates_disabled_message">Pembaruan aplikasi telah dinonaktifkan di pengaturan</string>
     <string name="updates_auto_disabled">Pemeriksaan pembaruan otomatis dinonaktifkan. Anda masih bisa melakukan pengecekan secara manual.</string>
     <string name="updates_up_to_date_message">Anda terkini!</string>
-    <string name="updates_check_frequency">Seberapa sering Rhythm harus memeriksa pembaruan?</string>
+    <string name="updates_check_frequency">Seberapa sering T2Rhythm harus memeriksa pembaruan?</string>
     <string name="updates_experimental_coming">Lebih banyak fitur eksperimental segera hadir di pembaruan mendatang</string>
     <string name="settings_interval_every_48_hours">Setiap 48 jam</string>
     <string name="settings_interval_every_72_hours">Setiap 72 jam</string>
@@ -857,7 +857,7 @@
     <string name="updates_enable_auto_check">Periksa otomatis</string>
     <string name="updates_channel_title">Perbarui Saluran</string>
     <string name="updates_source_title">Perbarui Sumber</string>
-    <string name="updates_source_desc">Pilih keluarga rilis mana yang harus digunakan Rhythm untuk pembaruan OTA.</string>
+    <string name="updates_source_desc">Pilih keluarga rilis mana yang harus digunakan T2Rhythm untuk pembaruan OTA.</string>
     <string name="updates_source_installed">Cocokkan Build Terpasang</string>
     <string name="updates_source_installed_label">Build Terpasang</string>
     <string name="updates_source_github_label">Pembuatan GitHub</string>
@@ -905,7 +905,7 @@
     <string name="cd_reorder_chips">Susun ulang chip</string>
     <string name="cd_search">Pencarian</string>
     <string name="cd_view_all">Lihat semua</string>
-    <string name="cd_rhythm_splash">Rhythm</string>
+    <string name="cd_rhythm_splash">T2Rhythm</string>
     <string name="cd_remove_from_playlist">Hapus dari daftar putar</string>
     <string name="cd_change_language">Ubah Bahasa</string>
     <string name="cd_open_settings">Buka</string>
@@ -978,18 +978,18 @@
     <!-- Fallback Metadata -->
     
     <!-- Service Notifications -->
-    <string name="service_app_updates">Rhythm Pembaru</string>
-    <string name="service_update_status">Rhythm Status Pembaruan</string>
-    <string name="service_rhythm_pulse">Rhythm Kiat</string>
-    <string name="service_rhythm_guard_alerts">Rhythm Peringatan Penjaga</string>
-    <string name="service_rhythm_guard_timers">Rhythm Pengatur Waktu Penjaga</string>
-    <string name="service_rhythm_music">Rhythm Musik</string>
+    <string name="service_app_updates">T2Rhythm Pembaru</string>
+    <string name="service_update_status">T2Rhythm Status Pembaruan</string>
+    <string name="service_rhythm_pulse">T2Rhythm Kiat</string>
+    <string name="service_rhythm_guard_alerts">T2Rhythm Peringatan Penjaga</string>
+    <string name="service_rhythm_guard_timers">T2Rhythm Pengatur Waktu Penjaga</string>
+    <string name="service_rhythm_music">T2Rhythm Musik</string>
     <string name="service_update_status_desc">Hasil status untuk pemeriksaan pembaruan latar belakang</string>
-    <string name="service_rhythm_pulse_desc">Pengingat dan tips mendengarkan secara ramah dari Rhythm</string>
-    <string name="service_rhythm_guard_alerts_desc">Peringatan keselamatan dari Rhythm Guard</string>
-    <string name="service_rhythm_guard_timers_desc">Rhythm Pengingat istirahat dan batas waktu penjagaan</string>
-    <string name="service_ready">Rhythm siap.</string>
-    <string name="service_init_failed">Rhythm tidak dapat memulai. Silakan buka kembali aplikasinya.</string>
+    <string name="service_rhythm_pulse_desc">Pengingat dan tips mendengarkan secara ramah dari T2Rhythm</string>
+    <string name="service_rhythm_guard_alerts_desc">Peringatan keselamatan dari T2Rhythm Guard</string>
+    <string name="service_rhythm_guard_timers_desc">T2Rhythm Pengingat istirahat dan batas waktu penjagaan</string>
+    <string name="service_ready">T2Rhythm siap.</string>
+    <string name="service_init_failed">T2Rhythm tidak dapat memulai. Silakan buka kembali aplikasinya.</string>
     <!-- Crash Activity -->
     <string name="crash_bug_report">Laporan Bug</string>
     <string name="crash_restart_app">Mulai Ulang Aplikasi</string>
@@ -1019,12 +1019,12 @@
     <string name="settings_artwork_cache_size">Ukuran Cache Karya Seni</string>
     <string name="settings_artist_parsing">Artis</string>
     <string name="settings_artist_parsing_desc">Cara nama artis dipisahkan dan ditampilkan</string>
-    <string name="settings_rhythm_stats">Rhythm Statistik</string>
+    <string name="settings_rhythm_stats">T2Rhythm Statistik</string>
     <string name="settings_rhythm_stats_desc">Waktu mendengarkan, lagu terpopuler, dan tren</string>
-    <string name="settings_rhythm_guard">Rhythm Penjaga</string>
-    <string name="settings_rhythm_guard_list_desc">Mendengarkan pagar pembatas kesehatan yang didukung oleh Rhythm Stats</string>
+    <string name="settings_rhythm_guard">T2Rhythm Penjaga</string>
+    <string name="settings_rhythm_guard_list_desc">Mendengarkan pagar pembatas kesehatan yang didukung oleh T2Rhythm Stats</string>
     <string name="settings_rhythm_guard_mode_title">Mode Perlindungan</string>
-    <string name="settings_rhythm_guard_mode_desc">Pilih cara Rhythm Guard mengelola kesehatan pendengaran</string>
+    <string name="settings_rhythm_guard_mode_desc">Pilih cara T2Rhythm Guard mengelola kesehatan pendengaran</string>
     <string name="settings_rhythm_guard_mode_auto">Otomatis</string>
     <string name="settings_rhythm_guard_mode_manual">Pedoman</string>
     <string name="settings_rhythm_guard_age_label">Profil Usia: %1$d</string>
@@ -1040,10 +1040,10 @@
     <string name="settings_rhythm_guard_manual_warning_toggle">Tampilkan Peringatan Keselamatan</string>
     <string name="settings_rhythm_guard_manual_warning_toggle_desc">Peringatkan bila volume langsung atau peralihan manual mungkin berisiko</string>
     <string name="settings_rhythm_guard_manual_threshold_title">Ambang Batas Peringatan Volume Tinggi: %1$d%%</string>
-    <string name="settings_rhythm_guard_manual_threshold_desc">Tetapkan kapan Rhythm Guard harus memperingatkan tentang volume yang berpotensi membahayakan.</string>
+    <string name="settings_rhythm_guard_manual_threshold_desc">Tetapkan kapan T2Rhythm Guard harus memperingatkan tentang volume yang berpotensi membahayakan.</string>
     <string name="settings_rhythm_guard_device_controls_title">Kontrol Keluaran</string>
     <string name="settings_rhythm_guard_device_controls_speaker_limit_title">Terapkan Batas Volume Pada Speaker Ponsel</string>
-    <string name="settings_rhythm_guard_device_controls_speaker_limit_desc">Saat mati, Rhythm Guard melewatkan penjepitan volume dan peringatan volume pada output speaker internal.</string>
+    <string name="settings_rhythm_guard_device_controls_speaker_limit_desc">Saat mati, T2Rhythm Guard melewatkan penjepitan volume dan peringatan volume pada output speaker internal.</string>
     <string name="settings_rhythm_guard_alert_controls_title">Kontrol Peringatan Mendengarkan</string>
     <string name="settings_rhythm_guard_alert_threshold_title">Ambang Batas Peringatan Paparan: %1$s</string>
     <string name="settings_rhythm_guard_alert_threshold_policy_default">Default Kebijakan</string>
@@ -1053,7 +1053,7 @@
     <string name="settings_rhythm_guard_warning_title">Peringatan Keselamatan Mendengarkan</string>
     <string name="settings_rhythm_guard_warning_high_volume">Volume saat ini berada di atas ambang peringatan Anda (%1$d%%). Pertimbangkan untuk mengurangi volume.</string>
     <string name="settings_rhythm_guard_warning_daily_exposure">Anda mencapai %1$s hari ini, di atas %2$s yang disarankan. Pertimbangkan untuk istirahat mendengarkan.</string>
-    <string name="settings_rhythm_guard_warning_dialog_title">Rhythm Peringatan Perlindungan Penjaga</string>
+    <string name="settings_rhythm_guard_warning_dialog_title">T2Rhythm Peringatan Perlindungan Penjaga</string>
     <string name="settings_rhythm_guard_warning_dialog_volume_message">Volume media sistem adalah %1$d%% secara real-time, di atas batas perlindungan Anda saat ini sebesar %2$d%%. Volume yang lebih rendah untuk mengurangi risiko pendengaran.</string>
     <string name="settings_rhythm_guard_risk_level_label">Tingkat keparahan risiko: %1$s</string>
     <string name="settings_rhythm_guard_risk_action_label">Tindakan yang disarankan: %1$s</string>
@@ -1083,8 +1083,8 @@
     <string name="settings_rhythm_guard_start_countdown_value">Dimulai pada %1$s</string>
     <string name="settings_rhythm_guard_snapshot_widget_above_limit">Di atas batas yang direkomendasikan</string>
     <string name="settings_rhythm_guard_snapshot_widget_within_limit">Dalam batas yang disarankan</string>
-    <string name="settings_rhythm_guard_state_active">Rhythm Penjaga Aktif</string>
-    <string name="settings_rhythm_guard_state_inactive">Rhythm Penjaga Tidak Aktif</string>
+    <string name="settings_rhythm_guard_state_active">T2Rhythm Penjaga Aktif</string>
+    <string name="settings_rhythm_guard_state_inactive">T2Rhythm Penjaga Tidak Aktif</string>
     <string name="settings_rhythm_guard_state_timeout_active">Batas waktu mendengarkan sedang berlangsung</string>
     <string name="settings_rhythm_guard_state_cooldown_active">Masa tenggang aktif</string>
     <string name="settings_rhythm_guard_state_timeout_remaining">Istirahat berakhir di %1$s</string>
@@ -1096,8 +1096,8 @@
     <string name="settings_rhythm_guard_protection_preset_strict">Ketat</string>
     <string name="settings_rhythm_guard_protection_preset_custom">Adat</string>
     <string name="settings_rhythm_guard_timeout_activity_title">Batas Waktu Mendengarkan Aktif</string>
-    <string name="settings_rhythm_guard_timeout_activity_default_reason">Plot twist: telingamu mulai menyatu dan menyerukan istirahat camilan. Rhythm Penjaga menjeda pemutaran agar semua orang dapat menenangkan diri.</string>
-    <string name="settings_rhythm_guard_timeout_activity_comic_desc">Plot twist: telinga Anda mulai menyatu dan menyerukan istirahat camilan. Rhythm Penjaga menjeda pemutaran agar semua orang dapat menenangkan diri.</string>
+    <string name="settings_rhythm_guard_timeout_activity_default_reason">Plot twist: telingamu mulai menyatu dan menyerukan istirahat camilan. T2Rhythm Penjaga menjeda pemutaran agar semua orang dapat menenangkan diri.</string>
+    <string name="settings_rhythm_guard_timeout_activity_comic_desc">Plot twist: telinga Anda mulai menyatu dan menyerukan istirahat camilan. T2Rhythm Penjaga menjeda pemutaran agar semua orang dapat menenangkan diri.</string>
     <string name="settings_rhythm_guard_timeout_activity_extend">Perpanjang waktu istirahat (+%1$d mnt)</string>
     <string name="settings_rhythm_guard_timeout_activity_exit">Tutup Layar Batas Waktu</string>
     <string name="settings_rhythm_guard_timeout_activity_close_app">Tutup Aplikasi</string>
@@ -1108,23 +1108,23 @@
     <string name="settings_rhythm_guard_alert_threshold_search_title">Ambang Batas Peringatan Eksposur</string>
     <string name="settings_rhythm_guard_alert_threshold_search_desc">Atur seberapa sering mendengarkan setiap hari memicu peringatan keselamatan</string>
     <string name="settings_rhythm_guard_warning_timeout_search_title">Masa Tenang Peringatan</string>
-    <string name="settings_rhythm_guard_warning_timeout_search_desc">Atur cooldown antara peringatan Penjaga Rhythm yang berulang</string>
+    <string name="settings_rhythm_guard_warning_timeout_search_desc">Atur cooldown antara peringatan Penjaga T2Rhythm yang berulang</string>
     <string name="settings_rhythm_guard_post_timeout_cooldown_search_title">Cooldown Pasca Batas Waktu</string>
     <string name="settings_rhythm_guard_post_timeout_cooldown_search_desc">Atur cooldown setelah batas waktu berakhir sebelum batas waktu eksposur lainnya dapat terpicu</string>
     <string name="settings_rhythm_guard_protection_presets_search_title">Preset Perlindungan</string>
     <string name="settings_rhythm_guard_protection_presets_search_desc">Terapkan bundel pagar pembatas yang Lembut, Seimbang, atau Ketat dalam satu ketukan</string>
     <string name="settings_rhythm_guard_break_resume_search_title">Resume Istirahat Default</string>
     <string name="settings_rhythm_guard_break_resume_search_desc">Atur berapa lama waktu istirahat mendengarkan yang dijadwalkan berlangsung secara default</string>
-    <string name="settings_rhythm_guard_enable_search_title">Rhythm Kekuatan Penjaga</string>
-    <string name="settings_rhythm_guard_enable_search_desc">Mengaktifkan atau menonaktifkan perlindungan Penjaga Rhythm</string>
-    <string name="settings_rhythm_guard_notification_alert_title">Rhythm Peringatan Keamanan Penjaga</string>
-    <string name="settings_rhythm_guard_notification_timer_active_title">Rhythm Batas Waktu Penjaga Aktif</string>
+    <string name="settings_rhythm_guard_enable_search_title">T2Rhythm Kekuatan Penjaga</string>
+    <string name="settings_rhythm_guard_enable_search_desc">Mengaktifkan atau menonaktifkan perlindungan Penjaga T2Rhythm</string>
+    <string name="settings_rhythm_guard_notification_alert_title">T2Rhythm Peringatan Keamanan Penjaga</string>
+    <string name="settings_rhythm_guard_notification_timer_active_title">T2Rhythm Batas Waktu Penjaga Aktif</string>
     <string name="settings_rhythm_guard_notification_timer_active_text">Pemutaran dilanjutkan dalam %1$s.</string>
-    <string name="settings_rhythm_guard_notification_timer_scheduled_title">Rhythm Istirahat Penjagaan Dijadwalkan</string>
+    <string name="settings_rhythm_guard_notification_timer_scheduled_title">T2Rhythm Istirahat Penjagaan Dijadwalkan</string>
     <string name="settings_rhythm_guard_notification_timer_scheduled_text">Istirahat mendengarkan dimulai pada %1$s.</string>
     <string name="settings_rhythm_guard_notification_tap_open">Ketuk untuk melihat detail batas waktu.</string>
-    <!-- Rhythm Stats Screen -->
-    <string name="stats_title">Rhythm Statistik</string>
+    <!-- T2Rhythm Stats Screen -->
+    <string name="stats_title">T2Rhythm Statistik</string>
     <string name="stats_today">Hari ini</string>
     <string name="stats_this_week">Minggu ini</string>
     <string name="stats_this_month">Bulan Ini</string>
@@ -1146,7 +1146,7 @@
     <!-- Content Descriptions (additional) -->
     <string name="cd_reorder_home_sections">Susun ulang bagian beranda</string>
     <string name="cd_remove">Hapus</string>
-    <string name="cd_rhythm_logo">Rhythm Logo</string>
+    <string name="cd_rhythm_logo">T2Rhythm Logo</string>
     <string name="cd_telegram_support">Dukungan Telegram</string>
     <!-- Queue &amp; Playlist Dialogs -->
     <!-- Artist Settings -->
@@ -1314,7 +1314,7 @@
     <string name="settings_snowflake_display_area">Area Tampilan Kepingan Salju</string>
     <string name="settings_snowflake_size">Ukuran Kepingan Salju</string>
     <string name="settings_toggle_decoration_elements">Alihkan elemen dekorasi individual berdasarkan posisinya</string>
-    <string name="settings_multi_artist_parsing_info">Saat diaktifkan, Rhythm memisahkan tag artis yang memuat beberapa nama — seperti “Artis A/Artis B” — menjadi artis terpisah. Pilih pemisah yang digunakan: garis miring, koma, titik koma, tanda tambah, atau ampersand.\n\nGunakan garis miring terbalik () agar karakter pemisah tetap menjadi bagian dari nama artis.</string>
+    <string name="settings_multi_artist_parsing_info">Saat diaktifkan, T2Rhythm memisahkan tag artis yang memuat beberapa nama — seperti “Artis A/Artis B” — menjadi artis terpisah. Pilih pemisah yang digunakan: garis miring, koma, titik koma, tanda tambah, atau ampersand.\n\nGunakan garis miring terbalik () agar karakter pemisah tetap menjadi bagian dari nama artis.</string>
     <!-- Format Strings with Placeholders -->
     <string name="settings_cache_size_2gb">2GB</string>
     <string name="settings_cache_size_64mb">64MB</string>
@@ -1394,7 +1394,7 @@
     <string name="settings_cache_info_4">Pemangkasan otomatis menjaga cache dalam batas ukuran yang Anda pilih</string>
     <!-- Updates Settings -->
     <string name="updates_status_error">Kesalahan</string>
-    <string name="updates_rhythm_logo_cd">Rhythm Logo</string>
+    <string name="updates_rhythm_logo_cd">T2Rhythm Logo</string>
     <string name="updates_version_prefix">V %1$s</string>
     <string name="updates_released_prefix">Dirilis: %1$s</string>
     <string name="updates_unknown_error">Terjadi kesalahan yang tidak diketahui</string>
@@ -1411,7 +1411,7 @@
     <string name="settings_interval_once_a_day">Sekali sehari</string>
     <string name="settings_interval_once_a_week">Seminggu sekali</string>
     <!-- Experimental Features -->
-    <string name="streaming_integration_title">Rhythm Go</string>
+    <string name="streaming_integration_title">T2Rhythm Go</string>
     <string name="streaming_integration_services">Layanan Integrasi</string>
     <string name="streaming_integration_services_empty">Belum ada layanan yang terhubung</string>
     <string name="streaming_settings_title">Pengaturan</string>
@@ -1419,7 +1419,7 @@
     <string name="streaming_settings_group_actions">Tindakan</string>
     <string name="streaming_settings_preferred_service">Layanan Pilihan</string>
     <string name="streaming_settings_quality">Kualitas Streaming</string>
-    <string name="streaming_settings_service_sheet_desc">Pilih layanan terhubung mana yang harus diprioritaskan oleh Rhythm Go secara default.</string>
+    <string name="streaming_settings_service_sheet_desc">Pilih layanan terhubung mana yang harus diprioritaskan oleh T2Rhythm Go secara default.</string>
     <string name="streaming_settings_quality_sheet_desc">Pilih kualitas audio pilihan Anda untuk pemutaran streaming.</string>
     <string name="streaming_quality_low">Rendah</string>
     <string name="streaming_quality_normal">Biasa</string>
@@ -1429,7 +1429,7 @@
     <string name="streaming_quality_normal_desc">Kualitas dan penggunaan data seimbang (~160 kbps).</string>
     <string name="streaming_quality_high_desc">Audio berkualitas tinggi (~320 kbps).</string>
     <string name="streaming_quality_lossless_desc">Kualitas terbaik jika didukung (FLAC/ALAC).</string>
-    <string name="streaming_settings_group_wellbeing">Rhythm Wawasan</string>
+    <string name="streaming_settings_group_wellbeing">T2Rhythm Wawasan</string>
     <string name="streaming_open_full_settings">Buka Pengaturan Penuh</string>
     <string name="streaming_open_full_settings_desc">Buka pengaturan seluruh aplikasi yang dibagikan ke seluruh mode</string>
     <string name="streaming_switch_to_local_mode">Beralih ke Mode Lokal</string>
@@ -1453,7 +1453,7 @@
     <string name="streaming_service_setup_password">Kata sandi</string>
     <string name="streaming_service_setup_password_hint">Masukkan kata sandi akun Anda</string>
     <string name="streaming_service_setup_remember_password">Ingat kata sandi pada perangkat ini</string>
-    <string name="streaming_service_setup_remember_password_desc">Simpan kredensial secara lokal sehingga Rhythm dapat terhubung kembali secara otomatis nanti.</string>
+    <string name="streaming_service_setup_remember_password_desc">Simpan kredensial secara lokal sehingga T2Rhythm dapat terhubung kembali secara otomatis nanti.</string>
     <string name="streaming_service_setup_connecting">Menghubungkan…</string>
     <string name="streaming_service_setup_disconnecting">Memutuskan sambungan…</string>
     <string name="streaming_service_setup_action_hint">Isi kolom yang wajib diisi untuk menghubungkan layanan ini.</string>
@@ -1641,7 +1641,7 @@
     <string name="settings_bluetooth_lyrics_enabled">Lirik Notifikasi</string>
     <string name="settings_bluetooth_lyrics_enabled_desc">Kirim baris lirik tersinkron sebagai metadata trek ke perangkat Bluetooth, perangkat wearable, dan pendengar notifikasi</string>
     <string name="exp_go_mode">Go Mode</string>
-    <string name="exp_go_mode_desc">Beralih ke Rhythm Go streaming mode</string>
+    <string name="exp_go_mode_desc">Beralih ke T2Rhythm Go streaming mode</string>
     <!-- Home Screen Search Strings -->
     <string name="settings_home_section_order">Urutan Bagian</string>
     <string name="settings_home_section_order_desc">Susun ulang bagian beranda</string>
@@ -1654,13 +1654,13 @@
     <string name="settings_home_carousel_auto_scroll">Gulir Otomatis Korsel</string>
     <string name="settings_home_carousel_auto_scroll_desc">Korsel gulir otomatis</string>
     <!-- Notifications Search Strings -->
-    <string name="settings_notifications_rhythm_guard_alerts">Rhythm Peringatan Keamanan Penjaga</string>
+    <string name="settings_notifications_rhythm_guard_alerts">T2Rhythm Peringatan Keamanan Penjaga</string>
     <string name="settings_notifications_rhythm_guard_alerts_desc">Beri tahu saat mendengarkan peringatan risiko dipicu</string>
-    <string name="settings_notifications_rhythm_guard_timers">Rhythm Pengatur Waktu Istirahat Penjaga</string>
+    <string name="settings_notifications_rhythm_guard_timers">T2Rhythm Pengatur Waktu Istirahat Penjaga</string>
     <string name="settings_notifications_rhythm_guard_timers_desc">Beritahukan jadwal istirahat dan hitungan mundur batas waktu</string>
-    <string name="settings_notifications_rhythm_pulse">Rhythm Kiat</string>
+    <string name="settings_notifications_rhythm_pulse">T2Rhythm Kiat</string>
     <string name="settings_notifications_rhythm_pulse_desc">Pengingat ramah dan tip mendengarkan.</string>
-    <string name="settings_notifications_rhythm_pulse_interval">Rhythm Interval Tip</string>
+    <string name="settings_notifications_rhythm_pulse_interval">T2Rhythm Interval Tip</string>
     <string name="settings_notifications_rhythm_pulse_interval_desc">Seberapa sering pemberitahuan tip dikirimkan</string>
     <!-- Expressive Shapes Search Strings -->
     <string name="settings_expressive_shapes_enabled">Bentuk Ekspresif</string>
@@ -1744,7 +1744,7 @@
     <!-- Library Screen scanning overlay -->
     <string name="settings_scanning">Pemindaian</string>
     <!-- Settings Search -->
-    <string name="search_settings_hint">Pencarian Rhythm Pengaturan…</string>
+    <string name="search_settings_hint">Pencarian T2Rhythm Pengaturan…</string>
     <string name="clear_search">Hapus pencarian</string>
     <string name="no_results_found">Tidak ada hasil yang ditemukan</string>
     <string name="try_different_search">Coba istilah pencarian lain</string>
@@ -1783,14 +1783,14 @@
     <string name="theme_font_imported">Font berhasil diimpor</string>
     <string name="theme_font_invalid">Format file font tidak valid</string>
     <string name="ui_apply">Terapkan</string>
-    <string name="crashactivity_uh_oh_looks_like">Eh oh! Sepertinya Rhythm mendapatkan hasil yang buruk!</string>
+    <string name="crashactivity_uh_oh_looks_like">Eh oh! Sepertinya T2Rhythm mendapatkan hasil yang buruk!</string>
     <string name="crashactivity_dont_fret_our_app">Jangan khawatir! Aplikasi kami baru saja mengalami sedikit \'oopsie\'. Silakan bagikan detail kerusakan di bawah – ini seperti pesan rahasia bagi pengembang kami untuk memperbaikinya! Kalau begitu, mari kita coba lagi, oke?</string>
     <string name="crashactivity_secret_crash_scrolls">Gulungan Kecelakaan Rahasia</string>
     <string name="crashactivity_share">Bagikan</string>
     <string name="externalplaybackactivity_unable_to_open_audio">Tidak dapat membuka file audio</string>
     <string name="externalplaybackactivity_unsupported_or_unreadable_audio">File audio tidak didukung atau tidak dapat dibaca</string>
     <string name="externalplaybackactivity_failed_to_play_audio">Gagal memutar file audio</string>
-    <string name="externalplaybackactivity_open_rhythm">Buka Rhythm</string>
+    <string name="externalplaybackactivity_open_rhythm">Buka T2Rhythm</string>
     <string name="mainactivity_error_opening_file">Kesalahan saat membuka file</string>
     <string name="mainactivity_unsupported_file_format">Format file tidak didukung</string>
     <string name="mainactivity_failed_to_initialize_media">Gagal menginisialisasi pemutar media</string>
@@ -1877,7 +1877,7 @@
     <string name="streamingmusicviewmodel_failed_to_play_next">Gagal memutar berikutnya: Tidak dapat menyelesaikan URL</string>
     <string name="streamingmusicviewmodel_failed_to_add_to">Gagal menambahkan ke antrian: Tidak dapat menyelesaikan URL</string>
     <string name="rhythmmusicwidget_album_art_placeholder">Penampung Seni Album</string>
-    <string name="rhythmwidgetpreview_rhythm_glance_widget_previews">Pratinjau Widget Rhythm Glance</string>
+    <string name="rhythmwidgetpreview_rhythm_glance_widget_previews">Pratinjau Widget T2Rhythm Glance</string>
     <string name="rhythmwidgetpreview_str_11_compact_widget">Widget Ringkas 1×1</string>
     <string name="rhythmwidgetpreview_str_21_horizontal_strip">Garis Horisontal 2×1</string>
     <string name="rhythmwidgetpreview_str_22_small_widget">Widget Kecil 2×2</string>
@@ -1919,7 +1919,7 @@
     <string name="betaprogrampopup_early_access">Akses Awal</string>
     <string name="betaprogrampopup_shape_the_future">Membentuk Masa Depan</string>
     <string name="betaprogrampopup_direct_feedback">Umpan Balik Langsung</string>
-    <string name="betaprogrampopup_youre_part_of_an">Anda adalah bagian dari grup eksklusif yang membantu membentuk masa depan pemutar musik Rhythm</string>
+    <string name="betaprogrampopup_youre_part_of_an">Anda adalah bagian dari grup eksklusif yang membantu membentuk masa depan pemutar musik T2Rhythm</string>
     <string name="betaprogrampopup_start_exploring">Mulai Menjelajah</string>
     <string name="switchmodedialog_switch_play">Ganti &amp; Mainkan</string>
     <string name="fullscreenlyricsview_cover_artwork">Karya Seni Sampul</string>
@@ -1985,7 +1985,7 @@
     <string name="lyricssourcesettingsscreen_retry_using_fallbacks">Coba lagi menggunakan fallback</string>
     <string name="lyricssourcesettingsscreen_embedded_lyrics_are_stored">• Embedded lyrics are stored in your audio files</string>
     <string name="miniplayercustomizationsettingsscreen_miniplayer_theme">Tema Pemutar Mini</string>
-    <string name="miniplayercustomizationsettingsscreen_choose_between_rhythm_default">Pilih antara Rhythm Tema default atau Ekspresif</string>
+    <string name="miniplayercustomizationsettingsscreen_choose_between_rhythm_default">Pilih antara T2Rhythm Tema default atau Ekspresif</string>
     <string name="miniplayercustomizationsettingsscreen_integrated_directly_into_the">Terintegrasi langsung ke latar belakang MiniPlayer</string>
     <string name="performancesettingsscreen_performance">Mode Ringan</string>
     <string name="performancesettingsscreen_disable_haptics">Nonaktifkan Haptik</string>
@@ -2002,7 +2002,7 @@
     <string name="rhythmguardsettingsscreen_none">Tidak ada</string>
     <string name="rhythmguardsettingsscreen_general_settings">Pengaturan Umum</string>
     <string name="rhythmguardsettingsscreen_library_data">Data Perpustakaan</string>
-    <string name="rhythmguardsettingsscreen_stats_rhythm_guard">Statistik &amp; Penjaga Rhythm</string>
+    <string name="rhythmguardsettingsscreen_stats_rhythm_guard">Statistik &amp; Penjaga T2Rhythm</string>
     <string name="settingsscreen_audio_offload">Pembongkaran Audio</string>
     <string name="settingsscreen_personalization">Personalisasi</string>
     <string name="settingsscreen_library_focus">Fokus Perpustakaan</string>
@@ -2097,7 +2097,7 @@
     <string name="pulse_marathon">Modus maraton</string>
     <!-- Settings Tips Details -->
     <string name="settings_tip_theme_desc_1">Segarkan pemutar musik Anda dengan warna hitam AMOLED yang cerah dan warna-warna pastel yang indah.</string>
-    <string name="settings_tip_theme_desc_2">Jadikan Rhythm benar-benar milik Anda dengan mencocokkan aksen aplikasi dengan sistem Anda.</string>
+    <string name="settings_tip_theme_desc_2">Jadikan T2Rhythm benar-benar milik Anda dengan mencocokkan aksen aplikasi dengan sistem Anda.</string>
     <string name="settings_tip_media_scan_desc_1">Hindari klip audio yang tidak diinginkan. Tentukan secara eksplisit folder mana yang harus kita pindai musiknya.</string>
     <string name="settings_tip_media_scan_desc_2">Jauhkan catatan suara dan nada dering dari daftar putar Anda menggunakan folder fokus.</string>
     <string name="settings_tip_sleep_timer_desc_1">Tertidur saat musik diputar. Kami akan menjedanya secara otomatis.</string>
@@ -2106,7 +2106,7 @@
     <string name="settings_tip_equalizer_desc_2">Sesuaikan suara ke headphone Anda dengan aman menggunakan efek audio canggih kami.</string>
     <string name="settings_tip_backup_active_desc_1">Pencadangan otomatis aktif. Verifikasi bagian cadangan Anda sehingga pemulihan tetap bersih.</string>
     <string name="settings_tip_backup_active_desc_2">Perlindungan diaktifkan: jadwal terlihat bagus. Jalankan pencadangan manual sebelum pengeditan besar.</string>
-    <string name="settings_tip_backup_inactive_desc_1">Pencadangan otomatis tidak aktif. Aktifkan untuk melindungi daftar putar dan statistik Penjaga Rhythm.</string>
+    <string name="settings_tip_backup_inactive_desc_1">Pencadangan otomatis tidak aktif. Aktifkan untuk melindungi daftar putar dan statistik Penjaga T2Rhythm.</string>
     <string name="settings_tip_backup_inactive_desc_2">Belum ada jaring pengaman. Aktifkan pencadangan untuk menghindari kehilangan pengaturan Anda.</string>
     <string name="settings_tip_updates_active_desc_1">Pembaruan diaktifkan. Tetap aktifkan untuk perbaikan dan peningkatan kinerja.</string>
     <string name="settings_tip_updates_active_desc_2">Anda siap menerima pembaruan. Periksa preferensi saluran untuk stabilitas vs kesegaran.</string>
@@ -2149,7 +2149,7 @@
     <string name="font_jetbrains_desc">Font monospace sempurna untuk konten teknis</string>
     <string name="font_quicksand_desc">Font bulat dengan tampilan lebih lembut dan ramah</string>
     <!-- Predefined Color Schemes -->
-    <string name="color_scheme_default_title">Rhythm Bawaan</string>
+    <string name="color_scheme_default_title">T2Rhythm Bawaan</string>
     <string name="color_scheme_default_desc">Material 3 garis dasar ungu dengan aksen merah jambu kemerahan</string>
     <string name="color_scheme_warm_title">Matahari Terbenam yang Hangat</string>
     <string name="color_scheme_warm_desc">Warna oranye dan merah yang nyaman untuk suasana hangat</string>
@@ -2184,7 +2184,7 @@
     <string name="lyrics_settings_embedded_first">Tertanam Pertama</string>
     <string name="lyrics_settings_embedded_first_desc">Lebih suka lirik yang disematkan dalam file audio, mundur ke API online</string>
     <string name="lyrics_settings_online_first">Daring Dulu</string>
-    <string name="lyrics_settings_online_first_desc">Lebih memilih API online (Rhythm kata demi kata, LRCLib), mundur ke yang tertanam</string>
+    <string name="lyrics_settings_online_first_desc">Lebih memilih API online (T2Rhythm kata demi kata, LRCLib), mundur ke yang tertanam</string>
     <string name="lyrics_settings_local_first">Lokal Pertama</string>
     <string name="lyrics_settings_local_first_desc">Lebih suka file .lrc lokal, lalu lirik yang disematkan, lalu API online</string>
     <string name="lyrics_settings_lyrically_first">Lyrically First</string>
@@ -2228,7 +2228,7 @@
     <string name="device_configuration_custom_preset">Prasetel Khusus</string>
     <string name="device_configuration_custom">Adat</string>
     <string name="device_configuration_active_profile_label">Profil Aktif: %1$s</string>
-    <string name="device_configuration_share_subject">Rhythm Profil EQ: %1$s</string>
+    <string name="device_configuration_share_subject">T2Rhythm Profil EQ: %1$s</string>
     <string name="device_configuration_share_title">Bagikan Profil EQ</string>
     <string name="device_configuration_edit_device">Edit Perangkat</string>
     <string name="device_configuration_add_device">Tambahkan Perangkat</string>
@@ -2274,9 +2274,9 @@
         <item quantity="other">Ekspor %1$d playlist ke:</item>
     </plurals>
     <!-- Mode dialog strings -->
-    <string name="dialog_switch_to_go">Switch to Rhythm Go?</string>
+    <string name="dialog_switch_to_go">Switch to T2Rhythm Go?</string>
     <string name="dialog_switch_to_local">Beralih ke Lokal?</string>
-    <string name="dialog_switch_to_go_desc">This item belongs to Rhythm Go. Beralih ke Mode Streaming sekarang untuk melakukan streaming dan memutarnya?</string>
+    <string name="dialog_switch_to_go_desc">This item belongs to T2Rhythm Go. Beralih ke Mode Streaming sekarang untuk melakukan streaming dan memutarnya?</string>
     <string name="dialog_switch_to_local_desc">Item ini milik Perpustakaan Lokal Anda. Beralih ke Mode Lokal sekarang untuk memutar lagu offline Anda?</string>
     <!-- Section order content descriptions -->
 
@@ -2451,7 +2451,7 @@
     <string name="carousel_style_hero">Pahlawan</string>
     <string name="carousel_style_hero_desc">1 album intip samping</string>
     <!-- Theme names -->
-    <string name="theme_rhythm">Rhythm</string>
+    <string name="theme_rhythm">T2Rhythm</string>
     <string name="theme_expressive">Ekspresif</string>
     <string name="settings_managed_by_expressive_shapes">Dikelola oleh Bentuk Ekspresif</string>
     <!-- Shape targets -->
@@ -2497,7 +2497,7 @@
     <string name="backup_restore_section_collection">Koleksi</string>
     <string name="backup_restore_section_collection_desc">Daftar putar, favorit, daftar hitam/daftar putih, folder yang disematkan.</string>
     <string name="backup_restore_section_insight">Wawasan</string>
-    <string name="backup_restore_section_insight_desc">Jumlah pemutaran, statistik harian, genre, dan konfigurasi Penjaga Rhythm.</string>
+    <string name="backup_restore_section_insight_desc">Jumlah pemutaran, statistik harian, genre, dan konfigurasi Penjaga T2Rhythm.</string>
     <string name="backup_restore_status_included">Termasuk</string>
     <string name="backup_restore_status_excluded">Dikecualikan</string>
     <plurals name="backup_restore_sections_enabled">
@@ -2517,7 +2517,7 @@
     <string name="library_bottom_bar_select_songs">Pilih lagu</string>
     <string name="library_bottom_bar_more_actions">Lebih banyak tindakan</string>
     <string name="library_play_selected">Putar (%1$d)</string>
-    <!-- Rhythm Guard Comic Status Subtitles -->
+    <!-- T2Rhythm Guard Comic Status Subtitles -->
     <!-- Player, Bottomsheet, and Popup translations -->
     <string name="unknown_track">Jalur Tidak Diketahui</string>
     <string name="unknown_song">Lagu Tidak Dikenal</string>
@@ -2553,7 +2553,7 @@
     <string name="settings_system_notification_channels">Pengaturan Notifikasi Android</string>
     <string name="settings_system_notification_channels_desc">Konfigurasikan kanal notifikasi OS, suara, getaran, dan perilaku layar kunci</string>
     <string name="settings_notification_permission_title">Izin Notifikasi Diperlukan</string>
-    <string name="settings_notification_permission_desc">Aktifkan izin notifikasi agar Rhythm dapat menampilkan kontrol media dan pembaruan tugas latar belakang.</string>
+    <string name="settings_notification_permission_desc">Aktifkan izin notifikasi agar T2Rhythm dapat menampilkan kontrol media dan pembaruan tugas latar belakang.</string>
     <string name="settings_notification_permission_grant">Aktifkan Notifikasi</string>
     <string name="settings_queue_autofill">Tambahkan otomatis</string>
     <string name="settings_queue_display">Tampilan antrean</string>
@@ -2634,8 +2634,8 @@
     <string name="settings_artist_artwork_source_disabled">Dinonaktifkan</string>
     <string name="settings_artist_artwork_source_disabled_desc">Jangan ambil atau muat gambar untuk artis</string>
     <string name="settings_rhythm_guard_first_break_dialog_title">Tentang Jeda Mendengarkan</string>
-    <string name="settings_rhythm_guard_first_break_dialog_message">Rhythm Guard menjadwalkan jeda mendengarkan untuk melindungi pendengaran Anda ketika batas paparan harian tercapai. Jeda akan menjeda pemutaran dan mengunci kontrol agar telinga Anda memperoleh waktu istirahat yang memadai.\n\nUntuk jeda pertama ini, Anda dapat memilih untuk menonaktifkan Rhythm Guard. Namun, selama jeda berikutnya, Anda tidak dapat menonaktifkan Rhythm Guard hingga waktu jeda berakhir. Anda selalu dapat menonaktifkannya atau menyesuaikan pengaturan di luar jeda aktif.</string>
-    <string name="settings_rhythm_guard_first_break_dialog_turn_off">Nonaktifkan Rhythm Guard</string>
+    <string name="settings_rhythm_guard_first_break_dialog_message">T2Rhythm Guard menjadwalkan jeda mendengarkan untuk melindungi pendengaran Anda ketika batas paparan harian tercapai. Jeda akan menjeda pemutaran dan mengunci kontrol agar telinga Anda memperoleh waktu istirahat yang memadai.\n\nUntuk jeda pertama ini, Anda dapat memilih untuk menonaktifkan T2Rhythm Guard. Namun, selama jeda berikutnya, Anda tidak dapat menonaktifkan T2Rhythm Guard hingga waktu jeda berakhir. Anda selalu dapat menonaktifkannya atau menyesuaikan pengaturan di luar jeda aktif.</string>
+    <string name="settings_rhythm_guard_first_break_dialog_turn_off">Nonaktifkan T2Rhythm Guard</string>
     <string name="settings_rhythm_guard_first_break_dialog_start">Mulai Jeda</string>
     <string name="settings_rhythm_guard_locked_during_break">Terkunci selama jeda mendengarkan</string>
     <string name="settings_rhythm_guard_hero_limit_exceeded">Batas terlampaui! Saatnya mengistirahatkan telinga Anda.</string>
@@ -2681,7 +2681,7 @@
     <string name="explorer_no_storage_desc">Hubungkan perangkat penyimpanan atau periksa izin untuk menjelajahi file musik Anda</string>
     <string name="explorer_empty_folder">Folder kosong</string>
     <string name="explorer_empty_folder_desc">Folder ini tidak berisi file audio</string>
-    <string name="onboardingscreen_rhythm_go">Rhythm GO</string>
+    <string name="onboardingscreen_rhythm_go">T2Rhythm GO</string>
     <string name="onboardingscreen_mode_local_desc">Putar file audio yang tersimpan di perangkat Anda</string>
     <string name="onboardingscreen_mode_streaming_desc">Streaming dari server Jellyfin atau Subsonic</string>
     <string name="onboarding_scanning_for_provider">Memindai %1$s…</string>
@@ -2872,7 +2872,7 @@
     <string name="settings_search_api_ytmusic_desc">Cadangan untuk gambar artis dan sampul album</string>
     <string name="widget_cookie_description">Mini player berbentuk cookie yang menampilkan sampul album beserta tombol putar, sebelumnya, dan berikutnya.</string>
     <string name="widget_stats_description">Lihat jumlah hari berturut-turut Anda mendengarkan musik — termasuk rekor streak terbaik Anda.</string>
-    <string name="widget_cookie_section_title">Widget Rhythm Cookie</string>
+    <string name="widget_cookie_section_title">Widget T2Rhythm Cookie</string>
     <string name="widget_cookie_bottom_left">Tindakan Kiri Bawah</string>
     <string name="widget_cookie_bottom_right">Tindakan Kanan Bawah</string>
     <string name="widget_cookie_action_skip">Lewati Trek</string>
@@ -2886,7 +2886,7 @@
     <string name="widget_cookie_action_favorite_desc">Mengaktifkan atau menonaktifkan status favorit lagu saat ini</string>
     <string name="widget_cookie_action_none">Tidak Ada</string>
     <string name="widget_cookie_action_none_desc">Menyembunyikan tombol sudut ini</string>
-    <string name="widget_stats_section_title">Widget Statistik Rhythm</string>
+    <string name="widget_stats_section_title">Widget Statistik T2Rhythm</string>
     <string name="widget_stats_time_range">Rentang Waktu Mendengarkan</string>
     <string name="widget_stats_range_all_time">Sepanjang Waktu</string>
     <string name="widget_stats_range_all_time_desc">Total waktu mendengarkan sejak Anda mulai menggunakan aplikasi</string>
@@ -2908,15 +2908,15 @@
     <string name="mirror_changes_across_both">Terapkan perubahan pada keduanya</string>
     <string name="add_to_playlist_named">Tambahkan ke %1$s</string>
     <string name="released_on">Dirilis: %1$s</string>
-    <string name="rhythmcookiewidget_rhythm_logo">Logo Rhythm</string>
+    <string name="rhythmcookiewidget_rhythm_logo">Logo T2Rhythm</string>
     <string name="rhythmlyricswidget_no_lyrics_available">Tidak ada lirik tersedia</string>
     <string name="rhythmlyricswidget_tagline">Musik Anda, Irama Anda</string>
-    <string name="rhythmlyricswidget_open_to_play">Buka Rhythm untuk memutar musik</string>
+    <string name="rhythmlyricswidget_open_to_play">Buka T2Rhythm untuk memutar musik</string>
     <string name="rhythmstatswidget_listening">mendengarkan</string>
     <string name="rhythmwidgetpreview_lyrics_widget">Widget Lirik</string>
     <string name="rhythmwidgetpreview_lyrics_3x2">Widget Lirik — 3×2</string>
     <string name="rhythmwidgetpreview_lyrics_4x3">Widget Lirik — 4×3</string>
-    <string name="rhythmwidgetpreview_cookie_widget">Widget Rhythm Cookie</string>
+    <string name="rhythmwidgetpreview_cookie_widget">Widget T2Rhythm Cookie</string>
     <string name="rhythmwidgetpreview_cookie_2x2">Widget Cookie — 2×2</string>
     <string name="rhythmwidgetpreview_cookie_resized_wide">Widget Cookie — diubah ukurannya menjadi lebar</string>
     <string name="player_theme_default_name">Default (Expressive)</string>
@@ -2938,9 +2938,9 @@
     <string name="tile_play_music">Putar Musik</string>
     <string name="tile_playing_format">Sedang diputar: %1$s</string>
     <string name="tile_paused_format">Dijeda: %1$s</string>
-    <string name="backup_clip_label">Cadangan Rhythm</string>
-    <string name="crashlog_clip_label">Log Kerusakan Rhythm</string>
-    <string name="rhythmguardsettingsscreen_status">Status Rhythm Guard</string>
+    <string name="backup_clip_label">Cadangan T2Rhythm</string>
+    <string name="crashlog_clip_label">Log Kerusakan T2Rhythm</string>
+    <string name="rhythmguardsettingsscreen_status">Status T2Rhythm Guard</string>
     <string name="betaprogrampopup_early_access_desc">Coba fitur baru sebelum rilis resmi</string>
     <string name="betaprogrampopup_shape_the_future_desc">Masukan Anda secara langsung memengaruhi pengembangan</string>
     <string name="betaprogrampopup_direct_feedback_desc">Berkomunikasi langsung dengan tim pengembang</string>
@@ -2951,7 +2951,7 @@
     <string name="search_no_results_query_format">Kami tidak menemukan apa pun yang sesuai dengan %1$s.</string>
     <string name="search_view_all_count_format">Lihat semua %1$d lagu</string>
     <string name="onboarding_step_counter">Langkah %1$d dari %2$d</string>
-    <string name="onboarding_configure_desc">Konfigurasikan Rhythm sebagai pemutar musik lokal offline untuk file audio yang tersimpan di perangkat Anda, atau hubungkan ke layanan streaming yang Anda host sendiri.</string>
+    <string name="onboarding_configure_desc">Konfigurasikan T2Rhythm sebagai pemutar musik lokal offline untuk file audio yang tersimpan di perangkat Anda, atau hubungkan ke layanan streaming yang Anda host sendiri.</string>
     <string name="onboarding_connected_to_format">Terhubung ke %1$s sebagai %2$s</string>
     <string name="mainactivity_preparing">Menyiapkan…</string>
     <string name="playlistsongoptions_local_song">Lagu Lokal</string>
@@ -3030,8 +3030,8 @@
     <string name="streaming_downloading">Mengunduh…</string>
     <string name="streaming_remove_download">Hapus Unduhan</string>
     <string name="streaming_downloaded">Diunduh</string>
-    <string name="rhythm_go_offline_toast">Rhythm Go sedang offline</string>
-    <string name="rhythm_go_online_toast">Rhythm Go kembali online</string>
+    <string name="rhythm_go_offline_toast">T2Rhythm Go sedang offline</string>
+    <string name="rhythm_go_online_toast">T2Rhythm Go kembali online</string>
     <string name="streaming_downloaded_albums">Album yang Diunduh</string>
     <string name="streaming_syncing_downloads_subtitle">Tersedia saat sinkronisasi</string>
 </resources>

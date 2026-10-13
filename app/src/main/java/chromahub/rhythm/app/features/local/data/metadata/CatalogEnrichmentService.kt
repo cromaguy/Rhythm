@@ -54,6 +54,7 @@ class CatalogEnrichmentService private constructor(private val context: Context)
     private val providers: Map<Provider, MusicProvider> = listOf(BugsMobileProvider(http), BugsPcProvider(http),
         GenieProvider(http), MelonProvider(http)).associateBy { it.provider }
 
+    fun onlineArtworkEnabled() = enabled() && preferences.options.value.artwork && preferences.options.value.artworkSource !in setOf("LOCAL_ONLY", "LEGACY", "DISABLED") && preferences.options.value.providers.isNotEmpty()
     fun enabled() = preferences.options.value.enabled && AppSettings.getInstance(context).integrationsEnabled.value
     fun songKey(song: Song): String = song.path?.takeIf(String::isNotBlank) ?: song.uri.toString().substringBefore('?')
     fun albumKey(title: String, artist: String) = "${CatalogIdentity.normalize(artist)}:${CatalogIdentity.normalize(title)}"
@@ -69,6 +70,11 @@ class CatalogEnrichmentService private constructor(private val context: Context)
     }))
     fun artworkRemoved(song: Song) = context.getSharedPreferences("artwork_overrides", Context.MODE_PRIVATE)
         .getBoolean("removed_${song.id}", false)
+    fun acceptForcedArtwork(song: Song, uri: Uri?) {
+        if (preferences.options.value.replaces(CatalogField.TRACK_IMAGE) && uri?.scheme == "file" && usableArtwork(uri)) {
+            context.getSharedPreferences("artwork_overrides", Context.MODE_PRIVATE).edit { remove("removed_${song.id}") }
+        }
+    }
     fun effectiveAlbumArtist(song: Song) = song.albumArtist?.takeUnless(CatalogIdentity::missing) ?: song.artist
     fun image(record: StoredCatalog?): Uri? = record?.imageFile?.let {
         val file = File(File(root, "images"), File(it).name)
@@ -84,57 +90,87 @@ class CatalogEnrichmentService private constructor(private val context: Context)
             else -> false
         }
     }
-    private fun changed() { revision.update { it + 1 } }
+    private fun changed() { revision.update { it + 1 }; PersonalArchive.enqueue(context) }
     private fun save(kind: EntityKind, key: String, document: CatalogDocument, retryAfter: Long,
-                     imageFile: String? = null, replace: Boolean = false, attemptedFields: Set<CatalogField> = emptySet()): StoredCatalog {
-        val result = if (preferences.options.value.permanent) store.merge(kind, key, document, retryAfter, imageFile, replace, attemptedFields)
+                     imageFile: String? = null, replace: Boolean = false, attemptedFields: Set<CatalogField> = emptySet(), reset: Boolean = false, matchingPolicy: String? = null): StoredCatalog {
+        val result = if (preferences.options.value.permanent) store.merge(kind, key, document, retryAfter, imageFile, replace, attemptedFields, reset, matchingPolicy)
             else {
-                val existing = read(kind, key)
+                val existing = if (reset) null else read(kind, key)
                 val fields = existing?.document?.values.orEmpty().associateBy { it.field }.toMutableMap()
                 document.values.filter { replace || it.hasValue() }.forEach { if (replace || fields[it.field]?.hasValue() != true) fields[it.field] = it }
                 StoredCatalog(CatalogDocument(kind, fields.values.toList()), retryAfter, imageFile = imageFile ?: existing?.imageFile,
-                    attemptedFields = attemptedFields + existing?.attemptedFields.orEmpty())
+                    attemptedFields = attemptedFields + existing?.attemptedFields.orEmpty(), matchingPolicy = matchingPolicy ?: existing?.matchingPolicy)
             }
         temporary[cacheKey(kind, key)] = result
         projections[cacheKey(kind, key)] = compact(result)
+        if (preferences.options.value.permanent && kind != EntityKind.TRACK) {
+            val nameField = if (kind == EntityKind.ARTIST) CatalogField.ARTIST_NAME else CatalogField.ALBUM_TITLE
+            val name = result.document[nameField]?.takeIf(String::isNotBlank) ?: key
+            val safe = name.replace(Regex("[^\\p{L}\\p{N} ._-]"), "_").take(70)
+            val folder = File(root, "entities/${if (kind == EntityKind.ARTIST) "artists" else "albums"}/$safe-${CatalogFileStore.hash(key).take(12)}").apply { mkdirs() }
+            val json = com.google.gson.JsonObject().apply {
+                addProperty("key", key); addProperty("kind", kind.name)
+                add("document", com.google.gson.JsonParser.parseString(CatalogDocumentCodec.encode(result.document)))
+            }
+            PersonalArchive.atomicWrite(File(folder, "metadata.json"), json.toString().toByteArray())
+            val description = result.document[if (kind == EntityKind.ARTIST) CatalogField.ARTIST_DESCRIPTION else CatalogField.ALBUM_DESCRIPTION]
+            description?.let { PersonalArchive.atomicWrite(File(folder, "about.txt"), it.toByteArray()) }
+            image(result)?.path?.let { path ->
+                val destination = File(folder, "artwork.jpg")
+                if (!destination.exists() || destination.length() != File(path).length()) PersonalArchive.atomicWrite(destination, File(path).readBytes())
+            }
+        }
         changed()
         return result
     }
 
-    /** Missing fields only, exact identities only, one request at a time per music service. */
-    suspend fun collect(kind: EntityKind, key: String, name: String, artist: String?, wanted: Set<CatalogField>): StoredCatalog? =
-        withContext(Dispatchers.IO) { entityLocks.computeIfAbsent(cacheKey(kind, key)) { Mutex() }.withLock {
-            var record = read(kind, key)
-            if (wanted.all { record?.document?.has(it) == true } || !enabled() || CatalogIdentity.missing(name)) return@withLock record
-            if ((record?.retryAfter ?: 0) > System.currentTimeMillis() && wanted.all {
+    /** Stable service order, exact identities and duration corroboration for audio writes. */
+    suspend fun collect(kind: EntityKind, key: String, name: String, artist: String?, wanted: Set<CatalogField>,
+                        durationMs: Long = 0, album: String? = null, selectedProviders: Set<Provider>? = null,
+                        replace: Boolean = false): StoredCatalog? = withContext(Dispatchers.IO) {
+        val selection = selectedProviders ?: preferences.options.value.providers
+        val policy = selection.sortedByDescending { it.priority }.joinToString { it.name } + if (kind == EntityKind.TRACK) ":${durationMs}:${preferences.options.value.strictDuration}:${preferences.options.value.durationTolerancePercent}" else ""
+        val recordKey = if (selectedProviders == null) key else "source:${selection.sortedByDescending { it.priority }.joinToString { it.name }}:$key"
+        entityLocks.computeIfAbsent(cacheKey(kind, recordKey)) { Mutex() }.withLock {
+            var record = read(kind, recordKey)
+            val lengthVerified = kind != EntityKind.TRACK || durationMs <= 0 || !preferences.options.value.strictDuration || CatalogIdentity.durationMatches(durationMs, record?.document?.get(CatalogField.TRACK_DURATION_MS)?.toLongOrNull(), preferences.options.value.durationTolerancePercent)
+            if ((!replace && lengthVerified && wanted.all { record?.document?.has(it) == true }) || !enabled() || CatalogIdentity.missing(name)) return@withLock record
+            if (!replace && record?.matchingPolicy == policy && (record?.retryAfter ?: 0) > System.currentTimeMillis() && wanted.all {
                     record?.document?.has(it) == true || it in record?.attemptedFields.orEmpty()
-                }) return@withLock record
+                }) return@withLock record.takeIf { lengthVerified }
             val values = record?.document?.values.orEmpty().associateBy { it.field }.toMutableMap()
-            for (provider in preferences.options.value.providers) {
+            if (!lengthVerified) values.clear() else if (replace) wanted.forEach(values::remove)
+            for (provider in selection.intersect(preferences.options.value.providers).sortedByDescending { it.priority }) {
                 if (wanted.all { values[it]?.hasValue() == true }) break
                 val query = listOfNotNull(name, artist?.takeUnless(CatalogIdentity::missing)).joinToString(" ")
                 val hits = search.search(provider, kind, query, 8)
-                val hit = CatalogIdentity.select(hits, name, artist) ?: continue
+                val candidates = if (kind == EntityKind.TRACK) hits.filter {
+                    CatalogIdentity.titleMatches(name, it.title) && (it.artists == null || artist != null && CatalogIdentity.artistMatches(artist, it.artists.orEmpty()))
+                }.distinctBy { it.providerId }.take(3) else listOfNotNull(CatalogIdentity.select(hits, name, artist))
                 val source = providers.getValue(provider)
-                val doc = when (kind) {
+                val documents = candidates.mapNotNull { hit -> when (kind) {
                     EntityKind.TRACK -> source.track(hit.providerId)?.let(CatalogDocument::from)
                     EntityKind.ALBUM -> source.album(hit.providerId)?.let(CatalogDocument::from)
                     EntityKind.ARTIST -> source.artist(hit.providerId)?.let(CatalogDocument::from)
-                } ?: continue
-                val verified = when (kind) {
+                } }.filter { doc -> when (kind) {
                     EntityKind.TRACK -> CatalogIdentity.titleMatches(name, doc[CatalogField.TRACK_TITLE].orEmpty()) &&
-                        !artist.isNullOrBlank() && CatalogIdentity.artistMatches(artist, doc[CatalogField.TRACK_ARTISTS].orEmpty())
+                        !artist.isNullOrBlank() && CatalogIdentity.artistMatches(artist, doc[CatalogField.TRACK_ARTISTS].orEmpty()) &&
+                        (!preferences.options.value.strictDuration || CatalogIdentity.durationMatches(durationMs, doc[CatalogField.TRACK_DURATION_MS]?.toLongOrNull(), preferences.options.value.durationTolerancePercent))
                     EntityKind.ALBUM -> CatalogIdentity.titleMatches(name, doc[CatalogField.ALBUM_TITLE].orEmpty()) &&
                         !artist.isNullOrBlank() && CatalogIdentity.artistMatches(artist, doc[CatalogField.ALBUM_ARTISTS].orEmpty())
                     EntityKind.ARTIST -> CatalogIdentity.artistMatches(name, doc[CatalogField.ARTIST_NAME].orEmpty())
-                }
-                if (!verified) continue
+                } }
+                val preferred = if (documents.size > 1 && !CatalogIdentity.missing(album)) documents.filter {
+                    CatalogIdentity.titleMatches(album.orEmpty(), it[CatalogField.TRACK_ALBUM_TITLE].orEmpty())
+                } else documents
+                val doc = preferred.singleOrNull() ?: continue
                 doc.values.forEach { if (values[it.field]?.hasValue() != true && it.hasValue()) values[it.field] = it }
             }
             val next = System.currentTimeMillis() + 7 * 24 * 3600_000L
-            record = save(kind, key, CatalogDocument(kind, values.values.toList()), next, attemptedFields = wanted)
-            record
-        } }
+            record = save(kind, recordKey, CatalogDocument(kind, values.values.toList()), next, replace = replace || !lengthVerified, attemptedFields = wanted, reset = !lengthVerified, matchingPolicy = policy)
+            record.takeIf { kind != EntityKind.TRACK || durationMs <= 0 || !preferences.options.value.strictDuration || CatalogIdentity.durationMatches(durationMs, it?.document?.get(CatalogField.TRACK_DURATION_MS)?.toLongOrNull(), preferences.options.value.durationTolerancePercent) }
+        }
+    }
 
     suspend fun persistArtwork(kind: EntityKind, key: String, source: Uri?): Uri? = withContext(Dispatchers.IO) {
         if (source == null || !preferences.options.value.permanent) return@withContext source
@@ -166,9 +202,16 @@ class CatalogEnrichmentService private constructor(private val context: Context)
         }
     }
 
-    suspend fun fetchedImage(kind: EntityKind, key: String, name: String, artist: String? = null): Uri? {
+    suspend fun fetchedImage(kind: EntityKind, key: String, name: String, artist: String? = null, durationMs: Long = 0, album: String? = null): Uri? {
         val field = when (kind) { EntityKind.TRACK -> CatalogField.TRACK_IMAGE; EntityKind.ALBUM -> CatalogField.ALBUM_IMAGE; EntityKind.ARTIST -> CatalogField.ARTIST_IMAGE }
-        val record = collect(kind, key, name, artist, setOf(field))
+        val selection = when (preferences.options.value.artworkSource) {
+            "BUGS" -> setOf(Provider.BUGS_MOBILE)
+            "MELON" -> setOf(Provider.MELON)
+            "GENIE" -> setOf(Provider.GENIE)
+            "LOCAL_ONLY", "DISABLED", "LEGACY" -> return image(read(kind, key))
+            else -> null
+        }
+        val record = collect(kind, key, name, artist, setOf(field), durationMs, album, selection)
         image(record)?.let { return it }
         val url = record?.document?.get(field) ?: return null
         return persistArtwork(kind, key, Uri.parse(url))
@@ -176,26 +219,28 @@ class CatalogEnrichmentService private constructor(private val context: Context)
     fun apply(song: Song, fillMissingManual: Boolean = false): Song {
         val key = songKey(song)
         val includeMetadata = preferences.options.value.metadata
-        val automatic = if (includeMetadata) projection(EntityKind.TRACK, key).document else CatalogDocument(EntityKind.TRACK, emptyList())
+        val storedTrack = projection(EntityKind.TRACK, key)
+        val verifiedTrack = !preferences.options.value.strictDuration || CatalogIdentity.durationMatches(song.duration, storedTrack.document[CatalogField.TRACK_DURATION_MS]?.toLongOrNull(), preferences.options.value.durationTolerancePercent)
+        val automatic = if (includeMetadata && verifiedTrack) storedTrack.document else CatalogDocument(EntityKind.TRACK, emptyList())
         val manual = projection(EntityKind.TRACK, "manual:$key").document
         val album = projection(EntityKind.ALBUM, albumKey(song.album, effectiveAlbumArtist(song)))
-        fun text(field: CatalogField, current: String?): String? = manual[field]?.takeIf {
+        fun text(field: CatalogField, current: String?): String? = (if (preferences.options.value.replaces(field)) automatic.get(field) else null) ?: manual[field]?.takeIf {
             !fillMissingManual || !CatalogIdentity.missing(it)
         } ?: current?.takeUnless(CatalogIdentity::missing) ?: automatic.get(field) ?: when (field) {
                 CatalogField.TRACK_GENRES -> if (includeMetadata) album.document[CatalogField.ALBUM_GENRES] else null
                 CatalogField.TRACK_RELEASE_DATE -> if (includeMetadata) album.document[CatalogField.ALBUM_RELEASE_DATE] else null
                 else -> null
             } ?: current
-        val autoArt = image(projection(EntityKind.TRACK, key)) ?: image(album)
-        val removed = artworkRemoved(song)
+        val autoArt = (if (verifiedTrack) image(storedTrack) else null) ?: image(album)
+        val removed = artworkRemoved(song) && !preferences.options.value.replaces(CatalogField.TRACK_IMAGE)
         return song.copy(title = text(CatalogField.TRACK_TITLE, song.title).orEmpty(),
             artist = text(CatalogField.TRACK_ARTISTS, song.artist).orEmpty(),
             album = text(CatalogField.TRACK_ALBUM_TITLE, song.album).orEmpty(), genre = text(CatalogField.TRACK_GENRES, song.genre),
-            year = manual[CatalogField.TRACK_RELEASE_DATE]?.toIntOrNull()?.takeIf { !fillMissingManual || it > 0 }
+            year = (if (preferences.options.value.replaces(CatalogField.TRACK_RELEASE_DATE)) automatic[CatalogField.TRACK_RELEASE_DATE].yearOrNull() else null) ?: manual[CatalogField.TRACK_RELEASE_DATE]?.toIntOrNull()?.takeIf { !fillMissingManual || it > 0 }
                 ?: song.year.takeIf { it > 0 } ?: (automatic[CatalogField.TRACK_RELEASE_DATE] ?: if (includeMetadata) album.document[CatalogField.ALBUM_RELEASE_DATE] else null).yearOrNull() ?: 0,
             artworkUri = if (removed) null else {
                 val original = song.artworkUri
-                if (original?.scheme == "file" && original.path?.let { File(it).isFile && !(it.startsWith(context.cacheDir.path) && File(it).name.contains("placeholder", true)) } == true) original
+                if (!preferences.options.value.replaces(CatalogField.TRACK_IMAGE) && original?.scheme == "file" && original.path?.let { File(it).isFile && !(it.startsWith(context.cacheDir.path) && File(it).name.contains("placeholder", true)) } == true) original
                 else autoArt ?: original
             })
     }
@@ -239,6 +284,7 @@ class CatalogEnrichmentService private constructor(private val context: Context)
         save(kind, key, CatalogDocument(kind, listOf(CatalogValue(field, text, "local:description"))), read(kind, key)?.retryAfter ?: 0)
     }
     fun notifyChanged() = changed()
+    fun reloadStored() { temporary.clear(); projections.clear(); changed() }
     suspend fun setPermanent(enabled: Boolean) = withContext(Dispatchers.IO) {
         preferences.update(preferences.options.value.copy(permanent = enabled))
         if (enabled) {

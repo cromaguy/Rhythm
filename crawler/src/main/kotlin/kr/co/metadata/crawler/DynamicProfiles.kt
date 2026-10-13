@@ -41,6 +41,7 @@ enum class CatalogField(val kind: EntityKind, val image: Boolean = false) {
     TRACK_RELEASE_DATE(EntityKind.TRACK),
     TRACK_GENRES(EntityKind.TRACK),
     TRACK_ALBUM_TITLE(EntityKind.TRACK),
+    TRACK_DURATION_MS(EntityKind.TRACK),
 }
 
 enum class ExtractionMode { TEXT, IMAGE_URL, HREF, ATTRIBUTE }

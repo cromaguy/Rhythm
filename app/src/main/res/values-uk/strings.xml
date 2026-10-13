@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Rhythm</string>
+    <string name="app_name">T2Rhythm</string>
     <!-- Common Labels -->
     <string name="home">Головна</string>
     <string name="library">Бібліотека</string>
     <string name="search">Пошук</string>
     <!-- Media3 notification configuration -->
-    <string name="media3_notification_channel_name">Rhythm Музика</string>
+    <string name="media3_notification_channel_name">T2Rhythm Музика</string>
     <string name="media3_notification_channel_description">Елементи керування відтворенням медіа</string>
     <!-- Widget strings -->
-    <string name="widget_description_glance">Rhythm Музика – керуйте відтворенням за допомогою 9 адаптивних макетів, Material 3 дизайну та оновлення стану в реальному часі</string>
-    <string name="widget_name_glance">Rhythm Музика</string>
+    <string name="widget_description_glance">T2Rhythm Музика – керуйте відтворенням за допомогою 9 адаптивних макетів, Material 3 дизайну та оновлення стану в реальному часі</string>
+    <string name="widget_name_glance">T2Rhythm Музика</string>
     <string name="unknown_artist">Невідомий художник</string>
     <string name="play_pause">Відтворення/пауза</string>
     <!-- Widget Settings -->
@@ -25,17 +25,17 @@
     <!-- Settings - Notifications -->
     <string name="settings_notifications">Сповіщення</string>
     <string name="settings_notifications_updates_group">Оновлення програми</string>
-    <string name="settings_notifications_rhythm_guard_group">Rhythm Охоронець</string>
-    <string name="settings_notifications_rhythm_pulse_group">Rhythm Поради</string>
+    <string name="settings_notifications_rhythm_guard_group">T2Rhythm Охоронець</string>
+    <string name="settings_notifications_rhythm_pulse_group">T2Rhythm Поради</string>
     <string name="settings_update_notifications_merged_desc">Отримуйте сповіщення про нові версії та результати фонової перевірки оновлень</string>
     <string name="settings_rhythm_guard_alert_notifications">Сповіщення про безпеку</string>
-    <string name="settings_rhythm_guard_alert_notifications_desc">Показувати сповіщення, коли Rhythm Guard виявляє небезпечний обсяг або вплив</string>
+    <string name="settings_rhythm_guard_alert_notifications_desc">Показувати сповіщення, коли T2Rhythm Guard виявляє небезпечний обсяг або вплив</string>
     <string name="settings_rhythm_guard_timer_notifications">Сповіщення таймера перерви</string>
     <string name="settings_rhythm_guard_timer_notifications_desc">Показувати сповіщення про заплановані перерви та активний відлік часу очікування</string>
-    <string name="settings_rhythm_pulse_notifications">Rhythm Сповіщення про поради</string>
+    <string name="settings_rhythm_pulse_notifications">T2Rhythm Сповіщення про поради</string>
     <string name="settings_rhythm_pulse_notifications_desc">Отримуйте дружні нагадування та поради щодо прослуховування.</string>
     <string name="settings_rhythm_pulse_interval">Інтервал порад</string>
-    <string name="settings_rhythm_pulse_interval_dialog_title">Rhythm Інтервал порад</string>
+    <string name="settings_rhythm_pulse_interval_dialog_title">T2Rhythm Інтервал порад</string>
     <!-- Settings - Queue & Playback -->
     <!-- Settings - Queue -->
     <string name="settings_queue">Черга</string>
@@ -116,18 +116,18 @@
     <string name="operation_exporting_playlists">Резервне копіювання ваших власних списків відтворення…</string>
     <string name="operation_exporting_playlists_location">Резервне копіювання списків відтворення в пам’ять…</string>
     <string name="operation_importing_playlist">Імпорт файлу списку відтворення…</string>
-    <string name="notification_operations_channel_name">Rhythm Бібліотека</string>
+    <string name="notification_operations_channel_name">T2Rhythm Бібліотека</string>
     <string name="notification_operations_channel_desc">Хід і результати для сканування бібліотеки та дій зі списком відтворення</string>
-    <string name="notification_media_scan_title">Rhythm Сканування бібліотеки</string>
+    <string name="notification_media_scan_title">T2Rhythm Сканування бібліотеки</string>
     <string name="notification_media_scan_stage_songs">Сканування пам’яті пристрою для аудіодоріжок…</string>
     <string name="notification_media_scan_stage_saving">Оптимізація та збереження бази даних звукових доріжок…</string>
     <string name="notification_media_scan_stage_finishing">Завершення індексування аудіо…</string>
     <string name="notification_media_scan_complete_pending_setup">Сканування аудіо завершено, ініціалізація фонових завдань…</string>
     <string name="notification_media_scan_cancelled">Сканування бібліотеки скасовано.</string>
     <string name="notification_media_scan_failed">Помилка сканування бібліотеки. Перевірте дозволи на зберігання та повторіть спробу.</string>
-    <string name="notification_playlist_export_title">Rhythm Експорт бібліотеки</string>
-    <string name="notification_playlist_import_title">Rhythm Імпорт бібліотеки</string>
-    <string name="notification_library_setup_title">Rhythm Налаштування бібліотеки</string>
+    <string name="notification_playlist_export_title">T2Rhythm Експорт бібліотеки</string>
+    <string name="notification_playlist_import_title">T2Rhythm Імпорт бібліотеки</string>
+    <string name="notification_library_setup_title">T2Rhythm Налаштування бібліотеки</string>
     <plurals name="notification_library_setup_complete_summary">
         <item quantity="one">Бібліотека оптимізована та готова: %1$d треків, %2$d альбомів, %3$d виконавців</item>
         <item quantity="few">Бібліотека оптимізована та готова: %1$d треків, %2$d альбомів, %3$d виконавців</item>
@@ -152,20 +152,20 @@
         <item quantity="other">Успішно імпортовано \"%1$s\" з %2$d піснями.</item>
     </plurals>
     <string name="notification_playlist_import_failed">Не вдалося імпортувати список відтворення. Перевірте формат файлу.</string>
-    <string name="notification_updater_channel_name">Rhythm Оновлення</string>
+    <string name="notification_updater_channel_name">T2Rhythm Оновлення</string>
     <string name="notification_updater_channel_desc">Статус завантаження оновлень програми</string>
-    <string name="notification_updater_title">Rhythm Оновлення</string>
+    <string name="notification_updater_title">T2Rhythm Оновлення</string>
     <string name="notification_updater_downloading">⬇ Завантаження: %1$d%%</string>
     <string name="notification_updater_download_complete">✓ Готовий до встановлення. Торкніться, щоб оновити.</string>
     <string name="notification_updater_available_title">Оновлення доступне!</string>
-    <string name="notification_updater_available_text">🆕 Нова версія Rhythm тут.</string>
-    <string name="notification_sleep_timer_channel_name">Rhythm Таймер сну</string>
+    <string name="notification_updater_available_text">🆕 Нова версія T2Rhythm тут.</string>
+    <string name="notification_sleep_timer_channel_name">T2Rhythm Таймер сну</string>
     <string name="notification_sleep_timer_channel_desc">Зворотний відлік і стан для дій таймера сну</string>
-    <string name="notification_sleep_timer_title">Rhythm Таймер сну</string>
+    <string name="notification_sleep_timer_title">T2Rhythm Таймер сну</string>
     <string name="notification_sleep_timer_pause_in">⏸ Пауза в %1$s</string>
     <string name="notification_sleep_timer_stop_in">⏹ Зупинка через %1$s</string>
     <!-- Streaming Notifications -->
-    <string name="notification_streaming_channel_name">Rhythm Go</string>
+    <string name="notification_streaming_channel_name">T2Rhythm Go</string>
     <string name="notification_streaming_channel_desc">Оновлення стану служби потокового передавання та синхронізації</string>
     <!-- Streaming Authentication -->
     <string name="notification_streaming_auth_title">Потокове підключення</string>
@@ -320,7 +320,7 @@
     <!-- Status Labels -->
     <string name="status_disabled">Вимкнено</string>
     <!-- HomeScreen -->
-    <string name="home_title">Rhythm</string>
+    <string name="home_title">T2Rhythm</string>
     <string name="home_settings_cd">Налаштування</string>
     <string name="home_no_featured_albums">Немає рекомендованих альбомів</string>
     <string name="home_no_featured_albums_desc">Додайте кілька альбомів у свою бібліотеку, щоб переглянути рекомендований вміст</string>
@@ -349,7 +349,7 @@
     <string name="home_no_recommendations">Немає рекомендацій</string>
     <string name="home_no_recommendations_desc">Послухайте музику, щоб отримати персоналізовані рекомендації</string>
     <!-- Listening Stats -->
-    <string name="home_listening_stats">Ваша статистика Rhythm</string>
+    <string name="home_listening_stats">Ваша статистика T2Rhythm</string>
     <!-- Mood & Moments -->
     
     <!-- Recently Played -->
@@ -409,7 +409,7 @@
     <string name="sort_song_count">Граф пісень</string>
     <!-- Storage Permission -->
     <string name="storage_permission_required">Потрібен дозвіл на зберігання</string>
-    <string name="storage_permission_desc">Щоб переглядати музичні файли та досліджувати сховище вашого пристрою, Rhythm потрібен дозвіл на доступ до ваших файлів і медіа.</string>
+    <string name="storage_permission_desc">Щоб переглядати музичні файли та досліджувати сховище вашого пристрою, T2Rhythm потрібен дозвіл на доступ до ваших файлів і медіа.</string>
     <string name="storage_permission_audio_only">Це надає доступ лише до аудіофайлів і папок, що містять музику.</string>
     <!-- PlayerScreen -->
     <string name="player_loading_lyrics">Завантаження тексту…</string>
@@ -424,11 +424,11 @@
     <!-- Common UI -->
     <string name="ui_dismiss">Відхилити</string>
     <!-- Common Terms -->
-    <string name="common_rhythm">Rhythm</string>
+    <string name="common_rhythm">T2Rhythm</string>
     <string name="common_home">Головна</string>
     <string name="common_library">Бібліотека</string>
     <!-- Splash/Loading -->
-    <string name="splash_tagline">Ваша музика, ваш Rhythm</string>
+    <string name="splash_tagline">Ваша музика, ваш T2Rhythm</string>
     <string name="splash_ready">Готовий до роботи!</string>
     <!-- Audio Quality -->
     
@@ -456,7 +456,7 @@
     <string name="updates_channel_desc">Виберіть, на який канал оновлення стежити:</string>
     <!-- Onboarding -->
     <string name="onboarding_welcome_to">Ласкаво просимо до</string>
-    <string name="onboarding_welcome_subtitle">Ваша музика, ваш Rhythm</string>
+    <string name="onboarding_welcome_subtitle">Ваша музика, ваш T2Rhythm</string>
     <string name="onboarding_get_started">Початок роботи</string>
     <string name="onboarding_android13_notice">Android Примітка 13+</string>
     <string name="onboarding_android13_desc">У новіших версіях Android ви побачите декілька запитів на дозвіл. Будь ласка, надайте доступ до аудіофайлів і сповіщень для найкращої роботи.</string>
@@ -480,15 +480,15 @@
     <string name="onboarding_library_how_works">Як працює організація бібліотеки</string>
     <string name="onboarding_library_1">Налаштуйте порядок вкладок у бібліотеці для швидкого доступу до вибраного</string>
     <string name="onboarding_library_2">Створюйте списки відтворення та керуйте ними безпосередньо з екрана бібліотеки</string>
-    <string name="onboarding_theme_title">Зробіть Rhythm своїм</string>
-    <string name="onboarding_theme_desc">Персоналізуйте зовнішність Rhythm відповідно до свого стилю. Виберіть тему системи, шрифт або Material динамічні кольори (Android 12+).</string>
+    <string name="onboarding_theme_title">Зробіть T2Rhythm своїм</string>
+    <string name="onboarding_theme_desc">Персоналізуйте зовнішність T2Rhythm відповідно до свого стилю. Виберіть тему системи, шрифт або Material динамічні кольори (Android 12+).</string>
     <string name="onboarding_more_tuner">Більше налаштувань у налаштуваннях</string>
     <string name="onboarding_tuner_1">Користувальницькі колірні схеми та виділення кольорів обкладинок альбомів</string>
     <string name="onboarding_tuner_2">Налаштування шрифтів і типографіки</string>
     <string name="onboarding_rhythm_guard_title">Захистіть свій слух</string>
-    <string name="onboarding_rhythm_guard_desc">Налаштуйте Rhythm Guard, щоб захистити ваше прослуховування завдяки налаштуванням за замовчуванням із урахуванням віку та ручним керуванням захисту.</string>
-    <string name="onboarding_rhythm_guard_mode_title">Rhythm Режим охорони</string>
-    <string name="onboarding_rhythm_guard_age_hint">Віковий профіль допомагає Rhythm Guard рекомендувати безпечніші межі прослуховування.</string>
+    <string name="onboarding_rhythm_guard_desc">Налаштуйте T2Rhythm Guard, щоб захистити ваше прослуховування завдяки налаштуванням за замовчуванням із урахуванням віку та ручним керуванням захисту.</string>
+    <string name="onboarding_rhythm_guard_mode_title">T2Rhythm Режим охорони</string>
+    <string name="onboarding_rhythm_guard_age_hint">Віковий профіль допомагає T2Rhythm Guard рекомендувати безпечніші межі прослуховування.</string>
     <string name="onboarding_rhythm_guard_tip_1">Автоматичний режим застосовує безпечніші параметри за замовчуванням із мінімальними налаштуваннями.</string>
     <string name="onboarding_rhythm_guard_tip_3">Ручний режим дає вам повний контроль над попередженнями та пороговими значеннями.</string>
     <string name="onboarding_full_tour_prompt_title">Продовжити огляд повного налаштування?</string>
@@ -504,7 +504,7 @@
     <string name="onboarding_media_scan_blacklist">Режим чорного списку: приховати певні пісні та папки (мелодії, сповіщення)</string>
     <string name="onboarding_media_scan_whitelist">Режим білого списку: показувати лише пісні з вибраних папок</string>
     <string name="onboarding_complete_title">Усе готово!</string>
-    <string name="onboarding_complete_desc">Rhythm готовий до гри! Ваша музична бібліотека сканується у фоновому режимі. Ось що налаштовано:</string>
+    <string name="onboarding_complete_desc">T2Rhythm готовий до гри! Ваша музична бібліотека сканується у фоновому режимі. Ось що налаштовано:</string>
     <string name="onboarding_whats_next">Що далі?</string>
     <string name="onboarding_next_browse">Переглядайте свої пісні, альбоми та виконавців</string>
     <string name="onboarding_next_create">Створіть свій перший список відтворення</string>
@@ -525,8 +525,8 @@
     <string name="onboarding_grant_permissions">Надати дозволи</string>
     <string name="onboarding_permissions_granted_desc">Усі необхідні дозволи надано. Ви готові продовжити!</string>
     <string name="onboarding_redirect_settings_desc">Щоб надати необхідні дозволи, перейдіть до налаштувань програми на своєму пристрої.</string>
-    <string name="onboarding_rationale_desc">Для коректної роботи Rhythm потрібні певні дозволи. Будь ласка, дозвольте їм продовжити.</string>
-    <string name="onboarding_permissions_required_desc">Щоб повністю використовувати функції Rhythm, нам потрібен ваш дозвіл на доступ до певних можливостей пристрою.</string>
+    <string name="onboarding_rationale_desc">Для коректної роботи T2Rhythm потрібні певні дозволи. Будь ласка, дозвольте їм продовжити.</string>
+    <string name="onboarding_permissions_required_desc">Щоб повністю використовувати функції T2Rhythm, нам потрібен ваш дозвіл на доступ до певних можливостей пристрою.</string>
     <string name="onboarding_permission_music_title">Доступ до музичної бібліотеки</string>
     <string name="onboarding_permission_music_desc">Читайте локальні музичні файли та відображайте їх у програмі</string>
     <string name="onboarding_permission_bluetooth_title">Підключення Bluetooth</string>
@@ -539,9 +539,9 @@
     <string name="onboarding_permission_tip_2">Ви можете змінити дозволи пізніше в налаштуваннях</string>
     <!-- Onboarding Audio &amp; Playback -->
     <string name="onboarding_default_screen_title">Цільовий екран за умовчанням</string>
-    <string name="onboarding_default_screen_desc">Виберіть, який екран відкриватиметься під час запуску Rhythm</string>
+    <string name="onboarding_default_screen_desc">Виберіть, який екран відкриватиметься під час запуску T2Rhythm</string>
     <string name="onboarding_system_volume_title">Регулювання гучності системи</string>
-    <string name="onboarding_system_volume_desc">Дозвольте фізичним кнопкам гучності вашого пристрою керувати гучністю відтворення Rhythm.</string>
+    <string name="onboarding_system_volume_desc">Дозвольте фізичним кнопкам гучності вашого пристрою керувати гучністю відтворення T2Rhythm.</string>
     <string name="onboarding_auto_queue_title">Автоматичне додавання в чергу</string>
     <string name="onboarding_auto_queue_desc">Автоматично створювати контекстну чергу з альбому/виконавця під час відтворення пісні.</string>
     <string name="onboarding_show_lyrics_title">Показати текст пісні</string>
@@ -552,7 +552,7 @@
     
     <!-- Onboarding Theming -->
     <string name="onboarding_player_theme_title">Теми відтворення та міні-плеєра</string>
-    <string name="onboarding_player_theme_desc">Персоналізуйте інтерфейси відтворення. Перемикайтеся між чистим, сучасним дизайном Rhythm або яскравим, плавним експресивним дизайном.</string>
+    <string name="onboarding_player_theme_desc">Персоналізуйте інтерфейси відтворення. Перемикайтеся між чистим, сучасним дизайном T2Rhythm або яскравим, плавним експресивним дизайном.</string>
     <!-- Onboarding Updater -->
     <string name="onboarding_update_check_failed">Помилка перевірки оновлення</string>
     <string name="onboarding_ready_to_install">Готовий до встановлення</string>
@@ -564,7 +564,7 @@
     <string name="onboarding_enable_updates_title">Увімкнути оновлення</string>
     <string name="onboarding_enable_updates_desc">Дозволити програмі перевіряти наявність оновлень і завантажувати їх</string>
     <string name="onboarding_periodic_check_title">Періодична перевірка</string>
-    <string name="onboarding_periodic_check_desc">Автоматично перевіряти наявність оновлень зі сховища GitHub Rhythm</string>
+    <string name="onboarding_periodic_check_desc">Автоматично перевіряти наявність оновлень зі сховища GitHub T2Rhythm</string>
     <string name="onboarding_update_notifications_title">Сповіщення про оновлення</string>
     <string name="onboarding_update_notifications_desc">Отримуйте сповіщення, коли будуть доступні нові версії</string>
     <string name="onboarding_check_interval_desc">Як часто перевіряти наявність оновлень</string>
@@ -607,7 +607,7 @@
     <string name="onboarding_gesture_tip_1">Жести гортання працюють в обох напрямках</string>
     <!-- Onboarding: Widgets Step -->
     <string name="onboarding_widgets_title">Віджети панелі запуску</string>
-    <string name="onboarding_widgets_desc">Додайте віджети Rhythm до панелі запуску для швидкого керування музикою. Налаштуйте, яка інформація відображатиметься та як виглядатиме віджет.</string>
+    <string name="onboarding_widgets_desc">Додайте віджети T2Rhythm до панелі запуску для швидкого керування музикою. Налаштуйте, яка інформація відображатиметься та як виглядатиме віджет.</string>
     <string name="onboarding_widget_artist">Показати ім’я виконавця</string>
     <string name="onboarding_widget_artist_desc">Відображення поточного виконавця у віджеті</string>
     <string name="onboarding_widget_album">Показати назву альбому</string>
@@ -622,8 +622,8 @@
     <string name="onboarding_integration_ytmusic">YouTube Music</string>
     <string name="onboarding_integrations_info_title">Примітка про конфіденційність</string>
     <string name="onboarding_integrations_info_desc">Ці функції надсилають обмежені дані (назви пісень, виконавців) зовнішнім службам. Ваші особисті дані та музичні файли залишаються на вашому пристрої. Ви можете будь-коли ввімкнути або вимкнути їх у налаштуваннях.</string>
-    <!-- Onboarding: Rhythm Stats Step -->
-    <string name="onboarding_stats_title">Rhythm Статистика</string>
+    <!-- Onboarding: T2Rhythm Stats Step -->
+    <string name="onboarding_stats_title">T2Rhythm Статистика</string>
     <string name="onboarding_stats_desc">Дізнайтеся про свої музичні звички. Відстежуйте час прослуховування, пісні, які найчастіше слухали, улюблених виконавців тощо за допомогою красивих візуалізацій.</string>
     <string name="onboarding_stats_show_home">Показати статистику на головній сторінці</string>
     <string name="onboarding_stats_show_home_desc">Відобразити віджет статистики прослуховування на головному екрані</string>
@@ -644,9 +644,9 @@
     <string name="settings_tip_gestures_swipe">Проведіть пальцем угору по міні-плеєру, щоб відкрити повний програвач, а потім проведіть пальцем униз, щоб закрити, коли закінчите.</string>
     <string name="settings_tip_gestures_artwork">Гортайте обкладинку, щоб перемикати треки, і двічі торкайтеся обкладинки альбому, щоб швидко відтворити або призупинити.</string>
     <string name="settings_tip_media_scan">Використовуйте сканування медіафайлів, щоб приховати непотрібні файли з бібліотеки</string>
-    <string name="settings_tip_rhythm_guard_off">Захистіть свій слух, увімкнувши Rhythm Guard</string>
-    <string name="settings_tip_rhythm_guard_auto">Rhythm Guard автоматично керує безпечними межами прослуховування</string>
-    <string name="settings_tip_rhythm_guard_manual">Ви вручну контролюєте обмеження Rhythm Guard</string>
+    <string name="settings_tip_rhythm_guard_off">Захистіть свій слух, увімкнувши T2Rhythm Guard</string>
+    <string name="settings_tip_rhythm_guard_auto">T2Rhythm Guard автоматично керує безпечними межами прослуховування</string>
+    <string name="settings_tip_rhythm_guard_manual">Ви вручну контролюєте обмеження T2Rhythm Guard</string>
     <string name="settings_default_screen">Цільовий екран за умовчанням</string>
     <string name="settings_default_screen_desc">Виберіть початковий екран</string>
     <string name="settings_home_desc">Відкрийте для себе нову музику та рекомендації</string>
@@ -716,7 +716,7 @@
     <string name="lyrics_editor_title">Редактор текстів</string>
     <!-- Components: Song Info -->
     <string name="song_info_title">Інформація про пісню</string>
-    <string name="rhythm_stats">Rhythm Статистика</string>
+    <string name="rhythm_stats">T2Rhythm Статистика</string>
     <string name="file_info">Інформація про файл</string>
     <!-- Components: Add to Playlist -->
     <string name="add_to_playlists">Додати до списків відтворення</string>
@@ -747,7 +747,7 @@
     <string name="updates_disabled_message">Оновлення програм вимкнено в налаштуваннях</string>
     <string name="updates_auto_disabled">Автоматична перевірка оновлень вимкнена. Ви все ще можете перевірити вручну.</string>
     <string name="updates_up_to_date_message">Ви в курсі подій!</string>
-    <string name="updates_check_frequency">Як часто Rhythm повинен перевіряти наявність оновлень?</string>
+    <string name="updates_check_frequency">Як часто T2Rhythm повинен перевіряти наявність оновлень?</string>
     <string name="updates_experimental_coming">Більше експериментальних функцій незабаром з’являться в наступних оновленнях</string>
     <string name="settings_interval_every_48_hours">Кожні 48 годин</string>
     <string name="settings_interval_every_72_hours">Кожні 72 години</string>
@@ -890,7 +890,7 @@
     <string name="updates_enable_auto_check">Автоматична перевірка</string>
     <string name="updates_channel_title">Оновити канал</string>
     <string name="updates_source_title">Джерело оновлення</string>
-    <string name="updates_source_desc">Виберіть, яке сімейство випусків Rhythm використовувати для OTA-оновлень.</string>
+    <string name="updates_source_desc">Виберіть, яке сімейство випусків T2Rhythm використовувати для OTA-оновлень.</string>
     <string name="updates_source_installed">Відповідність встановленій збірці</string>
     <string name="updates_source_installed_label">Встановлена збірка</string>
     <string name="updates_source_github_label">Збірки GitHub</string>
@@ -938,7 +938,7 @@
     <string name="cd_reorder_chips">Змінити порядок фішок</string>
     <string name="cd_search">Пошук</string>
     <string name="cd_view_all">Переглянути все</string>
-    <string name="cd_rhythm_splash">Rhythm</string>
+    <string name="cd_rhythm_splash">T2Rhythm</string>
     <string name="cd_remove_from_playlist">Видалити зі списку відтворення</string>
     <string name="cd_change_language">Змінити мову</string>
     <string name="cd_open_settings">Відкрити</string>
@@ -1011,18 +1011,18 @@
     <!-- Fallback Metadata -->
     
     <!-- Service Notifications -->
-    <string name="service_app_updates">Rhythm Оновлення</string>
-    <string name="service_update_status">Rhythm Статус програми оновлення</string>
-    <string name="service_rhythm_pulse">Rhythm Поради</string>
-    <string name="service_rhythm_guard_alerts">Rhythm Сповіщення охорони</string>
-    <string name="service_rhythm_guard_timers">Rhythm Охоронні таймери</string>
-    <string name="service_rhythm_music">Rhythm Музика</string>
+    <string name="service_app_updates">T2Rhythm Оновлення</string>
+    <string name="service_update_status">T2Rhythm Статус програми оновлення</string>
+    <string name="service_rhythm_pulse">T2Rhythm Поради</string>
+    <string name="service_rhythm_guard_alerts">T2Rhythm Сповіщення охорони</string>
+    <string name="service_rhythm_guard_timers">T2Rhythm Охоронні таймери</string>
+    <string name="service_rhythm_music">T2Rhythm Музика</string>
     <string name="service_update_status_desc">Результати статусу для фонових перевірок оновлень</string>
-    <string name="service_rhythm_pulse_desc">Дружнє прослуховування та поради від Rhythm</string>
-    <string name="service_rhythm_guard_alerts_desc">Сповіщення про безпеку від Rhythm Guard</string>
-    <string name="service_rhythm_guard_timers_desc">Rhythm Нагадування про перерву та тайм-аут</string>
-    <string name="service_ready">Rhythm готовий.</string>
-    <string name="service_init_failed">Rhythm не вдалося запустити. Відкрийте програму повторно.</string>
+    <string name="service_rhythm_pulse_desc">Дружнє прослуховування та поради від T2Rhythm</string>
+    <string name="service_rhythm_guard_alerts_desc">Сповіщення про безпеку від T2Rhythm Guard</string>
+    <string name="service_rhythm_guard_timers_desc">T2Rhythm Нагадування про перерву та тайм-аут</string>
+    <string name="service_ready">T2Rhythm готовий.</string>
+    <string name="service_init_failed">T2Rhythm не вдалося запустити. Відкрийте програму повторно.</string>
     <!-- Crash Activity -->
     <string name="crash_bug_report">Звіт про помилку</string>
     <string name="crash_restart_app">Перезапустіть додаток</string>
@@ -1052,12 +1052,12 @@
     <string name="settings_artwork_cache_size">Розмір кешу ілюстрації</string>
     <string name="settings_artist_parsing">Художники</string>
     <string name="settings_artist_parsing_desc">Роздільники, дисплей</string>
-    <string name="settings_rhythm_stats">Rhythm Статистика</string>
+    <string name="settings_rhythm_stats">T2Rhythm Статистика</string>
     <string name="settings_rhythm_stats_desc">Час прослуховування, найпопулярніші треки та тренди</string>
-    <string name="settings_rhythm_guard">Rhythm Охоронець</string>
-    <string name="settings_rhythm_guard_list_desc">Охорона здоров’я прослуховування на основі статистики Rhythm</string>
+    <string name="settings_rhythm_guard">T2Rhythm Охоронець</string>
+    <string name="settings_rhythm_guard_list_desc">Охорона здоров’я прослуховування на основі статистики T2Rhythm</string>
     <string name="settings_rhythm_guard_mode_title">Режим захисту</string>
-    <string name="settings_rhythm_guard_mode_desc">Виберіть, як Rhythm Guard керує справністю прослуховування</string>
+    <string name="settings_rhythm_guard_mode_desc">Виберіть, як T2Rhythm Guard керує справністю прослуховування</string>
     <string name="settings_rhythm_guard_mode_auto">Авто</string>
     <string name="settings_rhythm_guard_mode_manual">Посібник</string>
     <string name="settings_rhythm_guard_age_label">Віковий профіль: %1$d</string>
@@ -1076,10 +1076,10 @@
     <string name="settings_rhythm_guard_manual_warning_toggle">Показати попередження про безпеку</string>
     <string name="settings_rhythm_guard_manual_warning_toggle_desc">Попереджати, коли живий звук або ручне перемикання можуть бути небезпечними</string>
     <string name="settings_rhythm_guard_manual_threshold_title">Порогове значення попередження про велику гучність: %1$d%%</string>
-    <string name="settings_rhythm_guard_manual_threshold_desc">Встановіть, коли Rhythm Guard має попереджати про потенційно шкідливу гучність.</string>
+    <string name="settings_rhythm_guard_manual_threshold_desc">Встановіть, коли T2Rhythm Guard має попереджати про потенційно шкідливу гучність.</string>
     <string name="settings_rhythm_guard_device_controls_title">Елементи керування виводом</string>
     <string name="settings_rhythm_guard_device_controls_speaker_limit_title">Застосувати обмеження гучності на динаміку телефону</string>
-    <string name="settings_rhythm_guard_device_controls_speaker_limit_desc">Якщо вимкнено, Rhythm Guard пропускає обмеження гучності та попередження про гучність на вбудованому динаміку.</string>
+    <string name="settings_rhythm_guard_device_controls_speaker_limit_desc">Якщо вимкнено, T2Rhythm Guard пропускає обмеження гучності та попередження про гучність на вбудованому динаміку.</string>
     <string name="settings_rhythm_guard_alert_controls_title">Елементи керування сповіщеннями прослуховування</string>
     <string name="settings_rhythm_guard_alert_threshold_title">Поріг попередження про опромінення: %1$s</string>
     <string name="settings_rhythm_guard_alert_threshold_policy_default">Політика за умовчанням</string>
@@ -1089,7 +1089,7 @@
     <string name="settings_rhythm_guard_warning_title">Попередження про безпеку прослуховування</string>
     <string name="settings_rhythm_guard_warning_high_volume">Поточний обсяг перевищує порогове значення попередження (%1$d%%). Подумайте про зменшення гучності.</string>
     <string name="settings_rhythm_guard_warning_daily_exposure">Сьогодні ви досягли %1$s вище запропонованого %2$s. Подумайте про перерву в прослуховуванні.</string>
-    <string name="settings_rhythm_guard_warning_dialog_title">Rhythm Сповіщення охорони охорони</string>
+    <string name="settings_rhythm_guard_warning_dialog_title">T2Rhythm Сповіщення охорони охорони</string>
     <string name="settings_rhythm_guard_warning_dialog_volume_message">Обсяг системного медіа становить %1$d%% у реальному часі, що перевищує ваш поточний ліміт захисту в %2$d%%. Знизьте гучність, щоб зменшити ризик слуху.</string>
     <string name="settings_rhythm_guard_risk_level_label">Серйозність ризику: %1$s</string>
     <string name="settings_rhythm_guard_risk_action_label">Рекомендована дія: %1$s</string>
@@ -1119,8 +1119,8 @@
     <string name="settings_rhythm_guard_start_countdown_value">Починається через %1$s</string>
     <string name="settings_rhythm_guard_snapshot_widget_above_limit">Вище рекомендованої межі</string>
     <string name="settings_rhythm_guard_snapshot_widget_within_limit">У межах рекомендованого ліміту</string>
-    <string name="settings_rhythm_guard_state_active">Rhythm Охоронець активний</string>
-    <string name="settings_rhythm_guard_state_inactive">Rhythm Охорона неактивна</string>
+    <string name="settings_rhythm_guard_state_active">T2Rhythm Охоронець активний</string>
+    <string name="settings_rhythm_guard_state_inactive">T2Rhythm Охорона неактивна</string>
     <string name="settings_rhythm_guard_state_timeout_active">Триває тайм-аут прослуховування</string>
     <string name="settings_rhythm_guard_state_cooldown_active">Пільговий період активний</string>
     <string name="settings_rhythm_guard_state_timeout_remaining">Перерва закінчується через %1$s</string>
@@ -1132,8 +1132,8 @@
     <string name="settings_rhythm_guard_protection_preset_strict">Суворий</string>
     <string name="settings_rhythm_guard_protection_preset_custom">Звичайний</string>
     <string name="settings_rhythm_guard_timeout_activity_title">Час очікування прослуховування активний</string>
-    <string name="settings_rhythm_guard_timeout_activity_default_reason">Поворот сюжету: ваші вуха завели союз і закликали перекусити. Rhythm Охоронець призупинив відтворення, щоб усі могли охолонути.</string>
-    <string name="settings_rhythm_guard_timeout_activity_comic_desc">Поворот сюжету: ваші вуха почали союз і закликали перекусити. Rhythm Охоронець призупинив відтворення, щоб усі могли охолонути.</string>
+    <string name="settings_rhythm_guard_timeout_activity_default_reason">Поворот сюжету: ваші вуха завели союз і закликали перекусити. T2Rhythm Охоронець призупинив відтворення, щоб усі могли охолонути.</string>
+    <string name="settings_rhythm_guard_timeout_activity_comic_desc">Поворот сюжету: ваші вуха почали союз і закликали перекусити. T2Rhythm Охоронець призупинив відтворення, щоб усі могли охолонути.</string>
     <string name="settings_rhythm_guard_timeout_activity_extend">Подовження перерви (+%1$d хв)</string>
     <string name="settings_rhythm_guard_timeout_activity_exit">Закрити екран очікування</string>
     <string name="settings_rhythm_guard_timeout_activity_close_app">Закрийте додаток</string>
@@ -1144,23 +1144,23 @@
     <string name="settings_rhythm_guard_alert_threshold_search_title">Порогове значення експозиції</string>
     <string name="settings_rhythm_guard_alert_threshold_search_desc">Установіть, скільки щоденного прослуховування викликає попередження безпеки</string>
     <string name="settings_rhythm_guard_warning_timeout_search_title">Перезарядка попередження</string>
-    <string name="settings_rhythm_guard_warning_timeout_search_desc">Установіть час відновлення між повторюваними сповіщеннями Rhythm Guard</string>
+    <string name="settings_rhythm_guard_warning_timeout_search_desc">Установіть час відновлення між повторюваними сповіщеннями T2Rhythm Guard</string>
     <string name="settings_rhythm_guard_post_timeout_cooldown_search_title">Перезарядка після тайм-ауту</string>
     <string name="settings_rhythm_guard_post_timeout_cooldown_search_desc">Встановіть час відновлення після закінчення тайм-ауту, перш ніж може спрацювати інший тайм-аут експозиції</string>
     <string name="settings_rhythm_guard_protection_presets_search_title">Попередні налаштування захисту</string>
     <string name="settings_rhythm_guard_protection_presets_search_desc">Застосуйте пакети «Ніжний», «Збалансований» або «Строгий» одним дотиком</string>
     <string name="settings_rhythm_guard_break_resume_search_title">Відновлення перерви за замовчуванням</string>
     <string name="settings_rhythm_guard_break_resume_search_desc">Встановіть тривалість запланованих перерв для прослуховування за умовчанням</string>
-    <string name="settings_rhythm_guard_enable_search_title">Rhythm Сила охорони</string>
-    <string name="settings_rhythm_guard_enable_search_desc">Увімкнути або вимкнути захист Rhythm Guard</string>
-    <string name="settings_rhythm_guard_notification_alert_title">Rhythm Сповіщення безпеки охоронця</string>
-    <string name="settings_rhythm_guard_notification_timer_active_title">Rhythm Тайм-аут охорони активний</string>
+    <string name="settings_rhythm_guard_enable_search_title">T2Rhythm Сила охорони</string>
+    <string name="settings_rhythm_guard_enable_search_desc">Увімкнути або вимкнути захист T2Rhythm Guard</string>
+    <string name="settings_rhythm_guard_notification_alert_title">T2Rhythm Сповіщення безпеки охоронця</string>
+    <string name="settings_rhythm_guard_notification_timer_active_title">T2Rhythm Тайм-аут охорони активний</string>
     <string name="settings_rhythm_guard_notification_timer_active_text">Відтворення відновиться через %1$s.</string>
-    <string name="settings_rhythm_guard_notification_timer_scheduled_title">Rhythm Запланована перерва</string>
+    <string name="settings_rhythm_guard_notification_timer_scheduled_title">T2Rhythm Запланована перерва</string>
     <string name="settings_rhythm_guard_notification_timer_scheduled_text">Перерва в прослуховуванні починається через %1$s.</string>
     <string name="settings_rhythm_guard_notification_tap_open">Торкніться, щоб переглянути деталі часу очікування.</string>
-    <!-- Rhythm Stats Screen -->
-    <string name="stats_title">Rhythm Статистика</string>
+    <!-- T2Rhythm Stats Screen -->
+    <string name="stats_title">T2Rhythm Статистика</string>
     <string name="stats_today">Сьогодні</string>
     <string name="stats_this_week">Цього тижня</string>
     <string name="stats_this_month">Цього місяця</string>
@@ -1182,7 +1182,7 @@
     <!-- Content Descriptions (additional) -->
     <string name="cd_reorder_home_sections">Змінити порядок розділів домашньої сторінки</string>
     <string name="cd_remove">Видалити</string>
-    <string name="cd_rhythm_logo">Rhythm Логотип</string>
+    <string name="cd_rhythm_logo">T2Rhythm Логотип</string>
     <string name="cd_telegram_support">Підтримка Telegram</string>
     <!-- Queue &amp; Playlist Dialogs -->
     <!-- Artist Settings -->
@@ -1350,7 +1350,7 @@
     <string name="settings_snowflake_display_area">Область відображення сніжинки</string>
     <string name="settings_snowflake_size">Розмір сніжинки</string>
     <string name="settings_toggle_decoration_elements">Перемикати окремі елементи декорування за положенням</string>
-    <string name="settings_multi_artist_parsing_info">Якщо ввімкнено, Rhythm автоматично розділить теги виконавців, що містять кількох виконавців. Це корисно для пісень, завантажених за допомогою yt-dlp або інших інструментів, які використовують роздільники, наприклад «/», для розділення виконавців.\n\nЗворотну косу риску (\\) можна використовувати для екранування роздільників.</string>
+    <string name="settings_multi_artist_parsing_info">Якщо ввімкнено, T2Rhythm автоматично розділить теги виконавців, що містять кількох виконавців. Це корисно для пісень, завантажених за допомогою yt-dlp або інших інструментів, які використовують роздільники, наприклад «/», для розділення виконавців.\n\nЗворотну косу риску (\\) можна використовувати для екранування роздільників.</string>
     <!-- Format Strings with Placeholders -->
     <string name="settings_cache_size_2gb">2 ГБ</string>
     <string name="settings_cache_size_64mb">64 Мб</string>
@@ -1436,7 +1436,7 @@
     <string name="settings_cache_info_4">Автоматичне очищення допомагає підтримувати оптимальну продуктивність</string>
     <!-- Updates Settings -->
     <string name="updates_status_error">Помилка</string>
-    <string name="updates_rhythm_logo_cd">Rhythm Логотип</string>
+    <string name="updates_rhythm_logo_cd">T2Rhythm Логотип</string>
     <string name="updates_version_prefix">V %1$s</string>
     <string name="updates_released_prefix">Випущено: %1$s</string>
     <string name="updates_unknown_error">Сталася невідома помилка</string>
@@ -1456,7 +1456,7 @@
     <string name="settings_interval_once_a_day">Раз на день</string>
     <string name="settings_interval_once_a_week">Раз на тиждень</string>
     <!-- Experimental Features -->
-    <string name="streaming_integration_title">Rhythm Go</string>
+    <string name="streaming_integration_title">T2Rhythm Go</string>
     <string name="streaming_integration_services">Служби інтеграції</string>
     <string name="streaming_integration_services_empty">Ще немає підключених служб</string>
     <string name="streaming_settings_title">Налаштування</string>
@@ -1464,7 +1464,7 @@
     <string name="streaming_settings_group_actions">Дії</string>
     <string name="streaming_settings_preferred_service">Бажана послуга</string>
     <string name="streaming_settings_quality">Якість потокового передавання</string>
-    <string name="streaming_settings_service_sheet_desc">Виберіть, яка підключена служба Rhythm Go повинна мати пріоритет за замовчуванням.</string>
+    <string name="streaming_settings_service_sheet_desc">Виберіть, яка підключена служба T2Rhythm Go повинна мати пріоритет за замовчуванням.</string>
     <string name="streaming_settings_quality_sheet_desc">Виберіть бажану якість звуку для потокового відтворення.</string>
     <string name="streaming_quality_low">Низький</string>
     <string name="streaming_quality_normal">Нормальний</string>
@@ -1474,7 +1474,7 @@
     <string name="streaming_quality_normal_desc">Збалансована якість і використання даних (~160 Кбіт/с).</string>
     <string name="streaming_quality_high_desc">Аудіо високої якості (~320 кбіт/с).</string>
     <string name="streaming_quality_lossless_desc">Найкраща якість, якщо підтримується (FLAC/ALAC).</string>
-    <string name="streaming_settings_group_wellbeing">Rhythm Статистика</string>
+    <string name="streaming_settings_group_wellbeing">T2Rhythm Статистика</string>
     <string name="streaming_open_full_settings">Відкрийте повні налаштування</string>
     <string name="streaming_open_full_settings_desc">Відкрити параметри програми, спільні для різних режимів</string>
     <string name="streaming_switch_to_local_mode">Перейти в локальний режим</string>
@@ -1498,7 +1498,7 @@
     <string name="streaming_service_setup_password">Пароль</string>
     <string name="streaming_service_setup_password_hint">Введіть пароль свого облікового запису</string>
     <string name="streaming_service_setup_remember_password">Запам’ятати пароль на цьому пристрої</string>
-    <string name="streaming_service_setup_remember_password_desc">Зберігайте облікові дані локально, щоб Rhythm міг автоматично підключитися пізніше.</string>
+    <string name="streaming_service_setup_remember_password_desc">Зберігайте облікові дані локально, щоб T2Rhythm міг автоматично підключитися пізніше.</string>
     <string name="streaming_service_setup_connecting">Підключення…</string>
     <string name="streaming_service_setup_disconnecting">Відключення…</string>
     <string name="streaming_service_setup_action_hint">Заповніть необхідні поля для підключення цієї послуги.</string>
@@ -1686,7 +1686,7 @@
     <string name="settings_bluetooth_lyrics_enabled">Режим лірики Bluetooth</string>
     <string name="settings_bluetooth_lyrics_enabled_desc">Трансляція поточної лінії лірики через метадані Bluetooth</string>
     <string name="exp_go_mode">Go Mode</string>
-    <string name="exp_go_mode_desc">Перейти на Rhythm Go streaming mode</string>
+    <string name="exp_go_mode_desc">Перейти на T2Rhythm Go streaming mode</string>
     <!-- Home Screen Search Strings -->
     <string name="settings_home_section_order">Порядок розділу</string>
     <string name="settings_home_section_order_desc">Змінити порядок розділів домашньої сторінки</string>
@@ -1699,13 +1699,13 @@
     <string name="settings_home_carousel_auto_scroll">Автопрокручування каруселі</string>
     <string name="settings_home_carousel_auto_scroll_desc">Карусель автоматичного прокручування</string>
     <!-- Notifications Search Strings -->
-    <string name="settings_notifications_rhythm_guard_alerts">Rhythm Сповіщення про безпеку охоронця</string>
+    <string name="settings_notifications_rhythm_guard_alerts">T2Rhythm Сповіщення про безпеку охоронця</string>
     <string name="settings_notifications_rhythm_guard_alerts_desc">Сповіщати, коли спрацьовують попередження про ризик прослуховування</string>
-    <string name="settings_notifications_rhythm_guard_timers">Rhythm Таймери перерви</string>
+    <string name="settings_notifications_rhythm_guard_timers">T2Rhythm Таймери перерви</string>
     <string name="settings_notifications_rhythm_guard_timers_desc">Сповіщати про заплановані перерви та зворотний відлік часу очікування</string>
-    <string name="settings_notifications_rhythm_pulse">Rhythm Поради</string>
+    <string name="settings_notifications_rhythm_pulse">T2Rhythm Поради</string>
     <string name="settings_notifications_rhythm_pulse_desc">Дружні нагадування та поради щодо слухання.</string>
-    <string name="settings_notifications_rhythm_pulse_interval">Rhythm Інтервал порад</string>
+    <string name="settings_notifications_rhythm_pulse_interval">T2Rhythm Інтервал порад</string>
     <string name="settings_notifications_rhythm_pulse_interval_desc">Частота доставки сповіщень про поради</string>
     <!-- Expressive Shapes Search Strings -->
     <string name="settings_expressive_shapes_enabled">Виразні форми</string>
@@ -1789,7 +1789,7 @@
     <!-- Library Screen scanning overlay -->
     <string name="settings_scanning">Сканування</string>
     <!-- Settings Search -->
-    <string name="search_settings_hint">Пошук Rhythm Налаштування…</string>
+    <string name="search_settings_hint">Пошук T2Rhythm Налаштування…</string>
     <string name="clear_search">Очистити пошук</string>
     <string name="no_results_found">Результатів не знайдено</string>
     <string name="try_different_search">Спробуйте інший термін пошуку</string>
@@ -1828,14 +1828,14 @@
     <string name="theme_font_imported">Шрифт успішно імпортовано</string>
     <string name="theme_font_invalid">Недійсний формат файлу шрифту</string>
     <string name="ui_apply">Застосувати</string>
-    <string name="crashactivity_uh_oh_looks_like">Ой ой! Схоже, Rhythm потрапив на кислу ноту!</string>
+    <string name="crashactivity_uh_oh_looks_like">Ой ой! Схоже, T2Rhythm потрапив на кислу ноту!</string>
     <string name="crashactivity_dont_fret_our_app">Не хвилюйтеся! У нашому додатку просто виникла невелика помилка. Будь ласка, поділіться інформацією про збій нижче – це як секретне повідомлення для наших розробників, щоб виправити речі! Тоді давайте спробуємо це ще раз, добре?</string>
     <string name="crashactivity_secret_crash_scrolls">Secret Crash Scrolls</string>
     <string name="crashactivity_share">Поділитися</string>
     <string name="externalplaybackactivity_unable_to_open_audio">Не вдається відкрити аудіофайл</string>
     <string name="externalplaybackactivity_unsupported_or_unreadable_audio">Непідтримуваний або нечитабельний аудіофайл</string>
     <string name="externalplaybackactivity_failed_to_play_audio">Не вдалося відтворити аудіофайл</string>
-    <string name="externalplaybackactivity_open_rhythm">Відкрити Rhythm</string>
+    <string name="externalplaybackactivity_open_rhythm">Відкрити T2Rhythm</string>
     <string name="mainactivity_error_opening_file">Помилка відкриття файлу</string>
     <string name="mainactivity_unsupported_file_format">Непідтримуваний формат файлу</string>
     <string name="mainactivity_failed_to_initialize_media">Не вдалося ініціалізувати медіаплеєр</string>
@@ -1922,7 +1922,7 @@
     <string name="streamingmusicviewmodel_failed_to_play_next">Не вдалося відтворити далі: не вдається розпізнати URL-адресу</string>
     <string name="streamingmusicviewmodel_failed_to_add_to">Не вдалося додати до черги: не вдалося вирішити URL-адресу</string>
     <string name="rhythmmusicwidget_album_art_placeholder">Обкладинка альбому</string>
-    <string name="rhythmwidgetpreview_rhythm_glance_widget_previews">Rhythm Glance Попередній перегляд віджетів</string>
+    <string name="rhythmwidgetpreview_rhythm_glance_widget_previews">T2Rhythm Glance Попередній перегляд віджетів</string>
     <string name="rhythmwidgetpreview_str_11_compact_widget">Компактний віджет 1×1</string>
     <string name="rhythmwidgetpreview_str_21_horizontal_strip">Горизонтальна смуга 2×1</string>
     <string name="rhythmwidgetpreview_str_22_small_widget">Малий віджет 2×2</string>
@@ -1964,7 +1964,7 @@
     <string name="betaprogrampopup_early_access">Ранній доступ</string>
     <string name="betaprogrampopup_shape_the_future">Формуйте майбутнє</string>
     <string name="betaprogrampopup_direct_feedback">Прямий зворотний зв\'язок</string>
-    <string name="betaprogrampopup_youre_part_of_an">Ви є частиною ексклюзивної групи, яка допомагає формувати майбутнє музичного плеєра Rhythm</string>
+    <string name="betaprogrampopup_youre_part_of_an">Ви є частиною ексклюзивної групи, яка допомагає формувати майбутнє музичного плеєра T2Rhythm</string>
     <string name="betaprogrampopup_start_exploring">Розпочніть дослідження</string>
     <string name="switchmodedialog_switch_play">Switch &amp; Play</string>
     <string name="fullscreenlyricsview_cover_artwork">Обкладинка</string>
@@ -2030,7 +2030,7 @@
     <string name="lyricssourcesettingsscreen_retry_using_fallbacks">Повторіть спробу, використовуючи запасні варіанти</string>
     <string name="lyricssourcesettingsscreen_embedded_lyrics_are_stored">• Embedded lyrics are stored in your audio files</string>
     <string name="miniplayercustomizationsettingsscreen_miniplayer_theme">Тема MiniPlayer</string>
-    <string name="miniplayercustomizationsettingsscreen_choose_between_rhythm_default">Виберіть тему Rhythm за замовчуванням або тему Expressive</string>
+    <string name="miniplayercustomizationsettingsscreen_choose_between_rhythm_default">Виберіть тему T2Rhythm за замовчуванням або тему Expressive</string>
     <string name="miniplayercustomizationsettingsscreen_integrated_directly_into_the">Інтегровано безпосередньо у фоновий режим MiniPlayer</string>
     <string name="performancesettingsscreen_performance">Спрощений режим</string>
     <string name="performancesettingsscreen_disable_haptics">Вимкнути Haptics</string>
@@ -2047,7 +2047,7 @@
     <string name="rhythmguardsettingsscreen_none">Жодного</string>
     <string name="rhythmguardsettingsscreen_general_settings">Загальні налаштування</string>
     <string name="rhythmguardsettingsscreen_library_data">Дані бібліотеки</string>
-    <string name="rhythmguardsettingsscreen_stats_rhythm_guard">Статистика &amp; Rhythm Guard</string>
+    <string name="rhythmguardsettingsscreen_stats_rhythm_guard">Статистика &amp; T2Rhythm Guard</string>
     <string name="settingsscreen_audio_offload">Розвантаження аудіо</string>
     <string name="settingsscreen_personalization">Персоналізація</string>
     <string name="settingsscreen_library_focus">Бібліотечний фокус</string>
@@ -2148,7 +2148,7 @@
     <string name="pulse_marathon">Режим марафону</string>
     <!-- Settings Tips Details -->
     <string name="settings_tip_theme_desc_1">Оновіть свій музичний плеєр яскравим чорним AMOLED і красивими пастельними кольорами.</string>
-    <string name="settings_tip_theme_desc_2">Зробіть Rhythm справді вашим, підібравши акцент програми до вашої системи.</string>
+    <string name="settings_tip_theme_desc_2">Зробіть T2Rhythm справді вашим, підібравши акцент програми до вашої системи.</string>
     <string name="settings_tip_media_scan_desc_1">Уникайте небажаних аудіокліпів. Чітко визначте, які папки ми повинні сканувати на наявність музики.</string>
     <string name="settings_tip_media_scan_desc_2">Зберігайте голосові нотатки та мелодії подалі від ваших списків відтворення за допомогою папок фокусу.</string>
     <string name="settings_tip_sleep_timer_desc_1">Засинайте, поки грає музика. Ми автоматично призупинимо його.</string>
@@ -2157,7 +2157,7 @@
     <string name="settings_tip_equalizer_desc_2">Надійно налаштуйте звук у своїх навушниках за допомогою наших вдосконалених звукових ефектів.</string>
     <string name="settings_tip_backup_active_desc_1">Автоматичне резервне копіювання активне. Перевірте розділи резервної копії, щоб відновлення залишалося чистим.</string>
     <string name="settings_tip_backup_active_desc_2">Захист увімкнено: розклад виглядає добре. Перед великими редагуваннями створіть резервну копію вручну.</string>
-    <string name="settings_tip_backup_inactive_desc_1">Автоматичне резервне копіювання вимкнено. Увімкніть його, щоб захистити списки відтворення та статистику Rhythm Guard.</string>
+    <string name="settings_tip_backup_inactive_desc_1">Автоматичне резервне копіювання вимкнено. Увімкніть його, щоб захистити списки відтворення та статистику T2Rhythm Guard.</string>
     <string name="settings_tip_backup_inactive_desc_2">Мережі безпеки ще немає. Увімкніть резервне копіювання, щоб не втратити налаштування.</string>
     <string name="settings_tip_updates_active_desc_1">Оновлення ввімкнено. Залиште їх увімкненими для виправлення та покращення продуктивності.</string>
     <string name="settings_tip_updates_active_desc_2">Ви налаштовані на отримання оновлень. Перевірте параметри каналу на стабільність чи свіжість.</string>
@@ -2200,7 +2200,7 @@
     <string name="font_jetbrains_desc">Моноширинний шрифт ідеально підходить для технічного вмісту</string>
     <string name="font_quicksand_desc">Округлий шрифт із м’якшим і зручнішим виглядом</string>
     <!-- Predefined Color Schemes -->
-    <string name="color_scheme_default_title">Rhythm За замовчуванням</string>
+    <string name="color_scheme_default_title">T2Rhythm За замовчуванням</string>
     <string name="color_scheme_default_desc">Material 3 базові фіолетові з рожево-рожевими акцентами</string>
     <string name="color_scheme_warm_title">Теплий захід сонця</string>
     <string name="color_scheme_warm_desc">Затишні оранжеві та червоні тони для теплої атмосфери</string>
@@ -2235,7 +2235,7 @@
     <string name="lyrics_settings_embedded_first">Спочатку вбудовано</string>
     <string name="lyrics_settings_embedded_first_desc">Віддавайте перевагу текстам пісень, вбудованим у аудіофайли, повертайтеся до онлайнових API</string>
     <string name="lyrics_settings_online_first">Перший онлайн</string>
-    <string name="lyrics_settings_online_first_desc">Віддавати перевагу онлайн-інтерфейсам API (Rhythm слово за словом, LRCLib), повернутися до вбудованих</string>
+    <string name="lyrics_settings_online_first_desc">Віддавати перевагу онлайн-інтерфейсам API (T2Rhythm слово за словом, LRCLib), повернутися до вбудованих</string>
     <string name="lyrics_settings_local_first">Перш за все місцеве</string>
     <string name="lyrics_settings_local_first_desc">Віддавайте перевагу локальним файлам .lrc, потім вбудованим текстам пісень, а потім онлайн-API</string>
     <string name="lyrics_settings_lyrically_first">Lyrically First</string>
@@ -2261,7 +2261,7 @@
     <string name="lyrics_settings_disable_animations_desc">Вимкнути переходи та анімацію в режимі перегляду тексту</string>
     <string name="lyrics_settings_word_by_word_translation">Автоматична синхронізація слів</string>
     <string name="lyrics_settings_word_by_word_translation_desc">Автоматично генерувати хронометраж на рівні слова для тексту, синхронізованого рядками, пропорційно розподіляючи тривалість</string>
-    <string name="lyrics_settings_info_bullets">Додаткові відомості про синхронізацію:\n• Онлайн-інтерфейси API забезпечують високоякісні синхронізовані тексти пісень\n• Rhythm пропонують синхронізацію слово за словом\n• LRCLib забезпечує безкоштовну синхронізацію рядків за рядками</string>
+    <string name="lyrics_settings_info_bullets">Додаткові відомості про синхронізацію:\n• Онлайн-інтерфейси API забезпечують високоякісні синхронізовані тексти пісень\n• T2Rhythm пропонують синхронізацію слово за словом\n• LRCLib забезпечує безкоштовну синхронізацію рядків за рядками</string>
     <!-- AutoEQ Preset Picker additions -->
     <string name="autoeqpresetpickerbottomsheet_search_presets">Попередні налаштування пошуку…</string>
     <string name="autoeqpresetpickerbottomsheet_disable">Немає / Вимкнути AutoEQ</string>
@@ -2279,7 +2279,7 @@
     <string name="device_configuration_custom_preset">Користувацькі налаштування</string>
     <string name="device_configuration_custom">Звичайний</string>
     <string name="device_configuration_active_profile_label">Активний профіль: %1$s</string>
-    <string name="device_configuration_share_subject">Rhythm Профіль еквалайзера: %1$s</string>
+    <string name="device_configuration_share_subject">T2Rhythm Профіль еквалайзера: %1$s</string>
     <string name="device_configuration_share_title">Поділитися профілем еквалайзера</string>
     <string name="device_configuration_edit_device">Редагувати пристрій</string>
     <string name="device_configuration_add_device">Додати пристрій</string>
@@ -2331,9 +2331,9 @@
         <item quantity="other">Експорт %1$d списків відтворення до:</item>
     </plurals>
     <!-- Mode dialog strings -->
-    <string name="dialog_switch_to_go">Switch to Rhythm Go?</string>
+    <string name="dialog_switch_to_go">Switch to T2Rhythm Go?</string>
     <string name="dialog_switch_to_local">Перейти на локальний?</string>
-    <string name="dialog_switch_to_go_desc">This item belongs to Rhythm Go. Перейти в режим потокового передавання зараз, щоб транслювати та відтворювати?</string>
+    <string name="dialog_switch_to_go_desc">This item belongs to T2Rhythm Go. Перейти в режим потокового передавання зараз, щоб транслювати та відтворювати?</string>
     <string name="dialog_switch_to_local_desc">Цей елемент належить до вашої місцевої бібліотеки. Перейти в локальний режим зараз, щоб відтворювати композиції в автономному режимі?</string>
     <!-- Section order content descriptions -->
 
@@ -2514,7 +2514,7 @@
     <string name="carousel_style_hero">Герой</string>
     <string name="carousel_style_hero_desc">1 бічний альбом</string>
     <!-- Theme names -->
-    <string name="theme_rhythm">Rhythm</string>
+    <string name="theme_rhythm">T2Rhythm</string>
     <string name="theme_expressive">Виразний</string>
     <string name="settings_managed_by_expressive_shapes">Керується Expressive Shapes</string>
     <!-- Shape targets -->
@@ -2560,7 +2560,7 @@
     <string name="backup_restore_section_collection">Збірник</string>
     <string name="backup_restore_section_collection_desc">Списки відтворення, вибране, чорний/білий список, закріплені папки.</string>
     <string name="backup_restore_section_insight">Інсайт</string>
-    <string name="backup_restore_section_insight_desc">Кількість відтворень, щоденна статистика, жанри та конфігурація Rhythm Guard.</string>
+    <string name="backup_restore_section_insight_desc">Кількість відтворень, щоденна статистика, жанри та конфігурація T2Rhythm Guard.</string>
     <string name="backup_restore_status_included">Включено</string>
     <string name="backup_restore_status_excluded">Виключено</string>
     <plurals name="backup_restore_sections_enabled">
@@ -2583,7 +2583,7 @@
     <string name="library_bottom_bar_select_songs">Виберіть пісні</string>
     <string name="library_bottom_bar_more_actions">Більше дій</string>
     <string name="library_play_selected">Грати (%1$d)</string>
-    <!-- Rhythm Guard Comic Status Subtitles -->
+    <!-- T2Rhythm Guard Comic Status Subtitles -->
     <!-- Player, Bottomsheet, and Popup translations -->
     <string name="unknown_track">Невідомий трек</string>
     <string name="unknown_song">Невідома пісня</string>

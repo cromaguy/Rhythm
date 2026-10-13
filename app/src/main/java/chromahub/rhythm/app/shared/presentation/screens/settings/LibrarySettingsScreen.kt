@@ -285,6 +285,7 @@ fun LibrarySettingsScreen(onBackClick: () -> Unit) {
                 .background(MaterialTheme.colorScheme.background)
                 .padding(horizontal = 24.dp)
         ) {
+            item { chromahub.rhythm.app.features.local.presentation.metadata.CatalogSourceSettings() }
             items(settingGroups, key = { "libsettings_${it.title}" }) { group ->
                 Spacer(modifier = Modifier.height(24.dp))
 

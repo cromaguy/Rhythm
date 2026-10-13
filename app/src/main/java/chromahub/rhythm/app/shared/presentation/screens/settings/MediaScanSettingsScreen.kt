@@ -187,7 +187,12 @@ fun MediaScanSettingsScreen(onBackClick: () -> Unit) {
     val musicViewModel: MusicViewModel = viewModel()
 
     // Get all songs and filtered items
-    val allSongs by musicViewModel.songs.collectAsState()
+    val librarySongs by musicViewModel.songs.collectAsState()
+    val allSongs by produceState(initialValue = librarySongs, key1 = librarySongs) {
+        value = try { chromahub.rhythm.app.core.domain.scan.ScanRuleLibrary.load(context) }
+        catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
+        catch (_: Exception) { librarySongs }
+    }
     val filteredSongs by musicViewModel.filteredSongs.collectAsState()
     val blacklistedSongs by appSettings.blacklistedSongs.collectAsState()
     val blacklistedFolders by appSettings.blacklistedFolders.collectAsState()
@@ -200,11 +205,9 @@ fun MediaScanSettingsScreen(onBackClick: () -> Unit) {
     val minimumDuration by appSettings.minimumDuration.collectAsState()
 
     // Mode state
-    var currentMode by remember {
-        mutableStateOf(mediaScanMode)
-    }
+    val currentMode = mediaScanMode
 
-    var managedListMode by remember { mutableStateOf(MediaScanMode.WHITELIST) }
+    var managedListMode by rememberSaveable { mutableStateOf(MediaScanMode.WHITELIST) }
     val editingMode = if (currentMode == MediaScanMode.HYBRID) managedListMode else currentMode
 
     // Bottom sheet states
@@ -305,7 +308,6 @@ fun MediaScanSettingsScreen(onBackClick: () -> Unit) {
                     onToggleChange = { enabled ->
                         if (enabled) {
                             HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
-                            currentMode = MediaScanMode.BLACKLIST
                             appSettings.setMediaScanMode(MediaScanMode.BLACKLIST)
                         }
                     }
@@ -318,7 +320,6 @@ fun MediaScanSettingsScreen(onBackClick: () -> Unit) {
                     onToggleChange = { enabled ->
                         if (enabled) {
                             HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
-                            currentMode = MediaScanMode.WHITELIST
                             appSettings.setMediaScanMode(MediaScanMode.WHITELIST)
                             if (whitelistedFolders.isEmpty() && whitelistedSongs.isEmpty()) {
                                 try {
@@ -337,7 +338,6 @@ fun MediaScanSettingsScreen(onBackClick: () -> Unit) {
                     context.getString(R.string.catalog_hybrid_hint),
                     toggleState = currentMode == MediaScanMode.HYBRID,
                     onToggleChange = { enabled -> if (enabled) {
-                        currentMode = MediaScanMode.HYBRID
                         appSettings.setMediaScanMode(MediaScanMode.HYBRID)
                     } },
                 )
@@ -441,17 +441,8 @@ fun MediaScanSettingsScreen(onBackClick: () -> Unit) {
             item { Spacer(modifier = Modifier.height(8.dp)) }
             
             item {
-                chromahub.rhythm.app.features.local.presentation.metadata.LibraryEnrichmentPanel()
+                Text(context.getString(R.string.catalog_scan_rules_hint), style = MaterialTheme.typography.bodyMedium)
             }
-            if (currentMode == MediaScanMode.HYBRID) item {
-                ExpressiveButtonGroup(
-                    items = listOf(context.getString(R.string.settings_blacklist_mode), context.getString(R.string.settings_whitelist_mode)),
-                    selectedIndex = if (managedListMode == MediaScanMode.BLACKLIST) 0 else 1,
-                    onItemClick = { managedListMode = if (it == 0) MediaScanMode.BLACKLIST else MediaScanMode.WHITELIST },
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
-
             // Mode Selection with ExpressiveButtonGroup
             item {
                 Column(modifier = Modifier.fillMaxWidth()) {
@@ -478,10 +469,11 @@ fun MediaScanSettingsScreen(onBackClick: () -> Unit) {
                                 selectedIndex = MediaScanMode.entries.indexOf(currentMode),
                                 onItemClick = { index ->
                                     HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
-                                    currentMode = if (index == 0) {
+                                    if (index == 0) {
                                         appSettings.setMediaScanMode(MediaScanMode.BLACKLIST)
                                         MediaScanMode.BLACKLIST
                                     } else if (index == 2) {
+                                        managedListMode = MediaScanMode.WHITELIST
                                         appSettings.setMediaScanMode(MediaScanMode.HYBRID)
                                         MediaScanMode.HYBRID
                                     } else {
@@ -516,6 +508,15 @@ fun MediaScanSettingsScreen(onBackClick: () -> Unit) {
                 }
             }
 
+            if (currentMode == MediaScanMode.HYBRID) item {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(context.getString(R.string.catalog_editing_list), style = MaterialTheme.typography.titleSmall)
+                    ExpressiveButtonGroup(items = listOf(context.getString(R.string.catalog_included_list), context.getString(R.string.catalog_excluded_list)),
+                        selectedIndex = if (managedListMode == MediaScanMode.WHITELIST) 0 else 1,
+                        onItemClick = { managedListMode = if (it == 0) MediaScanMode.WHITELIST else MediaScanMode.BLACKLIST }, modifier = Modifier.fillMaxWidth())
+                    Text(context.getString(R.string.catalog_hybrid_hint), style = MaterialTheme.typography.bodySmall)
+                }
+            }
             item {
                 val scanBehaviorItems = listOf(
                     toMaterial3SettingsItem(

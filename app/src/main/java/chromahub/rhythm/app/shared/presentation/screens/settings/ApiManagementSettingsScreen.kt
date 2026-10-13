@@ -249,6 +249,7 @@ fun ApiManagementSettingsScreen(onBackClick: () -> Unit) {
             item { Spacer(modifier = Modifier.height(8.dp)) }
 
 
+            item { chromahub.rhythm.app.features.local.presentation.metadata.CatalogSourceSettings() }
             // API Services
             item {
                 Text(

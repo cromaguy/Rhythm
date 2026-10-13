@@ -141,6 +141,7 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
     
     // Player listener reference for proper cleanup
     private var playerListener: Player.Listener? = null
+    private var listeningRecorder: chromahub.rhythm.app.features.local.data.experience.ListeningRecorder? = null
     
     // BroadcastReceiver to listen for favorite changes from ViewModel
     private val favoriteChangeReceiver = object : BroadcastReceiver() {
@@ -983,6 +984,7 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
             val oldPlayer = player
             val wrappedNewPlayer = wrapPlayer(newPlayer)
             player = wrappedNewPlayer
+            listeningRecorder?.attach(wrappedNewPlayer)
             
             // Move the service-level player listener to the new player
             playerListener?.let { listener ->
@@ -992,6 +994,7 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
             
             // Update the MediaSession to use the new player
             mediaSession?.player = wrappedNewPlayer
+            listeningRecorder?.attach(wrappedNewPlayer)
             
             // Force custom layout update for the new player
             scheduleCustomLayoutUpdate(50)
@@ -1189,6 +1192,8 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
             }
         }
         playerListener?.let { player.addListener(it) }
+        listeningRecorder = chromahub.rhythm.app.features.local.data.experience.ListeningRecorder(this, ::convertMediaItemToSong).also { it.attach(player) }
+        chromahub.rhythm.app.features.local.data.experience.AudioAnalysisWorker.enqueue(this)
         
         // Initialize transition controller for crossfade scheduling
         transitionController = TransitionController(rhythmPlayerEngine, appSettings)
@@ -2436,6 +2441,7 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
     }
 
     override fun onDestroy() {
+        listeningRecorder?.close(); listeningRecorder = null
         chromahub.rhythm.app.features.local.data.metadata.CatalogEnrichmentService.get(this).setActiveSong(null)
         chromahub.rhythm.app.infrastructure.worker.CatalogWriteWorker.enqueue(this)
         instanceForWidgetAndLyricsOnly = null
@@ -2848,12 +2854,14 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
                     ?.takeIf { it.isNotBlank() }
                     ?: mediaItem.mediaMetadata.albumTitle?.toString()
                     ?: "",
-                uri = mediaItem.requestMetadata.mediaUri ?: Uri.EMPTY,
+                uri = mediaItem.requestMetadata.mediaUri ?: mediaItem.localConfiguration?.uri ?: Uri.EMPTY,
                 artworkUri = mediaItem.mediaMetadata.artworkUri,
                 duration = player.duration.takeIf { it > 0 } ?: 0L,
                 trackNumber = 0,
                 year = 0,
-                genre = "",
+                genre = mediaItem.mediaMetadata.genre?.toString(),
+                dateAdded = extras?.getLong("t2rhythm.dateAdded", 0L) ?: 0L,
+                path = extras?.getString("t2rhythm.path"),
                 albumId = "",
                 albumArtist = mediaItem.mediaMetadata.albumArtist?.toString()
             )

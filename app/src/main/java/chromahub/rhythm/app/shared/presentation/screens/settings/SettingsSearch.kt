@@ -99,6 +99,12 @@ data class SearchableSettingItem(
  */
 fun buildSettingsSearchIndex(context: Context): List<SearchableSettingItem> {
     return buildList {
+        add(SearchableSettingItem("personal_music_archive", context.getString(R.string.catalog_library_title), context.getString(R.string.catalog_library_hint),
+            listOf("archive", "metadata", "bulk", "permanent", "backup", "lyrics", "bugs", "melon", "genie", "waveform", "fingerprint", "on-device", "listening", "duration", "tolerance", "보관함", "메타데이터", "일괄", "영구", "백업", "가사", "벅스", "멜론", "지니", "파형", "지문", "청취", "곡길이", "오차"),
+            MaterialSymbolIcon("library_music"), SettingsRoutes.CATALOG_LIBRARY, context.getString(R.string.catalog_library_title)))
+        add(SearchableSettingItem("hybrid_scan", context.getString(R.string.catalog_hybrid_mode), context.getString(R.string.catalog_hybrid_hint),
+            listOf("hybrid", "whitelist", "blacklist", "include", "exclude", "하이브리드", "화이트리스트", "블랙리스트", "포함", "제외"),
+            RhythmIcons.FilterList, SettingsRoutes.MEDIA_SCAN, context.getString(R.string.settings_media_scan)))
         // ======================== MAIN SETTINGS SCREEN ========================
         
         // Look & Feel Section

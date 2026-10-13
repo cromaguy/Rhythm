@@ -8,7 +8,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 /** Persistent, field-level records live outside a cache directory. */
 data class StoredCatalog(val document: CatalogDocument, val retryAfter: Long = 0,
-                         val fetchedAt: Long = System.currentTimeMillis(), val imageFile: String? = null, val attemptedFields: Set<CatalogField> = emptySet())
+                         val fetchedAt: Long = System.currentTimeMillis(), val imageFile: String? = null, val attemptedFields: Set<CatalogField> = emptySet(), val matchingPolicy: String? = null)
 
 class CatalogFileStore(private val root: File) {
     companion object {
@@ -27,24 +27,25 @@ class CatalogFileStore(private val root: File) {
             require(document.kind == kind)
             StoredCatalog(document, json["retryAfter"]?.jsonPrimitive?.long ?: 0,
                 json["fetchedAt"]?.jsonPrimitive?.long ?: 0, json["imageFile"]?.jsonPrimitive?.contentOrNull,
-                json["attemptedFields"]?.jsonArray.orEmpty().map { CatalogField.valueOf(it.jsonPrimitive.content) }.toSet())
+                json["attemptedFields"]?.jsonArray.orEmpty().map { CatalogField.valueOf(it.jsonPrimitive.content) }.toSet(), json["matchingPolicy"]?.jsonPrimitive?.contentOrNull)
         }.getOrNull()
     }
     fun merge(kind: EntityKind, key: String, incoming: CatalogDocument, retryAfter: Long = 0,
-              imageFile: String? = null, replace: Boolean = false, attemptedFields: Set<CatalogField> = emptySet()): StoredCatalog = synchronized(locks.computeIfAbsent(file(kind, key).path) { Any() }) {
+              imageFile: String? = null, replace: Boolean = false, attemptedFields: Set<CatalogField> = emptySet(), reset: Boolean = false, matchingPolicy: String? = null): StoredCatalog = synchronized(locks.computeIfAbsent(file(kind, key).path) { Any() }) {
         require(incoming.kind == kind)
-        val existing = read(kind, key)
+        val existing = if (reset) null else read(kind, key)
         val fields = existing?.document?.values.orEmpty().associateBy { it.field }.toMutableMap()
         incoming.values.filter { replace || it.hasValue() }.forEach {
             if (replace || fields[it.field]?.hasValue() != true) fields[it.field] = it
         }
         val result = StoredCatalog(CatalogDocument(kind, fields.values.toList()), retryAfter,
-            imageFile = imageFile ?: existing?.imageFile, attemptedFields = attemptedFields + existing?.attemptedFields.orEmpty())
+            imageFile = imageFile ?: existing?.imageFile, attemptedFields = attemptedFields + existing?.attemptedFields.orEmpty(), matchingPolicy = matchingPolicy ?: existing?.matchingPolicy)
         root.mkdirs()
         val content = buildJsonObject {
             put("version", 1); put("retryAfter", result.retryAfter); put("fetchedAt", result.fetchedAt)
             put("document", Json.parseToJsonElement(CatalogDocumentCodec.encode(result.document)))
             result.imageFile?.let { put("imageFile", it) }
+            result.matchingPolicy?.let { put("matchingPolicy", it) }
             put("attemptedFields", JsonArray(result.attemptedFields.map { JsonPrimitive(it.name) }))
         }.toString()
         val destination = file(kind, key)

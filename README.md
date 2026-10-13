@@ -1,3 +1,5 @@
+> T2Rhythm 개인 음악 보관함: [사용 안내](docs/PERSONAL_MUSIC_ARCHIVE.md) · [최신 APK](https://github.com/tak2-08/T2Rhythm/releases/latest)
+
 > **T2Rhythm 업데이트:** [최신 APK](https://github.com/tak2-08/T2Rhythm/releases/latest) · [음악 정보 일괄 수집·영구 저장·가사 자동 저장 안내](docs/MUSIC_METADATA_CRAWLER.md)
 >
 > 가사는 기존 API 우선순위와 폴백 설정을 따릅니다. 음악 사이트 크롤링은 가사 API 목록에서 켤 수 있습니다.

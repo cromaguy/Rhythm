@@ -74,8 +74,6 @@ class PlaybackStatsRepository private constructor(private val context: Context) 
         @Volatile
         private var instance: PlaybackStatsRepository? = null
         
-        // Keep 90 days of history
-        private val MAX_HISTORY_AGE_MS = TimeUnit.DAYS.toMillis(90)
         
         // Maximum reasonable event duration (4 hours)
         private val MAX_REASONABLE_EVENT_DURATION_MS = TimeUnit.HOURS.toMillis(4)
@@ -106,7 +104,8 @@ class PlaybackStatsRepository private constructor(private val context: Context) 
         val songTitle: String? = null,
         val artistName: String? = null,
         val albumName: String? = null,
-        val genre: String? = null
+        val genre: String? = null,
+        val playId: String? = null
     ) {
         fun startMillis(): Long = startTimestamp ?: (timestamp - durationMs).coerceAtLeast(0L)
         fun endMillis(): Long = endTimestamp ?: timestamp
@@ -273,12 +272,6 @@ class PlaybackStatsRepository private constructor(private val context: Context) 
         synchronized(fileLock) {
             val events = readEventsLocked()
             
-            // Clean old events
-            val cutoff = coercedTimestamp - MAX_HISTORY_AGE_MS
-            if (cutoff > 0) {
-                events.removeAll { it.endMillis() < cutoff }
-            }
-            
             events += event
             writeEventsLocked(events)
         }
@@ -312,10 +305,6 @@ class PlaybackStatsRepository private constructor(private val context: Context) 
         
         synchronized(fileLock) {
             val events = readEventsLocked()
-            val cutoff = timestamp - MAX_HISTORY_AGE_MS
-            if (cutoff > 0) {
-                events.removeAll { it.endMillis() < cutoff }
-            }
             events += event
             writeEventsLocked(events)
         }
@@ -330,8 +319,8 @@ class PlaybackStatsRepository private constructor(private val context: Context) 
         nowMillis: Long = System.currentTimeMillis()
     ): PlaybackStatsSummary = withContext(Dispatchers.IO) {
         val zoneId = ZoneId.systemDefault()
-        val allEvents = readEvents()
         val (startBound, endBound) = range.resolveBounds(nowMillis, zoneId)
+        val allEvents = readEvents(startBound, endBound)
         
         // Filter events to the time range
         val filteredEvents = allEvents.mapNotNull { event ->
@@ -381,7 +370,11 @@ class PlaybackStatsRepository private constructor(private val context: Context) 
         val effectiveEnd = mergedSpans.maxOfOrNull { it.endMillis } ?: endBound
         
         val totalDuration = mergedSpans.sumOf { it.durationMs }
-        val totalPlays = segmentsBySong.values.sumOf { it.size }
+        val playCounts = eventsBySong.mapValues { (id, events) ->
+            val known = events.mapNotNull { it.playId }.distinct()
+            if (known.isEmpty()) segmentsBySong[id]?.size ?: 0 else known.size
+        }
+        val totalPlays = playCounts.values.sum()
         val uniqueSongsCount = segmentsBySong.keys.size
         
         // Calculate day span for averages
@@ -407,7 +400,7 @@ class PlaybackStatsRepository private constructor(private val context: Context) 
                 artist = artist,
                 albumArtUri = song?.artworkUri?.toString(),
                 totalDurationMs = segments.sumOf { it.durationMs },
-                playCount = segments.size
+                playCount = playCounts[songId] ?: segments.size
             )
         }.sortedByDescending { it.totalDurationMs }.take(5)
         
@@ -432,7 +425,7 @@ class PlaybackStatsRepository private constructor(private val context: Context) 
                 ).ifEmpty { listOf(rawArtist.trim()) }
             }
             val songDuration = segments.sumOf { it.durationMs }
-            val songPlayCount = segments.size
+            val songPlayCount = playCounts[songId] ?: segments.size
 
             resolvedArtists.forEach { artist ->
                 artistDurations[artist] = artistDurations.getOrDefault(artist, 0L) + songDuration
@@ -465,7 +458,7 @@ class PlaybackStatsRepository private constructor(private val context: Context) 
                 album = album,
                 albumArtUri = firstSong?.artworkUri?.toString(),
                 totalDurationMs = allSegments.sumOf { it.durationMs },
-                playCount = allSegments.size,
+                playCount = songEntries.sumOf { playCounts[it.key] ?: it.value.size },
                 uniqueSongs = songEntries.size
             )
         }.sortedByDescending { it.totalDurationMs }.take(5)
@@ -479,7 +472,7 @@ class PlaybackStatsRepository private constructor(private val context: Context) 
                 ?: filteredEvents.find { it.songId == songId }?.genre
             val resolvedGenres = GenreUtils.splitGenres(rawGenre).ifEmpty { listOf("Unknown") }
             val songDuration = segments.sumOf { it.durationMs }
-            val songPlayCount = segments.size
+            val songPlayCount = playCounts[songId] ?: segments.size
 
             resolvedGenres.forEach { genre ->
                 genreDurations[genre] = genreDurations.getOrDefault(genre, 0L) + songDuration
@@ -710,6 +703,7 @@ class PlaybackStatsRepository private constructor(private val context: Context) 
      */
     fun clearHistory() {
         synchronized(fileLock) {
+            chromahub.rhythm.app.features.local.data.experience.ListeningLedger.get(context).clearRecords()
             if (historyFile.exists()) {
                 historyFile.delete()
             }
@@ -719,10 +713,22 @@ class PlaybackStatsRepository private constructor(private val context: Context) 
     
     // Private helper methods
     
-    private fun readEvents(): List<PlaybackEvent> = synchronized(fileLock) { 
-        readEventsLocked() 
+    private fun readEvents(start: Long? = null, end: Long = Long.MAX_VALUE): List<PlaybackEvent> = synchronized(fileLock) {
+        val ledger = chromahub.rhythm.app.features.local.data.experience.ListeningLedger.get(context)
+        ledger.recover()
+        if (ledger.state("legacy_history_imported") == null) {
+            readEventsLocked().forEach { event ->
+                val id = "legacy:" + kr.co.metadata.crawler.CatalogFileStore.hash("${event.songId}:${event.startMillis()}:${event.endMillis()}:${event.durationMs}")
+                ledger.record(chromahub.rhythm.app.features.local.data.experience.ListeningRecord(
+                    id, id, "segment", event.songId, "legacy:${event.songId}", event.songTitle.orEmpty(), event.artistName.orEmpty(), event.albumName.orEmpty(), event.genre,
+                    event.startMillis(), event.endMillis(), event.durationMs, 0, 0, 0, 1f, "legacy_import"))
+            }
+            ledger.state("legacy_history_imported", "1")
+        }
+        ledger.records(start, end).map { r -> PlaybackEvent(r.songId, r.endedAt, r.listenedMs,
+            r.startedAt, r.endedAt, r.title, r.artist, r.album, r.genre, r.playId) }
     }
-    
+
     private fun readEventsLocked(): MutableList<PlaybackEvent> {
         if (!historyFile.exists()) {
             return mutableListOf()
@@ -744,7 +750,7 @@ class PlaybackStatsRepository private constructor(private val context: Context) 
     
     private fun writeEventsLocked(events: List<PlaybackEvent>) {
         runCatching {
-            historyFile.writeText(gson.toJson(events))
+            chromahub.rhythm.app.features.local.data.metadata.PersonalArchive.atomicWrite(historyFile, gson.toJson(events).toByteArray())
         }
     }
     

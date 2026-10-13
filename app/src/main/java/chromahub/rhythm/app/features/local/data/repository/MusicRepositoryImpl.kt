@@ -2572,11 +2572,12 @@ class MusicRepository(context: Context) {
     suspend fun fetchTrackArtwork(songs: List<Song>): List<Song> = withContext(Dispatchers.IO) {
         songs.map { original ->
             val song = catalog.apply(original)
-            if (catalog.artworkRemoved(song)) return@map song.copy(artworkUri = null)
-            var uri = song.artworkUri?.takeIf(catalog::usableArtwork)
-            if (uri == null && catalog.preferences.options.value.artwork) uri = catalog.fetchedImage(kr.co.metadata.crawler.EntityKind.TRACK, catalog.songKey(song), song.title, song.artist)
+            if (catalog.artworkRemoved(song) && !catalog.preferences.options.value.replaces(kr.co.metadata.crawler.CatalogField.TRACK_IMAGE)) return@map song.copy(artworkUri = null)
+            var uri = if (catalog.preferences.options.value.replaces(kr.co.metadata.crawler.CatalogField.TRACK_IMAGE)) null else song.artworkUri?.takeIf(catalog::usableArtwork)
+            if (uri == null && catalog.preferences.options.value.artwork) uri = catalog.fetchedImage(kr.co.metadata.crawler.EntityKind.TRACK, catalog.songKey(song), song.title, song.artist, song.duration, song.album)
             if (uri == null) uri = fetchTrackArtworkLegacy(listOf(song)).firstOrNull()?.artworkUri
             if (catalog.usableArtwork(uri)) uri = catalog.persistArtwork(kr.co.metadata.crawler.EntityKind.TRACK, catalog.songKey(song), uri)
+            catalog.acceptForcedArtwork(song, uri)
             song.copy(artworkUri = uri)
         }
     }
@@ -2601,7 +2602,9 @@ class MusicRepository(context: Context) {
         val kind = kr.co.metadata.crawler.EntityKind.ALBUM
         val key = catalog.albumKey(name, artist.orEmpty())
         catalog.read(kind, key)?.document?.get(kr.co.metadata.crawler.CatalogField.ALBUM_DESCRIPTION)?.let { return@withContext it }
-        if (!fetch || !catalog.descriptionLookupAllowed(kind, key)) return@withContext null
+        if (!fetch) return@withContext null
+        if (catalog.preferences.options.value.profiles) catalog.collect(kind, key, name, artist, setOf(kr.co.metadata.crawler.CatalogField.ALBUM_DESCRIPTION))?.document?.get(kr.co.metadata.crawler.CatalogField.ALBUM_DESCRIPTION)?.let { return@withContext it }
+        if (!catalog.descriptionLookupAllowed(kind, key)) return@withContext null
         var description: String? = null
         if (appSettings.integrationsEnabled.value && appSettings.appleCanvasEnabled.value && artist != null) {
             description = chromahub.rhythm.app.network.AppleMusicCanvasProvider.getAlbumDescription(name, artist)
@@ -4540,11 +4543,12 @@ class MusicRepository(context: Context) {
         songId: String? = null,
         songUri: Uri? = null,
         sourcePreference: LyricsSourcePreference = LyricsSourcePreference.API_FIRST,
-        forceRefresh: Boolean = false
+        forceRefresh: Boolean = false,
+        forceOnline: Boolean = false
     ): LyricsData? = withContext(Dispatchers.IO) {
         val appSettings = AppSettings.getInstance(context)
         val songSpecificPreference = songId?.let { appSettings.getSongLyricsPreference(it) }
-        val finalSourcePreference = when (songSpecificPreference) {
+        val finalSourcePreference = if (forceOnline) LyricsSourcePreference.API_FIRST else when (songSpecificPreference) {
             "online" -> LyricsSourcePreference.API_FIRST
             "embedded" -> LyricsSourcePreference.EMBEDDED_FIRST
             "lrc" -> LyricsSourcePreference.LOCAL_FIRST
@@ -4623,7 +4627,7 @@ class MusicRepository(context: Context) {
         
         val fetchFromAPI: suspend () -> LyricsData? = {
             if (isNetworkAvailable()) {
-                fetchLyricsFromAPIs(artist, title, songId, songUri)
+                fetchLyricsFromAPIs(artist, title, songId, songUri, forceRefresh)
             } else {
                 null
             }
@@ -4705,7 +4709,7 @@ class MusicRepository(context: Context) {
      * Fetches lyrics from online APIs (LRCLib, etc.)
      * Extracted as a separate method for cleaner code
      */
-    private suspend fun fetchLyricsFromAPIs(artist: String, title: String, songId: String? = null, songUri: Uri? = null): LyricsData? {
+    private suspend fun fetchLyricsFromAPIs(artist: String, title: String, songId: String? = null, songUri: Uri? = null, refresh: Boolean = false): LyricsData? {
         val cleanArtist = sanitizeSearchQuery(artist)
         val cleanTitle = sanitizeSearchQuery(title)
 
@@ -4827,14 +4831,16 @@ class MusicRepository(context: Context) {
 
         Log.d(TAG, "fetchLyricsFromAPIs: priority=$apiPriority, isPrioritySet=$isPrioritySet, fallbackRetry=$fallbackRetry")
 
-        val fetchCrawler: suspend () -> LyricsData? = {
+        val fetchCrawler: suspend (kr.co.metadata.crawler.Provider?) -> LyricsData? = { provider ->
             if (appSettings.integrationsEnabled.value && appSettings.musicCrawlerLyricsApiEnabled.value && catalog.enabled()) {
                 val song = cachedSongs?.firstOrNull { it.id == songId || (songUri != null && it.uri == songUri) }
                 val key = song?.let(catalog::songKey) ?: "lookup:${catalog.albumKey(title, artist)}"
                 val document = catalog.collect(kr.co.metadata.crawler.EntityKind.TRACK, key, title, artist,
-                    setOf(kr.co.metadata.crawler.CatalogField.TRACK_LYRICS))?.document
-                document?.get(kr.co.metadata.crawler.CatalogField.TRACK_LYRICS)?.let {
-                    LyricsData(it, null, source = "Music sites")
+                    setOf(kr.co.metadata.crawler.CatalogField.TRACK_LYRICS), song?.duration ?: 0, song?.album,
+                    selectedProviders = provider?.let { setOf(it) }, replace = refresh)?.document
+                document?.values?.firstOrNull { it.field == kr.co.metadata.crawler.CatalogField.TRACK_LYRICS }?.let {
+                    val label = when { "bugs.co.kr" in it.sourceUrl -> "Bugs"; "melon.com" in it.sourceUrl -> "Melon"; "genie.co.kr" in it.sourceUrl -> "Genie"; else -> "Music sites" }
+                    LyricsData(it.value, null, source = label)
                 }
             } else null
         }
@@ -4844,9 +4850,12 @@ class MusicRepository(context: Context) {
                 LyricsApiPriority.BETTERLYRICS_FIRST -> fetchBetterLyrics()
                 LyricsApiPriority.LYRICALLY_FIRST -> fetchLyrically()
                 LyricsApiPriority.LRCLIB_FIRST -> fetchLrcLib()
+                LyricsApiPriority.BUGS_FIRST -> fetchCrawler(kr.co.metadata.crawler.Provider.BUGS_MOBILE)
+                LyricsApiPriority.MELON_FIRST -> fetchCrawler(kr.co.metadata.crawler.Provider.MELON)
+                LyricsApiPriority.GENIE_FIRST -> fetchCrawler(kr.co.metadata.crawler.Provider.GENIE)
                 LyricsApiPriority.MUSIC_CRAWLER_FIRST -> {
                     // Preserve an earlier plain-LRC fallback rather than replace it with another plain source.
-                    lrclibPlainBackup ?: lyricallyBackup ?: fetchCrawler()
+                    lrclibPlainBackup ?: lyricallyBackup ?: fetchCrawler(null)
                 }
             }
             if (result != null) return result

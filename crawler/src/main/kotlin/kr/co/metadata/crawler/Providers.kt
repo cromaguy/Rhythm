@@ -151,6 +151,19 @@ private fun String.toAbsoluteImage(base: String): String? = clean()?.let { raw -
         else -> raw
     }
 }
+private fun Document.trackDuration(): Long? {
+    val explicit = selectFirst("meta[itemprop=duration], meta[property=music:duration]")?.attr("content")
+        ?: selectFirst("[itemprop=duration]")?.let { it.attr("content").ifBlank { it.text() } }
+        ?: labelValue("재생시간") ?: labelValue("곡길이") ?: labelValue("재생 시간")
+    TrackDuration.parse(explicit)?.let { return it }
+    // Only duration properties in public structured data; never infer from unrelated dates/times.
+    select("script[type=application/ld+json]").forEach { script ->
+        val match = Regex(""""duration"\s*:\s*"([^"]+)"""").find(script.data())
+        TrackDuration.parse(match?.groupValues?.get(1))?.let { return it }
+    }
+    return null
+}
+
 private fun <T> evidence(value: T?, provider: Provider, url: String, confidence: Double = 0.85): Evidence<T>? =
     value?.let { Evidence(it, provider, url, confidence) }
 private fun splitNames(text: String?): List<String> = text.clean()
@@ -255,6 +268,7 @@ abstract class BugsProvider(
             releaseDate = evidence(release, provider, page, 0.97),
             genres = evidence(genres.takeIf { it.isNotEmpty() }, provider, page, 0.92),
             sourceUrl = page,
+            description = evidence(result?.str("album_intro") ?: doc.selectFirst(".albumIntro, .album-intro, .album_desc")?.wholeText()?.trim(), provider, page),
         )
     }
 
@@ -269,10 +283,10 @@ abstract class BugsProvider(
         val album = result?.obj("album")
         val lyrics = runCatching { result?.obj("lyrics")?.get("normal")?.jsonPrimitive?.contentOrNull }.getOrNull()
             ?.replace("\\r\\n", "\n")?.replace("\\n", "\n")?.replace("\\r", "\n")?.trim()?.takeIf { it.isNotBlank() }
-        // Bugs may only expose artist genres on a track page; this is marked as lower confidence.
-        val genres = result?.get("artists").jsonArrayOrEmpty().flatMap { artist ->
-            artist.jsonObjectOrNull()?.get("genres").jsonArrayOrEmpty().mapNotNull { it.jsonObjectOrNull()?.str("svc_nm") }
-        }.distinct()
+        // Artist genres are not track genres; never overwrite a song tag with that inference.
+        val genres = result?.get("styles").jsonArrayOrEmpty().mapNotNull { style ->
+            style.jsonObjectOrNull()?.str("style_nm") ?: style.jsonObjectOrNull()?.str("svc_nm")
+        }.ifEmpty { splitGenres(doc.labelValue("장르")) }
         val image = (doc.meta("og:image") ?: album?.imagePath("album"))?.toAbsoluteImage(page)
         if (title == null && lyrics == null) return null
         return TrackMetadata(
@@ -282,8 +296,9 @@ abstract class BugsProvider(
             lyrics = evidence(lyrics, provider, page, 0.98),
             imageUrl = evidence(image, provider, page, 0.92),
             releaseDate = evidence(result?.str("release_ymd") ?: album?.str("release_ymd"), provider, page, 0.9),
-            genres = evidence(genres.takeIf { it.isNotEmpty() }, provider, page, 0.65),
+            genres = evidence(genres.takeIf { it.isNotEmpty() }, provider, page, 0.9),
             albumTitle = evidence(album?.str("title"), provider, page, 0.96),
+            durationMs = evidence(TrackDuration.parse(result?.str("play_time") ?: result?.str("duration")) ?: doc.trackDuration(), provider, page, 0.98),
             sourceUrl = page,
         )
     }
@@ -321,7 +336,7 @@ class GenieProvider(private val http: PageClient = PageClient()) : MusicProvider
         val release = doc.labelValue("발매일")
         val genre = splitGenres(doc.labelValue("장르/스타일") ?: doc.labelValue("장르"))
         if (title == null && image == null) return null
-        return AlbumMetadata(id, evidence(title, provider, url), evidence(splitNames(artist).ifEmpty { emptyList() }.takeIf { it.isNotEmpty() }, provider, url), evidence(image, provider, url), evidence(release, provider, url), evidence(genre.takeIf { it.isNotEmpty() }, provider, url), url)
+        return AlbumMetadata(id, evidence(title, provider, url), evidence(splitNames(artist).ifEmpty { emptyList() }.takeIf { it.isNotEmpty() }, provider, url), evidence(image, provider, url), evidence(release, provider, url), evidence(genre.takeIf { it.isNotEmpty() }, provider, url), url, evidence(doc.selectFirst(".album-intro, .album_desc, .album-detail .detail_txt")?.wholeText()?.trim(), provider, url))
     }
     override suspend fun track(id: String): TrackMetadata? {
         val url = "https://www.genie.co.kr/detail/songInfo?xgnm=${URLEncoder.encode(id, Charsets.UTF_8.name())}"
@@ -334,7 +349,7 @@ class GenieProvider(private val http: PageClient = PageClient()) : MusicProvider
         val lyrics = doc.selectFirst(".lyrics, .lyric, #lyrics, .song-lyrics")?.wholeText()?.trim()?.takeIf(String::isNotBlank)
         val image = (doc.meta("og:image") ?: doc.selectFirst(".album-img img")?.absUrl("src"))?.toAbsoluteImage(url)
         if (title == null && lyrics == null) return null
-        return TrackMetadata(id, evidence(title, provider, url), evidence(splitNames(artist).takeIf { it.isNotEmpty() }, provider, url), evidence(lyrics, provider, url), evidence(image, provider, url), evidence(release, provider, url), evidence(genre.takeIf { it.isNotEmpty() }, provider, url), evidence(album, provider, url), url)
+        return TrackMetadata(id, evidence(title, provider, url), evidence(splitNames(artist).takeIf { it.isNotEmpty() }, provider, url), evidence(lyrics, provider, url), evidence(image, provider, url), evidence(release, provider, url), evidence(genre.takeIf { it.isNotEmpty() }, provider, url), evidence(album, provider, url), url, evidence(doc.trackDuration(), provider, url, 0.98))
     }
 }
 
@@ -363,7 +378,7 @@ class MelonProvider(private val http: PageClient = PageClient()) : MusicProvider
         val release = doc.labelValue("발매일")
         val genres = doc.labelValue("장르")?.split(Regex("[,ㆍ·|]"))?.map(String::trim)?.filter(String::isNotBlank).orEmpty()
         if (title == null && image == null) return null
-        return AlbumMetadata(id, evidence(title, provider, url, 0.9), evidence(splitNames(artist).takeIf { it.isNotEmpty() }, provider, url), evidence(image, provider, url), evidence(release, provider, url), evidence(genres.takeIf { it.isNotEmpty() }, provider, url), url)
+        return AlbumMetadata(id, evidence(title, provider, url, 0.9), evidence(splitNames(artist).takeIf { it.isNotEmpty() }, provider, url), evidence(image, provider, url), evidence(release, provider, url), evidence(genres.takeIf { it.isNotEmpty() }, provider, url), url, evidence(doc.selectFirst(".album_intro, .section_albuminfo .text, .album_detail .text")?.wholeText()?.trim(), provider, url))
     }
     override suspend fun track(id: String): TrackMetadata? {
         val url = "https://www.melon.com/song/detail.htm?songId=${URLEncoder.encode(id, Charsets.UTF_8.name())}"
@@ -376,7 +391,7 @@ class MelonProvider(private val http: PageClient = PageClient()) : MusicProvider
         val album = doc.selectFirst(".wrap_info .meta a, .section_info .meta a")?.textClean() ?: doc.labelValue("앨범")
         val lyrics = doc.selectFirst(".section_lyric .lyric, .section_lyric .lyric_area, .lyric")?.wholeText()?.trim()?.takeIf(String::isNotBlank)
         if (title == null && lyrics == null) return null
-        return TrackMetadata(id, evidence(title, provider, url, 0.96), evidence(splitNames(artist).takeIf { it.isNotEmpty() }, provider, url), evidence(lyrics, provider, url, 0.9), evidence(image, provider, url, 0.95), evidence(release, provider, url, 0.95), evidence(genre.takeIf { it.isNotEmpty() }, provider, url, 0.92), evidence(album, provider, url), url)
+        return TrackMetadata(id, evidence(title, provider, url, 0.96), evidence(splitNames(artist).takeIf { it.isNotEmpty() }, provider, url), evidence(lyrics, provider, url, 0.9), evidence(image, provider, url, 0.95), evidence(release, provider, url, 0.95), evidence(genre.takeIf { it.isNotEmpty() }, provider, url, 0.92), evidence(album, provider, url), url, evidence(doc.trackDuration(), provider, url, 0.98))
     }
 }
 

@@ -160,6 +160,7 @@ import chromahub.rhythm.app.shared.presentation.components.SettingsPalettes
 
 // Define routes for navigation
 object SettingsRoutes {
+    const val CATALOG_LIBRARY = "catalog_library_settings"
     const val NOTIFICATIONS = "notifications_settings"
     const val LABS = "labs_settings"
     const val EXPERIMENTAL_FEATURES = LABS
@@ -399,6 +400,7 @@ fun SettingsScreen(
                 items = buildList {
                     add(SettingItem(RhythmIcons.Notifications, context.getString(R.string.settings_notifications), context.getString(R.string.settings_notifications_desc), palette = SettingsPalettes.Coral, onClick = { onNavigateTo(SettingsRoutes.NOTIFICATIONS) }))
                     // API Management/Integrations is available in both LOCAL and STREAMING modes
+                    add(SettingItem(MaterialSymbolIcon("library_music"), context.getString(R.string.catalog_library_title), context.getString(R.string.catalog_library_hint), palette = SettingsPalettes.Emerald, onClick = { onNavigateTo(SettingsRoutes.CATALOG_LIBRARY) }))
                     add(SettingItem(MaterialSymbolIcon("hub"), context.getString(R.string.settings_api_management), context.getString(R.string.settings_api_management_desc), palette = SettingsPalettes.Slate, onClick = { onNavigateTo(SettingsRoutes.API_MANAGEMENT) }))
                 }
             ),
@@ -1143,6 +1145,7 @@ fun SettingsScreenWrapper(
                         SettingsRoutes.DEFAULT_PLAYLISTS -> DefaultPlaylistsSettingsScreen(
                             onBackClick = handleBack
                         )
+                        SettingsRoutes.CATALOG_LIBRARY -> chromahub.rhythm.app.features.local.presentation.metadata.CatalogLibrarySettingsScreen(onBackClick = handleBack)
                         SettingsRoutes.MEDIA_SCAN -> MediaScanSettingsScreen(onBackClick = handleBack)
                         SettingsRoutes.ARTIST_SEPARATORS -> ArtistSeparatorsSettingsScreen(onBackClick = handleBack)
                         SettingsRoutes.ABOUT -> chromahub.rhythm.app.shared.presentation.screens.settings.AboutScreen(
@@ -1298,7 +1301,8 @@ fun SettingsScreenWrapper(
                 SettingsRoutes.DEFAULT_PLAYLISTS -> DefaultPlaylistsSettingsScreen(
                     onBackClick = handleBack
                 )
-                SettingsRoutes.MEDIA_SCAN -> MediaScanSettingsScreen(onBackClick = handleBack)
+                SettingsRoutes.CATALOG_LIBRARY -> chromahub.rhythm.app.features.local.presentation.metadata.CatalogLibrarySettingsScreen(onBackClick = handleBack)
+                        SettingsRoutes.MEDIA_SCAN -> MediaScanSettingsScreen(onBackClick = handleBack)
                 SettingsRoutes.ARTIST_SEPARATORS -> ArtistSeparatorsSettingsScreen(onBackClick = handleBack)
                 SettingsRoutes.ABOUT -> chromahub.rhythm.app.shared.presentation.screens.settings.AboutScreen(
                     onBackClick = handleBack,

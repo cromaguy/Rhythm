@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Rhythm</string>
+    <string name="app_name">T2Rhythm</string>
     <!-- Common Labels -->
     <string name="home">Ana sayfa</string>
     <string name="library">Kütüphane</string>
     <string name="search">Ara</string>
     <!-- Media3 notification configuration -->
-    <string name="media3_notification_channel_name">Rhythm Müzik</string>
+    <string name="media3_notification_channel_name">T2Rhythm Müzik</string>
     <string name="media3_notification_channel_description">Medya oynatma kontrolleri</string>
     <!-- Widget strings -->
-    <string name="widget_description_glance">Rhythm Müzik - 9 duyarlı düzen, Material 3 tasarım ve gerçek zamanlı durum güncellemeleriyle Oynatmayı Kontrol Edin</string>
-    <string name="widget_name_glance">Rhythm Müzik</string>
+    <string name="widget_description_glance">T2Rhythm Müzik - 9 duyarlı düzen, Material 3 tasarım ve gerçek zamanlı durum güncellemeleriyle Oynatmayı Kontrol Edin</string>
+    <string name="widget_name_glance">T2Rhythm Müzik</string>
     <string name="unknown_artist">Bilinmeyen sanatçı</string>
     <string name="play_pause">Oynat/Duraklat</string>
     <!-- Widget Settings -->
@@ -25,17 +25,17 @@
     <!-- Settings - Notifications -->
     <string name="settings_notifications">Bildirimler</string>
     <string name="settings_notifications_updates_group">Uygulama Güncellemeleri</string>
-    <string name="settings_notifications_rhythm_guard_group">Rhythm Muhafız</string>
-    <string name="settings_notifications_rhythm_pulse_group">Rhythm İpuçları</string>
+    <string name="settings_notifications_rhythm_guard_group">T2Rhythm Muhafız</string>
+    <string name="settings_notifications_rhythm_pulse_group">T2Rhythm İpuçları</string>
     <string name="settings_update_notifications_merged_desc">Yeni sürümler ve arka plan güncelleme kontrolü sonuçları için uyarılar alın</string>
     <string name="settings_rhythm_guard_alert_notifications">Güvenlik Uyarısı Bildirimleri</string>
-    <string name="settings_rhythm_guard_alert_notifications_desc">Rhythm Guard riskli hacim veya maruz kalma tespit ettiğinde bir bildirim göster</string>
+    <string name="settings_rhythm_guard_alert_notifications_desc">T2Rhythm Guard riskli hacim veya maruz kalma tespit ettiğinde bir bildirim göster</string>
     <string name="settings_rhythm_guard_timer_notifications">Mola Zamanlayıcı Bildirimleri</string>
     <string name="settings_rhythm_guard_timer_notifications_desc">Planlanmış molalar ve aktif mola geri sayımları için bildirimleri göster</string>
-    <string name="settings_rhythm_pulse_notifications">Rhythm İpucu Bildirimi</string>
+    <string name="settings_rhythm_pulse_notifications">T2Rhythm İpucu Bildirimi</string>
     <string name="settings_rhythm_pulse_notifications_desc">Dostça hatırlatmalar ve dinleme ipuçları alın.</string>
     <string name="settings_rhythm_pulse_interval">İpuçları Aralığı</string>
-    <string name="settings_rhythm_pulse_interval_dialog_title">Rhythm İpucu Aralığı</string>
+    <string name="settings_rhythm_pulse_interval_dialog_title">T2Rhythm İpucu Aralığı</string>
     <!-- Settings - Queue & Playback -->
     <!-- Settings - Queue -->
     <string name="settings_queue">Sıra</string>
@@ -114,18 +114,18 @@
     <string name="operation_exporting_playlists">Özel çalma listeleriniz yedekleniyor…</string>
     <string name="operation_exporting_playlists_location">Çalma listeleri depolama alanına yedekleniyor…</string>
     <string name="operation_importing_playlist">Çalma listesi dosyası içe aktarılıyor…</string>
-    <string name="notification_operations_channel_name">Rhythm Kitaplığı</string>
+    <string name="notification_operations_channel_name">T2Rhythm Kitaplığı</string>
     <string name="notification_operations_channel_desc">Kitaplık taramaları ve oynatma listesi eylemleri için ilerleme ve sonuçlar</string>
-    <string name="notification_media_scan_title">Rhythm Kitaplık Taraması</string>
+    <string name="notification_media_scan_title">T2Rhythm Kitaplık Taraması</string>
     <string name="notification_media_scan_stage_songs">Ses parçaları için cihaz depolama alanı taranıyor…</string>
     <string name="notification_media_scan_stage_saving">Ses parçası veritabanı optimize ediliyor ve kaydediliyor…</string>
     <string name="notification_media_scan_stage_finishing">Ses indekslemesi tamamlanıyor…</string>
     <string name="notification_media_scan_complete_pending_setup">Ses taraması tamamlandı, arka plan görevleri başlatılıyor…</string>
     <string name="notification_media_scan_cancelled">Kitaplık taraması iptal edildi.</string>
     <string name="notification_media_scan_failed">Kitaplık taraması başarısız oldu. Depolama izinlerini kontrol edip tekrar deneyin.</string>
-    <string name="notification_playlist_export_title">Rhythm Kitaplığı Dışa Aktarma</string>
-    <string name="notification_playlist_import_title">Rhythm Kitaplığı İçe Aktarma</string>
-    <string name="notification_library_setup_title">Rhythm Kitaplık Kurulumu</string>
+    <string name="notification_playlist_export_title">T2Rhythm Kitaplığı Dışa Aktarma</string>
+    <string name="notification_playlist_import_title">T2Rhythm Kitaplığı İçe Aktarma</string>
+    <string name="notification_library_setup_title">T2Rhythm Kitaplık Kurulumu</string>
     <plurals name="notification_library_setup_complete_summary">
         <item quantity="one">Kitaplık optimize edildi ve hazır: %1$d parça, %2$d albüm, %3$d sanatçı</item>
         <item quantity="other">Kitaplık optimize edildi ve hazır: %1$d parça, %2$d albüm, %3$d sanatçı</item>
@@ -144,20 +144,20 @@
         <item quantity="other">\"%1$s\", %2$d şarkıyla başarıyla içe aktarıldı.</item>
     </plurals>
     <string name="notification_playlist_import_failed">Çalma listesini içe aktarma başarısız oldu. Lütfen dosya biçimini doğrulayın.</string>
-    <string name="notification_updater_channel_name">Rhythm Güncelleyici</string>
+    <string name="notification_updater_channel_name">T2Rhythm Güncelleyici</string>
     <string name="notification_updater_channel_desc">Uygulama güncellemeleri için indirme durumu</string>
-    <string name="notification_updater_title">Rhythm Güncelleyici</string>
+    <string name="notification_updater_title">T2Rhythm Güncelleyici</string>
     <string name="notification_updater_downloading">⬇ İndiriliyor: %%%1$d</string>
     <string name="notification_updater_download_complete">✓ Kuruluma hazır. Güncellemek için dokunun.</string>
     <string name="notification_updater_available_title">Güncelleme Mevcut!</string>
-    <string name="notification_updater_available_text">🆕 Rhythm\'ın yeni bir sürümü burada.</string>
-    <string name="notification_sleep_timer_channel_name">Rhythm Uyku Zamanlayıcısı</string>
+    <string name="notification_updater_available_text">🆕 T2Rhythm\'ın yeni bir sürümü burada.</string>
+    <string name="notification_sleep_timer_channel_name">T2Rhythm Uyku Zamanlayıcısı</string>
     <string name="notification_sleep_timer_channel_desc">Uyku zamanlayıcısı işlemleri için geri sayım ve durum</string>
-    <string name="notification_sleep_timer_title">Rhythm Uyku Zamanlayıcısı</string>
+    <string name="notification_sleep_timer_title">T2Rhythm Uyku Zamanlayıcısı</string>
     <string name="notification_sleep_timer_pause_in">⏸ %1$s içinde duraklatma</string>
     <string name="notification_sleep_timer_stop_in">⏹ %1$s\'da durmak</string>
     <!-- Streaming Notifications -->
-    <string name="notification_streaming_channel_name">Rhythm Go</string>
+    <string name="notification_streaming_channel_name">T2Rhythm Go</string>
     <string name="notification_streaming_channel_desc">Akış hizmeti durumu ve senkronizasyon güncellemeleri</string>
     <!-- Streaming Authentication -->
     <string name="notification_streaming_auth_title">Akış Bağlandı</string>
@@ -302,7 +302,7 @@
     <!-- Status Labels -->
     <string name="status_disabled">Devre Dışı</string>
     <!-- HomeScreen -->
-    <string name="home_title">Rhythm</string>
+    <string name="home_title">T2Rhythm</string>
     <string name="home_settings_cd">Ayarlar</string>
     <string name="home_no_featured_albums">Öne Çıkan Albüm Yok</string>
     <string name="home_no_featured_albums_desc">Öne çıkan içeriği görmek için kitaplığınıza birkaç albüm ekleyin</string>
@@ -331,7 +331,7 @@
     <string name="home_no_recommendations">Öneri Yok</string>
     <string name="home_no_recommendations_desc">Kişiselleştirilmiş öneriler almak için biraz müzik dinleyin</string>
     <!-- Listening Stats -->
-    <string name="home_listening_stats">Rhythm İstatistikleriniz</string>
+    <string name="home_listening_stats">T2Rhythm İstatistikleriniz</string>
     <!-- Mood & Moments -->
     
     <!-- Recently Played -->
@@ -387,7 +387,7 @@
     <string name="sort_song_count">Şarkı Sayısı</string>
     <!-- Storage Permission -->
     <string name="storage_permission_required">Depolama İzni Gerekli</string>
-    <string name="storage_permission_desc">Müzik dosyalarınıza göz atmak ve cihazınızın depolama alanını keşfetmek için Rhythm\'ın dosyalarınıza ve medyanıza erişim iznine ihtiyacı var.</string>
+    <string name="storage_permission_desc">Müzik dosyalarınıza göz atmak ve cihazınızın depolama alanını keşfetmek için T2Rhythm\'ın dosyalarınıza ve medyanıza erişim iznine ihtiyacı var.</string>
     <string name="storage_permission_audio_only">Bu, yalnızca ses dosyalarına ve müzik içeren klasörlere erişime izin verir.</string>
     <!-- PlayerScreen -->
     <string name="player_loading_lyrics">Şarkı sözleri yükleniyor…</string>
@@ -402,11 +402,11 @@
     <!-- Common UI -->
     <string name="ui_dismiss">Reddet</string>
     <!-- Common Terms -->
-    <string name="common_rhythm">Rhythm</string>
+    <string name="common_rhythm">T2Rhythm</string>
     <string name="common_home">Ana sayfa</string>
     <string name="common_library">Kütüphane</string>
     <!-- Splash/Loading -->
-    <string name="splash_tagline">Müziğiniz, Rhythm\'ınız</string>
+    <string name="splash_tagline">Müziğiniz, T2Rhythm\'ınız</string>
     <string name="splash_ready">Çığır açmaya hazırız!</string>
     <!-- Audio Quality -->
     
@@ -434,7 +434,7 @@
     <string name="updates_channel_desc">Hangi güncelleme kanalını takip edeceğinizi seçin:</string>
     <!-- Onboarding -->
     <string name="onboarding_welcome_to">Hoş Geldiniz</string>
-    <string name="onboarding_welcome_subtitle">Müziğiniz, Rhythm\'ınız</string>
+    <string name="onboarding_welcome_subtitle">Müziğiniz, T2Rhythm\'ınız</string>
     <string name="onboarding_get_started">Başlayın</string>
     <string name="onboarding_android13_notice">Android 13+ Bildirimi</string>
     <string name="onboarding_android13_desc">Daha yeni Android sürümlerinde birden fazla izin isteği göreceksiniz. En iyi deneyim için lütfen ses dosyalarına ve bildirimlere erişim izni verin.</string>
@@ -458,15 +458,15 @@
     <string name="onboarding_library_how_works">Kütüphane Organizasyonu Nasıl Çalışır?</string>
     <string name="onboarding_library_1">Favorilerinize hızlı erişim için Kitaplık\'taki sekme sırasını özelleştirin</string>
     <string name="onboarding_library_2">Çalma listelerini doğrudan Kitaplık ekranından oluşturun ve yönetin</string>
-    <string name="onboarding_theme_title">Rhythm\'ı Kendinize Ait Yapın</string>
-    <string name="onboarding_theme_desc">Rhythm\'in görünümünü tarzınıza uyacak şekilde kişiselleştirin. Sistem temanızı, yazı tipinizi veya Material Dinamik renklerinizi (Android 12+) seçin.</string>
+    <string name="onboarding_theme_title">T2Rhythm\'ı Kendinize Ait Yapın</string>
+    <string name="onboarding_theme_desc">T2Rhythm\'in görünümünü tarzınıza uyacak şekilde kişiselleştirin. Sistem temanızı, yazı tipinizi veya Material Dinamik renklerinizi (Android 12+) seçin.</string>
     <string name="onboarding_more_tuner">Ayarlarda Daha Fazla Özelleştirme</string>
     <string name="onboarding_tuner_1">Özel renk şemaları ve albüm kapağı renk çıkarma</string>
     <string name="onboarding_tuner_2">Yazı tipi özelleştirme ve tipografi ayarları</string>
     <string name="onboarding_rhythm_guard_title">İşitme Duyunuzu Koruyun</string>
-    <string name="onboarding_rhythm_guard_desc">Yaşa duyarlı varsayılanlar ve manuel koruma kontrolleriyle dinlemenizi daha güvenli tutmak için Rhythm Guard\'ı kurun.</string>
-    <string name="onboarding_rhythm_guard_mode_title">Rhythm Koruma Modu</string>
-    <string name="onboarding_rhythm_guard_age_hint">Yaş profili, Rhythm Guard\'ın daha güvenli dinleme sınırları önermesine yardımcı oluyor.</string>
+    <string name="onboarding_rhythm_guard_desc">Yaşa duyarlı varsayılanlar ve manuel koruma kontrolleriyle dinlemenizi daha güvenli tutmak için T2Rhythm Guard\'ı kurun.</string>
+    <string name="onboarding_rhythm_guard_mode_title">T2Rhythm Koruma Modu</string>
+    <string name="onboarding_rhythm_guard_age_hint">Yaş profili, T2Rhythm Guard\'ın daha güvenli dinleme sınırları önermesine yardımcı oluyor.</string>
     <string name="onboarding_rhythm_guard_tip_1">Otomatik mod, minimum kurulumla daha güvenli varsayılanları uygular.</string>
     <string name="onboarding_rhythm_guard_tip_3">Manuel mod size uyarılar ve eşikler üzerinde tam kontrol sağlar.</string>
     <string name="onboarding_full_tour_prompt_title">Tam Kurulum Turuna Devam Edilsin mi?</string>
@@ -482,7 +482,7 @@
     <string name="onboarding_media_scan_blacklist">Kara Liste Modu: Belirli şarkıları ve klasörleri gizleyin (zil sesleri, bildirimler)</string>
     <string name="onboarding_media_scan_whitelist">Beyaz Liste Modu: Yalnızca seçilen klasörlerdeki şarkıları göster</string>
     <string name="onboarding_complete_title">Artık Hazırsınız!</string>
-    <string name="onboarding_complete_desc">Rhythm oynamaya hazır! Müzik kitaplığınız arka planda taranıyor. İşte yapılandırılmış olanlar:</string>
+    <string name="onboarding_complete_desc">T2Rhythm oynamaya hazır! Müzik kitaplığınız arka planda taranıyor. İşte yapılandırılmış olanlar:</string>
     <string name="onboarding_whats_next">Sırada Ne Var?</string>
     <string name="onboarding_next_browse">Şarkılarınıza, albümlerinize ve sanatçılarınıza göz atın</string>
     <string name="onboarding_next_create">İlk çalma listenizi oluşturun</string>
@@ -503,8 +503,8 @@
     <string name="onboarding_grant_permissions">İzin Verme</string>
     <string name="onboarding_permissions_granted_desc">Gerekli tüm izinler verilmiştir. Devam etmeye hazırsınız!</string>
     <string name="onboarding_redirect_settings_desc">Gerekli izinleri vermek için lütfen cihazınızdaki uygulama ayarlarına gidin.</string>
-    <string name="onboarding_rationale_desc">Rhythm\'ın düzgün çalışması için belirli izinler gerekiyor. Lütfen devam etmelerine izin verin.</string>
-    <string name="onboarding_permissions_required_desc">Rhythm\'ın özelliklerinden tam olarak yararlanabilmek için belirli cihaz özelliklerine erişim izninize ihtiyacımız var.</string>
+    <string name="onboarding_rationale_desc">T2Rhythm\'ın düzgün çalışması için belirli izinler gerekiyor. Lütfen devam etmelerine izin verin.</string>
+    <string name="onboarding_permissions_required_desc">T2Rhythm\'ın özelliklerinden tam olarak yararlanabilmek için belirli cihaz özelliklerine erişim izninize ihtiyacımız var.</string>
     <string name="onboarding_permission_music_title">Müzik Kitaplığı Erişimi</string>
     <string name="onboarding_permission_music_desc">Yerel müzik dosyalarınızı okuyun ve bunları uygulamada görüntüleyin</string>
     <string name="onboarding_permission_bluetooth_title">Bluetooth Bağlantısı</string>
@@ -517,9 +517,9 @@
     <string name="onboarding_permission_tip_2">İzinleri daha sonra Ayarlar\'dan değiştirebilirsiniz</string>
     <!-- Onboarding Audio &amp; Playback -->
     <string name="onboarding_default_screen_title">Varsayılan Açılış Ekranı</string>
-    <string name="onboarding_default_screen_desc">Rhythm\'ı başlattığınızda hangi ekranın açılacağını seçin</string>
+    <string name="onboarding_default_screen_desc">T2Rhythm\'ı başlattığınızda hangi ekranın açılacağını seçin</string>
     <string name="onboarding_system_volume_title">Sistem Ses Kontrolü</string>
-    <string name="onboarding_system_volume_desc">Cihazınızın fiziksel ses düğmelerinin, Rhythm cihazının oynatma ses düzeyini kontrol etmesine izin verin.</string>
+    <string name="onboarding_system_volume_desc">Cihazınızın fiziksel ses düğmelerinin, T2Rhythm cihazının oynatma ses düzeyini kontrol etmesine izin verin.</string>
     <string name="onboarding_auto_queue_title">Kuyruğa Otomatik Ekle</string>
     <string name="onboarding_auto_queue_desc">Bir şarkıyı çalarken albümden/sanatçıdan otomatik olarak bağlamsal bir sıra oluşturun.</string>
     <string name="onboarding_show_lyrics_title">Şarkı Sözlerini Göster</string>
@@ -530,7 +530,7 @@
     
     <!-- Onboarding Theming -->
     <string name="onboarding_player_theme_title">Oynatma ve Mini Oynatıcı Temaları</string>
-    <string name="onboarding_player_theme_desc">Oynatma arayüzlerinizi kişiselleştirin. Temiz, modern Rhythm tasarımı ile canlı, akıcı Etkileyici tasarım arasında geçiş yapın.</string>
+    <string name="onboarding_player_theme_desc">Oynatma arayüzlerinizi kişiselleştirin. Temiz, modern T2Rhythm tasarımı ile canlı, akıcı Etkileyici tasarım arasında geçiş yapın.</string>
     <!-- Onboarding Updater -->
     <string name="onboarding_update_check_failed">Güncelleme Kontrolü Başarısız</string>
     <string name="onboarding_ready_to_install">Kuruluma Hazır</string>
@@ -542,7 +542,7 @@
     <string name="onboarding_enable_updates_title">Güncellemeleri Etkinleştir</string>
     <string name="onboarding_enable_updates_desc">Uygulamanın güncellemeleri kontrol etmesine ve indirmesine izin verin</string>
     <string name="onboarding_periodic_check_title">Periyodik Kontrol</string>
-    <string name="onboarding_periodic_check_desc">Rhythm\'ın GitHub deposundaki güncellemeleri otomatik olarak kontrol edin</string>
+    <string name="onboarding_periodic_check_desc">T2Rhythm\'ın GitHub deposundaki güncellemeleri otomatik olarak kontrol edin</string>
     <string name="onboarding_update_notifications_title">Güncelleme Bildirimleri</string>
     <string name="onboarding_update_notifications_desc">Yeni sürümler mevcut olduğunda bildirim alın</string>
     <string name="onboarding_check_interval_desc">Güncellemelerin ne sıklıkta kontrol edileceği</string>
@@ -585,7 +585,7 @@
     <string name="onboarding_gesture_tip_1">Kaydırma hareketleri her iki yönde de çalışır</string>
     <!-- Onboarding: Widgets Step -->
     <string name="onboarding_widgets_title">Başlatıcı Widget\'ları</string>
-    <string name="onboarding_widgets_desc">Hızlı müzik kontrolü için başlatıcınıza Rhythm widget\'larını ekleyin. Hangi bilgilerin görüntüleneceğini ve widget\'ın nasıl görüneceğini özelleştirin.</string>
+    <string name="onboarding_widgets_desc">Hızlı müzik kontrolü için başlatıcınıza T2Rhythm widget\'larını ekleyin. Hangi bilgilerin görüntüleneceğini ve widget\'ın nasıl görüneceğini özelleştirin.</string>
     <string name="onboarding_widget_artist">Sanatçı Adını Göster</string>
     <string name="onboarding_widget_artist_desc">Widget\'ta mevcut sanatçıyı görüntüle</string>
     <string name="onboarding_widget_album">Albüm Adını Göster</string>
@@ -600,8 +600,8 @@
     <string name="onboarding_integration_ytmusic">YouTube Music</string>
     <string name="onboarding_integrations_info_title">Gizlilik Notu</string>
     <string name="onboarding_integrations_info_desc">Bu özellikler harici hizmetlere sınırlı veri (şarkı adları, sanatçılar) gönderir. Kişisel verileriniz ve müzik dosyalarınız cihazınızda kalır. Bunları istediğiniz zaman Ayarlar\'dan etkinleştirebilir veya devre dışı bırakabilirsiniz.</string>
-    <!-- Onboarding: Rhythm Stats Step -->
-    <string name="onboarding_stats_title">Rhythm İstatistikleri</string>
+    <!-- Onboarding: T2Rhythm Stats Step -->
+    <string name="onboarding_stats_title">T2Rhythm İstatistikleri</string>
     <string name="onboarding_stats_desc">Müzik alışkanlıklarınızla ilgili bilgileri keşfedin. Güzel görselleştirmelerle dinleme sürenizi, en çok çalınan şarkıları, favori sanatçıları ve daha fazlasını takip edin.</string>
     <string name="onboarding_stats_show_home">İstatistikleri Ana Sayfada Göster</string>
     <string name="onboarding_stats_show_home_desc">Ana ekranınızda bir dinleme istatistikleri widget\'ı görüntüleyin</string>
@@ -622,9 +622,9 @@
     <string name="settings_tip_gestures_swipe">Tam oynatıcıyı açmak için mini oynatıcıda yukarı kaydırın, ardından işiniz bittiğinde kapatmak için aşağı kaydırın.</string>
     <string name="settings_tip_gestures_artwork">Parçaları değiştirmek için resmi kaydırın ve hızlı oynatma veya duraklatma için albüm kapağına iki kez dokunun.</string>
     <string name="settings_tip_media_scan">İstenmeyen dosyaları kitaplığınızdan gizlemek için medya taramasını kullanın</string>
-    <string name="settings_tip_rhythm_guard_off">Rhythm Korumasını etkinleştirerek işitme duyunuzu koruyun</string>
-    <string name="settings_tip_rhythm_guard_auto">Rhythm Guard, güvenli dinleme sınırlarını otomatik olarak yönetir</string>
-    <string name="settings_tip_rhythm_guard_manual">Rhythm Koruma limitlerini manuel olarak kontrol ediyorsunuz</string>
+    <string name="settings_tip_rhythm_guard_off">T2Rhythm Korumasını etkinleştirerek işitme duyunuzu koruyun</string>
+    <string name="settings_tip_rhythm_guard_auto">T2Rhythm Guard, güvenli dinleme sınırlarını otomatik olarak yönetir</string>
+    <string name="settings_tip_rhythm_guard_manual">T2Rhythm Koruma limitlerini manuel olarak kontrol ediyorsunuz</string>
     <string name="settings_default_screen">Varsayılan Açılış Ekranı</string>
     <string name="settings_default_screen_desc">Başlangıç ekranınızı seçin</string>
     <string name="settings_home_desc">Yeni müzikleri ve önerileri keşfedin</string>
@@ -694,7 +694,7 @@
     <string name="lyrics_editor_title">Şarkı Sözü Düzenleyicisi</string>
     <!-- Components: Song Info -->
     <string name="song_info_title">Şarkı Bilgileri</string>
-    <string name="rhythm_stats">Rhythm İstatistikleri</string>
+    <string name="rhythm_stats">T2Rhythm İstatistikleri</string>
     <string name="file_info">Dosya Bilgisi</string>
     <!-- Components: Add to Playlist -->
     <string name="add_to_playlists">Çalma Listelerine Ekle</string>
@@ -725,7 +725,7 @@
     <string name="updates_disabled_message">Uygulama güncellemeleri ayarlarda devre dışı bırakıldı</string>
     <string name="updates_auto_disabled">Otomatik güncelleme kontrolü devre dışı. Yine de manuel olarak kontrol edebilirsiniz.</string>
     <string name="updates_up_to_date_message">Güncelsiniz!</string>
-    <string name="updates_check_frequency">Rhythm güncellemeleri ne sıklıkla kontrol etmelidir?</string>
+    <string name="updates_check_frequency">T2Rhythm güncellemeleri ne sıklıkla kontrol etmelidir?</string>
     <string name="updates_experimental_coming">Gelecekteki güncellemelerde yakında daha fazla deneysel özellik gelecek</string>
     <string name="settings_interval_every_48_hours">Her 48 saatte bir</string>
     <string name="settings_interval_every_72_hours">Her 72 saatte bir</string>
@@ -868,7 +868,7 @@
     <string name="updates_enable_auto_check">Otomatik kontrol</string>
     <string name="updates_channel_title">Kanalı Güncelle</string>
     <string name="updates_source_title">Güncelleme Kaynağı</string>
-    <string name="updates_source_desc">OTA güncellemeleri için Rhythm\'ın hangi sürüm ailesini kullanması gerektiğini seçin.</string>
+    <string name="updates_source_desc">OTA güncellemeleri için T2Rhythm\'ın hangi sürüm ailesini kullanması gerektiğini seçin.</string>
     <string name="updates_source_installed">Yüklü Yapıyı Eşleştir</string>
     <string name="updates_source_installed_label">Yüklü Yapı</string>
     <string name="updates_source_github_label">GitHub Derlemeleri</string>
@@ -916,7 +916,7 @@
     <string name="cd_reorder_chips">Çipleri yeniden sırala</string>
     <string name="cd_search">Ara</string>
     <string name="cd_view_all">Tümünü görüntüle</string>
-    <string name="cd_rhythm_splash">Rhythm</string>
+    <string name="cd_rhythm_splash">T2Rhythm</string>
     <string name="cd_remove_from_playlist">Çalma listesinden kaldır</string>
     <string name="cd_change_language">Dili Değiştir</string>
     <string name="cd_open_settings">Açık</string>
@@ -989,18 +989,18 @@
     <!-- Fallback Metadata -->
     
     <!-- Service Notifications -->
-    <string name="service_app_updates">Rhythm Güncelleyici</string>
-    <string name="service_update_status">Rhythm Güncelleyici Durumu</string>
-    <string name="service_rhythm_pulse">Rhythm İpuçları</string>
-    <string name="service_rhythm_guard_alerts">Rhythm Koruma Uyarısı</string>
-    <string name="service_rhythm_guard_timers">Rhythm Koruma Zamanlayıcısı</string>
-    <string name="service_rhythm_music">Rhythm Müzik</string>
+    <string name="service_app_updates">T2Rhythm Güncelleyici</string>
+    <string name="service_update_status">T2Rhythm Güncelleyici Durumu</string>
+    <string name="service_rhythm_pulse">T2Rhythm İpuçları</string>
+    <string name="service_rhythm_guard_alerts">T2Rhythm Koruma Uyarısı</string>
+    <string name="service_rhythm_guard_timers">T2Rhythm Koruma Zamanlayıcısı</string>
+    <string name="service_rhythm_music">T2Rhythm Müzik</string>
     <string name="service_update_status_desc">Arka plan güncelleme kontrolleri için durum sonuçları</string>
-    <string name="service_rhythm_pulse_desc">Rhythm\'dan dost canlısı dinleme hatırlatıcıları ve ipuçları</string>
-    <string name="service_rhythm_guard_alerts_desc">Rhythm Muhafızından güvenlik uyarıları</string>
-    <string name="service_rhythm_guard_timers_desc">Rhythm Koruma molası ve mola hatırlatıcıları</string>
-    <string name="service_ready">Rhythm hazır.</string>
-    <string name="service_init_failed">Rhythm başlatılamadı. Lütfen uygulamayı yeniden açın.</string>
+    <string name="service_rhythm_pulse_desc">T2Rhythm\'dan dost canlısı dinleme hatırlatıcıları ve ipuçları</string>
+    <string name="service_rhythm_guard_alerts_desc">T2Rhythm Muhafızından güvenlik uyarıları</string>
+    <string name="service_rhythm_guard_timers_desc">T2Rhythm Koruma molası ve mola hatırlatıcıları</string>
+    <string name="service_ready">T2Rhythm hazır.</string>
+    <string name="service_init_failed">T2Rhythm başlatılamadı. Lütfen uygulamayı yeniden açın.</string>
     <!-- Crash Activity -->
     <string name="crash_bug_report">Hata Raporu</string>
     <string name="crash_restart_app">Uygulamayı Yeniden Başlatın</string>
@@ -1030,12 +1030,12 @@
     <string name="settings_artwork_cache_size">Çizim Önbellek Boyutu</string>
     <string name="settings_artist_parsing">Sanatçılar</string>
     <string name="settings_artist_parsing_desc">Ayırıcılar, ekran</string>
-    <string name="settings_rhythm_stats">Rhythm İstatistikleri</string>
+    <string name="settings_rhythm_stats">T2Rhythm İstatistikleri</string>
     <string name="settings_rhythm_stats_desc">Dinleme süresi, en iyi parçalar ve trendler</string>
-    <string name="settings_rhythm_guard">Rhythm Muhafız</string>
-    <string name="settings_rhythm_guard_list_desc">Rhythm İstatistikleri tarafından desteklenen dinleme sağlık korkulukları</string>
+    <string name="settings_rhythm_guard">T2Rhythm Muhafız</string>
+    <string name="settings_rhythm_guard_list_desc">T2Rhythm İstatistikleri tarafından desteklenen dinleme sağlık korkulukları</string>
     <string name="settings_rhythm_guard_mode_title">Koruma Modu</string>
-    <string name="settings_rhythm_guard_mode_desc">Rhythm Korumasının dinleme sağlığını nasıl yönettiğini seçin</string>
+    <string name="settings_rhythm_guard_mode_desc">T2Rhythm Korumasının dinleme sağlığını nasıl yönettiğini seçin</string>
     <string name="settings_rhythm_guard_mode_auto">Otomatik</string>
     <string name="settings_rhythm_guard_mode_manual">Manuel</string>
     <string name="settings_rhythm_guard_age_label">Yaş Profili: %1$d</string>
@@ -1052,10 +1052,10 @@
     <string name="settings_rhythm_guard_manual_warning_toggle">Güvenlik Uyarılarını Göster</string>
     <string name="settings_rhythm_guard_manual_warning_toggle_desc">Canlı ses seviyesi veya manuel geçişler riskli olabileceğinde uyar</string>
     <string name="settings_rhythm_guard_manual_threshold_title">Yüksek Hacimli Uyarı Eşiği: %%%1$d</string>
-    <string name="settings_rhythm_guard_manual_threshold_desc">Rhythm Guard\'ın potansiyel olarak zararlı ses seviyesi hakkında ne zaman uyarı vermesi gerektiğini ayarlayın.</string>
+    <string name="settings_rhythm_guard_manual_threshold_desc">T2Rhythm Guard\'ın potansiyel olarak zararlı ses seviyesi hakkında ne zaman uyarı vermesi gerektiğini ayarlayın.</string>
     <string name="settings_rhythm_guard_device_controls_title">Çıkış Kontrolleri</string>
     <string name="settings_rhythm_guard_device_controls_speaker_limit_title">Telefon Hoparlörüne Ses Sınırlarını Uygulayın</string>
-    <string name="settings_rhythm_guard_device_controls_speaker_limit_desc">Kapalıyken, Rhythm Guard, dahili hoparlör çıkışındaki ses kısma ve ses seviyesi uyarılarını atlar.</string>
+    <string name="settings_rhythm_guard_device_controls_speaker_limit_desc">Kapalıyken, T2Rhythm Guard, dahili hoparlör çıkışındaki ses kısma ve ses seviyesi uyarılarını atlar.</string>
     <string name="settings_rhythm_guard_alert_controls_title">Dinleme Uyarısı Kontrolleri</string>
     <string name="settings_rhythm_guard_alert_threshold_title">Maruz Kalma Uyarısı Eşiği: %1$s</string>
     <string name="settings_rhythm_guard_alert_threshold_policy_default">Politika Varsayılanı</string>
@@ -1065,7 +1065,7 @@
     <string name="settings_rhythm_guard_warning_title">Dinleme Güvenliği Uyarısı</string>
     <string name="settings_rhythm_guard_warning_high_volume">Mevcut ses seviyesi uyarı eşiğinizin (%1$d%%) üzerinde. Sesi azaltmayı düşünün.</string>
     <string name="settings_rhythm_guard_warning_daily_exposure">Bugün önerilen %2$s seviyesinin üzerinde %1$s noktasına ulaştınız. Bir dinleme molası vermeyi düşünün.</string>
-    <string name="settings_rhythm_guard_warning_dialog_title">Rhythm Koruma Koruma Uyarısı</string>
+    <string name="settings_rhythm_guard_warning_dialog_title">T2Rhythm Koruma Koruma Uyarısı</string>
     <string name="settings_rhythm_guard_warning_dialog_volume_message">Sistem medya hacmi gerçek zamanlı olarak %%%1$d olup, geçerli koruma sınırınız olan %%%2$d\'in üzerindedir. İşitme riskini azaltmak için ses seviyesini düşürün.</string>
     <string name="settings_rhythm_guard_risk_level_label">Riskin ciddiyeti: %1$s</string>
     <string name="settings_rhythm_guard_risk_action_label">Önerilen işlem: %1$s</string>
@@ -1095,8 +1095,8 @@
     <string name="settings_rhythm_guard_start_countdown_value">%1$s\'da başlıyor</string>
     <string name="settings_rhythm_guard_snapshot_widget_above_limit">Önerilen sınırın üstünde</string>
     <string name="settings_rhythm_guard_snapshot_widget_within_limit">Önerilen limit dahilinde</string>
-    <string name="settings_rhythm_guard_state_active">Rhythm Koruma Aktif</string>
-    <string name="settings_rhythm_guard_state_inactive">Rhythm Koruma Aktif Değil</string>
+    <string name="settings_rhythm_guard_state_active">T2Rhythm Koruma Aktif</string>
+    <string name="settings_rhythm_guard_state_inactive">T2Rhythm Koruma Aktif Değil</string>
     <string name="settings_rhythm_guard_state_timeout_active">Dinleme zaman aşımı devam ediyor</string>
     <string name="settings_rhythm_guard_state_cooldown_active">Yetkisiz kullanım süresi etkin</string>
     <string name="settings_rhythm_guard_state_timeout_remaining">Mola %1$s\'da bitiyor</string>
@@ -1108,8 +1108,8 @@
     <string name="settings_rhythm_guard_protection_preset_strict">Katı</string>
     <string name="settings_rhythm_guard_protection_preset_custom">Özel</string>
     <string name="settings_rhythm_guard_timeout_activity_title">Dinleme Zaman Aşımı Etkin</string>
-    <string name="settings_rhythm_guard_timeout_activity_default_reason">Olay örgüsü: kulaklarınız bir birleşme başlattı ve bir atıştırma molası çağrısında bulundu. Rhythm Koruma, herkesin sakinleşebilmesi için oynatmayı duraklattı.</string>
-    <string name="settings_rhythm_guard_timeout_activity_comic_desc">Olay örgüsü: kulaklarınız bir birleşme başlattı ve bir atıştırma molası çağrısında bulundu. Rhythm Koruma, herkesin sakinleşebilmesi için oynatmayı duraklattı.</string>
+    <string name="settings_rhythm_guard_timeout_activity_default_reason">Olay örgüsü: kulaklarınız bir birleşme başlattı ve bir atıştırma molası çağrısında bulundu. T2Rhythm Koruma, herkesin sakinleşebilmesi için oynatmayı duraklattı.</string>
+    <string name="settings_rhythm_guard_timeout_activity_comic_desc">Olay örgüsü: kulaklarınız bir birleşme başlattı ve bir atıştırma molası çağrısında bulundu. T2Rhythm Koruma, herkesin sakinleşebilmesi için oynatmayı duraklattı.</string>
     <string name="settings_rhythm_guard_timeout_activity_extend">Arayı uzat (+%1$d dk)</string>
     <string name="settings_rhythm_guard_timeout_activity_exit">Zaman Aşımı Ekranını Kapat</string>
     <string name="settings_rhythm_guard_timeout_activity_close_app">Uygulamayı Kapat</string>
@@ -1120,23 +1120,23 @@
     <string name="settings_rhythm_guard_alert_threshold_search_title">Maruz Kalma Uyarısı Eşiği</string>
     <string name="settings_rhythm_guard_alert_threshold_search_desc">Ne kadar günlük dinlemenin bir güvenlik uyarısını tetikleyeceğini ayarlayın</string>
     <string name="settings_rhythm_guard_warning_timeout_search_title">Uyarı Bekleme Süresi</string>
-    <string name="settings_rhythm_guard_warning_timeout_search_desc">Tekrarlanan Rhythm Koruma uyarısı arasındaki bekleme süresini ayarlayın</string>
+    <string name="settings_rhythm_guard_warning_timeout_search_desc">Tekrarlanan T2Rhythm Koruma uyarısı arasındaki bekleme süresini ayarlayın</string>
     <string name="settings_rhythm_guard_post_timeout_cooldown_search_title">Zaman Aşımı Sonrası Bekleme Süresi</string>
     <string name="settings_rhythm_guard_post_timeout_cooldown_search_desc">Başka bir maruz kalma zaman aşımı tetiklenmeden önce, zaman aşımı sona erdikten sonra soğuma süresini ayarlayın</string>
     <string name="settings_rhythm_guard_protection_presets_search_title">Koruma Ön Ayarları</string>
     <string name="settings_rhythm_guard_protection_presets_search_desc">Tek dokunuşla Nazik, Dengeli veya Sıkı korkuluk demetleri uygulayın</string>
     <string name="settings_rhythm_guard_break_resume_search_title">Varsayılan Mola Devam Ettirme</string>
     <string name="settings_rhythm_guard_break_resume_search_desc">Planlanan dinleme aralarının varsayılan olarak ne kadar süreceğini ayarlayın</string>
-    <string name="settings_rhythm_guard_enable_search_title">Rhythm Koruma Gücü</string>
-    <string name="settings_rhythm_guard_enable_search_desc">Rhythm Koruma korumasını etkinleştirin veya devre dışı bırakın</string>
-    <string name="settings_rhythm_guard_notification_alert_title">Rhythm Koruma Güvenlik Uyarısı</string>
-    <string name="settings_rhythm_guard_notification_timer_active_title">Rhythm Koruma Zaman Aşımı Aktif</string>
+    <string name="settings_rhythm_guard_enable_search_title">T2Rhythm Koruma Gücü</string>
+    <string name="settings_rhythm_guard_enable_search_desc">T2Rhythm Koruma korumasını etkinleştirin veya devre dışı bırakın</string>
+    <string name="settings_rhythm_guard_notification_alert_title">T2Rhythm Koruma Güvenlik Uyarısı</string>
+    <string name="settings_rhythm_guard_notification_timer_active_title">T2Rhythm Koruma Zaman Aşımı Aktif</string>
     <string name="settings_rhythm_guard_notification_timer_active_text">Oynatma %1$s içinde devam eder.</string>
-    <string name="settings_rhythm_guard_notification_timer_scheduled_title">Rhythm Koruma Arası Planlandı</string>
+    <string name="settings_rhythm_guard_notification_timer_scheduled_title">T2Rhythm Koruma Arası Planlandı</string>
     <string name="settings_rhythm_guard_notification_timer_scheduled_text">%1$s\'da dinleme molası başlıyor.</string>
     <string name="settings_rhythm_guard_notification_tap_open">Zaman aşımı ayrıntılarını görüntülemek için dokunun.</string>
-    <!-- Rhythm Stats Screen -->
-    <string name="stats_title">Rhythm İstatistikleri</string>
+    <!-- T2Rhythm Stats Screen -->
+    <string name="stats_title">T2Rhythm İstatistikleri</string>
     <string name="stats_today">Bugün</string>
     <string name="stats_this_week">Bu Hafta</string>
     <string name="stats_this_month">Bu Ay</string>
@@ -1158,7 +1158,7 @@
     <!-- Content Descriptions (additional) -->
     <string name="cd_reorder_home_sections">Ana bölümleri yeniden sıralayın</string>
     <string name="cd_remove">Kaldır</string>
-    <string name="cd_rhythm_logo">Rhythm Logosu</string>
+    <string name="cd_rhythm_logo">T2Rhythm Logosu</string>
     <string name="cd_telegram_support">Telgraf Desteği</string>
     <!-- Queue &amp; Playlist Dialogs -->
     <!-- Artist Settings -->
@@ -1326,7 +1326,7 @@
     <string name="settings_snowflake_display_area">Kar Tanesi Gösterim Alanı</string>
     <string name="settings_snowflake_size">Kar Tanesi Boyutu</string>
     <string name="settings_toggle_decoration_elements">Bireysel dekorasyon öğelerini konuma göre değiştirin</string>
-    <string name="settings_multi_artist_parsing_info">Etkinleştirildiğinde, Rhythm birden fazla sanatçı içeren sanatçı etiketlerini otomatik olarak böler. Bu, yt-dlp ile indirilen şarkılar veya sanatçıları ayırmak için \'/\' gibi sınırlayıcılar kullanan diğer araçlar için kullanışlıdır.\n\nTers Eğik Çizgi (\\) sınırlayıcılardan kaçmak için kullanılabilir.</string>
+    <string name="settings_multi_artist_parsing_info">Etkinleştirildiğinde, T2Rhythm birden fazla sanatçı içeren sanatçı etiketlerini otomatik olarak böler. Bu, yt-dlp ile indirilen şarkılar veya sanatçıları ayırmak için \'/\' gibi sınırlayıcılar kullanan diğer araçlar için kullanışlıdır.\n\nTers Eğik Çizgi (\\) sınırlayıcılardan kaçmak için kullanılabilir.</string>
     <!-- Format Strings with Placeholders -->
     <string name="settings_cache_size_2gb">2GB</string>
     <string name="settings_cache_size_64mb">64MB</string>
@@ -1408,7 +1408,7 @@
     <string name="settings_cache_info_4">Otomatik temizleme, optimum performansın korunmasına yardımcı olur</string>
     <!-- Updates Settings -->
     <string name="updates_status_error">Hata</string>
-    <string name="updates_rhythm_logo_cd">Rhythm Logosu</string>
+    <string name="updates_rhythm_logo_cd">T2Rhythm Logosu</string>
     <string name="updates_version_prefix">V %1$s</string>
     <string name="updates_released_prefix">Yayınlandı: %1$s</string>
     <string name="updates_unknown_error">Bilinmeyen bir hata oluştu</string>
@@ -1426,7 +1426,7 @@
     <string name="settings_interval_once_a_day">Günde bir kez</string>
     <string name="settings_interval_once_a_week">Haftada bir kez</string>
     <!-- Experimental Features -->
-    <string name="streaming_integration_title">Rhythm Go</string>
+    <string name="streaming_integration_title">T2Rhythm Go</string>
     <string name="streaming_integration_services">Entegrasyon Hizmetleri</string>
     <string name="streaming_integration_services_empty">Henüz bağlı hizmet yok</string>
     <string name="streaming_settings_title">Ayarlar</string>
@@ -1434,7 +1434,7 @@
     <string name="streaming_settings_group_actions">Eylemler</string>
     <string name="streaming_settings_preferred_service">Tercih Edilen Hizmet</string>
     <string name="streaming_settings_quality">Yayın Kalitesi</string>
-    <string name="streaming_settings_service_sheet_desc">Varsayılan olarak hangi bağlı hizmete Rhythm Go öncelik verilmesi gerektiğini seçin.</string>
+    <string name="streaming_settings_service_sheet_desc">Varsayılan olarak hangi bağlı hizmete T2Rhythm Go öncelik verilmesi gerektiğini seçin.</string>
     <string name="streaming_settings_quality_sheet_desc">Akışlı oynatma için tercih ettiğiniz ses kalitesini seçin.</string>
     <string name="streaming_quality_low">Düşük</string>
     <string name="streaming_quality_normal">Normal</string>
@@ -1444,7 +1444,7 @@
     <string name="streaming_quality_normal_desc">Dengeli kalite ve veri kullanımı (~160 kbps).</string>
     <string name="streaming_quality_high_desc">Yüksek kaliteli ses (~320 kbps).</string>
     <string name="streaming_quality_lossless_desc">Desteklendiği yerde en iyi kalite (FLAC/ALAC).</string>
-    <string name="streaming_settings_group_wellbeing">Rhythm Analizler</string>
+    <string name="streaming_settings_group_wellbeing">T2Rhythm Analizler</string>
     <string name="streaming_open_full_settings">Tam Ayarları Aç</string>
     <string name="streaming_open_full_settings_desc">Modlar arasında paylaşılan uygulama genelindeki ayarları açın</string>
     <string name="streaming_switch_to_local_mode">Yerel Moda Geç</string>
@@ -1468,7 +1468,7 @@
     <string name="streaming_service_setup_password">Şifre</string>
     <string name="streaming_service_setup_password_hint">Hesap şifrenizi girin</string>
     <string name="streaming_service_setup_remember_password">Bu cihazdaki şifreyi hatırla</string>
-    <string name="streaming_service_setup_remember_password_desc">Rhythm\'ın daha sonra otomatik olarak yeniden bağlanabilmesi için kimlik bilgilerini yerel olarak saklayın.</string>
+    <string name="streaming_service_setup_remember_password_desc">T2Rhythm\'ın daha sonra otomatik olarak yeniden bağlanabilmesi için kimlik bilgilerini yerel olarak saklayın.</string>
     <string name="streaming_service_setup_connecting">Bağlanıyor…</string>
     <string name="streaming_service_setup_disconnecting">Bağlantı kesiliyor…</string>
     <string name="streaming_service_setup_action_hint">Bu servise bağlanmak için gerekli alanları doldurunuz.</string>
@@ -1656,7 +1656,7 @@
     <string name="settings_bluetooth_lyrics_enabled">Bluetooth Şarkı Sözü Modu</string>
     <string name="settings_bluetooth_lyrics_enabled_desc">Geçerli şarkı sözü satırını Bluetooth meta verileri aracılığıyla yayınlayın</string>
     <string name="exp_go_mode">Go Mode</string>
-    <string name="exp_go_mode_desc">Rhythm Go streaming mode\'a geç</string>
+    <string name="exp_go_mode_desc">T2Rhythm Go streaming mode\'a geç</string>
     <!-- Home Screen Search Strings -->
     <string name="settings_home_section_order">Bölüm Sırası</string>
     <string name="settings_home_section_order_desc">Ana bölümleri yeniden sıralayın</string>
@@ -1669,13 +1669,13 @@
     <string name="settings_home_carousel_auto_scroll">Atlıkarınca Otomatik Kaydırma</string>
     <string name="settings_home_carousel_auto_scroll_desc">Otomatik kaydırmalı karusel</string>
     <!-- Notifications Search Strings -->
-    <string name="settings_notifications_rhythm_guard_alerts">Rhythm Koruma Güvenlik Uyarıları</string>
+    <string name="settings_notifications_rhythm_guard_alerts">T2Rhythm Koruma Güvenlik Uyarıları</string>
     <string name="settings_notifications_rhythm_guard_alerts_desc">Dinleme riski uyarıları tetiklendiğinde bildirim ver</string>
-    <string name="settings_notifications_rhythm_guard_timers">Rhythm Koruma Arası Zamanlayıcıları</string>
+    <string name="settings_notifications_rhythm_guard_timers">T2Rhythm Koruma Arası Zamanlayıcıları</string>
     <string name="settings_notifications_rhythm_guard_timers_desc">Planlanmış molalar ve zaman aşımı geri sayımları için bildirim</string>
-    <string name="settings_notifications_rhythm_pulse">Rhythm İpuçları</string>
+    <string name="settings_notifications_rhythm_pulse">T2Rhythm İpuçları</string>
     <string name="settings_notifications_rhythm_pulse_desc">Dostça hatırlatmalar ve dinleme ipuçları.</string>
-    <string name="settings_notifications_rhythm_pulse_interval">Rhythm İpucu Aralığı</string>
+    <string name="settings_notifications_rhythm_pulse_interval">T2Rhythm İpucu Aralığı</string>
     <string name="settings_notifications_rhythm_pulse_interval_desc">İpucu bildirimlerinin ne sıklıkta iletildiği</string>
     <!-- Expressive Shapes Search Strings -->
     <string name="settings_expressive_shapes_enabled">Etkileyici Şekiller</string>
@@ -1759,7 +1759,7 @@
     <!-- Library Screen scanning overlay -->
     <string name="settings_scanning">Tarama</string>
     <!-- Settings Search -->
-    <string name="search_settings_hint">Rhythm Ayarlarını Ara…</string>
+    <string name="search_settings_hint">T2Rhythm Ayarlarını Ara…</string>
     <string name="clear_search">Aramayı temizle</string>
     <string name="no_results_found">Sonuç bulunamadı</string>
     <string name="try_different_search">Farklı bir arama terimi deneyin</string>
@@ -1798,14 +1798,14 @@
     <string name="theme_font_imported">Yazı tipi başarıyla içe aktarıldı</string>
     <string name="theme_font_invalid">Geçersiz yazı tipi dosyası biçimi</string>
     <string name="ui_apply">Uygula</string>
-    <string name="crashactivity_uh_oh_looks_like">Ah ah! Görünüşe göre Rhythm kötü bir not aldı!</string>
+    <string name="crashactivity_uh_oh_looks_like">Ah ah! Görünüşe göre T2Rhythm kötü bir not aldı!</string>
     <string name="crashactivity_dont_fret_our_app">Endişelenmeyin! Uygulamamızda biraz \'ayyy\' vardı. Lütfen kilitlenme ayrıntılarını aşağıda paylaşın; bu, geliştiricilerimizin sorunları düzeltmesi için gizli bir mesaj gibidir! O halde tekrar deneyelim, olur mu?</string>
     <string name="crashactivity_secret_crash_scrolls">Gizli Crash Scroll\'lar</string>
     <string name="crashactivity_share">Paylaş</string>
     <string name="externalplaybackactivity_unable_to_open_audio">Ses dosyası açılamıyor</string>
     <string name="externalplaybackactivity_unsupported_or_unreadable_audio">Desteklenmeyen veya okunamayan ses dosyası</string>
     <string name="externalplaybackactivity_failed_to_play_audio">Ses dosyası oynatılamadı</string>
-    <string name="externalplaybackactivity_open_rhythm">Rhythm\'ı açın</string>
+    <string name="externalplaybackactivity_open_rhythm">T2Rhythm\'ı açın</string>
     <string name="mainactivity_error_opening_file">Dosya açılırken hata oluştu</string>
     <string name="mainactivity_unsupported_file_format">Desteklenmeyen dosya formatı</string>
     <string name="mainactivity_failed_to_initialize_media">Medya oynatıcı başlatılamadı</string>
@@ -1892,7 +1892,7 @@
     <string name="streamingmusicviewmodel_failed_to_play_next">Sonraki oynatılamadı: URL çözümlenemiyor</string>
     <string name="streamingmusicviewmodel_failed_to_add_to">Kuyruğa eklenemedi: URL çözümlenemiyor</string>
     <string name="rhythmmusicwidget_album_art_placeholder">Albüm Kapağı Yer Tutucusu</string>
-    <string name="rhythmwidgetpreview_rhythm_glance_widget_previews">Rhythm Glance Widget Önizlemeleri</string>
+    <string name="rhythmwidgetpreview_rhythm_glance_widget_previews">T2Rhythm Glance Widget Önizlemeleri</string>
     <string name="rhythmwidgetpreview_str_11_compact_widget">1×1 Kompakt Widget</string>
     <string name="rhythmwidgetpreview_str_21_horizontal_strip">2×1 Yatay Şerit</string>
     <string name="rhythmwidgetpreview_str_22_small_widget">2×2 Küçük Widget</string>
@@ -1934,7 +1934,7 @@
     <string name="betaprogrampopup_early_access">Erken Erişim</string>
     <string name="betaprogrampopup_shape_the_future">Geleceği Şekillendirin</string>
     <string name="betaprogrampopup_direct_feedback">Doğrudan Geri Bildirim</string>
-    <string name="betaprogrampopup_youre_part_of_an">Rhythm müzik çaların geleceğini şekillendirmeye yardımcı olan özel bir grubun parçasısınız</string>
+    <string name="betaprogrampopup_youre_part_of_an">T2Rhythm müzik çaların geleceğini şekillendirmeye yardımcı olan özel bir grubun parçasısınız</string>
     <string name="betaprogrampopup_start_exploring">Keşfetmeye Başlayın</string>
     <string name="switchmodedialog_switch_play">Değiştir ve Oynat</string>
     <string name="fullscreenlyricsview_cover_artwork">Kapak Resmi</string>
@@ -2000,7 +2000,7 @@
     <string name="lyricssourcesettingsscreen_retry_using_fallbacks">Yedekleri kullanmayı yeniden deneyin</string>
     <string name="lyricssourcesettingsscreen_embedded_lyrics_are_stored">• Embedded lyrics are stored in your audio files</string>
     <string name="miniplayercustomizationsettingsscreen_miniplayer_theme">MiniPlayer Teması</string>
-    <string name="miniplayercustomizationsettingsscreen_choose_between_rhythm_default">Rhythm Varsayılan veya Etkileyici tema arasında seçim yapın</string>
+    <string name="miniplayercustomizationsettingsscreen_choose_between_rhythm_default">T2Rhythm Varsayılan veya Etkileyici tema arasında seçim yapın</string>
     <string name="miniplayercustomizationsettingsscreen_integrated_directly_into_the">Doğrudan MiniPlayer arka planına entegre edilmiştir</string>
     <string name="performancesettingsscreen_performance">Basit Mod</string>
     <string name="performancesettingsscreen_disable_haptics">Haptics\'i devre dışı bırak</string>
@@ -2017,7 +2017,7 @@
     <string name="rhythmguardsettingsscreen_none">Yok</string>
     <string name="rhythmguardsettingsscreen_general_settings">Genel Ayarlar</string>
     <string name="rhythmguardsettingsscreen_library_data">Kütüphane Verileri</string>
-    <string name="rhythmguardsettingsscreen_stats_rhythm_guard">İstatistikler ve Rhythm Koruma</string>
+    <string name="rhythmguardsettingsscreen_stats_rhythm_guard">İstatistikler ve T2Rhythm Koruma</string>
     <string name="settingsscreen_audio_offload">Ses Aktarımı</string>
     <string name="settingsscreen_personalization">Kişiselleştirme</string>
     <string name="settingsscreen_library_focus">Kütüphane Odağı</string>
@@ -2114,7 +2114,7 @@
     <string name="pulse_marathon">Maraton modu</string>
     <!-- Settings Tips Details -->
     <string name="settings_tip_theme_desc_1">Müzik çalarınızı canlı AMOLED siyah ve güzel pastel renklerle yenileyin.</string>
-    <string name="settings_tip_theme_desc_2">Uygulamanın aksanını sisteminizle eşleştirerek Rhythm\'ı tamamen kendinize ait yapın.</string>
+    <string name="settings_tip_theme_desc_2">Uygulamanın aksanını sisteminizle eşleştirerek T2Rhythm\'ı tamamen kendinize ait yapın.</string>
     <string name="settings_tip_media_scan_desc_1">İstenmeyen ses kliplerinden kaçının. Müzik için hangi klasörleri taramamız gerektiğini açıkça tanımlayın.</string>
     <string name="settings_tip_media_scan_desc_2">Odak klasörlerini kullanarak sesli notları ve zil seslerini çalma listelerinizden uzak tutun.</string>
     <string name="settings_tip_sleep_timer_desc_1">Müziğiniz çalarken uykuya dalın. Otomatik olarak duraklatacağız.</string>
@@ -2123,7 +2123,7 @@
     <string name="settings_tip_equalizer_desc_2">Gelişmiş ses efektlerimizle sesi kulaklığınıza güvenli bir şekilde ayarlayın.</string>
     <string name="settings_tip_backup_active_desc_1">Otomatik yedekleme etkin. Geri yüklemelerin temiz kalması için yedekleme bölümlerinizi doğrulayın.</string>
     <string name="settings_tip_backup_active_desc_2">Koruma etkin: program iyi görünüyor. Büyük düzenlemelerden önce manuel yedekleme yapın.</string>
-    <string name="settings_tip_backup_inactive_desc_1">Otomatik yedekleme kapalı. Çalma listelerini ve Rhythm Koruma istatistiklerini korumak için bunu etkinleştirin.</string>
+    <string name="settings_tip_backup_inactive_desc_1">Otomatik yedekleme kapalı. Çalma listelerini ve T2Rhythm Koruma istatistiklerini korumak için bunu etkinleştirin.</string>
     <string name="settings_tip_backup_inactive_desc_2">Henüz güvenlik ağı yok. Kurulumunuzu kaybetmemek için yedeklemeleri açın.</string>
     <string name="settings_tip_updates_active_desc_1">Güncellemeler etkinleştirildi. Düzeltmeler ve performans iyileştirmeleri için bunları açık tutun.</string>
     <string name="settings_tip_updates_active_desc_2">Güncellemeleri almaya hazırsınız. Kararlılık ve tazelik açısından kanal tercihlerini kontrol edin.</string>
@@ -2166,7 +2166,7 @@
     <string name="font_jetbrains_desc">Teknik içerik için mükemmel tek aralıklı yazı tipi</string>
     <string name="font_quicksand_desc">Daha yumuşak, daha samimi bir görünüme sahip yuvarlak yazı tipi</string>
     <!-- Predefined Color Schemes -->
-    <string name="color_scheme_default_title">Rhythm Varsayılan</string>
+    <string name="color_scheme_default_title">T2Rhythm Varsayılan</string>
     <string name="color_scheme_default_desc">Material 3 pembemsi desenli temel mor</string>
     <string name="color_scheme_warm_title">Sıcak Gün Batımı</string>
     <string name="color_scheme_warm_desc">Sıcak bir atmosfer için sıcak turuncu ve kırmızı tonlar</string>
@@ -2201,7 +2201,7 @@
     <string name="lyrics_settings_embedded_first">Önce Gömülü</string>
     <string name="lyrics_settings_embedded_first_desc">Ses dosyalarına gömülü şarkı sözlerini tercih edin, çevrimiçi API\'lere geri dönün</string>
     <string name="lyrics_settings_online_first">Önce Çevrimiçi</string>
-    <string name="lyrics_settings_online_first_desc">Çevrimiçi API\'leri (Rhythm kelime bazlı, LRCLib) tercih edin, yerleşik API\'lere geri dönün</string>
+    <string name="lyrics_settings_online_first_desc">Çevrimiçi API\'leri (T2Rhythm kelime bazlı, LRCLib) tercih edin, yerleşik API\'lere geri dönün</string>
     <string name="lyrics_settings_local_first">Önce Yerel</string>
     <string name="lyrics_settings_local_first_desc">Yerel .lrc dosyalarını, ardından gömülü şarkı sözlerini ve ardından çevrimiçi API\'leri tercih edin</string>
     <string name="lyrics_settings_lyrically_first">Lyrically First</string>
@@ -2227,7 +2227,7 @@
     <string name="lyrics_settings_disable_animations_desc">Şarkı sözü görünümünde geçişleri ve animasyonları devre dışı bırakın</string>
     <string name="lyrics_settings_word_by_word_translation">Otomatik Kelime Senkronizasyonu</string>
     <string name="lyrics_settings_word_by_word_translation_desc">Süreyi orantılı olarak dağıtarak satırla senkronize edilmiş şarkı sözleri için kelime düzeyinde zamanlamayı otomatik olarak oluşturun</string>
-    <string name="lyrics_settings_info_bullets">Ek Senkronizasyon Ayrıntıları:\n• Çevrimiçi API\'ler, yüksek kalitede senkronize şarkı sözleri sağlar\n• Rhythm, kelime bazlı senkronizasyon sunar\n• LRCLib, ücretsiz satır bazlı senkronizasyon sağlar</string>
+    <string name="lyrics_settings_info_bullets">Ek Senkronizasyon Ayrıntıları:\n• Çevrimiçi API\'ler, yüksek kalitede senkronize şarkı sözleri sağlar\n• T2Rhythm, kelime bazlı senkronizasyon sunar\n• LRCLib, ücretsiz satır bazlı senkronizasyon sağlar</string>
     <!-- AutoEQ Preset Picker additions -->
     <string name="autoeqpresetpickerbottomsheet_search_presets">Ön ayarları ara…</string>
     <string name="autoeqpresetpickerbottomsheet_disable">Yok / AutoEQ\'yu Devre Dışı Bırak</string>
@@ -2245,7 +2245,7 @@
     <string name="device_configuration_custom_preset">Özel Ön Ayar</string>
     <string name="device_configuration_custom">Özel</string>
     <string name="device_configuration_active_profile_label">Aktif Profil: %1$s</string>
-    <string name="device_configuration_share_subject">Rhythm EQ Profili: %1$s</string>
+    <string name="device_configuration_share_subject">T2Rhythm EQ Profili: %1$s</string>
     <string name="device_configuration_share_title">EQ Profilini Paylaşın</string>
     <string name="device_configuration_edit_device">Cihazı Düzenle</string>
     <string name="device_configuration_add_device">Cihaz Ekle</string>
@@ -2293,9 +2293,9 @@
         <item quantity="other">%1$d oynatma listesini şuraya aktar:</item>
     </plurals>
     <!-- Mode dialog strings -->
-    <string name="dialog_switch_to_go">Switch to Rhythm Go?</string>
+    <string name="dialog_switch_to_go">Switch to T2Rhythm Go?</string>
     <string name="dialog_switch_to_local">Yerel\'e geçilsin mi?</string>
-    <string name="dialog_switch_to_go_desc">This item belongs to Rhythm Go. Yayın yapmak ve oynatmak için şimdi Yayın Moduna geçilsin mi?</string>
+    <string name="dialog_switch_to_go_desc">This item belongs to T2Rhythm Go. Yayın yapmak ve oynatmak için şimdi Yayın Moduna geçilsin mi?</string>
     <string name="dialog_switch_to_local_desc">Bu öğe Yerel Kütüphanenize aittir. Çevrimdışı parçalarınızı çalmak için şimdi Yerel Moda geçmek ister misiniz?</string>
     <!-- Section order content descriptions -->
 
@@ -2472,7 +2472,7 @@
     <string name="carousel_style_hero">Kahraman</string>
     <string name="carousel_style_hero_desc">1 yandan bakış albümü</string>
     <!-- Theme names -->
-    <string name="theme_rhythm">Rhythm</string>
+    <string name="theme_rhythm">T2Rhythm</string>
     <string name="theme_expressive">Etkileyici</string>
     <string name="settings_managed_by_expressive_shapes">İfade Edici Şekiller tarafından yönetilmektedir</string>
     <!-- Shape targets -->
@@ -2518,7 +2518,7 @@
     <string name="backup_restore_section_collection">Koleksiyon</string>
     <string name="backup_restore_section_collection_desc">Çalma listeleri, favoriler, kara liste/beyaz liste, sabitlenmiş klasörler.</string>
     <string name="backup_restore_section_insight">İçgörü</string>
-    <string name="backup_restore_section_insight_desc">Oynatma sayıları, günlük istatistikler, türler ve Rhythm Koruma yapılandırması.</string>
+    <string name="backup_restore_section_insight_desc">Oynatma sayıları, günlük istatistikler, türler ve T2Rhythm Koruma yapılandırması.</string>
     <string name="backup_restore_status_included">Dahil</string>
     <string name="backup_restore_status_excluded">Hariç tutuldu</string>
     <plurals name="backup_restore_sections_enabled">
@@ -2539,7 +2539,7 @@
     <string name="library_bottom_bar_select_songs">Şarkıları seçin</string>
     <string name="library_bottom_bar_more_actions">Daha fazla eylem</string>
     <string name="library_play_selected">Oynat (%1$d)</string>
-    <!-- Rhythm Guard Comic Status Subtitles -->
+    <!-- T2Rhythm Guard Comic Status Subtitles -->
     <!-- Player, Bottomsheet, and Popup translations -->
     <string name="unknown_track">Bilinmeyen Parça</string>
     <string name="unknown_song">Bilinmeyen Şarkı</string>

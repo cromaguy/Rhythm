@@ -62,7 +62,7 @@ class AutomaticLyricsStore private constructor(private val context: Context) {
         if (prefs.getString("embedded:${key(song)}", null) == hash) {
             prefs.edit(commit = true) { remove("pending:${key(song)}") }; return@withContext
         }
-        if (catalog.withAudioWrite(song) { MediaUtils.embedLyricsAutomatically(context, song, text) }) {
+        if (catalog.withAudioWrite(song) { PersonalArchive(context).captureSong(song); MediaUtils.embedLyricsAutomatically(context, song, text) }) {
             prefs.edit(commit = true) { putString("embedded:${key(song)}", hash); remove("pending:${key(song)}") }
         }
     }

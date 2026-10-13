@@ -506,6 +506,7 @@ fun BackupRestoreSettingsScreen(onBackClick: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             
+            item { chromahub.rhythm.app.features.local.presentation.metadata.PersonalArchivePanel() }
             item {
                 Column(
                     modifier = Modifier

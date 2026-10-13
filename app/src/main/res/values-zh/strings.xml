@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Rhythm</string>
+    <string name="app_name">T2Rhythm</string>
     <!-- Common Labels -->
     <string name="home">首页</string>
     <string name="library">曲库</string>
     <string name="search">搜索</string>
     <!-- Media3 notification configuration -->
-    <string name="media3_notification_channel_name">Rhythm 正在播放</string>
+    <string name="media3_notification_channel_name">T2Rhythm 正在播放</string>
     <string name="media3_notification_channel_description">前台播放控制、搜索操作和专辑封面</string>
     <!-- Widget strings -->
     <string name="widget_description_glance">在主页上查看正在播放的音乐并控制音乐——播放、暂停、跳过等。</string>
-    <string name="widget_name_glance">Rhythm 音乐</string>
+    <string name="widget_name_glance">T2Rhythm 音乐</string>
     <string name="unknown_artist">未知艺术家</string>
     <string name="play_pause">播放/暂停</string>
     <!-- Widget Settings -->
@@ -25,7 +25,7 @@
     <!-- Settings - Notifications -->
     <string name="settings_notifications">通知</string>
     <string name="settings_notifications_updates_group">应用程序更新</string>
-    <string name="settings_notifications_rhythm_guard_group">Rhythm Guard 安全</string>
+    <string name="settings_notifications_rhythm_guard_group">T2Rhythm Guard 安全</string>
     <string name="settings_notifications_rhythm_pulse_group">享受音乐小提示</string>
     <string name="settings_update_notifications_merged_desc">获取新版本可安装提醒</string>
     <string name="settings_rhythm_guard_alert_notifications">听力安全警告</string>
@@ -113,9 +113,9 @@
     <string name="operation_exporting_playlists">备份您的自定义播放列表…</string>
     <string name="operation_exporting_playlists_location">将播放列表备份到存储…</string>
     <string name="operation_importing_playlist">正在导入播放列表文件…</string>
-    <string name="notification_operations_channel_name">Rhythm 音乐库同步</string>
+    <string name="notification_operations_channel_name">T2Rhythm 音乐库同步</string>
     <string name="notification_operations_channel_desc">音乐库扫描、索引和播放列表备份的进度通知</string>
-    <string name="notification_media_scan_title">Rhythm 音乐库扫描 &amp; 索引</string>
+    <string name="notification_media_scan_title">T2Rhythm 音乐库扫描 &amp; 索引</string>
     <string name="notification_media_scan_stage_songs">正在扫描存储中的音频文件…</string>
     <string name="notification_media_scan_stage_saving">正在构建音轨元数据索引…</string>
     <string name="notification_media_scan_stage_finishing">正在完成音频数据库…</string>
@@ -140,20 +140,20 @@
         <item quantity="other">成功导入包含 %2$d 首歌曲的“%1$s”。</item>
     </plurals>
     <string name="notification_playlist_import_failed">播放列表导入失败，请验证文件格式。</string>
-    <string name="notification_updater_channel_name">Rhythm 更新</string>
+    <string name="notification_updater_channel_name">T2Rhythm 更新</string>
     <string name="notification_updater_channel_desc">应用程序更新和下载进度弹窗</string>
-    <string name="notification_updater_title">Rhythm 软件更新</string>
+    <string name="notification_updater_title">T2Rhythm 软件更新</string>
     <string name="notification_updater_downloading">正在下载：%1$d%%</string>
     <string name="notification_updater_download_complete">更新已准备好，点击即可更新。</string>
     <string name="notification_updater_available_title">更新可用</string>
-    <string name="notification_updater_available_text">Rhythm 的新版本来了。</string>
-    <string name="notification_sleep_timer_channel_name">Rhythm 睡眠助手</string>
+    <string name="notification_updater_available_text">T2Rhythm 的新版本来了。</string>
+    <string name="notification_sleep_timer_channel_name">T2Rhythm 睡眠助手</string>
     <string name="notification_sleep_timer_channel_desc">睡眠定时器操作的倒计时和状态弹窗</string>
-    <string name="notification_sleep_timer_title">Rhythm 睡眠定时器已启用</string>
+    <string name="notification_sleep_timer_title">T2Rhythm 睡眠定时器已启用</string>
     <string name="notification_sleep_timer_pause_in">暂停于 %1$s</string>
     <string name="notification_sleep_timer_stop_in">停在%1$s</string>
     <!-- Streaming Notifications -->
-    <string name="notification_streaming_channel_name">Rhythm 云服务</string>
+    <string name="notification_streaming_channel_name">T2Rhythm 云服务</string>
     <string name="notification_streaming_channel_desc">在线音乐服务的连接状态和同步进度</string>
     <!-- Streaming Authentication -->
     <string name="notification_streaming_auth_title">云服务已连接</string>
@@ -293,7 +293,7 @@
     <!-- Status Labels -->
     <string name="status_disabled">已禁用</string>
     <!-- HomeScreen -->
-    <string name="home_title">Rhythm</string>
+    <string name="home_title">T2Rhythm</string>
     <string name="home_settings_cd">设置</string>
     <string name="home_no_featured_albums">没有精选专辑</string>
     <string name="home_no_featured_albums_desc">将一些专辑添加到您的媒体库中以查看精选内容</string>
@@ -322,7 +322,7 @@
     <string name="home_no_recommendations">没有推荐</string>
     <string name="home_no_recommendations_desc">听一些音乐以获得个性化推荐</string>
     <!-- Listening Stats -->
-    <string name="home_listening_stats">您的 Rhythm 统计数据</string>
+    <string name="home_listening_stats">您的 T2Rhythm 统计数据</string>
     <!-- Mood & Moments -->
     
     <!-- Recently Played -->
@@ -376,7 +376,7 @@
     <string name="sort_song_count">歌曲数</string>
     <!-- Storage Permission -->
     <string name="storage_permission_required">需要存储权限</string>
-    <string name="storage_permission_desc">要浏览您的音乐文件并浏览设备的存储空间，Rhythm 需要访问您的文件和媒体的权限。</string>
+    <string name="storage_permission_desc">要浏览您的音乐文件并浏览设备的存储空间，T2Rhythm 需要访问您的文件和媒体的权限。</string>
     <string name="storage_permission_audio_only">这仅允许访问包含音乐的音频文件和文件夹。</string>
     <!-- PlayerScreen -->
     <string name="player_loading_lyrics">加载歌词…</string>
@@ -391,7 +391,7 @@
     <!-- Common UI -->
     <string name="ui_dismiss">取消</string>
     <!-- Common Terms -->
-    <string name="common_rhythm">Rhythm</string>
+    <string name="common_rhythm">T2Rhythm</string>
     <string name="common_home">首页</string>
     <string name="common_library">音乐库</string>
     <!-- Splash/Loading -->
@@ -447,15 +447,15 @@
     <string name="onboarding_library_how_works">组织音乐库的原理</string>
     <string name="onboarding_library_1">自定义库中的标签页顺序，以便快速访问您的收藏夹</string>
     <string name="onboarding_library_2">直接从库屏幕创建和管理播放列表</string>
-    <string name="onboarding_theme_title">让 Rhythm 专属于你</string>
-    <string name="onboarding_theme_desc">个性化 Rhythm 的外观以符合您的风格。选择您的字体、主题色 / Material You 动态颜色 (Android 12+)。</string>
+    <string name="onboarding_theme_title">让 T2Rhythm 专属于你</string>
+    <string name="onboarding_theme_desc">个性化 T2Rhythm 的外观以符合您的风格。选择您的字体、主题色 / Material You 动态颜色 (Android 12+)。</string>
     <string name="onboarding_more_tuner">设置中更多自定义</string>
     <string name="onboarding_tuner_1">自定义配色方案和专辑封面颜色提取</string>
     <string name="onboarding_tuner_2">字体定制和排版设置</string>
     <string name="onboarding_rhythm_guard_title">保护您的听力</string>
-    <string name="onboarding_rhythm_guard_desc">设置 Rhythm Guard，通过年龄感知默认设置和手动保护控制，让您的聆听更加安全。</string>
-    <string name="onboarding_rhythm_guard_mode_title">Rhythm 防护模式</string>
-    <string name="onboarding_rhythm_guard_age_hint">年龄档案有助于 Rhythm Guard 建议更安全的听力限制。</string>
+    <string name="onboarding_rhythm_guard_desc">设置 T2Rhythm Guard，通过年龄感知默认设置和手动保护控制，让您的聆听更加安全。</string>
+    <string name="onboarding_rhythm_guard_mode_title">T2Rhythm 防护模式</string>
+    <string name="onboarding_rhythm_guard_age_hint">年龄档案有助于 T2Rhythm Guard 建议更安全的听力限制。</string>
     <string name="onboarding_rhythm_guard_tip_1">自动模式通过最少的设置应用更安全的默认值。</string>
     <string name="onboarding_rhythm_guard_tip_3">手动模式使您可以完全控制警告和阈值。</string>
     <string name="onboarding_full_tour_prompt_title">继续完整设置之旅吗？</string>
@@ -471,7 +471,7 @@
     <string name="onboarding_media_scan_blacklist">黑名单模式：隐藏特定歌曲和文件夹（铃声、通知）</string>
     <string name="onboarding_media_scan_whitelist">白名单模式：仅显示选定文件夹中的歌曲</string>
     <string name="onboarding_complete_title">一切就绪！</string>
-    <string name="onboarding_complete_desc">Rhythm 准备好播放了！正在后台扫描您的音乐库。配置如下：</string>
+    <string name="onboarding_complete_desc">T2Rhythm 准备好播放了！正在后台扫描您的音乐库。配置如下：</string>
     <string name="onboarding_whats_next">下一步是什么？</string>
     <string name="onboarding_next_browse">浏览您的歌曲、专辑和艺术家</string>
     <string name="onboarding_next_create">创建您的第一个播放列表</string>
@@ -492,7 +492,7 @@
     <string name="onboarding_grant_permissions">授予权限</string>
     <string name="onboarding_permissions_granted_desc">所有必要的权限均已授予。您已准备好继续！</string>
     <string name="onboarding_redirect_settings_desc">要授予所需的权限，请导航至您设备上的应用程序设置。</string>
-    <string name="onboarding_rationale_desc">Rhythm 需要某些权限才能正常运行。请提供这些权限以继续。</string>
+    <string name="onboarding_rationale_desc">T2Rhythm 需要某些权限才能正常运行。请提供这些权限以继续。</string>
     <string name="onboarding_permissions_required_desc">为了充分利用Rhythm的功能，我们需要您的许可才能访问某些设备功能。</string>
     <string name="onboarding_permission_music_title">音乐库访问权限</string>
     <string name="onboarding_permission_music_desc">读取本地音乐文件并在应用中显示</string>
@@ -506,7 +506,7 @@
     <string name="onboarding_permission_tip_2">您可以稍后在“设置”中更改权限</string>
     <!-- Onboarding Audio &amp; Playback -->
     <string name="onboarding_default_screen_title">默认登陆屏幕</string>
-    <string name="onboarding_default_screen_desc">选择启动 Rhythm 时打开的屏幕</string>
+    <string name="onboarding_default_screen_desc">选择启动 T2Rhythm 时打开的屏幕</string>
     <string name="onboarding_system_volume_title">系统音量控制</string>
     <string name="onboarding_system_volume_desc">允许设备的物理音量按钮控制Rhythm的播放音量。</string>
     <string name="onboarding_auto_queue_title">自动添加到队列</string>
@@ -519,7 +519,7 @@
     
     <!-- Onboarding Theming -->
     <string name="onboarding_player_theme_title">播放和迷你播放器主题</string>
-    <string name="onboarding_player_theme_desc">个性化您的播放界面。在干净、现代的 Rhythm 设计或充满活力、流畅、富有表现力的设计之间切换。</string>
+    <string name="onboarding_player_theme_desc">个性化您的播放界面。在干净、现代的 T2Rhythm 设计或充满活力、流畅、富有表现力的设计之间切换。</string>
     <!-- Onboarding Updater -->
     <string name="onboarding_update_check_failed">更新检查失败</string>
     <string name="onboarding_ready_to_install">准备安装</string>
@@ -531,7 +531,7 @@
     <string name="onboarding_enable_updates_title">启用更新</string>
     <string name="onboarding_enable_updates_desc">允许应用检查并下载更新</string>
     <string name="onboarding_periodic_check_title">定期检查</string>
-    <string name="onboarding_periodic_check_desc">自动检查 Rhythm 的 GitHub 存储库中的更新</string>
+    <string name="onboarding_periodic_check_desc">自动检查 T2Rhythm 的 GitHub 存储库中的更新</string>
     <string name="onboarding_update_notifications_title">更新通知</string>
     <string name="onboarding_update_notifications_desc">当新版本可用时收到通知</string>
     <string name="onboarding_check_interval_desc">检查更新的频率</string>
@@ -574,7 +574,7 @@
     <string name="onboarding_gesture_tip_1">滑动手势可双向使用</string>
     <!-- Onboarding: Widgets Step -->
     <string name="onboarding_widgets_title">启动器小部件</string>
-    <string name="onboarding_widgets_desc">将 Rhythm 小部件添加到您的启动器以快速控制音乐。自定义显示的信息以及小部件的外观。</string>
+    <string name="onboarding_widgets_desc">将 T2Rhythm 小部件添加到您的启动器以快速控制音乐。自定义显示的信息以及小部件的外观。</string>
     <string name="onboarding_widget_artist">显示艺术家姓名</string>
     <string name="onboarding_widget_artist_desc">在小部件中显示当前艺术家</string>
     <string name="onboarding_widget_album">显示专辑名称</string>
@@ -589,8 +589,8 @@
     <string name="onboarding_integration_ytmusic">YouTube Music</string>
     <string name="onboarding_integrations_info_title">隐私说明</string>
     <string name="onboarding_integrations_info_desc">这些功能将有限的数据（歌曲名称、艺术家）发送到外部服务。您的个人数据和音乐文件保留在您的设备上。您可以随时在“设置”中启用或禁用这些功能。</string>
-    <!-- Onboarding: Rhythm Stats Step -->
-    <string name="onboarding_stats_title">Rhythm 统计</string>
+    <!-- Onboarding: T2Rhythm Stats Step -->
+    <string name="onboarding_stats_title">T2Rhythm 统计</string>
     <string name="onboarding_stats_desc">发现有关您的音乐习惯的见解。通过精美的可视化效果跟踪您的收听时间、最常播放的歌曲、最喜欢的艺术家等。</string>
     <string name="onboarding_stats_show_home">显示主页统计数据</string>
     <string name="onboarding_stats_show_home_desc">在主屏幕上显示收听统计小部件</string>
@@ -611,9 +611,9 @@
     <string name="settings_tip_gestures_swipe">向上滑动迷你播放器以打开完整播放器，然后向下滑动以在完成后关闭。</string>
     <string name="settings_tip_gestures_artwork">滑动插图可切换曲目，双击专辑插图可快速播放或暂停。</string>
     <string name="settings_tip_media_scan">使用媒体扫描隐藏库中不需要的文件</string>
-    <string name="settings_tip_rhythm_guard_off">启用 Rhythm Guard 保护您的听力</string>
-    <string name="settings_tip_rhythm_guard_auto">Rhythm Guard 自动管理安全收听限制</string>
-    <string name="settings_tip_rhythm_guard_manual">您正在手动控制 Rhythm Guard 限制</string>
+    <string name="settings_tip_rhythm_guard_off">启用 T2Rhythm Guard 保护您的听力</string>
+    <string name="settings_tip_rhythm_guard_auto">T2Rhythm Guard 自动管理安全收听限制</string>
+    <string name="settings_tip_rhythm_guard_manual">您正在手动控制 T2Rhythm Guard 限制</string>
     <string name="settings_default_screen">默认登陆屏幕</string>
     <string name="settings_default_screen_desc">选择您的起始屏幕</string>
     <string name="settings_home_desc">发现新音乐和推荐</string>
@@ -683,7 +683,7 @@
     <string name="lyrics_editor_title">歌词编辑器</string>
     <!-- Components: Song Info -->
     <string name="song_info_title">歌曲信息</string>
-    <string name="rhythm_stats">Rhythm 统计</string>
+    <string name="rhythm_stats">T2Rhythm 统计</string>
     <string name="file_info">文件信息</string>
     <!-- Components: Add to Playlist -->
     <string name="add_to_playlists">添加到播放列表</string>
@@ -697,7 +697,7 @@
     <string name="backup_all_settings_placeholder">所有设置、播放列表、主题和库自定义</string>
     <string name="backup_restore_tap_placeholder">一键从文件或剪贴板恢复</string>
     <string name="backup_local_storage_placeholder">为了保护隐私，备份本地存储在您的设备上</string>
-    <string name="external_services_desc">切换 Rhythm 调取歌词、艺人图片以及动态专辑封面所使用的在线服务。可关闭不需要的服务，以减少流量消耗。</string>
+    <string name="external_services_desc">切换 T2Rhythm 调取歌词、艺人图片以及动态专辑封面所使用的在线服务。可关闭不需要的服务，以减少流量消耗。</string>
     <string name="lyrics_source_priority_title">歌词优先来源</string>
     <string name="queue_action_title">队列冲突操作</string>
     <string name="queue_action_choose">选择默认队列冲突动作</string>
@@ -714,7 +714,7 @@
     <string name="updates_disabled_message">应用程序更新已在设置中禁用</string>
     <string name="updates_auto_disabled">自动更新检查已禁用。您仍然可以手动检查。</string>
     <string name="updates_up_to_date_message">你的版本已是最新！</string>
-    <string name="updates_check_frequency">Rhythm 应多久检查一次更新？</string>
+    <string name="updates_check_frequency">T2Rhythm 应多久检查一次更新？</string>
     <string name="updates_experimental_coming">未来的更新中即将推出更多实验性功能</string>
     <string name="settings_interval_every_48_hours">每 48 小时一次</string>
     <string name="settings_interval_every_72_hours">每 72 小时一次</string>
@@ -857,7 +857,7 @@
     <string name="updates_enable_auto_check">自动检查</string>
     <string name="updates_channel_title">更新频道</string>
     <string name="updates_source_title">更新源</string>
-    <string name="updates_source_desc">选择用于 OTA 更新的版本系列 Rhythm。</string>
+    <string name="updates_source_desc">选择用于 OTA 更新的版本系列 T2Rhythm。</string>
     <string name="updates_source_installed">匹配安装版本</string>
     <string name="updates_source_installed_label">已安装版本</string>
     <string name="updates_source_github_label">GitHub 构建版本</string>
@@ -905,7 +905,7 @@
     <string name="cd_reorder_chips">重新排列小组件</string>
     <string name="cd_search">搜索</string>
     <string name="cd_view_all">查看全部</string>
-    <string name="cd_rhythm_splash">Rhythm</string>
+    <string name="cd_rhythm_splash">T2Rhythm</string>
     <string name="cd_remove_from_playlist">从播放列表中删除</string>
     <string name="cd_change_language">更改语言</string>
     <string name="cd_open_settings">打开</string>
@@ -980,16 +980,16 @@
     <!-- Service Notifications -->
     <string name="service_app_updates">Rhythm更新程序</string>
     <string name="service_update_status">Rhythm更新程序状态</string>
-    <string name="service_rhythm_pulse">Rhythm 提示</string>
-    <string name="service_rhythm_guard_alerts">Rhythm 警卫警报</string>
-    <string name="service_rhythm_guard_timers">Rhythm 保护定时器</string>
-    <string name="service_rhythm_music">Rhythm 音乐</string>
+    <string name="service_rhythm_pulse">T2Rhythm 提示</string>
+    <string name="service_rhythm_guard_alerts">T2Rhythm 警卫警报</string>
+    <string name="service_rhythm_guard_timers">T2Rhythm 保护定时器</string>
+    <string name="service_rhythm_music">T2Rhythm 音乐</string>
     <string name="service_update_status_desc">后台更新检查的状态结果</string>
     <string name="service_rhythm_pulse_desc">来自Rhythm的友好聆听提醒和提示</string>
     <string name="service_rhythm_guard_alerts_desc">来自Rhythm警卫的安全警报</string>
-    <string name="service_rhythm_guard_timers_desc">Rhythm 防守突破和超时提醒</string>
-    <string name="service_ready">Rhythm 准备就绪。</string>
-    <string name="service_init_failed">Rhythm 无法启动。请重新打开该应用程序。</string>
+    <string name="service_rhythm_guard_timers_desc">T2Rhythm 防守突破和超时提醒</string>
+    <string name="service_ready">T2Rhythm 准备就绪。</string>
+    <string name="service_init_failed">T2Rhythm 无法启动。请重新打开该应用程序。</string>
     <!-- Crash Activity -->
     <string name="crash_bug_report">错误报告</string>
     <string name="crash_restart_app">重新启动应用程序</string>
@@ -1019,12 +1019,12 @@
     <string name="settings_artwork_cache_size">封面缓存大小</string>
     <string name="settings_artist_parsing">艺术家</string>
     <string name="settings_artist_parsing_desc">分隔符，显示</string>
-    <string name="settings_rhythm_stats">Rhythm 统计</string>
+    <string name="settings_rhythm_stats">T2Rhythm 统计</string>
     <string name="settings_rhythm_stats_desc">收听时间、热门曲目和趋势</string>
-    <string name="settings_rhythm_guard">Rhythm 守卫</string>
-    <string name="settings_rhythm_guard_list_desc">由 Rhythm 统计数据提供支持的听力健康护栏</string>
+    <string name="settings_rhythm_guard">T2Rhythm 守卫</string>
+    <string name="settings_rhythm_guard_list_desc">由 T2Rhythm 统计数据提供支持的听力健康护栏</string>
     <string name="settings_rhythm_guard_mode_title">保护模式</string>
-    <string name="settings_rhythm_guard_mode_desc">选择 Rhythm Guard 如何管理听力健康状况</string>
+    <string name="settings_rhythm_guard_mode_desc">选择 T2Rhythm Guard 如何管理听力健康状况</string>
     <string name="settings_rhythm_guard_mode_auto">自动</string>
     <string name="settings_rhythm_guard_mode_manual">手册</string>
     <string name="settings_rhythm_guard_age_label">年龄概况：%1$d</string>
@@ -1040,10 +1040,10 @@
     <string name="settings_rhythm_guard_manual_warning_toggle">显示安全警告</string>
     <string name="settings_rhythm_guard_manual_warning_toggle_desc">当实时音量或手动切换可能存在风险时发出警告</string>
     <string name="settings_rhythm_guard_manual_threshold_title">高音量警告阈值：%1$d%%</string>
-    <string name="settings_rhythm_guard_manual_threshold_desc">设置 Rhythm Guard 应在何时发出潜在有害音量警告。</string>
+    <string name="settings_rhythm_guard_manual_threshold_desc">设置 T2Rhythm Guard 应在何时发出潜在有害音量警告。</string>
     <string name="settings_rhythm_guard_device_controls_title">输出控制</string>
     <string name="settings_rhythm_guard_device_controls_speaker_limit_title">对手机扬声器应用音量限制</string>
-    <string name="settings_rhythm_guard_device_controls_speaker_limit_desc">关闭时，Rhythm Guard 会跳过内置扬声器输出上的音量限制和音量警告。</string>
+    <string name="settings_rhythm_guard_device_controls_speaker_limit_desc">关闭时，T2Rhythm Guard 会跳过内置扬声器输出上的音量限制和音量警告。</string>
     <string name="settings_rhythm_guard_alert_controls_title">监听警报控件</string>
     <string name="settings_rhythm_guard_alert_threshold_title">暴露警报阈值：%1$s</string>
     <string name="settings_rhythm_guard_alert_threshold_policy_default">政策默认</string>
@@ -1053,7 +1053,7 @@
     <string name="settings_rhythm_guard_warning_title">聆听安全警告</string>
     <string name="settings_rhythm_guard_warning_high_volume">当前音量高于警告阈值 (%1$d%%)。考虑减少音量。</string>
     <string name="settings_rhythm_guard_warning_daily_exposure">您今天到达了 %1$s，高于建议的 %2$s。考虑休息一下再聆听。</string>
-    <string name="settings_rhythm_guard_warning_dialog_title">Rhythm 警卫保护警报</string>
+    <string name="settings_rhythm_guard_warning_dialog_title">T2Rhythm 警卫保护警报</string>
     <string name="settings_rhythm_guard_warning_dialog_volume_message">系统媒体音量实时为 %1$d%%，高于您当前的保护限制 %2$d%%。降低音量以降低听力风险。</string>
     <string name="settings_rhythm_guard_risk_level_label">风险严重程度：%1$s</string>
     <string name="settings_rhythm_guard_risk_action_label">建议采取的行动：%1$s</string>
@@ -1083,8 +1083,8 @@
     <string name="settings_rhythm_guard_start_countdown_value">从 %1$s 开始</string>
     <string name="settings_rhythm_guard_snapshot_widget_above_limit">超出建议限制</string>
     <string name="settings_rhythm_guard_snapshot_widget_within_limit">在建议限度内</string>
-    <string name="settings_rhythm_guard_state_active">Rhythm 防护已激活</string>
-    <string name="settings_rhythm_guard_state_inactive">Rhythm 防护未激活</string>
+    <string name="settings_rhythm_guard_state_active">T2Rhythm 防护已激活</string>
+    <string name="settings_rhythm_guard_state_inactive">T2Rhythm 防护未激活</string>
     <string name="settings_rhythm_guard_state_timeout_active">监听超时正在进行中</string>
     <string name="settings_rhythm_guard_state_cooldown_active">宽限期已激活</string>
     <string name="settings_rhythm_guard_state_timeout_remaining">中断以 %1$s 结束</string>
@@ -1096,8 +1096,8 @@
     <string name="settings_rhythm_guard_protection_preset_strict">严格</string>
     <string name="settings_rhythm_guard_protection_preset_custom">自定义</string>
     <string name="settings_rhythm_guard_timeout_activity_title">监听超时激活</string>
-    <string name="settings_rhythm_guard_timeout_activity_default_reason">情节转折：你的耳朵开始联合并要求休息一下。 Rhythm 警卫暂停了播放，以便每个人都可以冷静下来。</string>
-    <string name="settings_rhythm_guard_timeout_activity_comic_desc">情节转折：你的耳朵开始联合并要求休息一下。 Rhythm 警卫暂停了播放，以便每个人都可以冷静下来。</string>
+    <string name="settings_rhythm_guard_timeout_activity_default_reason">情节转折：你的耳朵开始联合并要求休息一下。 T2Rhythm 警卫暂停了播放，以便每个人都可以冷静下来。</string>
+    <string name="settings_rhythm_guard_timeout_activity_comic_desc">情节转折：你的耳朵开始联合并要求休息一下。 T2Rhythm 警卫暂停了播放，以便每个人都可以冷静下来。</string>
     <string name="settings_rhythm_guard_timeout_activity_extend">延长休息时间（+%1$d 分钟）</string>
     <string name="settings_rhythm_guard_timeout_activity_exit">关闭超时屏幕</string>
     <string name="settings_rhythm_guard_timeout_activity_close_app">关闭应用程序</string>
@@ -1115,16 +1115,16 @@
     <string name="settings_rhythm_guard_protection_presets_search_desc">一键应用温和、平衡或严格的护栏束</string>
     <string name="settings_rhythm_guard_break_resume_search_title">默认休息恢复</string>
     <string name="settings_rhythm_guard_break_resume_search_desc">设置默认监听中断持续多长时间</string>
-    <string name="settings_rhythm_guard_enable_search_title">Rhythm 守卫力量</string>
-    <string name="settings_rhythm_guard_enable_search_desc">启用或禁用 Rhythm Guard 保护</string>
+    <string name="settings_rhythm_guard_enable_search_title">T2Rhythm 守卫力量</string>
+    <string name="settings_rhythm_guard_enable_search_desc">启用或禁用 T2Rhythm Guard 保护</string>
     <string name="settings_rhythm_guard_notification_alert_title">Rhythm警卫安全警报</string>
-    <string name="settings_rhythm_guard_notification_timer_active_title">Rhythm 防护超时激活</string>
+    <string name="settings_rhythm_guard_notification_timer_active_title">T2Rhythm 防护超时激活</string>
     <string name="settings_rhythm_guard_notification_timer_active_text">在 %1$s 处继续播放。</string>
-    <string name="settings_rhythm_guard_notification_timer_scheduled_title">Rhythm Guard 已安排休息时间</string>
+    <string name="settings_rhythm_guard_notification_timer_scheduled_title">T2Rhythm Guard 已安排休息时间</string>
     <string name="settings_rhythm_guard_notification_timer_scheduled_text">聆听中断从 %1$s 开始。</string>
     <string name="settings_rhythm_guard_notification_tap_open">点击可查看超时详细信息。</string>
-    <!-- Rhythm Stats Screen -->
-    <string name="stats_title">Rhythm 统计</string>
+    <!-- T2Rhythm Stats Screen -->
+    <string name="stats_title">T2Rhythm 统计</string>
     <string name="stats_today">今天</string>
     <string name="stats_this_week">本周</string>
     <string name="stats_this_month">本月</string>
@@ -1411,7 +1411,7 @@
     <string name="settings_interval_once_a_day">每日一次</string>
     <string name="settings_interval_once_a_week">每周一次</string>
     <!-- Experimental Features -->
-    <string name="streaming_integration_title">Rhythm Go</string>
+    <string name="streaming_integration_title">T2Rhythm Go</string>
     <string name="streaming_integration_services">集成服务</string>
     <string name="streaming_integration_services_empty">尚未连接服务</string>
     <string name="streaming_settings_title">设置</string>
@@ -1419,7 +1419,7 @@
     <string name="streaming_settings_group_actions">操作</string>
     <string name="streaming_settings_preferred_service">首选服务</string>
     <string name="streaming_settings_quality">流媒体质量</string>
-    <string name="streaming_settings_service_sheet_desc">选择默认情况下应优先考虑的连接服务 Rhythm Go。</string>
+    <string name="streaming_settings_service_sheet_desc">选择默认情况下应优先考虑的连接服务 T2Rhythm Go。</string>
     <string name="streaming_settings_quality_sheet_desc">选择您喜欢的流媒体播放音频质量。</string>
     <string name="streaming_quality_low">低</string>
     <string name="streaming_quality_normal">正常</string>
@@ -1429,7 +1429,7 @@
     <string name="streaming_quality_normal_desc">平衡的质量和数据使用（~160 kbps）。</string>
     <string name="streaming_quality_high_desc">高品质音频（~320 kbps）。</string>
     <string name="streaming_quality_lossless_desc">支持的最佳质量 (FLAC/ALAC)。</string>
-    <string name="streaming_settings_group_wellbeing">Rhythm Insights</string>
+    <string name="streaming_settings_group_wellbeing">T2Rhythm Insights</string>
     <string name="streaming_open_full_settings">打开完整设置</string>
     <string name="streaming_open_full_settings_desc">打开跨模式共享的应用程序范围设置</string>
     <string name="streaming_switch_to_local_mode">切换到本地模式</string>
@@ -1453,7 +1453,7 @@
     <string name="streaming_service_setup_password">密码</string>
     <string name="streaming_service_setup_password_hint">输入您的帐户密码</string>
     <string name="streaming_service_setup_remember_password">记住此设备上的密码</string>
-    <string name="streaming_service_setup_remember_password_desc">在本地存储凭据，以便 Rhythm 稍后可以自动重新连接。</string>
+    <string name="streaming_service_setup_remember_password_desc">在本地存储凭据，以便 T2Rhythm 稍后可以自动重新连接。</string>
     <string name="streaming_service_setup_connecting">正在连接……</string>
     <string name="streaming_service_setup_disconnecting">断开连接……</string>
     <string name="streaming_service_setup_action_hint">填写必填字段以连接此服务。</string>
@@ -1641,7 +1641,7 @@
     <string name="settings_bluetooth_lyrics_enabled">蓝牙歌词模式</string>
     <string name="settings_bluetooth_lyrics_enabled_desc">通过蓝牙元数据广播当前歌词行</string>
     <string name="exp_go_mode">Go 模式</string>
-    <string name="exp_go_mode_desc">切换到 Rhythm Go 流媒体播放模式</string>
+    <string name="exp_go_mode_desc">切换到 T2Rhythm Go 流媒体播放模式</string>
     <!-- Home Screen Search Strings -->
     <string name="settings_home_section_order">章节顺序</string>
     <string name="settings_home_section_order_desc">重新排序主页部分</string>
@@ -1654,13 +1654,13 @@
     <string name="settings_home_carousel_auto_scroll">轮播自动滚动</string>
     <string name="settings_home_carousel_auto_scroll_desc">自动滚动轮播</string>
     <!-- Notifications Search Strings -->
-    <string name="settings_notifications_rhythm_guard_alerts">Rhythm Guard 安全警报</string>
+    <string name="settings_notifications_rhythm_guard_alerts">T2Rhythm Guard 安全警报</string>
     <string name="settings_notifications_rhythm_guard_alerts_desc">监听风险预警触发时发出通知</string>
-    <string name="settings_notifications_rhythm_guard_timers">Rhythm Guard 中断定时器</string>
+    <string name="settings_notifications_rhythm_guard_timers">T2Rhythm Guard 中断定时器</string>
     <string name="settings_notifications_rhythm_guard_timers_desc">通知安排的休息时间和超时倒计时</string>
-    <string name="settings_notifications_rhythm_pulse">Rhythm 提示</string>
+    <string name="settings_notifications_rhythm_pulse">T2Rhythm 提示</string>
     <string name="settings_notifications_rhythm_pulse_desc">友情提醒和聆听技巧。</string>
-    <string name="settings_notifications_rhythm_pulse_interval">Rhythm 提示间隔</string>
+    <string name="settings_notifications_rhythm_pulse_interval">T2Rhythm 提示间隔</string>
     <string name="settings_notifications_rhythm_pulse_interval_desc">提示通知的发送频率</string>
     <!-- Expressive Shapes Search Strings -->
     <string name="settings_expressive_shapes_enabled">富有表现力的形状</string>
@@ -1783,7 +1783,7 @@
     <string name="theme_font_imported">字体导入成功</string>
     <string name="theme_font_invalid">无效的字体文件格式</string>
     <string name="ui_apply">应用</string>
-    <string name="crashactivity_uh_oh_looks_like">呃哦！看来 Rhythm 唱得很不好！</string>
+    <string name="crashactivity_uh_oh_looks_like">呃哦！看来 T2Rhythm 唱得很不好！</string>
     <string name="crashactivity_dont_fret_our_app">别担心！我们的应用程序只是有一点“哎呀”。请分享下面的崩溃详细信息 - 这就像我们的开发人员修复问题的秘密消息！那么，让我们再试一次，好吗？</string>
     <string name="crashactivity_secret_crash_scrolls">秘密崩溃卷轴</string>
     <string name="crashactivity_share">分享</string>
@@ -1877,7 +1877,7 @@
     <string name="streamingmusicviewmodel_failed_to_play_next">无法播放下一个：无法解析 URL</string>
     <string name="streamingmusicviewmodel_failed_to_add_to">添加到队列失败：无法解析 URL</string>
     <string name="rhythmmusicwidget_album_art_placeholder">专辑艺术占位符</string>
-    <string name="rhythmwidgetpreview_rhythm_glance_widget_previews">Rhythm Glance 小部件预览</string>
+    <string name="rhythmwidgetpreview_rhythm_glance_widget_previews">T2Rhythm Glance 小部件预览</string>
     <string name="rhythmwidgetpreview_str_11_compact_widget">1×1 紧凑小部件</string>
     <string name="rhythmwidgetpreview_str_21_horizontal_strip">2×1横条</string>
     <string name="rhythmwidgetpreview_str_22_small_widget">2×2小部件</string>
@@ -1919,7 +1919,7 @@
     <string name="betaprogrampopup_early_access">抢先体验</string>
     <string name="betaprogrampopup_shape_the_future">塑造未来</string>
     <string name="betaprogrampopup_direct_feedback">直接反馈</string>
-    <string name="betaprogrampopup_youre_part_of_an">您是帮助塑造 Rhythm 音乐播放器未来的专属团队的一员</string>
+    <string name="betaprogrampopup_youre_part_of_an">您是帮助塑造 T2Rhythm 音乐播放器未来的专属团队的一员</string>
     <string name="betaprogrampopup_start_exploring">开始探索</string>
     <string name="switchmodedialog_switch_play">切换和播放</string>
     <string name="fullscreenlyricsview_cover_artwork">封面艺术</string>
@@ -1985,7 +1985,7 @@
     <string name="lyricssourcesettingsscreen_retry_using_fallbacks">使用后备重试</string>
     <string name="lyricssourcesettingsscreen_embedded_lyrics_are_stored">• 嵌入式歌词储存在你的音频文件中</string>
     <string name="miniplayercustomizationsettingsscreen_miniplayer_theme">迷你播放器主题</string>
-    <string name="miniplayercustomizationsettingsscreen_choose_between_rhythm_default">选择 Rhythm 默认主题或 Expressive 主题</string>
+    <string name="miniplayercustomizationsettingsscreen_choose_between_rhythm_default">选择 T2Rhythm 默认主题或 Expressive 主题</string>
     <string name="miniplayercustomizationsettingsscreen_integrated_directly_into_the">直接集成到MiniPlayer后台</string>
     <string name="performancesettingsscreen_performance">精简模式</string>
     <string name="performancesettingsscreen_disable_haptics">禁用触觉反馈</string>
@@ -2002,7 +2002,7 @@
     <string name="rhythmguardsettingsscreen_none">无</string>
     <string name="rhythmguardsettingsscreen_general_settings">常规设置</string>
     <string name="rhythmguardsettingsscreen_library_data">音乐库数据</string>
-    <string name="rhythmguardsettingsscreen_stats_rhythm_guard">统计数据与 Rhythm Guard</string>
+    <string name="rhythmguardsettingsscreen_stats_rhythm_guard">统计数据与 T2Rhythm Guard</string>
     <string name="settingsscreen_audio_offload">音频卸载</string>
     <string name="settingsscreen_personalization">个性化</string>
     <string name="settingsscreen_library_focus">音乐库焦点</string>
@@ -2097,7 +2097,7 @@
     <string name="pulse_marathon">马拉松模式</string>
     <!-- Settings Tips Details -->
     <string name="settings_tip_theme_desc_1">用活泼的 AMOLED 黑色和美丽柔和的色彩刷新您的音乐播放器。</string>
-    <string name="settings_tip_theme_desc_2">通过将应用程序的风格与您的系统相匹配，让 Rhythm 真正属于您。</string>
+    <string name="settings_tip_theme_desc_2">通过将应用程序的风格与您的系统相匹配，让 T2Rhythm 真正属于您。</string>
     <string name="settings_tip_media_scan_desc_1">避免不需要的音频剪辑。明确定义我们应该扫描哪些文件夹来查找音乐。</string>
     <string name="settings_tip_media_scan_desc_2">使用焦点文件夹使语音注释和铃声远离播放列表。</string>
     <string name="settings_tip_sleep_timer_desc_1">一边听音乐一边入睡。我们会自动暂停它。</string>
@@ -2106,7 +2106,7 @@
     <string name="settings_tip_equalizer_desc_2">使用我们先进的音频效果安全地调节耳机的声音。</string>
     <string name="settings_tip_backup_active_desc_1">自动备份已激活。验证您的备份部分，以便恢复保持干净。</string>
     <string name="settings_tip_backup_active_desc_2">保护已启用：时间表看起来不错。在进行大编辑之前运行手动备份。</string>
-    <string name="settings_tip_backup_inactive_desc_1">自动备份已关闭。启用它来保护播放列表和 Rhythm Guard 统计数据。</string>
+    <string name="settings_tip_backup_inactive_desc_1">自动备份已关闭。启用它来保护播放列表和 T2Rhythm Guard 统计数据。</string>
     <string name="settings_tip_backup_inactive_desc_2">还没有安全网。打开备份以避免丢失设置。</string>
     <string name="settings_tip_updates_active_desc_1">已启用更新。保持它们打开以进行修复和性能改进。</string>
     <string name="settings_tip_updates_active_desc_2">您已准备好接收更新。检查渠道偏好的稳定性与新鲜度。</string>
@@ -2149,7 +2149,7 @@
     <string name="font_jetbrains_desc">等宽字体完美适合技术内容</string>
     <string name="font_quicksand_desc">圆形字体，外观更柔和、更友好</string>
     <!-- Predefined Color Schemes -->
-    <string name="color_scheme_default_title">Rhythm 默认</string>
+    <string name="color_scheme_default_title">T2Rhythm 默认</string>
     <string name="color_scheme_default_desc">Material 3 基线紫色，带有玫瑰粉色点缀</string>
     <string name="color_scheme_warm_title">温暖的夕阳</string>
     <string name="color_scheme_warm_desc">舒适的橙色和红色色调营造出温暖的氛围</string>
@@ -2184,7 +2184,7 @@
     <string name="lyrics_settings_embedded_first">嵌入式优先</string>
     <string name="lyrics_settings_embedded_first_desc">优先选择嵌入音频文件中的歌词，回退到在线 API</string>
     <string name="lyrics_settings_online_first">在线优先</string>
-    <string name="lyrics_settings_online_first_desc">首选在线 API（Rhythm 逐字，LRCLib），回退到嵌入式</string>
+    <string name="lyrics_settings_online_first_desc">首选在线 API（T2Rhythm 逐字，LRCLib），回退到嵌入式</string>
     <string name="lyrics_settings_local_first">本地优先</string>
     <string name="lyrics_settings_local_first_desc">优先选择本地 .lrc 文件，然后是嵌入歌词，然后是在线 API</string>
     <string name="lyrics_settings_lyrically_first">Lyrically 优先</string>
@@ -2210,7 +2210,7 @@
     <string name="lyrics_settings_disable_animations_desc">禁用歌词视图中的过渡和动画</string>
     <string name="lyrics_settings_word_by_word_translation">自动词同步</string>
     <string name="lyrics_settings_word_by_word_translation_desc">通过按比例分配持续时间，自动生成行同步歌词的字级计时</string>
-    <string name="lyrics_settings_info_bullets">其他同步详细信息：\n• 在线 API 提供高质量同步歌词\n• Rhythm 提供逐字同步\n• LRCLib 提供免费的逐行同步</string>
+    <string name="lyrics_settings_info_bullets">其他同步详细信息：\n• 在线 API 提供高质量同步歌词\n• T2Rhythm 提供逐字同步\n• LRCLib 提供免费的逐行同步</string>
     <!-- AutoEQ Preset Picker additions -->
     <string name="autoeqpresetpickerbottomsheet_search_presets">搜索预设…</string>
     <string name="autoeqpresetpickerbottomsheet_disable">无/禁用 AutoEQ</string>
@@ -2228,7 +2228,7 @@
     <string name="device_configuration_custom_preset">自定义预设</string>
     <string name="device_configuration_custom">自定义</string>
     <string name="device_configuration_active_profile_label">活跃预设：%1$s</string>
-    <string name="device_configuration_share_subject">Rhythm EQ 配置文件：%1$s</string>
+    <string name="device_configuration_share_subject">T2Rhythm EQ 配置文件：%1$s</string>
     <string name="device_configuration_share_title">共享 EQ 配置文件</string>
     <string name="device_configuration_edit_device">编辑设备</string>
     <string name="device_configuration_add_device">添加设备</string>
@@ -2274,9 +2274,9 @@
         <item quantity="other">将 %1$d 个播放列表导出到：</item>
     </plurals>
     <!-- Mode dialog strings -->
-    <string name="dialog_switch_to_go">Switch to Rhythm Go？</string>
+    <string name="dialog_switch_to_go">Switch to T2Rhythm Go？</string>
     <string name="dialog_switch_to_local">切换到本地？</string>
-    <string name="dialog_switch_to_go_desc">This item belongs to Rhythm Go。现在切换到流媒体模式来进行流媒体播放吗？</string>
+    <string name="dialog_switch_to_go_desc">This item belongs to T2Rhythm Go。现在切换到流媒体模式来进行流媒体播放吗？</string>
     <string name="dialog_switch_to_local_desc">该资料属于您的本地音乐库。立即切换到本地模式来播放离线曲目吗？</string>
     <!-- Section order content descriptions -->
 
@@ -2451,7 +2451,7 @@
     <string name="carousel_style_hero">英雄</string>
     <string name="carousel_style_hero_desc">1 侧视专辑</string>
     <!-- Theme names -->
-    <string name="theme_rhythm">Rhythm</string>
+    <string name="theme_rhythm">T2Rhythm</string>
     <string name="theme_expressive">富有表现力</string>
     <string name="settings_managed_by_expressive_shapes">由富有表现力的形状管理</string>
     <!-- Shape targets -->
@@ -2497,7 +2497,7 @@
     <string name="backup_restore_section_collection">收藏</string>
     <string name="backup_restore_section_collection_desc">播放列表、收藏夹、黑名单/白名单、固定文件夹。</string>
     <string name="backup_restore_section_insight">Insight</string>
-    <string name="backup_restore_section_insight_desc">播放次数、每日统计数据、类型和 Rhythm Guard 配置。</string>
+    <string name="backup_restore_section_insight_desc">播放次数、每日统计数据、类型和 T2Rhythm Guard 配置。</string>
     <string name="backup_restore_status_included">包括</string>
     <string name="backup_restore_status_excluded">排除</string>
     <plurals name="backup_restore_sections_enabled">
@@ -2517,7 +2517,7 @@
     <string name="library_bottom_bar_select_songs">选择歌曲</string>
     <string name="library_bottom_bar_more_actions">更多操作</string>
     <string name="library_play_selected">播放 (%1$d)</string>
-    <!-- Rhythm Guard Comic Status Subtitles -->
+    <!-- T2Rhythm Guard Comic Status Subtitles -->
     <!-- Player, Bottomsheet, and Popup translations -->
     <string name="unknown_track">未知曲目</string>
     <string name="unknown_song">未知歌曲</string>
@@ -2545,8 +2545,8 @@
     <string name="settings_album_hide_about">隐藏专辑的“关于”部分</string>
     <string name="settings_album_hide_about_desc">隐藏专辑详情页的“描述/关于”部分</string>
     <string name="settings_rhythm_guard_first_break_dialog_title">关于听歌间隔</string>
-    <string name="settings_rhythm_guard_first_break_dialog_message">当你的每日听音暴露时长达到限值时，Rhythm Guard 会自动安排听音休息时段以保护听力。休息模式下设备会暂停播放，并锁定操作控件，确保你的耳朵得到充足休整。\n \n首次弹出休息提醒时，你可以选择关闭 Rhythm Guard 功能。但后续所有自动休息时段内，你无法关闭该功能，必须等休息时长结束才能操作。非强制休息阶段，你随时可以关闭 Rhythm Guard 或调整相关设置。</string>
-    <string name="settings_rhythm_guard_first_break_dialog_turn_off">关闭 Rhythm Guard</string>
+    <string name="settings_rhythm_guard_first_break_dialog_message">当你的每日听音暴露时长达到限值时，T2Rhythm Guard 会自动安排听音休息时段以保护听力。休息模式下设备会暂停播放，并锁定操作控件，确保你的耳朵得到充足休整。\n \n首次弹出休息提醒时，你可以选择关闭 T2Rhythm Guard 功能。但后续所有自动休息时段内，你无法关闭该功能，必须等休息时长结束才能操作。非强制休息阶段，你随时可以关闭 T2Rhythm Guard 或调整相关设置。</string>
+    <string name="settings_rhythm_guard_first_break_dialog_turn_off">关闭 T2Rhythm Guard</string>
     <string name="settings_rhythm_guard_first_break_dialog_start">开始休息</string>
     <string name="settings_rhythm_guard_locked_during_break">在听歌休息期间锁定</string>
     <string name="error_no_document_app">未找到用于选定文件夹的系统文件选择器。</string>
@@ -2559,7 +2559,7 @@
     <string name="settings_system_notification_channels">系统通知设置</string>
     <string name="settings_system_notification_channels_desc">配置系统通知、声音、振动和锁屏行为</string>
     <string name="settings_notification_permission_title">需要通知权限</string>
-    <string name="settings_notification_permission_desc">启用通知，这样 Rhythm 就能显示媒体控制和后台任务更新。</string>
+    <string name="settings_notification_permission_desc">启用通知，这样 T2Rhythm 就能显示媒体控制和后台任务更新。</string>
     <string name="settings_notification_permission_grant">启用通知</string>
     <string name="settings_queue_autofill">自动添加</string>
     <string name="settings_queue_display">队列展示</string>

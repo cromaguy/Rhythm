@@ -42,6 +42,7 @@ fun LibraryEnrichmentPanel() {
     val jobs by remember { workManager.getWorkInfosForUniqueWorkFlow(LibraryEnrichmentWorker.WORK_NAME) }.collectAsState(emptyList())
     val active = jobs.any { !it.state.isFinished }
     val changes by catalog.changes.collectAsState()
+    var advanced by remember { mutableStateOf(false) }
     var busy by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf<String?>(null) }
     var plan by remember { mutableStateOf<CatalogBatchPlan?>(null) }
@@ -110,8 +111,8 @@ fun LibraryEnrichmentPanel() {
             try {
                 context.contentResolver.takePersistableUriPermission(tree, Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
                 catalog.preferences.update(options.copy(exportTree = tree.toString()))
-                val file = CatalogExport.export(context, tree)
-                message = context.getString(R.string.catalog_export_saved, file)
+                val archive = PersonalArchive(context); archive.selectTree(tree); archive.sync()
+                message = context.getString(R.string.personal_archive_synced)
             } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
             catch (_: Exception) { message = context.getString(R.string.catalog_export_error) }
             finally { busy = false }
@@ -127,6 +128,20 @@ fun LibraryEnrichmentPanel() {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(stringResource(R.string.catalog_batch_title), style = MaterialTheme.typography.titleLarge)
             Text(stringResource(R.string.catalog_batch_hint), style = MaterialTheme.typography.bodySmall)
+            TextButton(onClick = { advanced = !advanced }) { Text(stringResource(R.string.catalog_options_expand)) }
+            if (advanced) {
+            toggle(R.string.catalog_replace_all, options.replaceTags) { catalog.preferences.update(options.copy(replaceTags = it)) }
+            Text(stringResource(R.string.catalog_force_fields_hint), style = MaterialTheme.typography.bodySmall)
+            listOf(kr.co.metadata.crawler.CatalogField.TRACK_TITLE, kr.co.metadata.crawler.CatalogField.TRACK_ARTISTS, kr.co.metadata.crawler.CatalogField.TRACK_ALBUM_TITLE, kr.co.metadata.crawler.CatalogField.TRACK_GENRES, kr.co.metadata.crawler.CatalogField.TRACK_RELEASE_DATE, kr.co.metadata.crawler.CatalogField.TRACK_IMAGE, kr.co.metadata.crawler.CatalogField.TRACK_LYRICS).forEach { field ->
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text(field.label(context), Modifier.weight(1f))
+                    Checkbox(checked = field in options.forceFields, enabled = !active && !busy && !options.replaceTags, onCheckedChange = { selected -> catalog.preferences.update(options.copy(forceFields = if (selected) options.forceFields + field else options.forceFields - field)) })
+                }
+            }
+            toggle(R.string.catalog_strict_duration, options.strictDuration) { catalog.preferences.update(options.copy(strictDuration = it)) }
+            Text(context.getString(R.string.catalog_duration_tolerance, options.durationTolerancePercent), style = MaterialTheme.typography.bodyMedium)
+            var tolerance by remember(options.durationTolerancePercent) { mutableFloatStateOf(options.durationTolerancePercent.toFloat()) }
+            Slider(value = tolerance, valueRange = 0f..30f, enabled = !active && !busy, onValueChange = { tolerance = it }, onValueChangeFinished = { catalog.preferences.update(options.copy(durationTolerancePercent = tolerance.toDouble())) })
             toggle(R.string.catalog_enabled, options.enabled) { catalog.preferences.update(options.copy(enabled = it)) }
             toggle(R.string.catalog_permanent, options.permanent) { enabled -> scope.launch { catalog.setPermanent(enabled) } }
             toggle(R.string.catalog_write_tags, options.writeTags) { catalog.preferences.update(options.copy(writeTags = it)) }
@@ -137,15 +152,8 @@ fun LibraryEnrichmentPanel() {
             toggle(R.string.catalog_artwork_fields, options.artwork) { catalog.preferences.update(options.copy(artwork = it)) }
             toggle(R.string.catalog_profile_fields, options.profiles) { catalog.preferences.update(options.copy(profiles = it)) }
             toggle(R.string.catalog_lyrics_fields, options.lyrics) { catalog.preferences.update(options.copy(lyrics = it)) }
-            Text(stringResource(R.string.catalog_provider_hint), style = MaterialTheme.typography.labelLarge)
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                listOf(Provider.BUGS_MOBILE, Provider.GENIE, Provider.MELON).forEach { provider ->
-                    FilterChip(selected = provider in options.providers, enabled = !active && !busy,
-                        onClick = { catalog.preferences.update(options.copy(providers = if (provider in options.providers) options.providers - provider else options.providers + provider)) },
-                        label = { Text(if (provider == Provider.BUGS_MOBILE) "Bugs" else provider.label) })
-                }
-            }
             Text(stringResource(R.string.catalog_lyrics_follow_settings), style = MaterialTheme.typography.bodySmall)
+            }
             if (!integrations) Text(stringResource(R.string.catalog_integrations_off), color = MaterialTheme.colorScheme.error)
             plan?.let { snapshot ->
                 val done = progress?.getInt("done", snapshot.next) ?: snapshot.next
@@ -171,9 +179,7 @@ fun LibraryEnrichmentPanel() {
                     catch (_: Exception) { busy = false; afterGrant = null; message = context.getString(R.string.catalog_permission_error) }
                 }
             }, modifier = Modifier.fillMaxWidth()) { Text(context.getString(R.string.catalog_pending_writes, pending)) }
-            OutlinedButton(enabled = !active && !busy, onClick = { export.launch(options.exportTree?.let(android.net.Uri::parse)) }, modifier = Modifier.fillMaxWidth()) {
-                Text(stringResource(R.string.catalog_export))
-            }
+
         }
     }
 }

@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Rhythm</string>
+    <string name="app_name">T2Rhythm</string>
     <!-- Common Labels -->
     <string name="home">Trang chủ</string>
     <string name="library">Thư viện</string>
     <string name="search">Tìm kiếm</string>
     <!-- Media3 notification configuration -->
-    <string name="media3_notification_channel_name">Rhythm Âm nhạc</string>
+    <string name="media3_notification_channel_name">T2Rhythm Âm nhạc</string>
     <string name="media3_notification_channel_description">Điều khiển phát lại phương tiện</string>
     <!-- Widget strings -->
-    <string name="widget_description_glance">Âm nhạc Rhythm - Điều khiển phát lại với 9 bố cục phản hồi, thiết kế Material 3 và cập nhật trạng thái theo thời gian thực</string>
-    <string name="widget_name_glance">Rhythm Âm nhạc</string>
+    <string name="widget_description_glance">Âm nhạc T2Rhythm - Điều khiển phát lại với 9 bố cục phản hồi, thiết kế Material 3 và cập nhật trạng thái theo thời gian thực</string>
+    <string name="widget_name_glance">T2Rhythm Âm nhạc</string>
     <string name="unknown_artist">Nghệ sĩ vô danh</string>
     <string name="play_pause">Phát/Tạm dừng</string>
     <!-- Widget Settings -->
@@ -25,17 +25,17 @@
     <!-- Settings - Notifications -->
     <string name="settings_notifications">Thông báo</string>
     <string name="settings_notifications_updates_group">Cập nhật ứng dụng</string>
-    <string name="settings_notifications_rhythm_guard_group">Rhythm Bảo vệ</string>
-    <string name="settings_notifications_rhythm_pulse_group">Rhythm Mẹo</string>
+    <string name="settings_notifications_rhythm_guard_group">T2Rhythm Bảo vệ</string>
+    <string name="settings_notifications_rhythm_pulse_group">T2Rhythm Mẹo</string>
     <string name="settings_update_notifications_merged_desc">Nhận thông báo về phiên bản mới và kết quả kiểm tra cập nhật nền</string>
     <string name="settings_rhythm_guard_alert_notifications">Thông báo cảnh báo an toàn</string>
-    <string name="settings_rhythm_guard_alert_notifications_desc">Hiển thị thông báo khi Rhythm Guard phát hiện khối lượng hoặc mức độ rủi ro</string>
+    <string name="settings_rhythm_guard_alert_notifications_desc">Hiển thị thông báo khi T2Rhythm Guard phát hiện khối lượng hoặc mức độ rủi ro</string>
     <string name="settings_rhythm_guard_timer_notifications">Thông báo hẹn giờ nghỉ giải lao</string>
     <string name="settings_rhythm_guard_timer_notifications_desc">Hiển thị thông báo về thời gian nghỉ theo lịch và đếm ngược thời gian chờ hoạt động</string>
-    <string name="settings_rhythm_pulse_notifications">Thông báo mẹo Rhythm</string>
+    <string name="settings_rhythm_pulse_notifications">Thông báo mẹo T2Rhythm</string>
     <string name="settings_rhythm_pulse_notifications_desc">Nhận lời nhắc thân thiện và mẹo lắng nghe.</string>
     <string name="settings_rhythm_pulse_interval">Khoảng thời gian mẹo</string>
-    <string name="settings_rhythm_pulse_interval_dialog_title">Khoảng thời gian mẹo Rhythm</string>
+    <string name="settings_rhythm_pulse_interval_dialog_title">Khoảng thời gian mẹo T2Rhythm</string>
     <!-- Settings - Queue & Playback -->
     <!-- Settings - Queue -->
     <string name="settings_queue">Hàng đợi</string>
@@ -113,18 +113,18 @@
     <string name="operation_exporting_playlists">Đang sao lưu danh sách phát tùy chỉnh của bạn…</string>
     <string name="operation_exporting_playlists_location">Đang sao lưu danh sách phát vào bộ nhớ…</string>
     <string name="operation_importing_playlist">Đang nhập tệp danh sách phát…</string>
-    <string name="notification_operations_channel_name">Thư viện Rhythm</string>
+    <string name="notification_operations_channel_name">Thư viện T2Rhythm</string>
     <string name="notification_operations_channel_desc">Tiến trình và kết quả của việc quét thư viện và các hành động trong danh sách phát</string>
-    <string name="notification_media_scan_title">Quét thư viện Rhythm</string>
+    <string name="notification_media_scan_title">Quét thư viện T2Rhythm</string>
     <string name="notification_media_scan_stage_songs">Đang quét bộ nhớ thiết bị để tìm các bản âm thanh…</string>
     <string name="notification_media_scan_stage_saving">Tối ưu hóa và lưu cơ sở dữ liệu bản âm thanh…</string>
     <string name="notification_media_scan_stage_finishing">Hoàn tất việc lập chỉ mục âm thanh…</string>
     <string name="notification_media_scan_complete_pending_setup">Quá trình quét âm thanh đã hoàn tất, đang khởi chạy tác vụ nền…</string>
     <string name="notification_media_scan_cancelled">Quá trình quét thư viện đã bị hủy.</string>
     <string name="notification_media_scan_failed">Quét thư viện không thành công. Hãy kiểm tra quyền lưu trữ và thử lại.</string>
-    <string name="notification_playlist_export_title">Xuất thư viện Rhythm</string>
-    <string name="notification_playlist_import_title">Nhập thư viện Rhythm</string>
-    <string name="notification_library_setup_title">Thiết lập thư viện Rhythm</string>
+    <string name="notification_playlist_export_title">Xuất thư viện T2Rhythm</string>
+    <string name="notification_playlist_import_title">Nhập thư viện T2Rhythm</string>
+    <string name="notification_library_setup_title">Thiết lập thư viện T2Rhythm</string>
     <plurals name="notification_library_setup_complete_summary">
         <item quantity="other">Thư viện đã được tối ưu hóa và sẵn sàng: bản nhạc %1$d, album %2$d, nghệ sĩ %3$d</item>
     </plurals>
@@ -140,20 +140,20 @@
         <item quantity="other">Đã nhập thành công \"%1$s\" với bài hát %2$d.</item>
     </plurals>
     <string name="notification_playlist_import_failed">Nhập danh sách phát không thành công. Vui lòng xác minh định dạng tập tin.</string>
-    <string name="notification_updater_channel_name">Trình cập nhật Rhythm</string>
+    <string name="notification_updater_channel_name">Trình cập nhật T2Rhythm</string>
     <string name="notification_updater_channel_desc">Trạng thái tải xuống để cập nhật ứng dụng</string>
-    <string name="notification_updater_title">Trình cập nhật Rhythm</string>
+    <string name="notification_updater_title">Trình cập nhật T2Rhythm</string>
     <string name="notification_updater_downloading">⬇ Đang tải xuống: %1$d%%</string>
     <string name="notification_updater_download_complete">✓ Sẵn sàng để cài đặt. Nhấn để cập nhật.</string>
     <string name="notification_updater_available_title">Đã có bản cập nhật!</string>
-    <string name="notification_updater_available_text">🆕 Đã có phiên bản mới của Rhythm.</string>
-    <string name="notification_sleep_timer_channel_name">Rhythm Hẹn giờ ngủ</string>
+    <string name="notification_updater_available_text">🆕 Đã có phiên bản mới của T2Rhythm.</string>
+    <string name="notification_sleep_timer_channel_name">T2Rhythm Hẹn giờ ngủ</string>
     <string name="notification_sleep_timer_channel_desc">Đếm ngược và trạng thái cho các hành động hẹn giờ ngủ</string>
-    <string name="notification_sleep_timer_title">Hẹn giờ ngủ Rhythm</string>
+    <string name="notification_sleep_timer_title">Hẹn giờ ngủ T2Rhythm</string>
     <string name="notification_sleep_timer_pause_in">⏸ Tạm dừng trong %1$s</string>
     <string name="notification_sleep_timer_stop_in">⏹ Dừng ở %1$s</string>
     <!-- Streaming Notifications -->
-    <string name="notification_streaming_channel_name">Rhythm Go</string>
+    <string name="notification_streaming_channel_name">T2Rhythm Go</string>
     <string name="notification_streaming_channel_desc">Trạng thái dịch vụ phát trực tuyến và cập nhật đồng bộ</string>
     <!-- Streaming Authentication -->
     <string name="notification_streaming_auth_title">Đã kết nối truyền phát</string>
@@ -293,7 +293,7 @@
     <!-- Status Labels -->
     <string name="status_disabled">Bị vô hiệu hóa</string>
     <!-- HomeScreen -->
-    <string name="home_title">Rhythm</string>
+    <string name="home_title">T2Rhythm</string>
     <string name="home_settings_cd">Cài đặt</string>
     <string name="home_no_featured_albums">Không có album nổi bật</string>
     <string name="home_no_featured_albums_desc">Thêm một số album vào thư viện của bạn để xem nội dung nổi bật</string>
@@ -322,7 +322,7 @@
     <string name="home_no_recommendations">Không có khuyến nghị</string>
     <string name="home_no_recommendations_desc">Nghe một số bản nhạc để nhận được đề xuất được cá nhân hóa</string>
     <!-- Listening Stats -->
-    <string name="home_listening_stats">Số liệu thống kê Rhythm của bạn</string>
+    <string name="home_listening_stats">Số liệu thống kê T2Rhythm của bạn</string>
     <!-- Mood & Moments -->
     
     <!-- Recently Played -->
@@ -376,7 +376,7 @@
     <string name="sort_song_count">Số bài hát</string>
     <!-- Storage Permission -->
     <string name="storage_permission_required">Cần có quyền lưu trữ</string>
-    <string name="storage_permission_desc">Để duyệt các tệp nhạc và khám phá bộ nhớ trên thiết bị của bạn, Rhythm cần có quyền truy cập các tệp và phương tiện của bạn.</string>
+    <string name="storage_permission_desc">Để duyệt các tệp nhạc và khám phá bộ nhớ trên thiết bị của bạn, T2Rhythm cần có quyền truy cập các tệp và phương tiện của bạn.</string>
     <string name="storage_permission_audio_only">Điều này chỉ cho phép truy cập vào các tệp âm thanh và thư mục chứa nhạc.</string>
     <!-- PlayerScreen -->
     <string name="player_loading_lyrics">Đang tải lời bài hát…</string>
@@ -391,11 +391,11 @@
     <!-- Common UI -->
     <string name="ui_dismiss">Loại bỏ</string>
     <!-- Common Terms -->
-    <string name="common_rhythm">Rhythm</string>
+    <string name="common_rhythm">T2Rhythm</string>
     <string name="common_home">Trang chủ</string>
     <string name="common_library">Thư viện</string>
     <!-- Splash/Loading -->
-    <string name="splash_tagline">Âm nhạc của bạn, Rhythm của bạn</string>
+    <string name="splash_tagline">Âm nhạc của bạn, T2Rhythm của bạn</string>
     <string name="splash_ready">Sẵn sàng lao vào!</string>
     <!-- Audio Quality -->
     
@@ -423,7 +423,7 @@
     <string name="updates_channel_desc">Chọn kênh cập nhật để theo dõi:</string>
     <!-- Onboarding -->
     <string name="onboarding_welcome_to">Chào mừng đến với</string>
-    <string name="onboarding_welcome_subtitle">Âm nhạc của bạn, Rhythm của bạn</string>
+    <string name="onboarding_welcome_subtitle">Âm nhạc của bạn, T2Rhythm của bạn</string>
     <string name="onboarding_get_started">Bắt đầu</string>
     <string name="onboarding_android13_notice">Android 13+ Thông báo</string>
     <string name="onboarding_android13_desc">Trên các phiên bản Android mới hơn, bạn sẽ thấy nhiều yêu cầu cấp quyền. Vui lòng cấp quyền truy cập vào tệp âm thanh và thông báo để có trải nghiệm tốt nhất.</string>
@@ -447,15 +447,15 @@
     <string name="onboarding_library_how_works">Cách tổ chức thư viện hoạt động</string>
     <string name="onboarding_library_1">Tùy chỉnh thứ tự tab trong Thư viện để truy cập nhanh vào mục yêu thích của bạn</string>
     <string name="onboarding_library_2">Tạo và quản lý danh sách phát trực tiếp từ màn hình Thư viện</string>
-    <string name="onboarding_theme_title">Biến Rhythm thành của bạn</string>
-    <string name="onboarding_theme_desc">Cá nhân hóa ngoại hình của Rhythm để phù hợp với phong cách của bạn. Chọn chủ đề hệ thống, phông chữ hoặc Material Màu động của bạn (Android 12+).</string>
+    <string name="onboarding_theme_title">Biến T2Rhythm thành của bạn</string>
+    <string name="onboarding_theme_desc">Cá nhân hóa ngoại hình của T2Rhythm để phù hợp với phong cách của bạn. Chọn chủ đề hệ thống, phông chữ hoặc Material Màu động của bạn (Android 12+).</string>
     <string name="onboarding_more_tuner">Tùy chỉnh thêm trong Cài đặt</string>
     <string name="onboarding_tuner_1">Phối màu tùy chỉnh và trích xuất màu ảnh bìa album</string>
     <string name="onboarding_tuner_2">Cài đặt tùy chỉnh phông chữ và kiểu chữ</string>
     <string name="onboarding_rhythm_guard_title">Bảo vệ thính giác của bạn</string>
-    <string name="onboarding_rhythm_guard_desc">Thiết lập Rhythm Guard để giúp quá trình nghe của bạn an toàn hơn với các cài đặt mặc định phù hợp với độ tuổi và các biện pháp kiểm soát bảo vệ thủ công.</string>
-    <string name="onboarding_rhythm_guard_mode_title">Chế độ bảo vệ Rhythm</string>
-    <string name="onboarding_rhythm_guard_age_hint">Hồ sơ độ tuổi giúp Rhythm Guard đề xuất giới hạn nghe an toàn hơn.</string>
+    <string name="onboarding_rhythm_guard_desc">Thiết lập T2Rhythm Guard để giúp quá trình nghe của bạn an toàn hơn với các cài đặt mặc định phù hợp với độ tuổi và các biện pháp kiểm soát bảo vệ thủ công.</string>
+    <string name="onboarding_rhythm_guard_mode_title">Chế độ bảo vệ T2Rhythm</string>
+    <string name="onboarding_rhythm_guard_age_hint">Hồ sơ độ tuổi giúp T2Rhythm Guard đề xuất giới hạn nghe an toàn hơn.</string>
     <string name="onboarding_rhythm_guard_tip_1">Chế độ tự động áp dụng các giá trị mặc định an toàn hơn với mức thiết lập tối thiểu.</string>
     <string name="onboarding_rhythm_guard_tip_3">Chế độ thủ công cho phép bạn toàn quyền kiểm soát các cảnh báo và ngưỡng.</string>
     <string name="onboarding_full_tour_prompt_title">Tiếp tục tham quan thiết lập đầy đủ?</string>
@@ -471,7 +471,7 @@
     <string name="onboarding_media_scan_blacklist">Chế độ danh sách đen: Ẩn các bài hát và thư mục cụ thể (nhạc chuông, thông báo)</string>
     <string name="onboarding_media_scan_whitelist">Chế độ danh sách trắng: Chỉ hiển thị các bài hát từ các thư mục đã chọn</string>
     <string name="onboarding_complete_title">Bạn đã sẵn sàng!</string>
-    <string name="onboarding_complete_desc">Rhythm đã sẵn sàng chơi! Thư viện nhạc của bạn đang được quét ở chế độ nền. Đây là những gì được cấu hình:</string>
+    <string name="onboarding_complete_desc">T2Rhythm đã sẵn sàng chơi! Thư viện nhạc của bạn đang được quét ở chế độ nền. Đây là những gì được cấu hình:</string>
     <string name="onboarding_whats_next">Tiếp theo là gì?</string>
     <string name="onboarding_next_browse">Duyệt các bài hát, album và nghệ sĩ của bạn</string>
     <string name="onboarding_next_create">Tạo danh sách phát đầu tiên của bạn</string>
@@ -492,8 +492,8 @@
     <string name="onboarding_grant_permissions">Cấp quyền</string>
     <string name="onboarding_permissions_granted_desc">Tất cả các quyền cần thiết đã được cấp. Bạn đã sẵn sàng để tiếp tục!</string>
     <string name="onboarding_redirect_settings_desc">Để cấp các quyền cần thiết, vui lòng điều hướng đến cài đặt ứng dụng trên thiết bị của bạn.</string>
-    <string name="onboarding_rationale_desc">Rhythm yêu cầu một số quyền nhất định để hoạt động chính xác. Hãy cho phép họ tiếp tục.</string>
-    <string name="onboarding_permissions_required_desc">Để sử dụng đầy đủ các tính năng của Rhythm, chúng tôi cần có sự cho phép của bạn để truy cập một số tính năng nhất định của thiết bị.</string>
+    <string name="onboarding_rationale_desc">T2Rhythm yêu cầu một số quyền nhất định để hoạt động chính xác. Hãy cho phép họ tiếp tục.</string>
+    <string name="onboarding_permissions_required_desc">Để sử dụng đầy đủ các tính năng của T2Rhythm, chúng tôi cần có sự cho phép của bạn để truy cập một số tính năng nhất định của thiết bị.</string>
     <string name="onboarding_permission_music_title">Truy cập thư viện nhạc</string>
     <string name="onboarding_permission_music_desc">Đọc các tệp nhạc cục bộ của bạn và hiển thị chúng trong ứng dụng</string>
     <string name="onboarding_permission_bluetooth_title">Kết nối Bluetooth</string>
@@ -506,9 +506,9 @@
     <string name="onboarding_permission_tip_2">Bạn có thể thay đổi quyền sau trong Cài đặt</string>
     <!-- Onboarding Audio &amp; Playback -->
     <string name="onboarding_default_screen_title">Màn hình đích mặc định</string>
-    <string name="onboarding_default_screen_desc">Chọn màn hình nào sẽ mở khi bạn khởi chạy Rhythm</string>
+    <string name="onboarding_default_screen_desc">Chọn màn hình nào sẽ mở khi bạn khởi chạy T2Rhythm</string>
     <string name="onboarding_system_volume_title">Kiểm soát âm lượng hệ thống</string>
-    <string name="onboarding_system_volume_desc">Cho phép các nút âm lượng vật lý trên thiết bị của bạn điều khiển âm lượng phát lại của Rhythm.</string>
+    <string name="onboarding_system_volume_desc">Cho phép các nút âm lượng vật lý trên thiết bị của bạn điều khiển âm lượng phát lại của T2Rhythm.</string>
     <string name="onboarding_auto_queue_title">Tự động thêm vào hàng đợi</string>
     <string name="onboarding_auto_queue_desc">Tự động tạo hàng đợi theo ngữ cảnh từ album/nghệ sĩ khi phát bài hát.</string>
     <string name="onboarding_show_lyrics_title">Hiển thị lời bài hát</string>
@@ -519,7 +519,7 @@
     
     <!-- Onboarding Theming -->
     <string name="onboarding_player_theme_title">Chủ đề phát lại và trình phát mini</string>
-    <string name="onboarding_player_theme_desc">Cá nhân hóa giao diện phát lại của bạn. Chuyển đổi giữa thiết kế Rhythm gọn gàng, hiện đại hoặc thiết kế Biểu cảm sống động, linh hoạt.</string>
+    <string name="onboarding_player_theme_desc">Cá nhân hóa giao diện phát lại của bạn. Chuyển đổi giữa thiết kế T2Rhythm gọn gàng, hiện đại hoặc thiết kế Biểu cảm sống động, linh hoạt.</string>
     <!-- Onboarding Updater -->
     <string name="onboarding_update_check_failed">Kiểm tra cập nhật không thành công</string>
     <string name="onboarding_ready_to_install">Sẵn sàng cài đặt</string>
@@ -531,7 +531,7 @@
     <string name="onboarding_enable_updates_title">Kích hoạt cập nhật</string>
     <string name="onboarding_enable_updates_desc">Cho phép ứng dụng kiểm tra và tải xuống bản cập nhật</string>
     <string name="onboarding_periodic_check_title">Kiểm tra định kỳ</string>
-    <string name="onboarding_periodic_check_desc">Tự động kiểm tra các bản cập nhật từ kho lưu trữ GitHub của Rhythm</string>
+    <string name="onboarding_periodic_check_desc">Tự động kiểm tra các bản cập nhật từ kho lưu trữ GitHub của T2Rhythm</string>
     <string name="onboarding_update_notifications_title">Thông báo cập nhật</string>
     <string name="onboarding_update_notifications_desc">Nhận thông báo khi có phiên bản mới</string>
     <string name="onboarding_check_interval_desc">Tần suất kiểm tra cập nhật</string>
@@ -574,7 +574,7 @@
     <string name="onboarding_gesture_tip_1">Cử chỉ vuốt hoạt động theo cả hai hướng</string>
     <!-- Onboarding: Widgets Step -->
     <string name="onboarding_widgets_title">Tiện ích Trình khởi chạy</string>
-    <string name="onboarding_widgets_desc">Thêm tiện ích Rhythm vào trình khởi chạy của bạn để điều khiển nhạc nhanh chóng. Tùy chỉnh thông tin nào được hiển thị và giao diện của tiện ích.</string>
+    <string name="onboarding_widgets_desc">Thêm tiện ích T2Rhythm vào trình khởi chạy của bạn để điều khiển nhạc nhanh chóng. Tùy chỉnh thông tin nào được hiển thị và giao diện của tiện ích.</string>
     <string name="onboarding_widget_artist">Hiển thị tên nghệ sĩ</string>
     <string name="onboarding_widget_artist_desc">Hiển thị nghệ sĩ hiện tại trong widget</string>
     <string name="onboarding_widget_album">Hiển thị tên album</string>
@@ -589,8 +589,8 @@
     <string name="onboarding_integration_ytmusic">YouTube Music</string>
     <string name="onboarding_integrations_info_title">Lưu ý về quyền riêng tư</string>
     <string name="onboarding_integrations_info_desc">Những tính năng này gửi dữ liệu hạn chế (tên bài hát, nghệ sĩ) đến các dịch vụ bên ngoài. Dữ liệu cá nhân và tập tin nhạc vẫn còn trên thiết bị của bạn. Bạn có thể bật hoặc tắt những tính năng này bất kỳ lúc nào trong Cài đặt.</string>
-    <!-- Onboarding: Rhythm Stats Step -->
-    <string name="onboarding_stats_title">Rhythm Số liệu thống kê</string>
+    <!-- Onboarding: T2Rhythm Stats Step -->
+    <string name="onboarding_stats_title">T2Rhythm Số liệu thống kê</string>
     <string name="onboarding_stats_desc">Khám phá những hiểu biết sâu sắc về thói quen âm nhạc của bạn. Theo dõi thời gian nghe của bạn, các bài hát được phát nhiều nhất, nghệ sĩ yêu thích và hơn thế nữa bằng hình ảnh trực quan đẹp mắt.</string>
     <string name="onboarding_stats_show_home">Hiển thị số liệu thống kê trên trang chủ</string>
     <string name="onboarding_stats_show_home_desc">Hiển thị tiện ích thống kê lượt nghe trên màn hình chính của bạn</string>
@@ -611,9 +611,9 @@
     <string name="settings_tip_gestures_swipe">Vuốt lên trên trình phát mini để mở trình phát đầy đủ, sau đó vuốt xuống để loại bỏ khi hoàn tất.</string>
     <string name="settings_tip_gestures_artwork">Vuốt tác phẩm nghệ thuật để chuyển bài hát và nhấn đúp vào ảnh bìa album để phát hoặc tạm dừng nhanh.</string>
     <string name="settings_tip_media_scan">Sử dụng tính năng quét phương tiện để ẩn các tệp không mong muốn khỏi thư viện của bạn</string>
-    <string name="settings_tip_rhythm_guard_off">Bảo vệ thính giác của bạn bằng cách bật Rhythm Guard</string>
-    <string name="settings_tip_rhythm_guard_auto">Rhythm Guard tự động quản lý giới hạn nghe an toàn</string>
-    <string name="settings_tip_rhythm_guard_manual">Bạn đang kiểm soát giới hạn bảo vệ Rhythm theo cách thủ công</string>
+    <string name="settings_tip_rhythm_guard_off">Bảo vệ thính giác của bạn bằng cách bật T2Rhythm Guard</string>
+    <string name="settings_tip_rhythm_guard_auto">T2Rhythm Guard tự động quản lý giới hạn nghe an toàn</string>
+    <string name="settings_tip_rhythm_guard_manual">Bạn đang kiểm soát giới hạn bảo vệ T2Rhythm theo cách thủ công</string>
     <string name="settings_default_screen">Màn hình đích mặc định</string>
     <string name="settings_default_screen_desc">Chọn màn hình bắt đầu của bạn</string>
     <string name="settings_home_desc">Khám phá âm nhạc mới và đề xuất</string>
@@ -683,7 +683,7 @@
     <string name="lyrics_editor_title">Biên tập lời bài hát</string>
     <!-- Components: Song Info -->
     <string name="song_info_title">Thông tin bài hát</string>
-    <string name="rhythm_stats">Rhythm Số liệu thống kê</string>
+    <string name="rhythm_stats">T2Rhythm Số liệu thống kê</string>
     <string name="file_info">Thông tin tập tin</string>
     <!-- Components: Add to Playlist -->
     <string name="add_to_playlists">Thêm vào danh sách phát</string>
@@ -714,7 +714,7 @@
     <string name="updates_disabled_message">Cập nhật ứng dụng đã bị tắt trong cài đặt</string>
     <string name="updates_auto_disabled">Tính năng kiểm tra cập nhật tự động bị tắt. Bạn vẫn có thể kiểm tra thủ công.</string>
     <string name="updates_up_to_date_message">Bạn đã cập nhật!</string>
-    <string name="updates_check_frequency">Bao lâu thì Rhythm nên kiểm tra các bản cập nhật?</string>
+    <string name="updates_check_frequency">Bao lâu thì T2Rhythm nên kiểm tra các bản cập nhật?</string>
     <string name="updates_experimental_coming">Sắp có thêm nhiều tính năng thử nghiệm trong các bản cập nhật trong tương lai</string>
     <string name="settings_interval_every_48_hours">Cứ sau 48 giờ</string>
     <string name="settings_interval_every_72_hours">Cứ sau 72 giờ</string>
@@ -857,7 +857,7 @@
     <string name="updates_enable_auto_check">Tự động kiểm tra</string>
     <string name="updates_channel_title">Cập nhật kênh</string>
     <string name="updates_source_title">Nguồn cập nhật</string>
-    <string name="updates_source_desc">Chọn họ bản phát hành Rhythm nên sử dụng cho các bản cập nhật OTA.</string>
+    <string name="updates_source_desc">Chọn họ bản phát hành T2Rhythm nên sử dụng cho các bản cập nhật OTA.</string>
     <string name="updates_source_installed">Bản dựng được cài đặt phù hợp</string>
     <string name="updates_source_installed_label">Bản dựng đã cài đặt</string>
     <string name="updates_source_github_label">Bản dựng GitHub</string>
@@ -905,7 +905,7 @@
     <string name="cd_reorder_chips">Sắp xếp lại chip</string>
     <string name="cd_search">Tìm kiếm</string>
     <string name="cd_view_all">Xem tất cả</string>
-    <string name="cd_rhythm_splash">Rhythm</string>
+    <string name="cd_rhythm_splash">T2Rhythm</string>
     <string name="cd_remove_from_playlist">Xóa khỏi danh sách phát</string>
     <string name="cd_change_language">Thay đổi ngôn ngữ</string>
     <string name="cd_open_settings">Mở</string>
@@ -978,18 +978,18 @@
     <!-- Fallback Metadata -->
     
     <!-- Service Notifications -->
-    <string name="service_app_updates">Trình cập nhật Rhythm</string>
-    <string name="service_update_status">Trạng thái cập nhật Rhythm</string>
-    <string name="service_rhythm_pulse">Rhythm Mẹo</string>
-    <string name="service_rhythm_guard_alerts">Rhythm Cảnh báo bảo vệ</string>
-    <string name="service_rhythm_guard_timers">Rhythm Bộ hẹn giờ bảo vệ</string>
-    <string name="service_rhythm_music">Rhythm Âm nhạc</string>
+    <string name="service_app_updates">Trình cập nhật T2Rhythm</string>
+    <string name="service_update_status">Trạng thái cập nhật T2Rhythm</string>
+    <string name="service_rhythm_pulse">T2Rhythm Mẹo</string>
+    <string name="service_rhythm_guard_alerts">T2Rhythm Cảnh báo bảo vệ</string>
+    <string name="service_rhythm_guard_timers">T2Rhythm Bộ hẹn giờ bảo vệ</string>
+    <string name="service_rhythm_music">T2Rhythm Âm nhạc</string>
     <string name="service_update_status_desc">Kết quả trạng thái để kiểm tra cập nhật nền</string>
-    <string name="service_rhythm_pulse_desc">Lời nhắc và mẹo lắng nghe thân thiện từ Rhythm</string>
-    <string name="service_rhythm_guard_alerts_desc">Cảnh báo an toàn từ Rhythm Guard</string>
-    <string name="service_rhythm_guard_timers_desc">Rhythm Nhắc nhở nghỉ bảo vệ và hết thời gian chờ</string>
-    <string name="service_ready">Rhythm đã sẵn sàng.</string>
-    <string name="service_init_failed">Rhythm không thể khởi động. Vui lòng mở lại ứng dụng.</string>
+    <string name="service_rhythm_pulse_desc">Lời nhắc và mẹo lắng nghe thân thiện từ T2Rhythm</string>
+    <string name="service_rhythm_guard_alerts_desc">Cảnh báo an toàn từ T2Rhythm Guard</string>
+    <string name="service_rhythm_guard_timers_desc">T2Rhythm Nhắc nhở nghỉ bảo vệ và hết thời gian chờ</string>
+    <string name="service_ready">T2Rhythm đã sẵn sàng.</string>
+    <string name="service_init_failed">T2Rhythm không thể khởi động. Vui lòng mở lại ứng dụng.</string>
     <!-- Crash Activity -->
     <string name="crash_bug_report">Báo cáo lỗi</string>
     <string name="crash_restart_app">Khởi động lại ứng dụng</string>
@@ -1019,12 +1019,12 @@
     <string name="settings_artwork_cache_size">Kích thước bộ đệm tác phẩm nghệ thuật</string>
     <string name="settings_artist_parsing">Nghệ sĩ</string>
     <string name="settings_artist_parsing_desc">Dụng cụ phân cách, hiển thị</string>
-    <string name="settings_rhythm_stats">Rhythm Số liệu thống kê</string>
+    <string name="settings_rhythm_stats">T2Rhythm Số liệu thống kê</string>
     <string name="settings_rhythm_stats_desc">Thời gian nghe, các bài hát hàng đầu và xu hướng</string>
-    <string name="settings_rhythm_guard">Rhythm Bảo vệ</string>
-    <string name="settings_rhythm_guard_list_desc">Lắng nghe các biện pháp bảo vệ sức khỏe được cung cấp bởi Số liệu thống kê Rhythm</string>
+    <string name="settings_rhythm_guard">T2Rhythm Bảo vệ</string>
+    <string name="settings_rhythm_guard_list_desc">Lắng nghe các biện pháp bảo vệ sức khỏe được cung cấp bởi Số liệu thống kê T2Rhythm</string>
     <string name="settings_rhythm_guard_mode_title">Chế độ bảo vệ</string>
-    <string name="settings_rhythm_guard_mode_desc">Chọn cách Rhythm Guard quản lý sức khỏe nghe</string>
+    <string name="settings_rhythm_guard_mode_desc">Chọn cách T2Rhythm Guard quản lý sức khỏe nghe</string>
     <string name="settings_rhythm_guard_mode_auto">Tự động</string>
     <string name="settings_rhythm_guard_mode_manual">Hướng dẫn sử dụng</string>
     <string name="settings_rhythm_guard_age_label">Hồ sơ độ tuổi: %1$d</string>
@@ -1040,10 +1040,10 @@
     <string name="settings_rhythm_guard_manual_warning_toggle">Hiển thị cảnh báo an toàn</string>
     <string name="settings_rhythm_guard_manual_warning_toggle_desc">Cảnh báo khi âm lượng trực tiếp hoặc chuyển đổi thủ công có thể gặp rủi ro</string>
     <string name="settings_rhythm_guard_manual_threshold_title">Ngưỡng cảnh báo âm lượng lớn: %1$d%%</string>
-    <string name="settings_rhythm_guard_manual_threshold_desc">Đặt thời điểm Rhythm Guard sẽ cảnh báo về khối lượng có thể gây hại.</string>
+    <string name="settings_rhythm_guard_manual_threshold_desc">Đặt thời điểm T2Rhythm Guard sẽ cảnh báo về khối lượng có thể gây hại.</string>
     <string name="settings_rhythm_guard_device_controls_title">Điều khiển đầu ra</string>
     <string name="settings_rhythm_guard_device_controls_speaker_limit_title">Áp dụng giới hạn âm lượng trên loa điện thoại</string>
-    <string name="settings_rhythm_guard_device_controls_speaker_limit_desc">Khi tắt, Rhythm Guard sẽ bỏ qua việc kẹp âm lượng và cảnh báo âm lượng trên đầu ra loa tích hợp.</string>
+    <string name="settings_rhythm_guard_device_controls_speaker_limit_desc">Khi tắt, T2Rhythm Guard sẽ bỏ qua việc kẹp âm lượng và cảnh báo âm lượng trên đầu ra loa tích hợp.</string>
     <string name="settings_rhythm_guard_alert_controls_title">Kiểm soát cảnh báo nghe</string>
     <string name="settings_rhythm_guard_alert_threshold_title">Ngưỡng cảnh báo phơi nhiễm: %1$s</string>
     <string name="settings_rhythm_guard_alert_threshold_policy_default">Mặc định chính sách</string>
@@ -1053,7 +1053,7 @@
     <string name="settings_rhythm_guard_warning_title">Cảnh báo an toàn khi nghe</string>
     <string name="settings_rhythm_guard_warning_high_volume">Âm lượng hiện tại vượt quá ngưỡng cảnh báo của bạn (%1$d%%). Hãy cân nhắc việc giảm âm lượng.</string>
     <string name="settings_rhythm_guard_warning_daily_exposure">Hôm nay bạn đã đạt đến %1$s, trên mức %2$s được đề xuất. Hãy cân nhắc việc nghỉ nghe.</string>
-    <string name="settings_rhythm_guard_warning_dialog_title">Rhythm Cảnh báo bảo vệ bảo vệ</string>
+    <string name="settings_rhythm_guard_warning_dialog_title">T2Rhythm Cảnh báo bảo vệ bảo vệ</string>
     <string name="settings_rhythm_guard_warning_dialog_volume_message">Âm lượng phương tiện hệ thống là %1$d%% trong thời gian thực, vượt quá giới hạn bảo vệ hiện tại của bạn là %2$d%%. Giảm âm lượng để giảm nguy cơ nghe.</string>
     <string name="settings_rhythm_guard_risk_level_label">Mức độ nghiêm trọng của rủi ro: %1$s</string>
     <string name="settings_rhythm_guard_risk_action_label">Hành động đề xuất: %1$s</string>
@@ -1083,8 +1083,8 @@
     <string name="settings_rhythm_guard_start_countdown_value">Bắt đầu sau %1$s</string>
     <string name="settings_rhythm_guard_snapshot_widget_above_limit">Trên mức khuyến nghị</string>
     <string name="settings_rhythm_guard_snapshot_widget_within_limit">Trong giới hạn khuyến nghị</string>
-    <string name="settings_rhythm_guard_state_active">Rhythm Bảo vệ đang hoạt động</string>
-    <string name="settings_rhythm_guard_state_inactive">Rhythm Bảo vệ không hoạt động</string>
+    <string name="settings_rhythm_guard_state_active">T2Rhythm Bảo vệ đang hoạt động</string>
+    <string name="settings_rhythm_guard_state_inactive">T2Rhythm Bảo vệ không hoạt động</string>
     <string name="settings_rhythm_guard_state_timeout_active">Đang hết thời gian chờ nghe</string>
     <string name="settings_rhythm_guard_state_cooldown_active">Thời gian ân hạn đang hoạt động</string>
     <string name="settings_rhythm_guard_state_timeout_remaining">Nghỉ giải lao kết thúc sau %1$s</string>
@@ -1096,8 +1096,8 @@
     <string name="settings_rhythm_guard_protection_preset_strict">Nghiêm khắc</string>
     <string name="settings_rhythm_guard_protection_preset_custom">Tùy chỉnh</string>
     <string name="settings_rhythm_guard_timeout_activity_title">Thời gian chờ nghe đang hoạt động</string>
-    <string name="settings_rhythm_guard_timeout_activity_default_reason">Cốt truyện xoay chuyển: đôi tai của bạn bắt đầu hợp nhất và kêu gọi nghỉ ăn nhẹ. Rhythm Guard đã tạm dừng phát lại để mọi người có thể thư giãn.</string>
-    <string name="settings_rhythm_guard_timeout_activity_comic_desc">Cốt truyện thay đổi: đôi tai của bạn bắt đầu hợp nhất và kêu gọi nghỉ ăn nhẹ. Rhythm Guard đã tạm dừng phát lại để mọi người có thể thư giãn.</string>
+    <string name="settings_rhythm_guard_timeout_activity_default_reason">Cốt truyện xoay chuyển: đôi tai của bạn bắt đầu hợp nhất và kêu gọi nghỉ ăn nhẹ. T2Rhythm Guard đã tạm dừng phát lại để mọi người có thể thư giãn.</string>
+    <string name="settings_rhythm_guard_timeout_activity_comic_desc">Cốt truyện thay đổi: đôi tai của bạn bắt đầu hợp nhất và kêu gọi nghỉ ăn nhẹ. T2Rhythm Guard đã tạm dừng phát lại để mọi người có thể thư giãn.</string>
     <string name="settings_rhythm_guard_timeout_activity_extend">Kéo dài thời gian nghỉ (+%1$d phút)</string>
     <string name="settings_rhythm_guard_timeout_activity_exit">Đóng màn hình hết thời gian chờ</string>
     <string name="settings_rhythm_guard_timeout_activity_close_app">Đóng ứng dụng</string>
@@ -1108,23 +1108,23 @@
     <string name="settings_rhythm_guard_alert_threshold_search_title">Ngưỡng cảnh báo phơi nhiễm</string>
     <string name="settings_rhythm_guard_alert_threshold_search_desc">Đặt mức độ nghe hàng ngày sẽ kích hoạt cảnh báo an toàn</string>
     <string name="settings_rhythm_guard_warning_timeout_search_title">Thời gian hồi chiêu cảnh báo</string>
-    <string name="settings_rhythm_guard_warning_timeout_search_desc">Đặt thời gian hồi chiêu giữa các cảnh báo bảo vệ Rhythm lặp lại</string>
+    <string name="settings_rhythm_guard_warning_timeout_search_desc">Đặt thời gian hồi chiêu giữa các cảnh báo bảo vệ T2Rhythm lặp lại</string>
     <string name="settings_rhythm_guard_post_timeout_cooldown_search_title">Thời gian hồi chiêu sau khi hết thời gian chờ</string>
     <string name="settings_rhythm_guard_post_timeout_cooldown_search_desc">Đặt thời gian hồi chiêu sau khi hết thời gian chờ trước khi thời gian chờ phơi sáng khác có thể kích hoạt</string>
     <string name="settings_rhythm_guard_protection_presets_search_title">Cài đặt trước bảo vệ</string>
     <string name="settings_rhythm_guard_protection_presets_search_desc">Áp dụng các gói lan can Nhẹ nhàng, Cân bằng hoặc Nghiêm ngặt chỉ bằng một lần nhấn</string>
     <string name="settings_rhythm_guard_break_resume_search_title">Tiếp tục nghỉ mặc định</string>
     <string name="settings_rhythm_guard_break_resume_search_desc">Đặt thời gian nghỉ nghe theo lịch trình kéo dài theo mặc định</string>
-    <string name="settings_rhythm_guard_enable_search_title">Rhythm Sức mạnh bảo vệ</string>
-    <string name="settings_rhythm_guard_enable_search_desc">Bật hoặc tắt Rhythm Bảo vệ bảo vệ</string>
-    <string name="settings_rhythm_guard_notification_alert_title">Rhythm Cảnh báo an toàn bảo vệ</string>
-    <string name="settings_rhythm_guard_notification_timer_active_title">Rhythm Thời gian chờ bảo vệ đang hoạt động</string>
+    <string name="settings_rhythm_guard_enable_search_title">T2Rhythm Sức mạnh bảo vệ</string>
+    <string name="settings_rhythm_guard_enable_search_desc">Bật hoặc tắt T2Rhythm Bảo vệ bảo vệ</string>
+    <string name="settings_rhythm_guard_notification_alert_title">T2Rhythm Cảnh báo an toàn bảo vệ</string>
+    <string name="settings_rhythm_guard_notification_timer_active_title">T2Rhythm Thời gian chờ bảo vệ đang hoạt động</string>
     <string name="settings_rhythm_guard_notification_timer_active_text">Quá trình phát lại sẽ tiếp tục sau %1$s.</string>
-    <string name="settings_rhythm_guard_notification_timer_scheduled_title">Rhythm Đã lên lịch nghỉ bảo vệ</string>
+    <string name="settings_rhythm_guard_notification_timer_scheduled_title">T2Rhythm Đã lên lịch nghỉ bảo vệ</string>
     <string name="settings_rhythm_guard_notification_timer_scheduled_text">Thời gian nghỉ nghe bắt đầu sau %1$s.</string>
     <string name="settings_rhythm_guard_notification_tap_open">Nhấn để xem chi tiết thời gian chờ.</string>
-    <!-- Rhythm Stats Screen -->
-    <string name="stats_title">Rhythm Số liệu thống kê</string>
+    <!-- T2Rhythm Stats Screen -->
+    <string name="stats_title">T2Rhythm Số liệu thống kê</string>
     <string name="stats_today">Hôm nay</string>
     <string name="stats_this_week">Tuần này</string>
     <string name="stats_this_month">Tháng này</string>
@@ -1146,7 +1146,7 @@
     <!-- Content Descriptions (additional) -->
     <string name="cd_reorder_home_sections">Sắp xếp lại các phần nhà</string>
     <string name="cd_remove">Xóa</string>
-    <string name="cd_rhythm_logo">Biểu tượng Rhythm</string>
+    <string name="cd_rhythm_logo">Biểu tượng T2Rhythm</string>
     <string name="cd_telegram_support">Hỗ trợ Telegram</string>
     <!-- Queue &amp; Playlist Dialogs -->
     <!-- Artist Settings -->
@@ -1314,7 +1314,7 @@
     <string name="settings_snowflake_display_area">Khu trưng bày bông tuyết</string>
     <string name="settings_snowflake_size">Kích thước bông tuyết</string>
     <string name="settings_toggle_decoration_elements">Chuyển đổi các yếu tố trang trí riêng lẻ theo vị trí</string>
-    <string name="settings_multi_artist_parsing_info">Khi được bật, Rhythm sẽ tự động phân chia thẻ nghệ sĩ chứa nhiều nghệ sĩ. Điều này hữu ích đối với các bài hát được tải xuống bằng yt-dlp hoặc các công cụ khác sử dụng dấu phân cách như \'/\' để phân tách nghệ sĩ.\n\nDấu gạch chéo ngược (\\) có thể được sử dụng để thoát khỏi dấu phân cách.</string>
+    <string name="settings_multi_artist_parsing_info">Khi được bật, T2Rhythm sẽ tự động phân chia thẻ nghệ sĩ chứa nhiều nghệ sĩ. Điều này hữu ích đối với các bài hát được tải xuống bằng yt-dlp hoặc các công cụ khác sử dụng dấu phân cách như \'/\' để phân tách nghệ sĩ.\n\nDấu gạch chéo ngược (\\) có thể được sử dụng để thoát khỏi dấu phân cách.</string>
     <!-- Format Strings with Placeholders -->
     <string name="settings_cache_size_2gb">2GB</string>
     <string name="settings_cache_size_64mb">64MB</string>
@@ -1394,7 +1394,7 @@
     <string name="settings_cache_info_4">Tự động xóa giúp duy trì hiệu suất tối ưu</string>
     <!-- Updates Settings -->
     <string name="updates_status_error">Lỗi</string>
-    <string name="updates_rhythm_logo_cd">Biểu tượng Rhythm</string>
+    <string name="updates_rhythm_logo_cd">Biểu tượng T2Rhythm</string>
     <string name="updates_version_prefix">V %1$s</string>
     <string name="updates_released_prefix">Đã phát hành: %1$s</string>
     <string name="updates_unknown_error">Đã xảy ra lỗi không xác định</string>
@@ -1411,7 +1411,7 @@
     <string name="settings_interval_once_a_day">Mỗi ngày một lần</string>
     <string name="settings_interval_once_a_week">Mỗi tuần một lần</string>
     <!-- Experimental Features -->
-    <string name="streaming_integration_title">Rhythm Go</string>
+    <string name="streaming_integration_title">T2Rhythm Go</string>
     <string name="streaming_integration_services">Dịch vụ tích hợp</string>
     <string name="streaming_integration_services_empty">Chưa có dịch vụ nào được kết nối</string>
     <string name="streaming_settings_title">Cài đặt</string>
@@ -1419,7 +1419,7 @@
     <string name="streaming_settings_group_actions">Hành động</string>
     <string name="streaming_settings_preferred_service">Dịch vụ ưu tiên</string>
     <string name="streaming_settings_quality">Chất lượng phát trực tuyến</string>
-    <string name="streaming_settings_service_sheet_desc">Chọn dịch vụ được kết nối Rhythm Go sẽ ưu tiên theo mặc định.</string>
+    <string name="streaming_settings_service_sheet_desc">Chọn dịch vụ được kết nối T2Rhythm Go sẽ ưu tiên theo mặc định.</string>
     <string name="streaming_settings_quality_sheet_desc">Chọn chất lượng âm thanh ưa thích của bạn để phát lại trực tuyến.</string>
     <string name="streaming_quality_low">Thấp</string>
     <string name="streaming_quality_normal">Bình thường</string>
@@ -1429,7 +1429,7 @@
     <string name="streaming_quality_normal_desc">Chất lượng cân bằng và mức sử dụng dữ liệu (~160 kbps).</string>
     <string name="streaming_quality_high_desc">Âm thanh chất lượng cao (~320 kbps).</string>
     <string name="streaming_quality_lossless_desc">Chất lượng tốt nhất ở nơi được hỗ trợ (FLAC/ALAC).</string>
-    <string name="streaming_settings_group_wellbeing">Rhythm Thông tin chi tiết</string>
+    <string name="streaming_settings_group_wellbeing">T2Rhythm Thông tin chi tiết</string>
     <string name="streaming_open_full_settings">Mở cài đặt đầy đủ</string>
     <string name="streaming_open_full_settings_desc">Mở cài đặt toàn ứng dụng được chia sẻ giữa các chế độ</string>
     <string name="streaming_switch_to_local_mode">Chuyển sang Chế độ cục bộ</string>
@@ -1453,7 +1453,7 @@
     <string name="streaming_service_setup_password">Mật khẩu</string>
     <string name="streaming_service_setup_password_hint">Nhập mật khẩu tài khoản của bạn</string>
     <string name="streaming_service_setup_remember_password">Ghi nhớ mật khẩu trên thiết bị này</string>
-    <string name="streaming_service_setup_remember_password_desc">Lưu trữ thông tin xác thực cục bộ để Rhythm có thể tự động kết nối lại sau.</string>
+    <string name="streaming_service_setup_remember_password_desc">Lưu trữ thông tin xác thực cục bộ để T2Rhythm có thể tự động kết nối lại sau.</string>
     <string name="streaming_service_setup_connecting">Đang kết nối…</string>
     <string name="streaming_service_setup_disconnecting">Đang ngắt kết nối…</string>
     <string name="streaming_service_setup_action_hint">Điền vào các trường bắt buộc để kết nối dịch vụ này.</string>
@@ -1641,7 +1641,7 @@
     <string name="settings_bluetooth_lyrics_enabled">Chế độ lời bài hát qua Bluetooth</string>
     <string name="settings_bluetooth_lyrics_enabled_desc">Phát dòng lời bài hát hiện tại qua siêu dữ liệu Bluetooth</string>
     <string name="exp_go_mode">Go Mode</string>
-    <string name="exp_go_mode_desc">Chuyển sang Rhythm Go streaming mode</string>
+    <string name="exp_go_mode_desc">Chuyển sang T2Rhythm Go streaming mode</string>
     <!-- Home Screen Search Strings -->
     <string name="settings_home_section_order">Thứ tự phần</string>
     <string name="settings_home_section_order_desc">Sắp xếp lại phần nhà</string>
@@ -1654,13 +1654,13 @@
     <string name="settings_home_carousel_auto_scroll">Cuộn tự động băng chuyền</string>
     <string name="settings_home_carousel_auto_scroll_desc">Băng chuyền tự động cuộn</string>
     <!-- Notifications Search Strings -->
-    <string name="settings_notifications_rhythm_guard_alerts">Rhythm Cảnh báo an toàn bảo vệ</string>
+    <string name="settings_notifications_rhythm_guard_alerts">T2Rhythm Cảnh báo an toàn bảo vệ</string>
     <string name="settings_notifications_rhythm_guard_alerts_desc">Thông báo khi cảnh báo rủi ro nghe được kích hoạt</string>
-    <string name="settings_notifications_rhythm_guard_timers">Rhythm Bộ hẹn giờ ngắt bảo vệ</string>
+    <string name="settings_notifications_rhythm_guard_timers">T2Rhythm Bộ hẹn giờ ngắt bảo vệ</string>
     <string name="settings_notifications_rhythm_guard_timers_desc">Thông báo về thời gian nghỉ theo lịch trình và đếm ngược thời gian chờ</string>
-    <string name="settings_notifications_rhythm_pulse">Rhythm Lời khuyên</string>
+    <string name="settings_notifications_rhythm_pulse">T2Rhythm Lời khuyên</string>
     <string name="settings_notifications_rhythm_pulse_desc">Lời nhắc nhở thân thiện và mẹo lắng nghe.</string>
-    <string name="settings_notifications_rhythm_pulse_interval">Khoảng thời gian mẹo Rhythm</string>
+    <string name="settings_notifications_rhythm_pulse_interval">Khoảng thời gian mẹo T2Rhythm</string>
     <string name="settings_notifications_rhythm_pulse_interval_desc">Tần suất gửi thông báo tiền boa</string>
     <!-- Expressive Shapes Search Strings -->
     <string name="settings_expressive_shapes_enabled">Hình dạng biểu cảm</string>
@@ -1744,7 +1744,7 @@
     <!-- Library Screen scanning overlay -->
     <string name="settings_scanning">Đang quét</string>
     <!-- Settings Search -->
-    <string name="search_settings_hint">Tìm kiếm cài đặt Rhythm…</string>
+    <string name="search_settings_hint">Tìm kiếm cài đặt T2Rhythm…</string>
     <string name="clear_search">Xóa tìm kiếm</string>
     <string name="no_results_found">Không tìm thấy kết quả</string>
     <string name="try_different_search">Hãy thử một cụm từ tìm kiếm khác</string>
@@ -1783,14 +1783,14 @@
     <string name="theme_font_imported">Đã nhập phông chữ thành công</string>
     <string name="theme_font_invalid">Định dạng tệp phông chữ không hợp lệ</string>
     <string name="ui_apply">Áp dụng</string>
-    <string name="crashactivity_uh_oh_looks_like">Ờ ồ! Có vẻ như Rhythm đã đạt đến một nốt nhạc chua chát!</string>
+    <string name="crashactivity_uh_oh_looks_like">Ờ ồ! Có vẻ như T2Rhythm đã đạt đến một nốt nhạc chua chát!</string>
     <string name="crashactivity_dont_fret_our_app">Đừng lo lắng! Ứng dụng của chúng tôi vừa có một chút \'oopsie\'. Vui lòng chia sẻ chi tiết sự cố bên dưới - nó giống như một thông điệp bí mật dành cho các nhà phát triển của chúng tôi để khắc phục sự cố! Vậy chúng ta hãy thử lại lần nữa nhé?</string>
     <string name="crashactivity_secret_crash_scrolls">Cuộn giấy bí mật</string>
     <string name="crashactivity_share">Chia sẻ</string>
     <string name="externalplaybackactivity_unable_to_open_audio">Không thể mở tệp âm thanh</string>
     <string name="externalplaybackactivity_unsupported_or_unreadable_audio">Tệp âm thanh không được hỗ trợ hoặc không thể đọc được</string>
     <string name="externalplaybackactivity_failed_to_play_audio">Không thể phát tệp âm thanh</string>
-    <string name="externalplaybackactivity_open_rhythm">Mở Rhythm</string>
+    <string name="externalplaybackactivity_open_rhythm">Mở T2Rhythm</string>
     <string name="mainactivity_error_opening_file">Lỗi mở tập tin</string>
     <string name="mainactivity_unsupported_file_format">Định dạng tệp không được hỗ trợ</string>
     <string name="mainactivity_failed_to_initialize_media">Không khởi chạy được trình phát đa phương tiện</string>
@@ -1877,7 +1877,7 @@
     <string name="streamingmusicviewmodel_failed_to_play_next">Không thể phát tiếp theo: Không thể phân giải URL</string>
     <string name="streamingmusicviewmodel_failed_to_add_to">Không thể thêm vào hàng đợi: Không thể phân giải URL</string>
     <string name="rhythmmusicwidget_album_art_placeholder">Trình giữ chỗ ảnh bìa album</string>
-    <string name="rhythmwidgetpreview_rhythm_glance_widget_previews">Bản xem trước tiện ích Rhythm Glance</string>
+    <string name="rhythmwidgetpreview_rhythm_glance_widget_previews">Bản xem trước tiện ích T2Rhythm Glance</string>
     <string name="rhythmwidgetpreview_str_11_compact_widget">Tiện ích nhỏ gọn 1×1</string>
     <string name="rhythmwidgetpreview_str_21_horizontal_strip">Dải ngang 2×1</string>
     <string name="rhythmwidgetpreview_str_22_small_widget">Tiện ích nhỏ 2×2</string>
@@ -1919,7 +1919,7 @@
     <string name="betaprogrampopup_early_access">Truy cập sớm</string>
     <string name="betaprogrampopup_shape_the_future">Định hình tương lai</string>
     <string name="betaprogrampopup_direct_feedback">Phản hồi trực tiếp</string>
-    <string name="betaprogrampopup_youre_part_of_an">Bạn là thành viên của nhóm độc quyền giúp định hình tương lai của máy nghe nhạc Rhythm</string>
+    <string name="betaprogrampopup_youre_part_of_an">Bạn là thành viên của nhóm độc quyền giúp định hình tương lai của máy nghe nhạc T2Rhythm</string>
     <string name="betaprogrampopup_start_exploring">Bắt đầu khám phá</string>
     <string name="switchmodedialog_switch_play">Chuyển đổi và chơi</string>
     <string name="fullscreenlyricsview_cover_artwork">Ảnh bìa</string>
@@ -1985,7 +1985,7 @@
     <string name="lyricssourcesettingsscreen_retry_using_fallbacks">Thử lại bằng cách sử dụng dự phòng</string>
     <string name="lyricssourcesettingsscreen_embedded_lyrics_are_stored">• Embedded lyrics are stored in your audio files</string>
     <string name="miniplayercustomizationsettingsscreen_miniplayer_theme">Chủ đề MiniPlayer</string>
-    <string name="miniplayercustomizationsettingsscreen_choose_between_rhythm_default">Chọn giữa chủ đề Mặc định hoặc Chủ đề biểu cảm của Rhythm</string>
+    <string name="miniplayercustomizationsettingsscreen_choose_between_rhythm_default">Chọn giữa chủ đề Mặc định hoặc Chủ đề biểu cảm của T2Rhythm</string>
     <string name="miniplayercustomizationsettingsscreen_integrated_directly_into_the">Tích hợp trực tiếp vào nền MiniPlayer</string>
     <string name="performancesettingsscreen_performance">Chế độ thu gọn</string>
     <string name="performancesettingsscreen_disable_haptics">Tắt Haptics</string>
@@ -2002,7 +2002,7 @@
     <string name="rhythmguardsettingsscreen_none">Không có</string>
     <string name="rhythmguardsettingsscreen_general_settings">Cài đặt chung</string>
     <string name="rhythmguardsettingsscreen_library_data">Dữ liệu thư viện</string>
-    <string name="rhythmguardsettingsscreen_stats_rhythm_guard">Chỉ số &amp; Bảo vệ Rhythm</string>
+    <string name="rhythmguardsettingsscreen_stats_rhythm_guard">Chỉ số &amp; Bảo vệ T2Rhythm</string>
     <string name="settingsscreen_audio_offload">Giảm tải âm thanh</string>
     <string name="settingsscreen_personalization">Cá nhân hóa</string>
     <string name="settingsscreen_library_focus">Thư viện tập trung</string>
@@ -2097,7 +2097,7 @@
     <string name="pulse_marathon">Chế độ chạy marathon</string>
     <!-- Settings Tips Details -->
     <string name="settings_tip_theme_desc_1">Làm mới máy nghe nhạc của bạn với màu đen AMOLED sống động và màu pastel đẹp mắt.</string>
-    <string name="settings_tip_theme_desc_2">Hãy biến Rhythm thực sự là của bạn bằng cách kết hợp giọng của ứng dụng với hệ thống của bạn.</string>
+    <string name="settings_tip_theme_desc_2">Hãy biến T2Rhythm thực sự là của bạn bằng cách kết hợp giọng của ứng dụng với hệ thống của bạn.</string>
     <string name="settings_tip_media_scan_desc_1">Tránh các đoạn âm thanh không mong muốn. Xác định rõ ràng những thư mục nào chúng ta nên quét để tìm nhạc.</string>
     <string name="settings_tip_media_scan_desc_2">Giữ các ghi chú thoại và nhạc chuông khỏi danh sách phát của bạn bằng các thư mục tiêu điểm.</string>
     <string name="settings_tip_sleep_timer_desc_1">Hãy chìm vào giấc ngủ trong khi nhạc đang vang lên. Chúng tôi sẽ tự động tạm dừng nó.</string>
@@ -2106,7 +2106,7 @@
     <string name="settings_tip_equalizer_desc_2">Điều chỉnh âm thanh cho tai nghe của bạn một cách an toàn bằng các hiệu ứng âm thanh tiên tiến của chúng tôi.</string>
     <string name="settings_tip_backup_active_desc_1">Tự động sao lưu đang hoạt động. Xác minh các phần sao lưu của bạn để khôi phục luôn sạch sẽ.</string>
     <string name="settings_tip_backup_active_desc_2">Đã kích hoạt tính năng bảo vệ: lịch trình có vẻ ổn. Chạy sao lưu thủ công trước khi chỉnh sửa lớn.</string>
-    <string name="settings_tip_backup_inactive_desc_1">Tự động sao lưu bị tắt. Kích hoạt tính năng này để bảo vệ danh sách phát và số liệu thống kê về Bảo vệ Rhythm.</string>
+    <string name="settings_tip_backup_inactive_desc_1">Tự động sao lưu bị tắt. Kích hoạt tính năng này để bảo vệ danh sách phát và số liệu thống kê về Bảo vệ T2Rhythm.</string>
     <string name="settings_tip_backup_inactive_desc_2">Chưa có mạng lưới an toàn. Bật sao lưu để tránh mất thiết lập của bạn.</string>
     <string name="settings_tip_updates_active_desc_1">Cập nhật được kích hoạt. Hãy tiếp tục sử dụng chúng để sửa lỗi và cải thiện hiệu suất.</string>
     <string name="settings_tip_updates_active_desc_2">Bạn đã sẵn sàng nhận thông tin cập nhật. Kiểm tra tùy chọn kênh để biết độ ổn định và độ mới.</string>
@@ -2149,7 +2149,7 @@
     <string name="font_jetbrains_desc">Phông chữ đơn cách hoàn hảo cho nội dung kỹ thuật</string>
     <string name="font_quicksand_desc">Phông chữ bo tròn với vẻ ngoài nhẹ nhàng, thân thiện hơn</string>
     <!-- Predefined Color Schemes -->
-    <string name="color_scheme_default_title">Rhythm Mặc định</string>
+    <string name="color_scheme_default_title">T2Rhythm Mặc định</string>
     <string name="color_scheme_default_desc">Material 3 màu tím cơ bản có điểm nhấn màu hồng hồng</string>
     <string name="color_scheme_warm_title">Hoàng hôn ấm áp</string>
     <string name="color_scheme_warm_desc">Tông màu cam và đỏ ấm cúng cho bầu không khí ấm áp</string>
@@ -2184,7 +2184,7 @@
     <string name="lyrics_settings_embedded_first">Được nhúng đầu tiên</string>
     <string name="lyrics_settings_embedded_first_desc">Ưu tiên lời bài hát được nhúng trong tệp âm thanh, dự phòng cho API trực tuyến</string>
     <string name="lyrics_settings_online_first">Trực tuyến đầu tiên</string>
-    <string name="lyrics_settings_online_first_desc">Ưu tiên các API trực tuyến (Rhythm từng từ, LRCLib), dự phòng cho các API được nhúng</string>
+    <string name="lyrics_settings_online_first_desc">Ưu tiên các API trực tuyến (T2Rhythm từng từ, LRCLib), dự phòng cho các API được nhúng</string>
     <string name="lyrics_settings_local_first">Địa phương đầu tiên</string>
     <string name="lyrics_settings_local_first_desc">Ưu tiên các tệp .lrc cục bộ, sau đó là lời bài hát được nhúng, sau đó là API trực tuyến</string>
     <string name="lyrics_settings_lyrically_first">Lyrically First</string>
@@ -2210,7 +2210,7 @@
     <string name="lyrics_settings_disable_animations_desc">Tắt chuyển tiếp và hoạt ảnh trong chế độ xem lời bài hát</string>
     <string name="lyrics_settings_word_by_word_translation">Tự động đồng bộ hóa từ</string>
     <string name="lyrics_settings_word_by_word_translation_desc">Tự động tạo thời gian ở cấp độ từ cho lời bài hát được đồng bộ hóa theo dòng bằng cách phân phối thời lượng theo tỷ lệ</string>
-    <string name="lyrics_settings_info_bullets">Chi tiết đồng bộ hóa bổ sung:\n• API trực tuyến cung cấp lời bài hát được đồng bộ hóa chất lượng cao\n• Rhythm cung cấp đồng bộ hóa từng từ\n• LRCLib cung cấp đồng bộ hóa từng dòng miễn phí</string>
+    <string name="lyrics_settings_info_bullets">Chi tiết đồng bộ hóa bổ sung:\n• API trực tuyến cung cấp lời bài hát được đồng bộ hóa chất lượng cao\n• T2Rhythm cung cấp đồng bộ hóa từng từ\n• LRCLib cung cấp đồng bộ hóa từng dòng miễn phí</string>
     <!-- AutoEQ Preset Picker additions -->
     <string name="autoeqpresetpickerbottomsheet_search_presets">Tìm kiếm cài đặt trước…</string>
     <string name="autoeqpresetpickerbottomsheet_disable">Không / Tắt AutoEQ</string>
@@ -2228,7 +2228,7 @@
     <string name="device_configuration_custom_preset">Cài đặt trước tùy chỉnh</string>
     <string name="device_configuration_custom">Tùy chỉnh</string>
     <string name="device_configuration_active_profile_label">Hồ sơ hoạt động: %1$s</string>
-    <string name="device_configuration_share_subject">Rhythm Cấu hình EQ: %1$s</string>
+    <string name="device_configuration_share_subject">T2Rhythm Cấu hình EQ: %1$s</string>
     <string name="device_configuration_share_title">Chia sẻ hồ sơ EQ</string>
     <string name="device_configuration_edit_device">Chỉnh sửa thiết bị</string>
     <string name="device_configuration_add_device">Thêm thiết bị</string>
@@ -2274,9 +2274,9 @@
         <item quantity="other">Xuất danh sách phát %1$d sang:</item>
     </plurals>
     <!-- Mode dialog strings -->
-    <string name="dialog_switch_to_go">Switch to Rhythm Go?</string>
+    <string name="dialog_switch_to_go">Switch to T2Rhythm Go?</string>
     <string name="dialog_switch_to_local">Chuyển sang địa phương?</string>
-    <string name="dialog_switch_to_go_desc">This item belongs to Rhythm Go. Chuyển sang Chế độ phát trực tuyến ngay bây giờ để truyền phát và phát?</string>
+    <string name="dialog_switch_to_go_desc">This item belongs to T2Rhythm Go. Chuyển sang Chế độ phát trực tuyến ngay bây giờ để truyền phát và phát?</string>
     <string name="dialog_switch_to_local_desc">Mục này thuộc về Thư viện địa phương của bạn. Chuyển sang Chế độ cục bộ ngay bây giờ để phát các bản nhạc ngoại tuyến của bạn?</string>
     <!-- Section order content descriptions -->
 
@@ -2451,7 +2451,7 @@
     <string name="carousel_style_hero">Anh hùng</string>
     <string name="carousel_style_hero_desc">Album nhìn trộm 1 mặt</string>
     <!-- Theme names -->
-    <string name="theme_rhythm">Rhythm</string>
+    <string name="theme_rhythm">T2Rhythm</string>
     <string name="theme_expressive">Biểu cảm</string>
     <string name="settings_managed_by_expressive_shapes">Được quản lý bởi Expressive Shapes</string>
     <!-- Shape targets -->
@@ -2497,7 +2497,7 @@
     <string name="backup_restore_section_collection">Bộ sưu tập</string>
     <string name="backup_restore_section_collection_desc">Danh sách phát, mục yêu thích, danh sách đen/danh sách trắng, thư mục được ghim.</string>
     <string name="backup_restore_section_insight">Cái nhìn sâu sắc</string>
-    <string name="backup_restore_section_insight_desc">Số lần chơi, số liệu thống kê hàng ngày, thể loại và cấu hình Bảo vệ Rhythm.</string>
+    <string name="backup_restore_section_insight_desc">Số lần chơi, số liệu thống kê hàng ngày, thể loại và cấu hình Bảo vệ T2Rhythm.</string>
     <string name="backup_restore_status_included">Bao gồm</string>
     <string name="backup_restore_status_excluded">Bị loại trừ</string>
     <plurals name="backup_restore_sections_enabled">
@@ -2517,7 +2517,7 @@
     <string name="library_bottom_bar_select_songs">Chọn bài hát</string>
     <string name="library_bottom_bar_more_actions">Thêm hành động</string>
     <string name="library_play_selected">Chơi (%1$d)</string>
-    <!-- Rhythm Guard Comic Status Subtitles -->
+    <!-- T2Rhythm Guard Comic Status Subtitles -->
     <!-- Player, Bottomsheet, and Popup translations -->
     <string name="unknown_track">Bản nhạc không xác định</string>
     <string name="unknown_song">Bài hát không rõ</string>

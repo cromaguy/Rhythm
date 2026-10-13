@@ -4,6 +4,14 @@ package kr.co.metadata.crawler
 import java.text.Normalizer
 
 object CatalogIdentity {
+    /** Duration is corroborating evidence, never a replacement for title and artist identity. */
+    fun durationMatches(expectedMs: Long, candidateMs: Long?, tolerancePercent: Double = 3.0): Boolean {
+        require(tolerancePercent.isFinite() && tolerancePercent in 0.0..30.0)
+        if (expectedMs <= 0) return true
+        if (candidateMs == null || candidateMs <= 0) return false
+        val tolerance = (expectedMs * tolerancePercent / 100.0).toLong().coerceAtLeast(1_000L)
+        return kotlin.math.abs(expectedMs - candidateMs) <= tolerance
+    }
     fun normalize(value: String): String = Normalizer.normalize(value, Normalizer.Form.NFKC)
         .lowercase().filter(Char::isLetterOrDigit)
     fun missing(value: String?): Boolean = value.isNullOrBlank() || value.trim().lowercase() in setOf(

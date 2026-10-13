@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Rhythm</string>
+    <string name="app_name">T2Rhythm</string>
     <!-- Common Labels -->
     <string name="home">Página inicial</string>
     <string name="library">Biblioteca</string>
     <string name="search">Pesquisa</string>
     <!-- Media3 notification configuration -->
-    <string name="media3_notification_channel_name">Rhythm Música</string>
+    <string name="media3_notification_channel_name">T2Rhythm Música</string>
     <string name="media3_notification_channel_description">Controles de reprodução de mídia</string>
     <!-- Widget strings -->
-    <string name="widget_description_glance">Rhythm Música - controle a reprodução com 9 layouts responsivos, design Material 3 e atualizações de estado em tempo real</string>
-    <string name="widget_name_glance">Rhythm Música</string>
+    <string name="widget_description_glance">T2Rhythm Música - controle a reprodução com 9 layouts responsivos, design Material 3 e atualizações de estado em tempo real</string>
+    <string name="widget_name_glance">T2Rhythm Música</string>
     <string name="unknown_artist">Artista desconhecido</string>
     <string name="play_pause">Reproduzir/Pausar</string>
     <!-- Widget Settings -->
@@ -25,17 +25,17 @@
     <!-- Settings - Notifications -->
     <string name="settings_notifications">Notificações</string>
     <string name="settings_notifications_updates_group">Atualizações de aplicativos</string>
-    <string name="settings_notifications_rhythm_guard_group">Rhythm Guarda</string>
-    <string name="settings_notifications_rhythm_pulse_group">Rhythm dicas</string>
+    <string name="settings_notifications_rhythm_guard_group">T2Rhythm Guarda</string>
+    <string name="settings_notifications_rhythm_pulse_group">T2Rhythm dicas</string>
     <string name="settings_update_notifications_merged_desc">Receba alertas para novas versões e resultados de verificação de atualização em segundo plano</string>
     <string name="settings_rhythm_guard_alert_notifications">Notificações de alerta de segurança</string>
-    <string name="settings_rhythm_guard_alert_notifications_desc">Mostrar uma notificação quando o Rhythm Guard detectar volume ou exposição arriscada</string>
+    <string name="settings_rhythm_guard_alert_notifications_desc">Mostrar uma notificação quando o T2Rhythm Guard detectar volume ou exposição arriscada</string>
     <string name="settings_rhythm_guard_timer_notifications">Notificações de intervalo</string>
     <string name="settings_rhythm_guard_timer_notifications_desc">Mostrar notificações para intervalos programados e contagens regressivas de tempo limite ativo</string>
-    <string name="settings_rhythm_pulse_notifications">Rhythm Notificações de dicas</string>
+    <string name="settings_rhythm_pulse_notifications">T2Rhythm Notificações de dicas</string>
     <string name="settings_rhythm_pulse_notifications_desc">Receba lembretes amigáveis e dicas de escuta.</string>
     <string name="settings_rhythm_pulse_interval">Intervalo de dicas</string>
-    <string name="settings_rhythm_pulse_interval_dialog_title">Rhythm intervalo de dicas</string>
+    <string name="settings_rhythm_pulse_interval_dialog_title">T2Rhythm intervalo de dicas</string>
     <!-- Settings - Queue & Playback -->
     <!-- Settings - Queue -->
     <string name="settings_queue">Fila</string>
@@ -115,18 +115,18 @@
     <string name="operation_exporting_playlists">Fazendo backup de suas playlists personalizadas…</string>
     <string name="operation_exporting_playlists_location">Fazendo backup de playlists no armazenamento…</string>
     <string name="operation_importing_playlist">Importando arquivo de lista de reprodução…</string>
-    <string name="notification_operations_channel_name">Rhythm Biblioteca</string>
+    <string name="notification_operations_channel_name">T2Rhythm Biblioteca</string>
     <string name="notification_operations_channel_desc">Progresso e resultados de verificações de bibliotecas e ações de listas de reprodução</string>
-    <string name="notification_media_scan_title">Rhythm Verificação da biblioteca</string>
+    <string name="notification_media_scan_title">T2Rhythm Verificação da biblioteca</string>
     <string name="notification_media_scan_stage_songs">Verificando o armazenamento do dispositivo em busca de faixas de áudio…</string>
     <string name="notification_media_scan_stage_saving">Otimizando e salvando banco de dados de trilhas de áudio…</string>
     <string name="notification_media_scan_stage_finishing">Concluindo a indexação de áudio…</string>
     <string name="notification_media_scan_complete_pending_setup">Varredura de áudio concluída, inicializando tarefas em segundo plano…</string>
     <string name="notification_media_scan_cancelled">A verificação da biblioteca foi cancelada.</string>
     <string name="notification_media_scan_failed">Falha na verificação da biblioteca. Verifique as permissões de armazenamento e tente novamente.</string>
-    <string name="notification_playlist_export_title">Rhythm Exportação de biblioteca</string>
-    <string name="notification_playlist_import_title">Importação de biblioteca Rhythm</string>
-    <string name="notification_library_setup_title">Rhythm Configuração da biblioteca</string>
+    <string name="notification_playlist_export_title">T2Rhythm Exportação de biblioteca</string>
+    <string name="notification_playlist_import_title">Importação de biblioteca T2Rhythm</string>
+    <string name="notification_library_setup_title">T2Rhythm Configuração da biblioteca</string>
     <plurals name="notification_library_setup_complete_summary">
         <item quantity="one">A biblioteca está otimizada e pronta: %1$d faixas, %2$d álbuns, %3$d artistas</item>
         <item quantity="many">A biblioteca está otimizada e pronta: %1$d faixas, %2$d álbuns, %3$d artistas</item>
@@ -148,20 +148,20 @@
         <item quantity="other">Importado \"%1$s\" com %2$d músicas com sucesso.</item>
     </plurals>
     <string name="notification_playlist_import_failed">Falha na importação da lista de reprodução. Verifique o formato do arquivo.</string>
-    <string name="notification_updater_channel_name">Rhythm Atualizador</string>
+    <string name="notification_updater_channel_name">T2Rhythm Atualizador</string>
     <string name="notification_updater_channel_desc">Status do download para atualizações de aplicativos</string>
-    <string name="notification_updater_title">Rhythm Atualizador</string>
+    <string name="notification_updater_title">T2Rhythm Atualizador</string>
     <string name="notification_updater_downloading">⬇ Baixando: %1$d%%</string>
     <string name="notification_updater_download_complete">✓ Pronto para instalar. Toque para atualizar.</string>
     <string name="notification_updater_available_title">Atualização disponível!</string>
-    <string name="notification_updater_available_text">🆕 Uma nova versão de Rhythm está aqui.</string>
-    <string name="notification_sleep_timer_channel_name">Rhythm Temporizador</string>
+    <string name="notification_updater_available_text">🆕 Uma nova versão de T2Rhythm está aqui.</string>
+    <string name="notification_sleep_timer_channel_name">T2Rhythm Temporizador</string>
     <string name="notification_sleep_timer_channel_desc">Contagem regressiva e status para ações do temporizador</string>
-    <string name="notification_sleep_timer_title">Rhythm Temporizador</string>
+    <string name="notification_sleep_timer_title">T2Rhythm Temporizador</string>
     <string name="notification_sleep_timer_pause_in">⏸ Pausa em %1$s</string>
     <string name="notification_sleep_timer_stop_in">⏹ Parada em %1$s</string>
     <!-- Streaming Notifications -->
-    <string name="notification_streaming_channel_name">Rhythm Go</string>
+    <string name="notification_streaming_channel_name">T2Rhythm Go</string>
     <string name="notification_streaming_channel_desc">Status do serviço de streaming e atualizações de sincronização</string>
     <!-- Streaming Authentication -->
     <string name="notification_streaming_auth_title">Streaming conectado</string>
@@ -311,7 +311,7 @@
     <!-- Status Labels -->
     <string name="status_disabled">Desativado</string>
     <!-- HomeScreen -->
-    <string name="home_title">Rhythm</string>
+    <string name="home_title">T2Rhythm</string>
     <string name="home_settings_cd">Configurações</string>
     <string name="home_no_featured_albums">Nenhum álbum em destaque</string>
     <string name="home_no_featured_albums_desc">Adicione alguns álbuns à sua biblioteca para ver o conteúdo em destaque</string>
@@ -340,7 +340,7 @@
     <string name="home_no_recommendations">Sem recomendações</string>
     <string name="home_no_recommendations_desc">Ouça algumas músicas para obter recomendações personalizadas</string>
     <!-- Listening Stats -->
-    <string name="home_listening_stats">Suas estatísticas Rhythm</string>
+    <string name="home_listening_stats">Suas estatísticas T2Rhythm</string>
     <!-- Mood & Moments -->
     
     <!-- Recently Played -->
@@ -398,7 +398,7 @@
     <string name="sort_song_count">Contagem de músicas</string>
     <!-- Storage Permission -->
     <string name="storage_permission_required">Permissão de armazenamento necessária</string>
-    <string name="storage_permission_desc">Para navegar pelos seus arquivos de música e explorar o armazenamento do seu dispositivo, Rhythm precisa de permissão para acessar seus arquivos e mídia.</string>
+    <string name="storage_permission_desc">Para navegar pelos seus arquivos de música e explorar o armazenamento do seu dispositivo, T2Rhythm precisa de permissão para acessar seus arquivos e mídia.</string>
     <string name="storage_permission_audio_only">Isso permite acesso apenas a arquivos de áudio e pastas contendo música.</string>
     <!-- PlayerScreen -->
     <string name="player_loading_lyrics">Carregando letras…</string>
@@ -413,11 +413,11 @@
     <!-- Common UI -->
     <string name="ui_dismiss">Dispensar</string>
     <!-- Common Terms -->
-    <string name="common_rhythm">Rhythm</string>
+    <string name="common_rhythm">T2Rhythm</string>
     <string name="common_home">Casa</string>
     <string name="common_library">Biblioteca</string>
     <!-- Splash/Loading -->
-    <string name="splash_tagline">Sua música, sua Rhythm</string>
+    <string name="splash_tagline">Sua música, sua T2Rhythm</string>
     <string name="splash_ready">Pronto para dançar!</string>
     <!-- Audio Quality -->
     
@@ -445,7 +445,7 @@
     <string name="updates_channel_desc">Escolha qual canal de atualização seguir:</string>
     <!-- Onboarding -->
     <string name="onboarding_welcome_to">Bem-vindo ao</string>
-    <string name="onboarding_welcome_subtitle">Sua música, sua Rhythm</string>
+    <string name="onboarding_welcome_subtitle">Sua música, sua T2Rhythm</string>
     <string name="onboarding_get_started">Comece</string>
     <string name="onboarding_android13_notice">Android 13+ Aviso</string>
     <string name="onboarding_android13_desc">Nas versões mais recentes do Android, você verá diversas solicitações de permissão. Conceda acesso a arquivos de áudio e notificações para obter a melhor experiência.</string>
@@ -469,15 +469,15 @@
     <string name="onboarding_library_how_works">Como funciona a organização da biblioteca</string>
     <string name="onboarding_library_1">Personalize a ordem das guias na Biblioteca para acesso rápido aos seus favoritos</string>
     <string name="onboarding_library_2">Crie e gerencie playlists diretamente na tela Biblioteca</string>
-    <string name="onboarding_theme_title">Faça Rhythm seu</string>
-    <string name="onboarding_theme_desc">Personalize a aparência de Rhythm para combinar com seu estilo. Escolha o tema do sistema, fonte ou Material Suas cores dinâmicas (Android 12+).</string>
+    <string name="onboarding_theme_title">Faça T2Rhythm seu</string>
+    <string name="onboarding_theme_desc">Personalize a aparência de T2Rhythm para combinar com seu estilo. Escolha o tema do sistema, fonte ou Material Suas cores dinâmicas (Android 12+).</string>
     <string name="onboarding_more_tuner">Mais personalização nas configurações</string>
     <string name="onboarding_tuner_1">Esquemas de cores personalizados e extração de cores da arte do álbum</string>
     <string name="onboarding_tuner_2">Personalização de fontes e configurações de tipografia</string>
     <string name="onboarding_rhythm_guard_title">Proteja sua audição</string>
-    <string name="onboarding_rhythm_guard_desc">Configure o Rhythm Guard para manter sua audição mais segura com padrões de reconhecimento de idade e controles de proteção manuais.</string>
-    <string name="onboarding_rhythm_guard_mode_title">Rhythm Modo de Guarda</string>
-    <string name="onboarding_rhythm_guard_age_hint">O perfil de idade ajuda o Rhythm Guard a recomendar limites de audição mais seguros.</string>
+    <string name="onboarding_rhythm_guard_desc">Configure o T2Rhythm Guard para manter sua audição mais segura com padrões de reconhecimento de idade e controles de proteção manuais.</string>
+    <string name="onboarding_rhythm_guard_mode_title">T2Rhythm Modo de Guarda</string>
+    <string name="onboarding_rhythm_guard_age_hint">O perfil de idade ajuda o T2Rhythm Guard a recomendar limites de audição mais seguros.</string>
     <string name="onboarding_rhythm_guard_tip_1">O modo automático aplica padrões mais seguros com configuração mínima.</string>
     <string name="onboarding_rhythm_guard_tip_3">O modo manual oferece controle total sobre avisos e limites.</string>
     <string name="onboarding_full_tour_prompt_title">Continuar o tour completo de configuração?</string>
@@ -493,7 +493,7 @@
     <string name="onboarding_media_scan_blacklist">Modo lista negra: ocultar músicas e pastas específicas (toques, notificações)</string>
     <string name="onboarding_media_scan_whitelist">Modo Whitelist: mostra apenas músicas das pastas selecionadas</string>
     <string name="onboarding_complete_title">Está tudo pronto!</string>
-    <string name="onboarding_complete_desc">Rhythm está pronto para jogar! Sua biblioteca de música está sendo verificada em segundo plano. Aqui está o que está configurado:</string>
+    <string name="onboarding_complete_desc">T2Rhythm está pronto para jogar! Sua biblioteca de música está sendo verificada em segundo plano. Aqui está o que está configurado:</string>
     <string name="onboarding_whats_next">O que vem a seguir?</string>
     <string name="onboarding_next_browse">Navegue pelas suas músicas, álbuns e artistas</string>
     <string name="onboarding_next_create">Crie sua primeira playlist</string>
@@ -514,8 +514,8 @@
     <string name="onboarding_grant_permissions">Conceder permissões</string>
     <string name="onboarding_permissions_granted_desc">Todas as permissões necessárias foram concedidas. Você está pronto para prosseguir!</string>
     <string name="onboarding_redirect_settings_desc">Para conceder as permissões necessárias, navegue até as configurações do aplicativo no seu dispositivo.</string>
-    <string name="onboarding_rationale_desc">Rhythm requer certas permissões para funcionar corretamente. Por favor, conceda-lhes que continuem.</string>
-    <string name="onboarding_permissions_required_desc">Para utilizar plenamente os recursos do Rhythm, precisamos da sua permissão para acessar determinados recursos do dispositivo.</string>
+    <string name="onboarding_rationale_desc">T2Rhythm requer certas permissões para funcionar corretamente. Por favor, conceda-lhes que continuem.</string>
+    <string name="onboarding_permissions_required_desc">Para utilizar plenamente os recursos do T2Rhythm, precisamos da sua permissão para acessar determinados recursos do dispositivo.</string>
     <string name="onboarding_permission_music_title">Acesso à biblioteca de música</string>
     <string name="onboarding_permission_music_desc">Leia seus arquivos de música locais e exiba-os no aplicativo</string>
     <string name="onboarding_permission_bluetooth_title">Conectividade Bluetooth</string>
@@ -528,9 +528,9 @@
     <string name="onboarding_permission_tip_2">Você pode alterar as permissões posteriormente em Configurações</string>
     <!-- Onboarding Audio &amp; Playback -->
     <string name="onboarding_default_screen_title">Tela de destino padrão</string>
-    <string name="onboarding_default_screen_desc">Escolha qual tela será aberta quando você iniciar Rhythm</string>
+    <string name="onboarding_default_screen_desc">Escolha qual tela será aberta quando você iniciar T2Rhythm</string>
     <string name="onboarding_system_volume_title">Controle de volume do sistema</string>
-    <string name="onboarding_system_volume_desc">Permita que os botões físicos de volume do seu dispositivo controlem o volume de reprodução de Rhythm.</string>
+    <string name="onboarding_system_volume_desc">Permita que os botões físicos de volume do seu dispositivo controlem o volume de reprodução de T2Rhythm.</string>
     <string name="onboarding_auto_queue_title">Adicionar automaticamente à fila</string>
     <string name="onboarding_auto_queue_desc">Crie automaticamente uma fila contextual do álbum/artista ao reproduzir uma música.</string>
     <string name="onboarding_show_lyrics_title">Mostrar letras</string>
@@ -541,7 +541,7 @@
     
     <!-- Onboarding Theming -->
     <string name="onboarding_player_theme_title">Temas de reprodução e miniplayer</string>
-    <string name="onboarding_player_theme_desc">Personalize suas interfaces de reprodução. Alterne entre o design limpo e moderno Rhythm ou o design expressivo vibrante e fluido.</string>
+    <string name="onboarding_player_theme_desc">Personalize suas interfaces de reprodução. Alterne entre o design limpo e moderno T2Rhythm ou o design expressivo vibrante e fluido.</string>
     <!-- Onboarding Updater -->
     <string name="onboarding_update_check_failed">Falha na verificação de atualização</string>
     <string name="onboarding_ready_to_install">Pronto para instalar</string>
@@ -553,7 +553,7 @@
     <string name="onboarding_enable_updates_title">Habilitar atualizações</string>
     <string name="onboarding_enable_updates_desc">Permitir que o aplicativo verifique e baixe atualizações</string>
     <string name="onboarding_periodic_check_title">Verificação Periódica</string>
-    <string name="onboarding_periodic_check_desc">Verifique automaticamente se há atualizações do repositório GitHub de Rhythm</string>
+    <string name="onboarding_periodic_check_desc">Verifique automaticamente se há atualizações do repositório GitHub de T2Rhythm</string>
     <string name="onboarding_update_notifications_title">Notificações de atualização</string>
     <string name="onboarding_update_notifications_desc">Seja notificado quando novas versões estiverem disponíveis</string>
     <string name="onboarding_check_interval_desc">Com que frequência verificar atualizações</string>
@@ -596,7 +596,7 @@
     <string name="onboarding_gesture_tip_1">Os gestos de deslizar funcionam em ambas as direções</string>
     <!-- Onboarding: Widgets Step -->
     <string name="onboarding_widgets_title">Widgets do iniciador</string>
-    <string name="onboarding_widgets_desc">Adicione widgets Rhythm ao seu iniciador para controle rápido da música. Personalize quais informações são exibidas e a aparência do widget.</string>
+    <string name="onboarding_widgets_desc">Adicione widgets T2Rhythm ao seu iniciador para controle rápido da música. Personalize quais informações são exibidas e a aparência do widget.</string>
     <string name="onboarding_widget_artist">Mostrar nome do artista</string>
     <string name="onboarding_widget_artist_desc">Exibir o artista atual no widget</string>
     <string name="onboarding_widget_album">Mostrar nome do álbum</string>
@@ -611,8 +611,8 @@
     <string name="onboarding_integration_ytmusic">YouTube Music</string>
     <string name="onboarding_integrations_info_title">Nota de privacidade</string>
     <string name="onboarding_integrations_info_desc">Esses recursos enviam dados limitados (títulos de músicas, artistas) para serviços externos. Seus dados pessoais e arquivos de música permanecem no seu dispositivo. Você pode ativá-los ou desativá-los a qualquer momento nas Configurações.</string>
-    <!-- Onboarding: Rhythm Stats Step -->
-    <string name="onboarding_stats_title">Rhythm Estatísticas</string>
+    <!-- Onboarding: T2Rhythm Stats Step -->
+    <string name="onboarding_stats_title">T2Rhythm Estatísticas</string>
     <string name="onboarding_stats_desc">Descubra insights sobre seus hábitos musicais. Acompanhe seu tempo de audição, músicas mais tocadas, artistas favoritos e muito mais com belas visualizações.</string>
     <string name="onboarding_stats_show_home">Mostrar estatísticas na página inicial</string>
     <string name="onboarding_stats_show_home_desc">Exiba um widget de estatísticas de audição na tela inicial</string>
@@ -633,9 +633,9 @@
     <string name="settings_tip_gestures_swipe">Deslize para cima no miniplayer para abrir o player completo e deslize para baixo para dispensar quando terminar.</string>
     <string name="settings_tip_gestures_artwork">Deslize a arte para alternar as faixas e toque duas vezes na arte do álbum para reproduzir ou pausar rapidamente.</string>
     <string name="settings_tip_media_scan">Use a verificação de mídia para ocultar arquivos indesejados da sua biblioteca</string>
-    <string name="settings_tip_rhythm_guard_off">Proteja sua audição ativando Rhythm Guard</string>
-    <string name="settings_tip_rhythm_guard_auto">Rhythm O Guard gerencia automaticamente os limites de escuta segura</string>
-    <string name="settings_tip_rhythm_guard_manual">Você está controlando manualmente os limites do Guard Rhythm</string>
+    <string name="settings_tip_rhythm_guard_off">Proteja sua audição ativando T2Rhythm Guard</string>
+    <string name="settings_tip_rhythm_guard_auto">T2Rhythm O Guard gerencia automaticamente os limites de escuta segura</string>
+    <string name="settings_tip_rhythm_guard_manual">Você está controlando manualmente os limites do Guard T2Rhythm</string>
     <string name="settings_default_screen">Tela de destino padrão</string>
     <string name="settings_default_screen_desc">Escolha sua tela inicial</string>
     <string name="settings_home_desc">Descubra novas músicas e recomendações</string>
@@ -705,7 +705,7 @@
     <string name="lyrics_editor_title">Editor de letras</string>
     <!-- Components: Song Info -->
     <string name="song_info_title">Informações da música</string>
-    <string name="rhythm_stats">Rhythm Estatísticas</string>
+    <string name="rhythm_stats">T2Rhythm Estatísticas</string>
     <string name="file_info">Informações do arquivo</string>
     <!-- Components: Add to Playlist -->
     <string name="add_to_playlists">Adicionar às listas de reprodução</string>
@@ -736,7 +736,7 @@
     <string name="updates_disabled_message">As atualizações de aplicativos foram desativadas nas configurações</string>
     <string name="updates_auto_disabled">A verificação automática de atualizações está desativada. Você ainda pode verificar manualmente.</string>
     <string name="updates_up_to_date_message">Você está atualizado!</string>
-    <string name="updates_check_frequency">Com que frequência Rhythm deve verificar atualizações?</string>
+    <string name="updates_check_frequency">Com que frequência T2Rhythm deve verificar atualizações?</string>
     <string name="updates_experimental_coming">Mais recursos experimentais em breve em atualizações futuras</string>
     <string name="settings_interval_every_48_hours">A cada 48 horas</string>
     <string name="settings_interval_every_72_hours">A cada 72 horas</string>
@@ -879,7 +879,7 @@
     <string name="updates_enable_auto_check">Verificação automática</string>
     <string name="updates_channel_title">Atualizar canal</string>
     <string name="updates_source_title">Fonte de atualização</string>
-    <string name="updates_source_desc">Escolha qual família de lançamentos Rhythm deve usar para atualizações OTA.</string>
+    <string name="updates_source_desc">Escolha qual família de lançamentos T2Rhythm deve usar para atualizações OTA.</string>
     <string name="updates_source_installed">Corresponder à versão instalada</string>
     <string name="updates_source_installed_label">Versão instalada</string>
     <string name="updates_source_github_label">Compilações do GitHub</string>
@@ -927,7 +927,7 @@
     <string name="cd_reorder_chips">Reordenar chips</string>
     <string name="cd_search">Pesquisa</string>
     <string name="cd_view_all">Ver tudo</string>
-    <string name="cd_rhythm_splash">Rhythm</string>
+    <string name="cd_rhythm_splash">T2Rhythm</string>
     <string name="cd_remove_from_playlist">Remover da lista de reprodução</string>
     <string name="cd_change_language">Alterar idioma</string>
     <string name="cd_open_settings">Abrir</string>
@@ -1000,18 +1000,18 @@
     <!-- Fallback Metadata -->
     
     <!-- Service Notifications -->
-    <string name="service_app_updates">Rhythm Atualizador</string>
-    <string name="service_update_status">Status do atualizador Rhythm</string>
-    <string name="service_rhythm_pulse">Rhythm dicas</string>
-    <string name="service_rhythm_guard_alerts">Rhythm Alertas de guarda</string>
-    <string name="service_rhythm_guard_timers">Rhythm Temporizadores de guarda</string>
-    <string name="service_rhythm_music">Rhythm Música</string>
+    <string name="service_app_updates">T2Rhythm Atualizador</string>
+    <string name="service_update_status">Status do atualizador T2Rhythm</string>
+    <string name="service_rhythm_pulse">T2Rhythm dicas</string>
+    <string name="service_rhythm_guard_alerts">T2Rhythm Alertas de guarda</string>
+    <string name="service_rhythm_guard_timers">T2Rhythm Temporizadores de guarda</string>
+    <string name="service_rhythm_music">T2Rhythm Música</string>
     <string name="service_update_status_desc">Resultados de status para verificações de atualização em segundo plano</string>
-    <string name="service_rhythm_pulse_desc">Lembretes e dicas de escuta amigável de Rhythm</string>
-    <string name="service_rhythm_guard_alerts_desc">Alertas de segurança do Rhythm Guard</string>
-    <string name="service_rhythm_guard_timers_desc">Rhythm Lembretes de quebra de guarda e tempo limite</string>
-    <string name="service_ready">Rhythm está pronto.</string>
-    <string name="service_init_failed">Rhythm não pôde ser iniciado. Por favor, reabra o aplicativo.</string>
+    <string name="service_rhythm_pulse_desc">Lembretes e dicas de escuta amigável de T2Rhythm</string>
+    <string name="service_rhythm_guard_alerts_desc">Alertas de segurança do T2Rhythm Guard</string>
+    <string name="service_rhythm_guard_timers_desc">T2Rhythm Lembretes de quebra de guarda e tempo limite</string>
+    <string name="service_ready">T2Rhythm está pronto.</string>
+    <string name="service_init_failed">T2Rhythm não pôde ser iniciado. Por favor, reabra o aplicativo.</string>
     <!-- Crash Activity -->
     <string name="crash_bug_report">Relatório de bug</string>
     <string name="crash_restart_app">Reiniciar aplicativo</string>
@@ -1041,12 +1041,12 @@
     <string name="settings_artwork_cache_size">Tamanho do cache de arte</string>
     <string name="settings_artist_parsing">Artistas</string>
     <string name="settings_artist_parsing_desc">Separadores, display</string>
-    <string name="settings_rhythm_stats">Rhythm Estatísticas</string>
+    <string name="settings_rhythm_stats">T2Rhythm Estatísticas</string>
     <string name="settings_rhythm_stats_desc">Tempo de audição, principais faixas e tendências</string>
-    <string name="settings_rhythm_guard">Rhythm Guarda</string>
-    <string name="settings_rhythm_guard_list_desc">Ouvindo as proteções de saúde com tecnologia Rhythm Stats</string>
+    <string name="settings_rhythm_guard">T2Rhythm Guarda</string>
+    <string name="settings_rhythm_guard_list_desc">Ouvindo as proteções de saúde com tecnologia T2Rhythm Stats</string>
     <string name="settings_rhythm_guard_mode_title">Modo de proteção</string>
-    <string name="settings_rhythm_guard_mode_desc">Escolha como o Rhythm Guard gerencia a saúde auditiva</string>
+    <string name="settings_rhythm_guard_mode_desc">Escolha como o T2Rhythm Guard gerencia a saúde auditiva</string>
     <string name="settings_rhythm_guard_mode_auto">Automático</string>
     <string name="settings_rhythm_guard_mode_manual">Manual</string>
     <string name="settings_rhythm_guard_age_label">Perfil de idade: %1$d</string>
@@ -1064,10 +1064,10 @@
     <string name="settings_rhythm_guard_manual_warning_toggle">Mostrar avisos de segurança</string>
     <string name="settings_rhythm_guard_manual_warning_toggle_desc">Avisar quando o volume ao vivo ou a alternância manual podem ser arriscados</string>
     <string name="settings_rhythm_guard_manual_threshold_title">Limite de aviso de alto volume: %1$d%%</string>
-    <string name="settings_rhythm_guard_manual_threshold_desc">Defina quando o Rhythm Guard deve avisar sobre volume potencialmente prejudicial.</string>
+    <string name="settings_rhythm_guard_manual_threshold_desc">Defina quando o T2Rhythm Guard deve avisar sobre volume potencialmente prejudicial.</string>
     <string name="settings_rhythm_guard_device_controls_title">Controles de saída</string>
     <string name="settings_rhythm_guard_device_controls_speaker_limit_title">Aplicar limites de volume no alto-falante do telefone</string>
-    <string name="settings_rhythm_guard_device_controls_speaker_limit_desc">Quando desativado, o Rhythm Guard ignora a limitação de volume e os avisos de volume na saída do alto-falante integrado.</string>
+    <string name="settings_rhythm_guard_device_controls_speaker_limit_desc">Quando desativado, o T2Rhythm Guard ignora a limitação de volume e os avisos de volume na saída do alto-falante integrado.</string>
     <string name="settings_rhythm_guard_alert_controls_title">Controles de alerta de escuta</string>
     <string name="settings_rhythm_guard_alert_threshold_title">Limite de alerta de exposição: %1$s</string>
     <string name="settings_rhythm_guard_alert_threshold_policy_default">Política padrão</string>
@@ -1077,7 +1077,7 @@
     <string name="settings_rhythm_guard_warning_title">Aviso de segurança auditiva</string>
     <string name="settings_rhythm_guard_warning_high_volume">O volume atual está acima do limite de aviso (%1$d%%). Considere reduzir o volume.</string>
     <string name="settings_rhythm_guard_warning_daily_exposure">Você alcançou %1$s hoje, acima do %2$s sugerido. Considere fazer uma pausa para ouvir.</string>
-    <string name="settings_rhythm_guard_warning_dialog_title">Rhythm Alerta de proteção de guarda</string>
+    <string name="settings_rhythm_guard_warning_dialog_title">T2Rhythm Alerta de proteção de guarda</string>
     <string name="settings_rhythm_guard_warning_dialog_volume_message">O volume de mídia do sistema é %1$d%% em tempo real, acima do limite de proteção atual de %2$d%%. Abaixe o volume para reduzir o risco auditivo.</string>
     <string name="settings_rhythm_guard_risk_level_label">Gravidade do risco: %1$s</string>
     <string name="settings_rhythm_guard_risk_action_label">Ação recomendada: %1$s</string>
@@ -1107,8 +1107,8 @@
     <string name="settings_rhythm_guard_start_countdown_value">Começa em %1$s</string>
     <string name="settings_rhythm_guard_snapshot_widget_above_limit">Acima do limite recomendado</string>
     <string name="settings_rhythm_guard_snapshot_widget_within_limit">Dentro do limite recomendado</string>
-    <string name="settings_rhythm_guard_state_active">Rhythm Guarda está ativo</string>
-    <string name="settings_rhythm_guard_state_inactive">Rhythm Guarda está inativo</string>
+    <string name="settings_rhythm_guard_state_active">T2Rhythm Guarda está ativo</string>
+    <string name="settings_rhythm_guard_state_inactive">T2Rhythm Guarda está inativo</string>
     <string name="settings_rhythm_guard_state_timeout_active">Tempo limite de escuta em andamento</string>
     <string name="settings_rhythm_guard_state_cooldown_active">Período de carência ativo</string>
     <string name="settings_rhythm_guard_state_timeout_remaining">O intervalo termina em %1$s</string>
@@ -1120,8 +1120,8 @@
     <string name="settings_rhythm_guard_protection_preset_strict">Estrito</string>
     <string name="settings_rhythm_guard_protection_preset_custom">Personalizado</string>
     <string name="settings_rhythm_guard_timeout_activity_title">Tempo limite de escuta ativo</string>
-    <string name="settings_rhythm_guard_timeout_activity_default_reason">Reviravolta na história: seus ouvidos se uniram e pediram uma pausa para o lanche. Rhythm O Guard pausou a reprodução para que todos pudessem se acalmar.</string>
-    <string name="settings_rhythm_guard_timeout_activity_comic_desc">Reviravolta na história: seus ouvidos se uniram e pediram uma pausa para o lanche. Rhythm O Guard pausou a reprodução para que todos pudessem se acalmar.</string>
+    <string name="settings_rhythm_guard_timeout_activity_default_reason">Reviravolta na história: seus ouvidos se uniram e pediram uma pausa para o lanche. T2Rhythm O Guard pausou a reprodução para que todos pudessem se acalmar.</string>
+    <string name="settings_rhythm_guard_timeout_activity_comic_desc">Reviravolta na história: seus ouvidos se uniram e pediram uma pausa para o lanche. T2Rhythm O Guard pausou a reprodução para que todos pudessem se acalmar.</string>
     <string name="settings_rhythm_guard_timeout_activity_extend">Prolongar o intervalo (+%1$d min)</string>
     <string name="settings_rhythm_guard_timeout_activity_exit">Fechar tela de tempo limite</string>
     <string name="settings_rhythm_guard_timeout_activity_close_app">Fechar aplicativo</string>
@@ -1132,23 +1132,23 @@
     <string name="settings_rhythm_guard_alert_threshold_search_title">Limite de alerta de exposição</string>
     <string name="settings_rhythm_guard_alert_threshold_search_desc">Defina quanto de escuta diária aciona um alerta de segurança</string>
     <string name="settings_rhythm_guard_warning_timeout_search_title">Tempo de espera do alerta</string>
-    <string name="settings_rhythm_guard_warning_timeout_search_desc">Defina o tempo de espera entre alertas repetidos do Rhythm Guard</string>
+    <string name="settings_rhythm_guard_warning_timeout_search_desc">Defina o tempo de espera entre alertas repetidos do T2Rhythm Guard</string>
     <string name="settings_rhythm_guard_post_timeout_cooldown_search_title">Recarga pós-tempo limite</string>
     <string name="settings_rhythm_guard_post_timeout_cooldown_search_desc">Defina o tempo de espera após um tempo limite terminar antes que outro tempo limite de exposição possa ser acionado</string>
     <string name="settings_rhythm_guard_protection_presets_search_title">Predefinições de proteção</string>
     <string name="settings_rhythm_guard_protection_presets_search_desc">Aplique pacotes de guarda-corpo Suave, Equilibrado ou Estrito com um toque</string>
     <string name="settings_rhythm_guard_break_resume_search_title">Resumo de intervalo padrão</string>
     <string name="settings_rhythm_guard_break_resume_search_desc">Defina quanto tempo duram os intervalos de audição programados por padrão</string>
-    <string name="settings_rhythm_guard_enable_search_title">Rhythm Poder de Guarda</string>
-    <string name="settings_rhythm_guard_enable_search_desc">Ativar ou desativar proteções Rhythm Guard</string>
-    <string name="settings_rhythm_guard_notification_alert_title">Rhythm Alerta de segurança do guarda</string>
-    <string name="settings_rhythm_guard_notification_timer_active_title">Rhythm Tempo limite de proteção ativo</string>
+    <string name="settings_rhythm_guard_enable_search_title">T2Rhythm Poder de Guarda</string>
+    <string name="settings_rhythm_guard_enable_search_desc">Ativar ou desativar proteções T2Rhythm Guard</string>
+    <string name="settings_rhythm_guard_notification_alert_title">T2Rhythm Alerta de segurança do guarda</string>
+    <string name="settings_rhythm_guard_notification_timer_active_title">T2Rhythm Tempo limite de proteção ativo</string>
     <string name="settings_rhythm_guard_notification_timer_active_text">A reprodução é retomada em %1$s.</string>
-    <string name="settings_rhythm_guard_notification_timer_scheduled_title">Rhythm Quebra de guarda agendada</string>
+    <string name="settings_rhythm_guard_notification_timer_scheduled_title">T2Rhythm Quebra de guarda agendada</string>
     <string name="settings_rhythm_guard_notification_timer_scheduled_text">Uma pausa para audição começa em %1$s.</string>
     <string name="settings_rhythm_guard_notification_tap_open">Toque para ver detalhes do tempo limite.</string>
-    <!-- Rhythm Stats Screen -->
-    <string name="stats_title">Rhythm Estatísticas</string>
+    <!-- T2Rhythm Stats Screen -->
+    <string name="stats_title">T2Rhythm Estatísticas</string>
     <string name="stats_today">Hoje</string>
     <string name="stats_this_week">Esta semana</string>
     <string name="stats_this_month">Este mês</string>
@@ -1170,7 +1170,7 @@
     <!-- Content Descriptions (additional) -->
     <string name="cd_reorder_home_sections">Reordenar seções iniciais</string>
     <string name="cd_remove">Remover</string>
-    <string name="cd_rhythm_logo">Rhythm Logotipo</string>
+    <string name="cd_rhythm_logo">T2Rhythm Logotipo</string>
     <string name="cd_telegram_support">Suporte por telegrama</string>
     <!-- Queue &amp; Playlist Dialogs -->
     <!-- Artist Settings -->
@@ -1338,7 +1338,7 @@
     <string name="settings_snowflake_display_area">Área de exibição do floco de neve</string>
     <string name="settings_snowflake_size">Tamanho do floco de neve</string>
     <string name="settings_toggle_decoration_elements">Alternar elementos de decoração individuais por posição</string>
-    <string name="settings_multi_artist_parsing_info">Quando ativado, Rhythm dividirá automaticamente as tags de artista contendo vários artistas. Isso é útil para músicas baixadas com yt-dlp ou outras ferramentas que usam delimitadores como \'/\' para separar artistas.\n\nBarra invertida (\\) pode ser usada para escapar dos delimitadores.</string>
+    <string name="settings_multi_artist_parsing_info">Quando ativado, T2Rhythm dividirá automaticamente as tags de artista contendo vários artistas. Isso é útil para músicas baixadas com yt-dlp ou outras ferramentas que usam delimitadores como \'/\' para separar artistas.\n\nBarra invertida (\\) pode ser usada para escapar dos delimitadores.</string>
     <!-- Format Strings with Placeholders -->
     <string name="settings_cache_size_2gb">2GB</string>
     <string name="settings_cache_size_64mb">64MB</string>
@@ -1422,7 +1422,7 @@
     <string name="settings_cache_info_4">A limpeza automática ajuda a manter o desempenho ideal</string>
     <!-- Updates Settings -->
     <string name="updates_status_error">Erro</string>
-    <string name="updates_rhythm_logo_cd">Rhythm Logotipo</string>
+    <string name="updates_rhythm_logo_cd">T2Rhythm Logotipo</string>
     <string name="updates_version_prefix">V %1$s</string>
     <string name="updates_released_prefix">Lançado: %1$s</string>
     <string name="updates_unknown_error">Ocorreu um erro desconhecido</string>
@@ -1441,7 +1441,7 @@
     <string name="settings_interval_once_a_day">Uma vez por dia</string>
     <string name="settings_interval_once_a_week">Uma vez por semana</string>
     <!-- Experimental Features -->
-    <string name="streaming_integration_title">Rhythm Go</string>
+    <string name="streaming_integration_title">T2Rhythm Go</string>
     <string name="streaming_integration_services">Serviços de Integração</string>
     <string name="streaming_integration_services_empty">Nenhum serviço conectado ainda</string>
     <string name="streaming_settings_title">Configurações</string>
@@ -1449,7 +1449,7 @@
     <string name="streaming_settings_group_actions">Ações</string>
     <string name="streaming_settings_preferred_service">Serviço Preferencial</string>
     <string name="streaming_settings_quality">Qualidade de streaming</string>
-    <string name="streaming_settings_service_sheet_desc">Escolha qual serviço conectado Rhythm Go deve priorizar por padrão.</string>
+    <string name="streaming_settings_service_sheet_desc">Escolha qual serviço conectado T2Rhythm Go deve priorizar por padrão.</string>
     <string name="streaming_settings_quality_sheet_desc">Selecione sua qualidade de áudio preferida para reprodução de streaming.</string>
     <string name="streaming_quality_low">Baixo</string>
     <string name="streaming_quality_normal">Normal</string>
@@ -1459,7 +1459,7 @@
     <string name="streaming_quality_normal_desc">Qualidade e uso de dados equilibrados (~160 kbps).</string>
     <string name="streaming_quality_high_desc">Áudio de alta qualidade (~320 kbps).</string>
     <string name="streaming_quality_lossless_desc">Melhor qualidade quando compatível (FLAC/ALAC).</string>
-    <string name="streaming_settings_group_wellbeing">Rhythm Informações</string>
+    <string name="streaming_settings_group_wellbeing">T2Rhythm Informações</string>
     <string name="streaming_open_full_settings">Abra configurações completas</string>
     <string name="streaming_open_full_settings_desc">Abra as configurações de todo o aplicativo compartilhadas entre os modos</string>
     <string name="streaming_switch_to_local_mode">Mudar para o modo local</string>
@@ -1483,7 +1483,7 @@
     <string name="streaming_service_setup_password">Senha</string>
     <string name="streaming_service_setup_password_hint">Digite a senha da sua conta</string>
     <string name="streaming_service_setup_remember_password">Lembre-se da senha neste dispositivo</string>
-    <string name="streaming_service_setup_remember_password_desc">Armazene credenciais localmente para que Rhythm possa se reconectar automaticamente mais tarde.</string>
+    <string name="streaming_service_setup_remember_password_desc">Armazene credenciais localmente para que T2Rhythm possa se reconectar automaticamente mais tarde.</string>
     <string name="streaming_service_setup_connecting">Conectando…</string>
     <string name="streaming_service_setup_disconnecting">Desconectando…</string>
     <string name="streaming_service_setup_action_hint">Preencha os campos obrigatórios para conectar este serviço.</string>
@@ -1671,7 +1671,7 @@
     <string name="settings_bluetooth_lyrics_enabled">Modo de letras Bluetooth</string>
     <string name="settings_bluetooth_lyrics_enabled_desc">Transmitir a linha da letra atual via metadados Bluetooth</string>
     <string name="exp_go_mode">Go Mode</string>
-    <string name="exp_go_mode_desc">Mudar para Rhythm Go streaming mode</string>
+    <string name="exp_go_mode_desc">Mudar para T2Rhythm Go streaming mode</string>
     <!-- Home Screen Search Strings -->
     <string name="settings_home_section_order">Ordem das Seções</string>
     <string name="settings_home_section_order_desc">Reordenar seções iniciais</string>
@@ -1684,13 +1684,13 @@
     <string name="settings_home_carousel_auto_scroll">Rolagem automática do carrossel</string>
     <string name="settings_home_carousel_auto_scroll_desc">Carrossel de rolagem automática</string>
     <!-- Notifications Search Strings -->
-    <string name="settings_notifications_rhythm_guard_alerts">Rhythm Alertas de segurança da guarda</string>
+    <string name="settings_notifications_rhythm_guard_alerts">T2Rhythm Alertas de segurança da guarda</string>
     <string name="settings_notifications_rhythm_guard_alerts_desc">Notificar quando avisos de risco de escuta forem acionados</string>
-    <string name="settings_notifications_rhythm_guard_timers">Rhythm Temporizadores de Quebra de Guarda</string>
+    <string name="settings_notifications_rhythm_guard_timers">T2Rhythm Temporizadores de Quebra de Guarda</string>
     <string name="settings_notifications_rhythm_guard_timers_desc">Notificar sobre intervalos programados e contagens regressivas de tempo limite</string>
-    <string name="settings_notifications_rhythm_pulse">Rhythm dicas</string>
+    <string name="settings_notifications_rhythm_pulse">T2Rhythm dicas</string>
     <string name="settings_notifications_rhythm_pulse_desc">Lembretes amigáveis e dicas de escuta.</string>
-    <string name="settings_notifications_rhythm_pulse_interval">Rhythm intervalo de dicas</string>
+    <string name="settings_notifications_rhythm_pulse_interval">T2Rhythm intervalo de dicas</string>
     <string name="settings_notifications_rhythm_pulse_interval_desc">Com que frequência as notificações de dicas são entregues</string>
     <!-- Expressive Shapes Search Strings -->
     <string name="settings_expressive_shapes_enabled">Formas Expressivas</string>
@@ -1774,7 +1774,7 @@
     <!-- Library Screen scanning overlay -->
     <string name="settings_scanning">Digitalização</string>
     <!-- Settings Search -->
-    <string name="search_settings_hint">Configurações de pesquisa Rhythm…</string>
+    <string name="search_settings_hint">Configurações de pesquisa T2Rhythm…</string>
     <string name="clear_search">Limpar pesquisa</string>
     <string name="no_results_found">Nenhum resultado encontrado</string>
     <string name="try_different_search">Experimente um termo de pesquisa diferente</string>
@@ -1813,14 +1813,14 @@
     <string name="theme_font_imported">Fonte importada com sucesso</string>
     <string name="theme_font_invalid">Formato de arquivo de fonte inválido</string>
     <string name="ui_apply">Aplicar</string>
-    <string name="crashactivity_uh_oh_looks_like">Ah, ah! Parece que Rhythm atingiu uma nota amarga!</string>
+    <string name="crashactivity_uh_oh_looks_like">Ah, ah! Parece que T2Rhythm atingiu uma nota amarga!</string>
     <string name="crashactivity_dont_fret_our_app">Não se preocupe! Nosso aplicativo acabou de dar um pequeno \'oopsie\'. Por favor, compartilhe os detalhes da falha abaixo – é como uma mensagem secreta para nossos desenvolvedores consertarem as coisas! Então, vamos tentar de novo, certo?</string>
     <string name="crashactivity_secret_crash_scrolls">Pergaminhos Secretos de Crash</string>
     <string name="crashactivity_share">Compartilhar</string>
     <string name="externalplaybackactivity_unable_to_open_audio">Não é possível abrir o arquivo de áudio</string>
     <string name="externalplaybackactivity_unsupported_or_unreadable_audio">Arquivo de áudio incompatível ou ilegível</string>
     <string name="externalplaybackactivity_failed_to_play_audio">Falha ao reproduzir arquivo de áudio</string>
-    <string name="externalplaybackactivity_open_rhythm">Abra Rhythm</string>
+    <string name="externalplaybackactivity_open_rhythm">Abra T2Rhythm</string>
     <string name="mainactivity_error_opening_file">Erro ao abrir arquivo</string>
     <string name="mainactivity_unsupported_file_format">Formato de arquivo não suportado</string>
     <string name="mainactivity_failed_to_initialize_media">Falha ao inicializar o media player</string>
@@ -1907,7 +1907,7 @@
     <string name="streamingmusicviewmodel_failed_to_play_next">Falha ao reproduzir a seguir: não foi possível resolver o URL</string>
     <string name="streamingmusicviewmodel_failed_to_add_to">Falha ao adicionar à fila: não é possível resolver o URL</string>
     <string name="rhythmmusicwidget_album_art_placeholder">Espaço reservado para arte do álbum</string>
-    <string name="rhythmwidgetpreview_rhythm_glance_widget_previews">Pré-visualizações de widgets Rhythm Glance</string>
+    <string name="rhythmwidgetpreview_rhythm_glance_widget_previews">Pré-visualizações de widgets T2Rhythm Glance</string>
     <string name="rhythmwidgetpreview_str_11_compact_widget">Widget compacto 1×1</string>
     <string name="rhythmwidgetpreview_str_21_horizontal_strip">Faixa Horizontal 2×1</string>
     <string name="rhythmwidgetpreview_str_22_small_widget">Widget pequeno 2×2</string>
@@ -1949,7 +1949,7 @@
     <string name="betaprogrampopup_early_access">Acesso antecipado</string>
     <string name="betaprogrampopup_shape_the_future">Moldar o Futuro</string>
     <string name="betaprogrampopup_direct_feedback">Feedback direto</string>
-    <string name="betaprogrampopup_youre_part_of_an">Você faz parte de um grupo exclusivo que ajuda a moldar o futuro do reprodutor de música Rhythm</string>
+    <string name="betaprogrampopup_youre_part_of_an">Você faz parte de um grupo exclusivo que ajuda a moldar o futuro do reprodutor de música T2Rhythm</string>
     <string name="betaprogrampopup_start_exploring">Comece a explorar</string>
     <string name="switchmodedialog_switch_play">Trocar e jogar</string>
     <string name="fullscreenlyricsview_cover_artwork">Arte da capa</string>
@@ -2015,7 +2015,7 @@
     <string name="lyricssourcesettingsscreen_retry_using_fallbacks">Tente novamente usando substitutos</string>
     <string name="lyricssourcesettingsscreen_embedded_lyrics_are_stored">• Embedded lyrics are stored in your audio files</string>
     <string name="miniplayercustomizationsettingsscreen_miniplayer_theme">Tema do miniplayer</string>
-    <string name="miniplayercustomizationsettingsscreen_choose_between_rhythm_default">Escolha entre tema Rhythm Padrão ou Expressivo</string>
+    <string name="miniplayercustomizationsettingsscreen_choose_between_rhythm_default">Escolha entre tema T2Rhythm Padrão ou Expressivo</string>
     <string name="miniplayercustomizationsettingsscreen_integrated_directly_into_the">Integrado diretamente no fundo do MiniPlayer</string>
     <string name="performancesettingsscreen_performance">Modo Lite</string>
     <string name="performancesettingsscreen_disable_haptics">Desativar a sensação tátil</string>
@@ -2032,7 +2032,7 @@
     <string name="rhythmguardsettingsscreen_none">Nenhum</string>
     <string name="rhythmguardsettingsscreen_general_settings">Configurações Gerais</string>
     <string name="rhythmguardsettingsscreen_library_data">Dados da Biblioteca</string>
-    <string name="rhythmguardsettingsscreen_stats_rhythm_guard">Estatísticas e Rhythm Guarda</string>
+    <string name="rhythmguardsettingsscreen_stats_rhythm_guard">Estatísticas e T2Rhythm Guarda</string>
     <string name="settingsscreen_audio_offload">Descarga de áudio</string>
     <string name="settingsscreen_personalization">Personalização</string>
     <string name="settingsscreen_library_focus">Foco na Biblioteca</string>
@@ -2131,7 +2131,7 @@
     <string name="pulse_marathon">Modo Maratona</string>
     <!-- Settings Tips Details -->
     <string name="settings_tip_theme_desc_1">Atualize seu reprodutor de música com preto AMOLED vivo e lindas cores pastel.</string>
-    <string name="settings_tip_theme_desc_2">Torne o Rhythm verdadeiramente seu combinando o sotaque do aplicativo com o seu sistema.</string>
+    <string name="settings_tip_theme_desc_2">Torne o T2Rhythm verdadeiramente seu combinando o sotaque do aplicativo com o seu sistema.</string>
     <string name="settings_tip_media_scan_desc_1">Evite clipes de áudio indesejados. Defina explicitamente quais pastas devemos procurar por músicas.</string>
     <string name="settings_tip_media_scan_desc_2">Mantenha notas de voz e toques longe de suas listas de reprodução usando pastas de foco.</string>
     <string name="settings_tip_sleep_timer_desc_1">Adormeça enquanto sua música está tocando. Faremos uma pausa automaticamente.</string>
@@ -2140,7 +2140,7 @@
     <string name="settings_tip_equalizer_desc_2">Sintonize o som dos seus fones de ouvido com segurança com nossos efeitos de áudio avançados.</string>
     <string name="settings_tip_backup_active_desc_1">O backup automático está ativo. Verifique suas seções de backup para que as restaurações permaneçam limpas.</string>
     <string name="settings_tip_backup_active_desc_2">Proteção ativada: a programação parece boa. Execute um backup manual antes de grandes edições.</string>
-    <string name="settings_tip_backup_inactive_desc_1">O backup automático está desativado. Ative-o para proteger playlists e estatísticas do Rhythm Guard.</string>
+    <string name="settings_tip_backup_inactive_desc_1">O backup automático está desativado. Ative-o para proteger playlists e estatísticas do T2Rhythm Guard.</string>
     <string name="settings_tip_backup_inactive_desc_2">Ainda não há rede de segurança. Ative os backups para evitar perder sua configuração.</string>
     <string name="settings_tip_updates_active_desc_1">As atualizações estão habilitadas. Mantenha-os ativados para correções e melhorias de desempenho.</string>
     <string name="settings_tip_updates_active_desc_2">Você está pronto para receber atualizações. Verifique as preferências do canal quanto à estabilidade versus atualização.</string>
@@ -2183,7 +2183,7 @@
     <string name="font_jetbrains_desc">Fonte monoespaçada perfeita para conteúdo técnico</string>
     <string name="font_quicksand_desc">Fonte arredondada com aparência mais suave e amigável</string>
     <!-- Predefined Color Schemes -->
-    <string name="color_scheme_default_title">Rhythm Padrão</string>
+    <string name="color_scheme_default_title">T2Rhythm Padrão</string>
     <string name="color_scheme_default_desc">Material 3 linha de base roxa com detalhes em rosa rosado</string>
     <string name="color_scheme_warm_title">Pôr do sol quente</string>
     <string name="color_scheme_warm_desc">Tons aconchegantes de laranja e vermelho para um ambiente acolhedor</string>
@@ -2218,7 +2218,7 @@
     <string name="lyrics_settings_embedded_first">Incorporado primeiro</string>
     <string name="lyrics_settings_embedded_first_desc">Prefira letras incorporadas em arquivos de áudio, use APIs online</string>
     <string name="lyrics_settings_online_first">On-line primeiro</string>
-    <string name="lyrics_settings_online_first_desc">Prefira APIs on-line (Rhythm palavra por palavra, LRCLib), substituto para incorporado</string>
+    <string name="lyrics_settings_online_first_desc">Prefira APIs on-line (T2Rhythm palavra por palavra, LRCLib), substituto para incorporado</string>
     <string name="lyrics_settings_local_first">Local primeiro</string>
     <string name="lyrics_settings_local_first_desc">Prefira arquivos .lrc locais, letras incorporadas e APIs online</string>
     <string name="lyrics_settings_lyrically_first">Lyrically First</string>
@@ -2244,7 +2244,7 @@
     <string name="lyrics_settings_disable_animations_desc">Desative transições e animações na visualização das letras</string>
     <string name="lyrics_settings_word_by_word_translation">Sincronização automática de palavras</string>
     <string name="lyrics_settings_word_by_word_translation_desc">Gere automaticamente o tempo no nível da palavra para letras sincronizadas com linhas, distribuindo a duração proporcionalmente</string>
-    <string name="lyrics_settings_info_bullets">Detalhes adicionais de sincronização:\n• APIs on-line fornecem letras sincronizadas de alta qualidade\n• Rhythm oferece sincronização palavra por palavra\n• LRCLib fornece sincronização gratuita linha por linha</string>
+    <string name="lyrics_settings_info_bullets">Detalhes adicionais de sincronização:\n• APIs on-line fornecem letras sincronizadas de alta qualidade\n• T2Rhythm oferece sincronização palavra por palavra\n• LRCLib fornece sincronização gratuita linha por linha</string>
     <!-- AutoEQ Preset Picker additions -->
     <string name="autoeqpresetpickerbottomsheet_search_presets">Pesquisar predefinições…</string>
     <string name="autoeqpresetpickerbottomsheet_disable">Nenhum / Desativar AutoEQ</string>
@@ -2262,7 +2262,7 @@
     <string name="device_configuration_custom_preset">Predefinição personalizada</string>
     <string name="device_configuration_custom">Personalizado</string>
     <string name="device_configuration_active_profile_label">Perfil ativo: %1$s</string>
-    <string name="device_configuration_share_subject">Rhythm Perfil de equalização: %1$s</string>
+    <string name="device_configuration_share_subject">T2Rhythm Perfil de equalização: %1$s</string>
     <string name="device_configuration_share_title">Compartilhar perfil EQ</string>
     <string name="device_configuration_edit_device">Editar dispositivo</string>
     <string name="device_configuration_add_device">Adicionar dispositivo</string>
@@ -2312,9 +2312,9 @@
         <item quantity="other">Exporte listas de reprodução %1$d para:</item>
     </plurals>
     <!-- Mode dialog strings -->
-    <string name="dialog_switch_to_go">Switch to Rhythm Go?</string>
+    <string name="dialog_switch_to_go">Switch to T2Rhythm Go?</string>
     <string name="dialog_switch_to_local">Mudar para local?</string>
-    <string name="dialog_switch_to_go_desc">This item belongs to Rhythm Go. Mudar para o modo de streaming agora para transmitir e reproduzir?</string>
+    <string name="dialog_switch_to_go_desc">This item belongs to T2Rhythm Go. Mudar para o modo de streaming agora para transmitir e reproduzir?</string>
     <string name="dialog_switch_to_local_desc">Este item pertence à sua Biblioteca Local. Mudar para o modo local agora para reproduzir suas faixas off-line?</string>
     <!-- Section order content descriptions -->
 
@@ -2493,7 +2493,7 @@
     <string name="carousel_style_hero">Herói</string>
     <string name="carousel_style_hero_desc">1 álbum de amostra lateral</string>
     <!-- Theme names -->
-    <string name="theme_rhythm">Rhythm</string>
+    <string name="theme_rhythm">T2Rhythm</string>
     <string name="theme_expressive">Expressivo</string>
     <string name="settings_managed_by_expressive_shapes">Gerenciado por formas expressivas</string>
     <!-- Shape targets -->
@@ -2539,7 +2539,7 @@
     <string name="backup_restore_section_collection">Coleção</string>
     <string name="backup_restore_section_collection_desc">Listas de reprodução, favoritos, lista negra/lista branca, pastas fixadas.</string>
     <string name="backup_restore_section_insight">Visão</string>
-    <string name="backup_restore_section_insight_desc">Contagens de jogos, estatísticas diárias, gêneros e configuração de guarda Rhythm.</string>
+    <string name="backup_restore_section_insight_desc">Contagens de jogos, estatísticas diárias, gêneros e configuração de guarda T2Rhythm.</string>
     <string name="backup_restore_status_included">Incluído</string>
     <string name="backup_restore_status_excluded">Excluído</string>
     <plurals name="backup_restore_sections_enabled">
@@ -2561,7 +2561,7 @@
     <string name="library_bottom_bar_select_songs">Selecione músicas</string>
     <string name="library_bottom_bar_more_actions">Mais ações</string>
     <string name="library_play_selected">Jogar (%1$d)</string>
-    <!-- Rhythm Guard Comic Status Subtitles -->
+    <!-- T2Rhythm Guard Comic Status Subtitles -->
     <!-- Player, Bottomsheet, and Popup translations -->
     <string name="unknown_track">Trilha Desconhecida</string>
     <string name="unknown_song">Canção Desconhecida</string>

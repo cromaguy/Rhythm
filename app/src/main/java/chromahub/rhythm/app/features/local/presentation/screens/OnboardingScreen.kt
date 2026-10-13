@@ -3334,7 +3334,9 @@ private fun FolderManagementCard(
     whitelistedFolders: List<String>,
     onModeChange: (Boolean) -> Unit,
     onAddFolder: () -> Unit,
-    onRemoveFolder: (String) -> Unit
+    onRemoveFolder: (String) -> Unit,
+    scanMode: MediaScanMode = if (isBlacklistMode) MediaScanMode.BLACKLIST else MediaScanMode.WHITELIST,
+    onScanModeChange: ((MediaScanMode) -> Unit)? = null
 ) {
     val context = LocalContext.current
     val haptic = LocalHapticFeedback.current
@@ -3355,14 +3357,19 @@ private fun FolderManagementCard(
                         )
                         Spacer(modifier = Modifier.height(12.dp))
                         ExpressiveButtonGroup(
-                            items = listOf("Blacklist", "Whitelist"),
-                            selectedIndex = if (isBlacklistMode) 0 else 1,
+                            items = listOf(context.getString(R.string.settings_blacklist_mode), context.getString(R.string.settings_whitelist_mode), context.getString(R.string.catalog_hybrid_mode)),
+                            selectedIndex = MediaScanMode.entries.indexOf(scanMode),
                             onItemClick = { index ->
                                 HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
-                                onModeChange(index == 0)
+                                onScanModeChange?.invoke(MediaScanMode.entries[index]) ?: onModeChange(index == 0)
                             },
                             modifier = Modifier.fillMaxWidth()
                         )
+                        if (scanMode == MediaScanMode.HYBRID) {
+                            Text(context.getString(R.string.catalog_editing_list), style = MaterialTheme.typography.labelMedium)
+                            ExpressiveButtonGroup(items = listOf(context.getString(R.string.catalog_included_list), context.getString(R.string.catalog_excluded_list)),
+                                selectedIndex = if (isBlacklistMode) 1 else 0, onItemClick = { onModeChange(it == 1) }, modifier = Modifier.fillMaxWidth())
+                        }
                     }
                 }
             )
@@ -5868,7 +5875,8 @@ fun EnhancedMediaScanContent(
 
     // Get current media scan mode preference
     val mediaScanMode by appSettings.mediaScanMode.collectAsState()
-    val isBlacklistMode = mediaScanMode == MediaScanMode.BLACKLIST
+    var editExclusions by rememberSaveable { mutableStateOf(false) }
+    val isBlacklistMode = if (mediaScanMode == MediaScanMode.HYBRID) editExclusions else mediaScanMode == MediaScanMode.BLACKLIST
     val blacklistedFolders by appSettings.blacklistedFolders.collectAsState()
     val whitelistedFolders by appSettings.whitelistedFolders.collectAsState()
 
@@ -6013,10 +6021,12 @@ fun EnhancedMediaScanContent(
             ) {
                 FolderManagementCard(
                     isBlacklistMode = isBlacklistMode,
+                    scanMode = mediaScanMode, onScanModeChange = appSettings::setMediaScanMode,
                     blacklistedFolders = blacklistedFolders,
                     whitelistedFolders = whitelistedFolders,
                     onModeChange = { useBlacklist ->
-                        appSettings.setMediaScanMode(if (useBlacklist) MediaScanMode.BLACKLIST else MediaScanMode.WHITELIST)
+                        if (mediaScanMode == MediaScanMode.HYBRID) editExclusions = useBlacklist
+                        else appSettings.setMediaScanMode(if (useBlacklist) MediaScanMode.BLACKLIST else MediaScanMode.WHITELIST)
                     },
                     onAddFolder = {
                         HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
@@ -6077,10 +6087,12 @@ fun EnhancedMediaScanContent(
 
             FolderManagementCard(
                 isBlacklistMode = isBlacklistMode,
+                scanMode = mediaScanMode, onScanModeChange = appSettings::setMediaScanMode,
                 blacklistedFolders = blacklistedFolders,
                 whitelistedFolders = whitelistedFolders,
                 onModeChange = { useBlacklist ->
-                    appSettings.setMediaScanMode(if (useBlacklist) MediaScanMode.BLACKLIST else MediaScanMode.WHITELIST)
+                    if (mediaScanMode == MediaScanMode.HYBRID) editExclusions = useBlacklist
+                        else appSettings.setMediaScanMode(if (useBlacklist) MediaScanMode.BLACKLIST else MediaScanMode.WHITELIST)
                 },
                 onAddFolder = {
                     HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
