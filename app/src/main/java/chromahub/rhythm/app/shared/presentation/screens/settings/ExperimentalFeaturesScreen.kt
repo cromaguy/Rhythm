@@ -256,12 +256,6 @@ fun LabsSettingsScreen(
                             onToggleChange = { appSettings.setAudioDeviceLoggingEnabled(it) }
                         ),
                         SettingItem(
-                            RhythmIcons.BugReport,
-                            context.getString(R.string.exp_test_crash),
-                            context.getString(R.string.exp_test_crash_desc),
-                            onClick = { chromahub.rhythm.app.util.CrashReporter.testCrash() }
-                        ),
-                        SettingItem(
                             MaterialSymbolIcon("smartphone"),
                             context.getString(R.string.exp_force_player_compact_mode),
                             context.getString(R.string.exp_force_player_compact_mode_desc),

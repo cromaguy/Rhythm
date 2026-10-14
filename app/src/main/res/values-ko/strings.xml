@@ -3074,7 +3074,7 @@
     <string name="unknown_album_name">알 수 없는 앨범</string>
     <string name="settings_floating_navigation">떠 있는 탐색 막대</string>
     <string name="settings_floating_navigation_desc">탐색 막대를 화면 위에 띄우거나 가장자리에 붙입니다</string>
-    <string name="expressive_bottom_buttons_desc">하단 조작 버튼의 순서와 표시 여부를 바꿉니다</string>
+    <string name="expressive_bottom_buttons_desc">조작 버튼을 정렬하거나 숨길 수 있습니다. 추가 작업은 우측 상단에 고정되며 5개 제한에 포함되지 않습니다.</string>
     <string name="expressive_bottom_buttons_title">조작 버튼 편집</string>
     <string name="expressive_bottom_buttons_normal_tab">일반 모드</string>
     <string name="expressive_bottom_buttons_merge_tab">통합 모드</string>

@@ -174,6 +174,7 @@ fun PlayerScreen(
 ) {
     val playerThemeId = "EXPRESSIVE"
     val videoControls = remember(song?.uri) { chromahub.rhythm.app.shared.presentation.components.player.MusicVideoControls() }
+    song?.let { chromahub.rhythm.app.shared.presentation.components.player.MusicVideoSession(it, videoControls) }
     var showFullScreenLyrics by remember { mutableStateOf(false) }
 
     BackHandler(enabled = showFullScreenLyrics || expansionFraction > 0.5f) {

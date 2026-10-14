@@ -1053,14 +1053,14 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
     private val _isExtractingMetadata = MutableStateFlow(false)
     val isExtractingMetadata: StateFlow<Boolean> = _isExtractingMetadata.asStateFlow()
 
-    // Combined background processing state - true if ANY background task is running
+    // Initial library preparation excludes optional online artwork lookup.
     val isBackgroundProcessing: StateFlow<Boolean> = combine(
         isMediaScanning,
         _isGenreDetectionRunning,
         _isFetchingArtwork,
         _isExtractingMetadata
     ) { mediaScanning, genreDetection, artworkFetching, metadataExtraction ->
-        mediaScanning || genreDetection || artworkFetching || metadataExtraction
+        mediaScanning || genreDetection || metadataExtraction
     }.stateIn(
         scope = viewModelScope,
         started = kotlinx.coroutines.flow.SharingStarted.WhileSubscribed(5000),
@@ -2729,10 +2729,8 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
     private fun startLibrarySetupCompletionMonitor() {
         notificationManagerHelper.startLibrarySetupCompletionMonitor(
             scope = viewModelScope,
-            isBackgroundProcessing = isBackgroundProcessing,
             isMediaScanning = isMediaScanning,
             isGenreDetectionRunning = isGenreDetectionRunning,
-            isFetchingArtwork = isFetchingArtwork,
             isExtractingMetadata = isExtractingMetadata,
             filteredSongsSize = { filteredSongs.value.size },
             filteredAlbumsSize = { filteredAlbums.value.size },
@@ -3945,35 +3943,50 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
      * Auto-fetches artwork from online metadata providers for a specific song,
      * updates the song in memory & repository, and invokes onResult callback with success & artwork Uri string.
      */
+    private val automaticArtworkInFlight = java.util.concurrent.ConcurrentHashMap.newKeySet<String>()
+
     fun autoFetchArtworkForSong(song: Song, onResult: (Boolean, String?) -> Unit) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                _isFetchingArtwork.value = true
-                val updated = repository.fetchTrackArtwork(listOf(song))
-                val resultSong = updated.firstOrNull()
-                if (resultSong?.artworkUri != null && resultSong.artworkUri != song.artworkUri) {
-                    val currentList = _songs.value.toMutableList()
-                    val idx = currentList.indexOfFirst { it.id == song.id }
-                    if (idx != -1) {
-                        currentList[idx] = resultSong
-                        _songs.value = currentList
-                        repository.updateAndPersistSongs(currentList)
-                    }
-                    withContext(Dispatchers.Main) {
-                        onResult(true, resultSong.artworkUri.toString())
-                    }
-                } else {
-                    withContext(Dispatchers.Main) {
-                        onResult(false, null)
-                    }
+                val attemptKey = kr.co.metadata.crawler.CatalogFileStore.hash(song.uri.toString())
+                val attempts = getApplication<Application>().getSharedPreferences("automatic_artwork_attempts", android.content.Context.MODE_PRIVATE)
+                val now = System.currentTimeMillis()
+                if (!automaticArtworkInFlight.add(attemptKey)) {
+                    withContext(Dispatchers.Main) { onResult(false, null) }
+                    return@launch
                 }
+                try {
+                    if (attempts.getLong(attemptKey, 0L) > now) {
+                        withContext(Dispatchers.Main) { onResult(false, null) }
+                        return@launch
+                    }
+                    attempts.edit().putLong(attemptKey, now + 6 * 3600_000L).apply()
+                    val updated = kotlinx.coroutines.withTimeoutOrNull(45_000L) { repository.fetchTrackArtwork(listOf(song)) }.orEmpty()
+                    val resultSong = updated.firstOrNull()
+                    if (resultSong?.artworkUri != null && resultSong.artworkUri != song.artworkUri) {
+                        val currentList = _songs.value.toMutableList()
+                        val idx = currentList.indexOfFirst { it.id == song.id }
+                        if (idx != -1) {
+                            currentList[idx] = resultSong
+                            _songs.value = currentList
+                            repository.updateAndPersistSongs(currentList)
+                        }
+                        withContext(Dispatchers.Main) {
+                            onResult(true, resultSong.artworkUri.toString())
+                        }
+                    } else {
+                        withContext(Dispatchers.Main) {
+                            onResult(false, null)
+                        }
+                    }
+                } finally { automaticArtworkInFlight.remove(attemptKey) }
+            } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                throw cancelled
             } catch (e: Exception) {
                 Log.e(TAG, "Error in autoFetchArtworkForSong", e)
                 withContext(Dispatchers.Main) {
                     onResult(false, null)
                 }
-            } finally {
-                _isFetchingArtwork.value = false
             }
         }
     }

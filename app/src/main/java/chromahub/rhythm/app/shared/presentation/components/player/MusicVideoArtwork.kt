@@ -17,6 +17,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -43,7 +44,9 @@ class MusicVideoControls {
     val active = mutableStateOf(false)
     val managing = mutableStateOf(false)
     val feedback = mutableStateOf(false)
-    var hasVideo by mutableStateOf(false)
+    val video = mutableStateOf<MusicVideo?>(null)
+    val error = mutableStateOf<String?>(null)
+    val hasVideo: Boolean get() = video.value != null
     fun toggle() { if (hasVideo) active.value = !active.value else managing.value = true }
 }
 
@@ -62,27 +65,45 @@ fun MusicVideoToggle(controls: MusicVideoControls, foreground: Color = MaterialT
     }
 }
 
-/** User-initiated video replaces the artwork area. The music playback service remains authoritative. */
+/** Rendering can disappear for lyrics/backdrop layouts; session state and dialogs must not. */
 @androidx.annotation.OptIn(markerClass = [androidx.media3.common.util.UnstableApi::class])
 @Composable
-fun MusicVideoArtwork(song: Song, isPlaying: Boolean, positionMs: () -> Long, modifier: Modifier = Modifier, onActiveChange: (Boolean) -> Unit = {}, controls: MusicVideoControls = remember(song.uri) { MusicVideoControls() }) {
+fun MusicVideoArtwork(song: Song, isPlaying: Boolean, positionMs: () -> Long, modifier: Modifier = Modifier, onActiveChange: (Boolean) -> Unit = {}, controls: MusicVideoControls? = null) {
+    val currentControls = controls ?: remember(song.uri) { MusicVideoControls() }
+    if (controls == null) MusicVideoSession(song, currentControls)
+    val context = LocalContext.current
+    val repository = remember(context) { MusicVideoRepository(context) }
+    val video = currentControls.video.value
+    val active = currentControls.active.value
+    LaunchedEffect(active, song.uri) { onActiveChange(active && video != null) }
+    DisposableEffect(song.uri) { onDispose { onActiveChange(false) } }
+    Box(modifier) {
+        if (active && video != null) {
+            Box(Modifier.fillMaxSize().background(Color.Black).testTag("music_video_surface")) {
+                MutedMusicVideo(video, repository, isPlaying, positionMs, Modifier.fillMaxSize()) { currentControls.error.value = context.getString(R.string.mv_playback_error) }
+                currentControls.error.value?.let { Text(it, color = Color.White, modifier = Modifier.align(Alignment.TopCenter).background(Color.Black.copy(alpha = .8f)).padding(12.dp)) }
+            }
+        }
+    }
+}
+
+/** Mounted once by the player, independently of visible artwork or lyrics. */
+@Composable
+fun MusicVideoSession(song: Song, controls: MusicVideoControls) {
     val context = LocalContext.current; val scope = rememberCoroutineScope()
     val repository = remember { MusicVideoRepository(context) }
     val key = song.uri.toString()
-    var video by remember(key) { mutableStateOf<MusicVideo?>(null) }
+    var video by controls.video
     var active by controls.active
     var chooser by controls.managing
     var feedback by controls.feedback
     var pendingFileKey by remember { mutableStateOf<String?>(null) }
     var pendingFileTitle by remember { mutableStateOf("") }
     var busy by remember(key) { mutableStateOf(false) }
-    var error by remember(key) { mutableStateOf<String?>(null) }
+    var error by controls.error
     var url by remember(key) { mutableStateOf("") }
     var results by remember(key) { mutableStateOf(emptyList<VideoCandidate>()) }
     val currentKey by rememberUpdatedState(key)
-    LaunchedEffect(active, key) { onActiveChange(active) }
-    LaunchedEffect(video) { controls.hasVideo = video != null }
-    DisposableEffect(key) { onDispose { onActiveChange(false) } }
     LaunchedEffect(key) { video = withContext(Dispatchers.IO) { repository.get(key) } }
     val pick = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) {
@@ -91,17 +112,9 @@ fun MusicVideoArtwork(song: Song, isPlaying: Boolean, positionMs: () -> Long, mo
             scope.launch {
                 try {
                     val imported = repository.import(captured, uri, pendingFileTitle.ifBlank { song.title })
-                    if (currentKey == captured) { video = imported; active = true; chooser = false }
+                    if (currentKey == captured) { video = imported; active = true; chooser = false; error = null }
                 } catch (_: Exception) { if (currentKey == captured) error = context.getString(R.string.mv_import_error) }
                 finally { if (currentKey == captured) busy = false }
-            }
-        }
-    }
-    Box(modifier) {
-        if (active && video != null) {
-            Box(Modifier.fillMaxSize().background(Color.Black)) {
-                MutedMusicVideo(video!!, repository, isPlaying, positionMs, Modifier.fillMaxSize()) { error = context.getString(R.string.mv_playback_error) }
-                error?.let { Text(it, color = Color.White, modifier = Modifier.align(Alignment.TopCenter).background(Color.Black.copy(alpha = .8f)).padding(12.dp)) }
             }
         }
     }

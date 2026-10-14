@@ -216,7 +216,7 @@ class AppSettings private constructor(context: Context) {
         private const val KEY_EXPRESSIVE_HIDDEN_BOTTOM_BUTTONS_NORMAL = "expressive_hidden_bottom_buttons_normal"
         private const val KEY_EXPRESSIVE_BOTTOM_BUTTONS_MERGE = "expressive_bottom_buttons_merge"
         private const val KEY_EXPRESSIVE_HIDDEN_BOTTOM_BUTTONS_MERGE = "expressive_hidden_bottom_buttons_merge"
-        const val MAX_EXPRESSIVE_BOTTOM_PINS_NORMAL = 2
+        const val MAX_EXPRESSIVE_BOTTOM_PINS_NORMAL = 3
         const val MAX_EXPRESSIVE_BOTTOM_BUTTONS_MERGE = 5
         val fixedBottomButtonsNormal = listOf("LYRICS", "FAVORITE")
         private const val KEY_LYRICALLY_SOURCES_ORDER = "lyrically_sources_order"
@@ -1003,10 +1003,10 @@ class AppSettings private constructor(context: Context) {
     val hiddenPlayerChips: StateFlow<Set<String>> = _hiddenPlayerChips.asStateFlow()
 
     // Expressive Player Bottom Buttons
-    val defaultExpressiveBottomButtonsNormal = listOf("DEVICE", "QUEUE", "MORE")
-    val defaultExpressiveBottomButtonsMerge = listOf("LYRICS", "FAVORITE", "DEVICE", "QUEUE", "MORE")
+    val defaultExpressiveBottomButtonsNormal = listOf("DEVICE", "QUEUE")
+    val defaultExpressiveBottomButtonsMerge = listOf("LYRICS", "FAVORITE", "DEVICE", "QUEUE")
     val allExpressiveBottomButtons = listOf(
-        "LYRICS", "FAVORITE", "DEVICE", "QUEUE", "MORE",
+        "LYRICS", "FAVORITE", "DEVICE", "QUEUE",
         "SHUFFLE", "REPEAT", "EQUALIZER", "SPEED", "SLEEP_TIMER",
         "ADD_TO_PLAYLIST", "ALBUM", "ARTIST", "SONG_INFO", "SHARE"
     )
@@ -1026,9 +1026,6 @@ class AppSettings private constructor(context: Context) {
                     if (!result.contains(button)) {
                         result.add(defaultIndex.coerceAtMost(result.size), button)
                     }
-                }
-                if (!result.contains("MORE")) {
-                    result.add("MORE")
                 }
                 result
             }
@@ -2762,9 +2759,6 @@ private val _autoCheckForUpdates = MutableStateFlow(prefs.getBoolean(KEY_AUTO_CH
 
     fun setExpressiveBottomButtonsNormal(order: List<String>) {
         val sanitized = order.filter { it in allExpressiveBottomButtons && it !in fixedBottomButtonsNormal }.toMutableList()
-        if (!sanitized.contains("MORE")) {
-            sanitized.add("MORE")
-        }
         val orderString = sanitized.joinToString(",")
         prefs.edit { putString(KEY_EXPRESSIVE_BOTTOM_BUTTONS_NORMAL, orderString) }
         _expressiveBottomButtonsNormal.value = sanitized

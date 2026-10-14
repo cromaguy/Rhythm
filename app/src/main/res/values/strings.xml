@@ -2845,7 +2845,7 @@
     <string name="unknown_album_name">Unknown Album</string>
     <string name="settings_floating_navigation">Floating Navigation Bar</string>
     <string name="settings_floating_navigation_desc">Float navigation bar above content or dock it to screen edges</string>
-    <string name="expressive_bottom_buttons_desc">Customize and reorder bottom action buttons</string>
+    <string name="expressive_bottom_buttons_desc">Reorder or hide playback actions. More actions stay fixed at the top right and do not count toward the five-button limit.</string>
     <string name="expressive_bottom_buttons_title">Edit Controls</string>
     <string name="expressive_bottom_buttons_normal_tab">Normal Mode</string>
     <string name="expressive_bottom_buttons_merge_tab">Merge Mode</string>

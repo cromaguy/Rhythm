@@ -120,9 +120,6 @@ fun ExpressiveBottomButtonsOrderBottomSheet(
         editableNormalBottomButtons.forEach { btn ->
             if (!list.contains(btn)) list.add(btn)
         }
-        if (!list.contains("MORE")) {
-            list.add("MORE")
-        }
         list
     }
     val fullMergeList = remember(mergeOrder) {
@@ -286,7 +283,7 @@ fun ExpressiveBottomButtonsOrderBottomSheet(
                     color = MaterialTheme.colorScheme.secondaryContainer
                 ) {
                     Text(
-                        text = "$currentPinnedCount / $maxAllowed",
+                        text = "${currentPinnedCount + if (isNormalMode) AppSettings.fixedBottomButtonsNormal.size else 0} / ${maxAllowed + if (isNormalMode) AppSettings.fixedBottomButtonsNormal.size else 0}",
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSecondaryContainer,
@@ -424,16 +421,7 @@ fun ExpressiveBottomButtonsOrderBottomSheet(
                             ) {
                                 IconButton(
                                     onClick = {
-                                        if (isNormalMode && buttonId == "MORE") {
-                                            HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
-                                            Toast.makeText(
-                                                context,
-                                                R.string.expressive_bottom_buttons_more_required,
-                                                Toast.LENGTH_SHORT
-                                            ).show()
-                                            return@IconButton
-                                        }
-                                        if (!isHidden && visibleButtonsCount <= 1) {
+                                        if (!isNormalMode && !isHidden && visibleButtonsCount <= 1) {
                                             HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
                                             Toast.makeText(
                                                 context,

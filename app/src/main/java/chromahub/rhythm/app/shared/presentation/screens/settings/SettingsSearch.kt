@@ -2382,16 +2382,6 @@ fun buildSettingsSearchIndex(context: Context): List<SearchableSettingItem> {
             parentScreen = context.getString(R.string.settings_about_title)
         ))
         add(SearchableSettingItem(
-            id = "exp_test_crash",
-            title = context.getString(R.string.settings_exp_test_crash),
-            description = context.getString(R.string.settings_exp_test_crash_desc),
-            keywords = listOf("crash", "test", "debug", "error", "reporting"),
-            icon = RhythmIcons.BugReport,
-            route = SettingsRoutes.LABS,
-            parentScreen = context.getString(R.string.settings_labs)
-        ))
-
-        add(SearchableSettingItem(
             id = "broadcast_status_enabled",
             title = context.getString(R.string.settings_broadcast_status_enabled),
             description = context.getString(R.string.settings_broadcast_status_enabled_desc),

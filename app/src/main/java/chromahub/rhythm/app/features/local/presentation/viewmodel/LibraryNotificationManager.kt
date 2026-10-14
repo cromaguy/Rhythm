@@ -283,7 +283,8 @@ class LibraryNotificationManager(private val context: Application) {
         lastLibrarySetupProgressText = null
     }
 
-    fun disarmLibrarySetupCompletionNotification() {
+    fun disarmLibrarySetupCompletionNotification(cancelProgress: Boolean = true) {
+        if (cancelProgress) notificationManager.cancel(LIBRARY_SETUP_NOTIFICATION_ID)
         librarySetupCompletionDebounceJob?.cancel()
         librarySetupCompletionDebounceJob = null
         librarySetupNotificationArmed = false
@@ -294,13 +295,11 @@ class LibraryNotificationManager(private val context: Application) {
     private fun resolveLibrarySetupProgressText(
         isMediaScanRunning: Boolean,
         isGenreDetectionRunning: Boolean,
-        isArtworkFetching: Boolean,
         isMetadataExtractionRunning: Boolean
     ): String {
         return when {
             isMediaScanRunning -> context.getString(R.string.scanning_media)
             isGenreDetectionRunning -> context.getString(R.string.detecting_genres)
-            isArtworkFetching -> context.getString(R.string.fetching_artwork)
             isMetadataExtractionRunning -> context.getString(R.string.extracting_metadata)
             else -> context.getString(R.string.processing_library)
         }
@@ -308,40 +307,28 @@ class LibraryNotificationManager(private val context: Application) {
 
     fun startLibrarySetupCompletionMonitor(
         scope: CoroutineScope,
-        isBackgroundProcessing: StateFlow<Boolean>,
         isMediaScanning: StateFlow<Boolean>,
         isGenreDetectionRunning: StateFlow<Boolean>,
-        isFetchingArtwork: StateFlow<Boolean>,
         isExtractingMetadata: StateFlow<Boolean>,
         filteredSongsSize: () -> Int,
         filteredAlbumsSize: () -> Int,
         filteredArtistsSize: () -> Int
     ) {
+        // Optional artwork lookup does not keep initial library setup alive. Clear progress
+        // left by a killed process before monitoring the new scan.
+        notificationManager.cancel(LIBRARY_SETUP_NOTIFICATION_ID)
         scope.launch {
-            combine(
-                isBackgroundProcessing,
-                isMediaScanning,
-                isGenreDetectionRunning,
-                isFetchingArtwork,
-                isExtractingMetadata
-            ) { processing, mediaScanRunning, genreDetectionRunning, artworkFetching, metadataExtractionRunning ->
-                listOf(
-                    processing,
-                    mediaScanRunning,
-                    genreDetectionRunning,
-                    artworkFetching,
-                    metadataExtractionRunning
-                )
+            combine(isMediaScanning, isGenreDetectionRunning, isExtractingMetadata) { scan, genres, metadata ->
+                listOf(scan, genres, metadata)
             }.collect { state ->
                 if (!librarySetupNotificationArmed) {
                     return@collect
                 }
 
-                val processing = state[0]
-                val mediaScanRunning = state[1]
-                val genreDetectionRunning = state[2]
-                val artworkFetching = state[3]
-                val metadataExtractionRunning = state[4]
+                val processing = state.any { it }
+                val mediaScanRunning = state[0]
+                val genreDetectionRunning = state[1]
+                val metadataExtractionRunning = state[2]
 
                 if (processing) {
                     librarySetupProcessingObserved = true
@@ -350,14 +337,13 @@ class LibraryNotificationManager(private val context: Application) {
 
                     // Media scan has its own dedicated progress notification.
                     // Show library-setup progress only for post-scan background tasks.
-                    if (mediaScanRunning && !genreDetectionRunning && !artworkFetching && !metadataExtractionRunning) {
+                    if (mediaScanRunning && !genreDetectionRunning && !metadataExtractionRunning) {
                         return@collect
                     }
 
                     val progressText = resolveLibrarySetupProgressText(
                         isMediaScanRunning = mediaScanRunning,
                         isGenreDetectionRunning = genreDetectionRunning,
-                        isArtworkFetching = artworkFetching,
                         isMetadataExtractionRunning = metadataExtractionRunning
                     )
 
@@ -381,7 +367,7 @@ class LibraryNotificationManager(private val context: Application) {
                 librarySetupCompletionDebounceJob?.cancel()
                 librarySetupCompletionDebounceJob = scope.launch {
                     delay(5500)
-                    if (!librarySetupNotificationArmed || isBackgroundProcessing.value) {
+                    if (!librarySetupNotificationArmed || isMediaScanning.value || isGenreDetectionRunning.value || isExtractingMetadata.value) {
                         return@launch
                     }
 
@@ -402,7 +388,7 @@ class LibraryNotificationManager(private val context: Application) {
                         autoDismissMs = 5000L
                     )
 
-                    disarmLibrarySetupCompletionNotification()
+                    disarmLibrarySetupCompletionNotification(cancelProgress = false)
                 }
             }
         }

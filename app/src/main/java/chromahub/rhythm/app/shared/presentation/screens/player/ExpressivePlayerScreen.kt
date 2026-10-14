@@ -44,6 +44,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -88,6 +90,7 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -358,7 +361,8 @@ fun ExpressivePlayerScreen(
 
     val context = LocalContext.current
     val currentVideoControls = videoControls ?: remember(song?.uri) { chromahub.rhythm.app.shared.presentation.components.player.MusicVideoControls() }
-    var musicVideoActive by remember(song?.id) { mutableStateOf(false) }
+    if (videoControls == null && song != null) chromahub.rhythm.app.shared.presentation.components.player.MusicVideoSession(song, currentVideoControls)
+    val musicVideoActive = currentVideoControls.active.value && currentVideoControls.hasVideo
 
     var showAutoEQSuggestion by remember { mutableStateOf(false) }
     var detectedDevice by remember { mutableStateOf<chromahub.rhythm.app.shared.data.model.UserAudioDevice?>(null) }
@@ -848,17 +852,16 @@ fun ExpressivePlayerScreen(
     var showAutoFetchEmbedDialog by remember { mutableStateOf(false) }
     var pendingAutoFetchSong by remember { mutableStateOf<Song?>(null) }
     val autoFetchPromptedSongIds = remember { mutableStateOf<Set<String>>(emptySet()) }
-    var lastNoArtworkToastTime by remember { mutableLongStateOf(0L) }
 
     // Auto-fetch in both modes, but only after validation confirms the song has no
     // artwork (null = still checking). Each song is prompted at most once per session.
     LaunchedEffect(debouncedSong.value?.id, autoFetchArtwork, artworkValidation) {
         val currentSong = debouncedSong.value
         val alreadyPrompted = currentSong != null && currentSong.id in autoFetchPromptedSongIds.value
-        if (autoFetchArtwork && currentSong != null && artworkValidation == false && !isAutoFetchingMissingArtwork && !alreadyPrompted) {
+        if (musicViewModel != null && autoFetchArtwork && currentSong != null && artworkValidation == false && !isAutoFetchingMissingArtwork && !alreadyPrompted) {
             autoFetchPromptedSongIds.value = autoFetchPromptedSongIds.value + currentSong.id
             isAutoFetchingMissingArtwork = true
-            musicViewModel?.autoFetchArtworkForSong(currentSong) { success, uriStr ->
+            musicViewModel.autoFetchArtworkForSong(currentSong) { success, uriStr ->
                 isAutoFetchingMissingArtwork = false
                 if (success && uriStr != null) {
                     if (isStreamingMode) {
@@ -876,16 +879,6 @@ fun ExpressivePlayerScreen(
                         pendingAutoFetchSong = currentSong
                         fetchedAutoArtworkUriStr = uriStr
                         showAutoFetchEmbedDialog = true
-                    }
-                } else {
-                    val now = android.os.SystemClock.elapsedRealtime()
-                    if (now - lastNoArtworkToastTime > 5000) {
-                        lastNoArtworkToastTime = now
-                        Toast.makeText(
-                            context,
-                            context.getString(R.string.expressiveplayerscreen_no_artwork_found),
-                            Toast.LENGTH_SHORT
-                        ).show()
                     }
                 }
             }
@@ -1239,7 +1232,7 @@ fun ExpressivePlayerScreen(
                         ) {
                             if (song != null && !showLyricsView) {
                                 chromahub.rhythm.app.shared.presentation.components.player.MusicVideoArtwork(song, isPlaying,
-                                    positionMs = { (progress() * song.duration).toLong() }, modifier = Modifier.fillMaxSize().zIndex(5f), onActiveChange = { musicVideoActive = it }, controls = currentVideoControls)
+                                    positionMs = { (progress() * song.duration).toLong() }, modifier = Modifier.fillMaxSize().zIndex(5f), controls = currentVideoControls)
                             }
                             val currentSongArt = debouncedSong.value?.artworkUri
 
@@ -1333,7 +1326,7 @@ fun ExpressivePlayerScreen(
                 // Use fully qualified AnimatedVisibility to avoid ColumnScope receiver capture
                 val artworkContent = @Composable { modifier: Modifier ->
                     androidx.compose.animation.AnimatedVisibility(
-                        visible = showAlbumArt || lyricsVisible,
+                        visible = showAlbumArt || musicVideoActive || lyricsVisible,
                         enter = fadeIn() + slideInVertically { it / 2 },
                         exit = fadeOut() + slideOutVertically { it / 2 },
                         modifier = modifier
@@ -1643,16 +1636,8 @@ fun ExpressivePlayerScreen(
                                         .filter { !expressiveHiddenBottomButtonsNormal.contains(it) }
                                         .filterNot { it in AppSettings.fixedBottomButtonsNormal }
                                     val pins = visibleButtons
-                                        .filter { it != "MORE" }
                                         .take(AppSettings.MAX_EXPRESSIVE_BOTTOM_PINS_NORMAL)
-                                    val result = visibleButtons.filter { it in pins || it == "MORE" }
-                                    if (result.isEmpty()) {
-                                        appSettings.defaultExpressiveBottomButtonsNormal
-                                    } else if (!result.contains("MORE")) {
-                                        result + "MORE"
-                                    } else {
-                                        result
-                                    }
+                                    pins
                                 }
                             }
 
@@ -1756,23 +1741,7 @@ fun ExpressivePlayerScreen(
                                                     contentColor = defaultContentColor
                                                 )
                                             }
-                                            "MORE" -> {
-                                                RhythmDetailActionButton(
-                                                    onClick = { HapticUtils.performHapticFeedback(context, haptic, HapticType.MEDIUM); onMoreClick() },
-                                                    onLongClick = onButtonLongClick,
-                                                    weight = 1f,
-                                                    height = 44.dp,
-                                                    isFirst = isFirst,
-                                                    isLast = isLast,
-                                                    type = RhythmButtonType.Tonal,
-                                                    icon = RhythmIcons.More,
-                                                    iconSize = 22.dp,
-                                                    text = null,
-                                                    contentDescription = stringResource(R.string.expressiveplayerscreen_more),
-                                                    containerColor = controlsContainerColor,
-                                                    contentColor = defaultContentColor
-                                                )
-                                            }
+
                                             "SHUFFLE" -> {
                                                 RhythmDetailActionButton(
                                                     onClick = { HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT); onToggleShuffle() },
@@ -2013,22 +1982,7 @@ fun ExpressivePlayerScreen(
                                                     contentColor = defaultContentColor
                                                 )
                                             }
-                                            "MORE" -> {
-                                                RhythmDetailActionButton(
-                                                    onClick = { HapticUtils.performHapticFeedback(context, haptic, HapticType.MEDIUM); onMoreClick() },
-                                                    onLongClick = onButtonLongClick,
-                                                    weight = 0.35f,
-                                                    height = 44.dp,
-                                                    isFirst = isFirst,
-                                                    isLast = isLast,
-                                                    type = RhythmButtonType.Tonal,
-                                                    icon = RhythmIcons.More,
-                                                    iconSize = 22.dp,
-                                                    contentDescription = stringResource(R.string.expressiveplayerscreen_more),
-                                                    containerColor = controlsContainerColor,
-                                                    contentColor = defaultContentColor
-                                                )
-                                            }
+
                                             "LYRICS" -> {
                                                 RhythmDetailActionButton(
                                                     onClick = { HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT); onToggleLyrics() },
@@ -2440,6 +2394,15 @@ fun ExpressivePlayerScreen(
                     }
                 }
 
+                IconButton(
+                    onClick = { HapticUtils.performHapticFeedback(context, haptic, HapticType.MEDIUM); onMoreClick() },
+                    modifier = Modifier.align(Alignment.TopEnd).padding(top = 4.dp, end = 12.dp).size(48.dp)
+                        .testTag("player_overflow"),
+                    colors = IconButtonDefaults.iconButtonColors(contentColor = onSurfaceColor)
+                ) {
+                    Icon(RhythmIcons.More, contentDescription = stringResource(R.string.expressiveplayerscreen_more), modifier = Modifier.size(24.dp))
+                }
+
                 // Audio quality icon at top-right — fades in once the (debounced) track settles
                 // and auto-hides after 5 seconds (or stays visible if configured)
                 if (playerShowAudioQualityBadges) {
@@ -2457,7 +2420,7 @@ fun ExpressivePlayerScreen(
                                 useAccentBackground -> accentFg
                                 else -> null
                             },
-                            modifier = Modifier.align(Alignment.TopEnd).padding(top = 8.dp, end = 12.dp)
+                            modifier = Modifier.align(Alignment.TopEnd).padding(top = 8.dp, end = 72.dp)
                         )
                     }
                 }
