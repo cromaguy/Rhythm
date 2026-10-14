@@ -116,8 +116,11 @@ class CatalogEnrichmentService private constructor(private val context: Context)
             val description = result.document[if (kind == EntityKind.ARTIST) CatalogField.ARTIST_DESCRIPTION else CatalogField.ALBUM_DESCRIPTION]
             description?.let { PersonalArchive.atomicWrite(File(folder, "about.txt"), it.toByteArray()) }
             image(result)?.path?.let { path ->
-                val destination = File(folder, "artwork.jpg")
-                if (!destination.exists() || destination.length() != File(path).length()) PersonalArchive.atomicWrite(destination, File(path).readBytes())
+                val destination = File(folder, "artwork.webp")
+                if (!destination.exists() || destination.lastModified() < File(path).lastModified()) {
+                    if (File(path).extension == "webp") PersonalArchive.atomicWrite(destination, File(path).readBytes())
+                    else chromahub.rhythm.app.util.ArtworkStorage.convertFile(File(path), destination)
+                }
             }
         }
         changed()
@@ -174,32 +177,24 @@ class CatalogEnrichmentService private constructor(private val context: Context)
 
     suspend fun persistArtwork(kind: EntityKind, key: String, source: Uri?): Uri? = withContext(Dispatchers.IO) {
         if (source == null || !preferences.options.value.permanent) return@withContext source
-        if (source.scheme == "file" && source.path?.startsWith(File(root, "images").path + "/") == true) return@withContext source
-        val filename = "${CatalogFileStore.hash(source.toString())}.jpg"
         val directory = File(root, "images").apply { mkdirs() }
-        val target = File(directory, filename)
-        entityLocks.computeIfAbsent("image:$filename") { Mutex() }.withLock {
-            if (!target.isFile) {
-                val temp = File.createTempFile("image-", ".tmp", directory)
-                try {
-                    if (source.scheme in listOf("http", "https")) {
-                        val result = context.imageLoader.execute(ImageRequest.Builder(context).data(source).size(1600).allowHardware(false).build()) as? SuccessResult
-                            ?: return@withLock source
-                        temp.outputStream().use { check(result.drawable.toBitmap().compress(Bitmap.CompressFormat.JPEG, 92, it)) }
-                    } else {
-                        context.contentResolver.openInputStream(source)?.use { input -> temp.outputStream().use { output ->
-                            val buffer = ByteArray(8192); var total = 0L
-                            while (true) { val count = input.read(buffer); if (count < 0) break; total += count
-                                require(total <= 20 * 1024 * 1024); output.write(buffer, 0, count) }
-                        } } ?: return@withLock source
-                    }
-                    check(temp.length() > 0 && temp.renameTo(target))
-                } finally { temp.delete() }
+        val owned = source.scheme == "file" && source.path?.endsWith(".webp") == true && source.path?.startsWith(directory.path + "/") == true
+        val target = if (owned) File(requireNotNull(source.path)) else {
+            val result = context.imageLoader.execute(ImageRequest.Builder(context).data(source).size(1600).allowHardware(false).build()) as? SuccessResult
+                ?: return@withContext source
+            val bytes = java.io.ByteArrayOutputStream().use { stream ->
+                check(result.drawable.toBitmap().compress(chromahub.rhythm.app.util.ArtworkStorage.format(), 86, stream)); stream.toByteArray()
             }
-            val existing = read(kind, key)?.document ?: CatalogDocument(kind, emptyList())
-            save(kind, key, existing, read(kind, key)?.retryAfter ?: 0, filename)
-            Uri.fromFile(target)
+            val hash = java.security.MessageDigest.getInstance("SHA-256").digest(bytes).joinToString("") { "%02x".format(it.toInt() and 255) }
+            File(directory, "$hash.webp").also { target ->
+                entityLocks.computeIfAbsent("image:$hash") { Mutex() }.withLock {
+                    if (!target.isFile) PersonalArchive.atomicWrite(target, bytes)
+                }
+            }
         }
+        val record = read(kind, key)
+        if (record?.imageFile != target.name) save(kind, key, record?.document ?: CatalogDocument(kind, emptyList()), record?.retryAfter ?: 0, target.name)
+        Uri.fromFile(target)
     }
 
     suspend fun fetchedImage(kind: EntityKind, key: String, name: String, artist: String? = null, durationMs: Long = 0, album: String? = null): Uri? {

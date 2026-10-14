@@ -836,24 +836,12 @@ class LibraryMetadataManager(
             val artworkDir = File(context.filesDir, "custom_artwork").apply {
                 if (!exists()) mkdirs()
             }
-            val artworkFile = File(artworkDir, "artwork_${song.id}.jpg")
-
-            val inputStream = if (artworkUri.scheme == "http" || artworkUri.scheme == "https") {
-                val request = Request.Builder().url(artworkUri.toString()).build()
-                val response = NetworkClient.genericHttpClient.newCall(request).execute()
-                if (!response.isSuccessful) return@withContext null
-                response.body.byteStream()
-            } else {
-                context.contentResolver.openInputStream(artworkUri)
-            }
-
-            inputStream?.use { input ->
-                artworkFile.outputStream().use { output ->
-                    input.copyTo(output)
-                }
-                Log.d(TAG, "Artwork saved to persistent storage: ${artworkFile.absolutePath}")
-                artworkFile.toUri()
-            }
+            val artworkFile = File(artworkDir, "artwork_${song.id}.webp")
+            val copied = chromahub.rhythm.app.util.ArtworkStorage.copy(context, artworkUri, artworkFile)
+            val catalog = chromahub.rhythm.app.features.local.data.metadata.CatalogEnrichmentService.get(context)
+            val archived = catalog.persistArtwork(kr.co.metadata.crawler.EntityKind.TRACK, "manual:${catalog.songKey(song)}", copied) ?: copied
+            if (archived != copied) artworkFile.delete()
+            archived
         } catch (e: Exception) {
             Log.e(TAG, "Failed to save artwork to cache", e)
             null
@@ -927,6 +915,7 @@ class LibraryMetadataManager(
             if (cachedArtwork.exists()) {
                 cachedArtwork.delete()
             }
+            File(File(context.filesDir, "custom_artwork"), "artwork_${songId}.webp").delete()
             val persistentArtwork = File(File(context.filesDir, "custom_artwork"), "artwork_${songId}.jpg")
             if (persistentArtwork.exists()) {
                 persistentArtwork.delete()

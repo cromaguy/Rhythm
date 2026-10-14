@@ -71,6 +71,9 @@ import chromahub.rhythm.app.util.HapticType
 import chromahub.rhythm.app.util.HapticUtils
 import chromahub.rhythm.app.util.ImageUtils
 import coil.compose.AsyncImage
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.Dispatchers
 import coil.request.ImageRequest
 
 private data class SongOverflowItem(
@@ -110,6 +113,7 @@ fun SongOverflowBottomSheet(
 ) {
     val context = LocalContext.current
     val haptic = LocalHapticFeedback.current
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
 
     LaunchedEffect(sheetState) {
         sheetState.expand()
@@ -288,6 +292,13 @@ fun SongOverflowBottomSheet(
                     onClick = finalOnShare
                 )
             )
+            add(SongOverflowItem(context.getString(R.string.personal_snooze), MaterialSymbolIcon("snooze")) {
+                onDismiss(); scope.launch { withContext(Dispatchers.IO) { chromahub.rhythm.app.features.local.data.experience.PersonalCollections.snooze(context, song.uri.toString(), song.title) } }
+            })
+            add(SongOverflowItem(context.getString(R.string.personal_hide), MaterialSymbolIcon("visibility_off")) {
+                onDismiss(); scope.launch { withContext(Dispatchers.IO) { chromahub.rhythm.app.features.local.data.experience.PersonalCollections.hide(context, song.uri.toString(), song.title) } }
+            })
+
         }
     }
 

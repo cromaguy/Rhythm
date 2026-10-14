@@ -1836,16 +1836,6 @@ fun buildSettingsSearchIndex(context: Context): List<SearchableSettingItem> {
 
         // ======================== MINIPLAYER CUSTOMIZATION SCREEN ========================
         add(SearchableSettingItem(
-            id = "miniplayer_theme",
-            title = context.getString(R.string.miniplayercustomizationsettingsscreen_miniplayer_theme),
-            description = context.getString(R.string.miniplayercustomizationsettingsscreen_choose_between_rhythm_default),
-            keywords = listOf("miniplayer theme", "mini player", "expressive", "material", "default", "theme", "bottom bar"),
-            icon = MaterialSymbolIcon("palette"),
-            route = SettingsRoutes.MINIPLAYER_CUSTOMIZATION,
-            parentScreen = context.getString(R.string.settings_miniplayer_customization),
-            settingKey = "miniPlayerThemeId"
-        ))
-        add(SearchableSettingItem(
             id = "miniplayer_show_progress",
             title = context.getString(R.string.settings_miniplayer_show_progress),
             description = context.getString(R.string.settings_miniplayer_show_progress_desc),

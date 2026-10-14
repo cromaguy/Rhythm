@@ -201,48 +201,6 @@ fun MiniPlayerCustomizationSettingsScreen(onBackClick: () -> Unit) {
                 .padding(horizontal = 24.dp)
         ) {
 
-            // MiniPlayer Theme Selection Section
-            item {
-                Spacer(modifier = Modifier.height(16.dp))
-                Text(
-                    text = stringResource(R.string.miniplayercustomizationsettingsscreen_miniplayer_theme),
-                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(start = 16.dp, bottom = 8.dp)
-                )
-                Material3SettingsGroup(
-                    items = listOf(
-                        Material3SettingsItem(
-                            icon = MaterialSymbolIcon("palette"),
-                            title = { Text(stringResource(R.string.miniplayercustomizationsettingsscreen_miniplayer_theme)) },
-                            description = {
-                                Column {
-                                    Text(stringResource(R.string.miniplayercustomizationsettingsscreen_choose_between_rhythm_default))
-                                    Spacer(modifier = Modifier.height(12.dp))
-                                    ExpressiveButtonGroup(
-                                        items = listOf(
-                                            stringResource(R.string.theme_rhythm),
-                                            stringResource(R.string.theme_expressive)
-                                        ),
-                                        selectedIndex = if (miniPlayerThemeId == "EXPRESSIVE") 1 else 0,
-                                        onItemClick = { index ->
-                                            HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
-                                            if (index == 1) {
-                                                appSettings.setMiniPlayerThemeId("EXPRESSIVE")
-                                            } else {
-                                                appSettings.setMiniPlayerThemeId("MATERIAL")
-                                            }
-                                        },
-                                        modifier = Modifier.fillMaxWidth()
-                                    )
-                                }
-                            }
-                        )
-                    ),
-                    containerColor = MaterialTheme.colorScheme.surfaceContainer
-                )
-            }
-
             // Progress Display Section
             item {
                 Spacer(modifier = Modifier.height(24.dp))

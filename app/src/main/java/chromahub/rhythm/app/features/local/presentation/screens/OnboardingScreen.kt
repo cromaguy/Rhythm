@@ -8097,39 +8097,6 @@ private fun PlayerThemeSettingsSection(
     val miniTabletLayout by appSettings.miniPlayerAlwaysShowTablet.collectAsState()
 
     if (isPlayer) {
-        TourSectionTitle(context.getString(R.string.settings_theme))
-        Material3SettingsGroup(
-            items = listOf(
-                Material3SettingsItem(
-                    icon = MaterialSymbolIcon("palette"),
-                    title = { Text(context.getString(R.string.playercustomizationsettingsscreen_playback_theme)) },
-                    description = {
-                        Column {
-                            Text(context.getString(R.string.miniplayercustomizationsettingsscreen_choose_between_rhythm_default))
-                            Spacer(modifier = Modifier.height(12.dp))
-                            ExpressiveButtonGroup(
-                                items = listOf(
-                                    context.getString(R.string.theme_rhythm),
-                                    context.getString(R.string.theme_expressive)
-                                ),
-                                selectedIndex = if (playerIsExpressive) 1 else 0,
-                                onItemClick = { index ->
-                                    HapticUtils.performHapticFeedback(context, haptic, HapticType.HEAVY)
-                                    if (index == 1) {
-                                        appSettings.setPlayerThemeId("EXPRESSIVE")
-                                    } else {
-                                        appSettings.setPlayerThemeId("MATERIAL")
-                                    }
-                                },
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        }
-                    }
-                )
-            ),
-            containerColor = MaterialTheme.colorScheme.surface
-        )
-
         TourSectionTitle(context.getString(R.string.settings_display_options))
         Material3SettingsGroup(
             items = listOf(
@@ -8249,39 +8216,6 @@ private fun PlayerThemeSettingsSection(
             containerColor = MaterialTheme.colorScheme.surface
         )
     } else {
-        TourSectionTitle(context.getString(R.string.settings_theme))
-        Material3SettingsGroup(
-            items = listOf(
-                Material3SettingsItem(
-                    icon = MaterialSymbolIcon("palette"),
-                    title = { Text(context.getString(R.string.miniplayercustomizationsettingsscreen_miniplayer_theme)) },
-                    description = {
-                        Column {
-                            Text(context.getString(R.string.miniplayercustomizationsettingsscreen_choose_between_rhythm_default))
-                            Spacer(modifier = Modifier.height(12.dp))
-                            ExpressiveButtonGroup(
-                                items = listOf(
-                                    context.getString(R.string.theme_rhythm),
-                                    context.getString(R.string.theme_expressive)
-                                ),
-                                selectedIndex = if (miniIsExpressive) 1 else 0,
-                                onItemClick = { index ->
-                                    HapticUtils.performHapticFeedback(context, haptic, HapticType.HEAVY)
-                                    if (index == 1) {
-                                        appSettings.setMiniPlayerThemeId("EXPRESSIVE")
-                                    } else {
-                                        appSettings.setMiniPlayerThemeId("MATERIAL")
-                                    }
-                                },
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        }
-                    }
-                )
-            ),
-            containerColor = MaterialTheme.colorScheme.surface
-        )
-
         TourSectionTitle(context.getString(R.string.settings_progress_display))
         Material3SettingsGroup(
             items = listOf(

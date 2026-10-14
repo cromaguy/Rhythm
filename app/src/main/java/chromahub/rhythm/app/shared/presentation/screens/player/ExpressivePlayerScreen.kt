@@ -70,6 +70,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.zIndex
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.blur
@@ -286,6 +287,7 @@ fun ExpressivePlayerScreen(
     onBack: () -> Unit,
     location: PlaybackLocation?,
     appSettings: AppSettings,
+    videoControls: chromahub.rhythm.app.shared.presentation.components.player.MusicVideoControls? = null,
     modifier: Modifier = Modifier,
     canvasArtwork: CanvasArtwork? = null,
     canvasLoading: Boolean = false,
@@ -355,6 +357,8 @@ fun ExpressivePlayerScreen(
     val isFlexMode = postureState is DevicePosture.TableTop
 
     val context = LocalContext.current
+    val currentVideoControls = videoControls ?: remember(song?.uri) { chromahub.rhythm.app.shared.presentation.components.player.MusicVideoControls() }
+    var musicVideoActive by remember(song?.id) { mutableStateOf(false) }
 
     var showAutoEQSuggestion by remember { mutableStateOf(false) }
     var detectedDevice by remember { mutableStateOf<chromahub.rhythm.app.shared.data.model.UserAudioDevice?>(null) }
@@ -643,7 +647,7 @@ fun ExpressivePlayerScreen(
     val line6Alpha = line6Fraction
     val line6TranslationY = with(LocalDensity.current) { 48.dp.toPx() * (1f - line6Fraction) }
 
-    val artworkClipShape = playerArtworkShape
+    val artworkClipShape = if (musicVideoActive) RoundedCornerShape(16.dp) else playerArtworkShape
 
     val needsDarkSurfaces = showDarkBg
     val darkScheme = remember { darkColorScheme() }
@@ -1075,7 +1079,7 @@ fun ExpressivePlayerScreen(
                                 .memoryCacheKey(artworkUri.toString()).diskCacheKey(artworkUri.toString()).build(),
                                 contentDescription = null, contentScale = ContentScale.Crop,
                                 modifier = Modifier.fillMaxSize())
-                            if (canvasArtwork?.preferredAnimationUrl != null) {
+                            if (!musicVideoActive && canvasArtwork?.preferredAnimationUrl != null) {
                                 CanvasArtworkPlayer(primaryUrl = canvasArtwork.animated, fallbackUrl = canvasArtwork.videoUrl, isPlaying = isPlaying, alwaysPlay = true, modifier = Modifier.fillMaxSize())
                             }
                         }
@@ -1233,6 +1237,10 @@ fun ExpressivePlayerScreen(
                                     }
                                 }
                         ) {
+                            if (song != null && !showLyricsView) {
+                                chromahub.rhythm.app.shared.presentation.components.player.MusicVideoArtwork(song, isPlaying,
+                                    positionMs = { (progress() * song.duration).toLong() }, modifier = Modifier.fillMaxSize().zIndex(5f), onActiveChange = { musicVideoActive = it }, controls = currentVideoControls)
+                            }
                             val currentSongArt = debouncedSong.value?.artworkUri
 
                             AnimatedContent(
@@ -1271,7 +1279,7 @@ fun ExpressivePlayerScreen(
                                 }
                             }
 
-                            if (canvasArtwork?.preferredAnimationUrl != null) {
+                            if (!musicVideoActive && canvasArtwork?.preferredAnimationUrl != null) {
                                 CanvasArtworkPlayer(
                                     primaryUrl = canvasArtwork.animated,
                                     fallbackUrl = canvasArtwork.videoUrl,
@@ -1456,6 +1464,11 @@ fun ExpressivePlayerScreen(
                                         )
                                     }
                                 }
+                            }
+
+                            if (song != null && !showLyricsView) {
+                                chromahub.rhythm.app.shared.presentation.components.player.MusicVideoToggle(currentVideoControls, foreground = onSurfaceColor)
+                                Spacer(Modifier.height(12.dp))
                             }
 
                             // The whole controls card (play controls + progress) slides up as one unit.

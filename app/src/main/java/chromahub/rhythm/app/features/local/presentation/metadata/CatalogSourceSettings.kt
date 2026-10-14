@@ -65,7 +65,7 @@ fun CatalogLibrarySettingsScreen(onBackClick: () -> Unit) {
         title = stringResource(R.string.catalog_library_title), showBackButton = true, onBackClick = onBackClick
     ) { modifier ->
         androidx.compose.foundation.lazy.LazyColumn(modifier = modifier.fillMaxSize(),
-            contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 20.dp, bottom = 20.dp + chromahub.rhythm.app.ui.LocalMiniPlayerPadding.current.calculateBottomPadding()), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             item { LibraryEnrichmentPanel() }
             item { CatalogSourceSettings() }
             item { PersonalArchivePanel() }

@@ -172,7 +172,8 @@ fun PlayerScreen(
     swipeToDismissEnabled: Boolean = true,
     expansionFraction: Float = 1f
 ) {
-    val playerThemeId by appSettings.playerThemeId.collectAsState()
+    val playerThemeId = "EXPRESSIVE"
+    val videoControls = remember(song?.uri) { chromahub.rhythm.app.shared.presentation.components.player.MusicVideoControls() }
     var showFullScreenLyrics by remember { mutableStateOf(false) }
 
     BackHandler(enabled = showFullScreenLyrics || expansionFraction > 0.5f) {
@@ -377,6 +378,7 @@ fun PlayerScreen(
 
         ExpressivePlayerScreen(
             song = song,
+            videoControls = videoControls,
             isPlaying = isPlaying,
             isFavorite = isFavorite,
             progress = { progressValue },
@@ -680,6 +682,9 @@ fun PlayerScreen(
                 lyrics = lyrics,
                 onAddToPlaylist = { showAddToPlaylistSheetInternal = true },
                 onEditControls = { showExpressiveBottomButtonsSheet = true },
+                onSmartShuffle = { musicViewModel.addPersonalizedQueueSongs() },
+                onMusicVideo = { showLyricsView = false; videoControls.managing.value = true },
+                onRecommendationFeedback = { showLyricsView = false; videoControls.feedback.value = true },
                 onPlaybackSpeed = { showPlaybackSpeedDialog = true },
                 onPlaybackPitch = { showPlaybackPitchDialog = true },
                 onEqualizer = {

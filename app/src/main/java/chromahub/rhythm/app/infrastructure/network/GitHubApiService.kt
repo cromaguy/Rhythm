@@ -37,7 +37,8 @@ data class GitHubAsset(
     val content_type: String,
     val size: Long,
     val state: String,
-    val download_count: Long = 0
+    val download_count: Long = 0,
+    val digest: String? = null
 )
 
 /**

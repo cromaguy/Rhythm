@@ -882,11 +882,14 @@ class AppSettings private constructor(context: Context) {
     val customFontFamily: StateFlow<String> = _customFontFamily.asStateFlow()
     
     // Player Theme Settings
-    private val _playerThemeId = MutableStateFlow(prefs.getString(KEY_PLAYER_THEME_ID, "EXPRESSIVE") ?: "EXPRESSIVE")
+    private val _playerThemeId = MutableStateFlow("EXPRESSIVE")
     val playerThemeId: StateFlow<String> = _playerThemeId.asStateFlow()
     
-    private val _miniPlayerThemeId = MutableStateFlow(prefs.getString(KEY_MINI_PLAYER_THEME_ID, "EXPRESSIVE") ?: "EXPRESSIVE")
+    private val _miniPlayerThemeId = MutableStateFlow("MATERIAL")
     val miniPlayerThemeId: StateFlow<String> = _miniPlayerThemeId.asStateFlow()
+    init {
+        prefs.edit { putString(KEY_PLAYER_THEME_ID, "EXPRESSIVE"); putString(KEY_MINI_PLAYER_THEME_ID, "MATERIAL") }
+    }
     
     // Library Settings
     private val _albumViewType = MutableStateFlow(
@@ -2666,13 +2669,13 @@ private val _autoCheckForUpdates = MutableStateFlow(prefs.getBoolean(KEY_AUTO_CH
     
     // Player Theme Settings Methods
     fun setPlayerThemeId(themeId: String) {
-        prefs.edit { putString(KEY_PLAYER_THEME_ID, themeId) }
-        _playerThemeId.value = themeId
+        prefs.edit { putString(KEY_PLAYER_THEME_ID, "EXPRESSIVE") }
+        _playerThemeId.value = "EXPRESSIVE"
     }
     
     fun setMiniPlayerThemeId(themeId: String) {
-        prefs.edit { putString(KEY_MINI_PLAYER_THEME_ID, themeId) }
-        _miniPlayerThemeId.value = themeId
+        prefs.edit { putString(KEY_MINI_PLAYER_THEME_ID, "MATERIAL") }
+        _miniPlayerThemeId.value = "MATERIAL"
     }
     
     // Library Settings Methods
@@ -6663,8 +6666,8 @@ private val _autoCheckForUpdates = MutableStateFlow(prefs.getBoolean(KEY_AUTO_CH
     
     // Default section order for home screen
     private val defaultHomeSectionOrder = listOf(
-        "DISCOVER", "RECENTLY_PLAYED", "ARTISTS", "RHYTHM_GUARD",
-        "NEW_RELEASES", "RECENTLY_ADDED", "RECOMMENDED", "STATS", "MOOD"
+        "RECOMMENDED", "RECENTLY_PLAYED", "DISCOVER", "RECENTLY_ADDED",
+        "ARTISTS", "NEW_RELEASES", "STATS", "RHYTHM_GUARD", "MOOD"
     )
     private val _homeSectionOrder = MutableStateFlow(
         prefs.getString(KEY_HOME_SECTION_ORDER, null)
@@ -6672,12 +6675,13 @@ private val _autoCheckForUpdates = MutableStateFlow(prefs.getBoolean(KEY_AUTO_CH
             ?.map(String::trim)
             ?.filter { it.isNotBlank() && it != "GREETING" }
             ?.takeIf { it.isNotEmpty() }
+            ?.let { saved -> if (!prefs.getBoolean("t2_home_order_selected", false) && saved == listOf("DISCOVER", "RECENTLY_PLAYED", "ARTISTS", "RHYTHM_GUARD", "NEW_RELEASES", "RECENTLY_ADDED", "RECOMMENDED", "STATS", "MOOD")) defaultHomeSectionOrder else saved }
             ?: defaultHomeSectionOrder
     )
     val homeSectionOrder: StateFlow<List<String>> = _homeSectionOrder.asStateFlow()
     fun setHomeSectionOrder(value: List<String>) {
         _homeSectionOrder.value = value
-        prefs.edit { putString(KEY_HOME_SECTION_ORDER, value.joinToString(",")) }
+        prefs.edit { putString(KEY_HOME_SECTION_ORDER, value.joinToString(",")); putBoolean("t2_home_order_selected", true) }
     }
 
     private val defaultStreamingHomeSectionOrder = listOf(

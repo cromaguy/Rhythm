@@ -7,16 +7,19 @@ import java.time.ZoneId
 
 data class SongHabit(val songKey: String, val title: String, val artist: String, val plays: Int,
     val listenedMs: Long, val medianGapMs: Long?, val maxConsecutiveRepeats: Int, val completed: Int,
-    val earlySkips: Int, val firstListenDelayMs: Long?)
+    val earlySkips: Int, val firstListenDelayMs: Long?, val averageCompletionRatio: Double? = null)
 data class ListeningInsights(val monthly: Map<String, Long>, val hourly: List<Long>, val genres: Map<String, Long>,
-    val artists: Map<String, Long>, val transitions: Map<Pair<String, String>, Int>, val habits: List<SongHabit>, val totalPlays: Int)
+    val artists: Map<String, Long>, val transitions: Map<Pair<String, String>, Int>, val habits: List<SongHabit>, val totalPlays: Int, val places: Map<String, Long> = emptyMap(), val outputs: Map<String, Long> = emptyMap())
 
 object ListeningInsightAnalysis {
     fun analyze(records: List<ListeningRecord>): ListeningInsights {
         val segments = records.filter { it.kind == "segment" && it.listenedMs > 0 }
         val monthly = mutableMapOf<String, Long>(); val hours = LongArray(24)
         val genres = mutableMapOf<String, Long>(); val artists = mutableMapOf<String, Long>()
+        val places = mutableMapOf<String, Long>(); val outputs = mutableMapOf<String, Long>()
         segments.forEach { r ->
+            ListeningContext.region(r.situation)?.let { place -> places[place] = (places[place] ?: 0) + r.listenedMs }
+            r.situation?.routeType?.let { route -> outputs[route] = (outputs[route] ?: 0) + r.listenedMs }
             val zone = runCatching { ZoneId.of(r.timezone) }.getOrDefault(ZoneId.systemDefault())
             var cursor = r.startedAt
             // Split across calendar boundaries instead of assigning a whole overnight play to one hour.
@@ -50,13 +53,14 @@ object ListeningInsightAnalysis {
         val habits = plays.groupBy { it.first().songKey }.map { (key, group) ->
             val first = group.first().first(); val starts = group.map { it.minOf(ListeningRecord::startedAt) }.sorted()
             val gaps = starts.zipWithNext().map { (a, b) -> b - a }.sorted()
-            val completed = group.count { play -> play.any { it.completed } || actions[play.first().playId].orEmpty().any { it.reason in setOf("ended", "next_auto", "repeat") } || first.audioDurationMs > 0 && play.sumOf { it.listenedMs } >= first.audioDurationMs * .9 }
+            val ratios = group.mapNotNull { PlayCoverage.ratio(it) }
+            val completed = group.count { (PlayCoverage.ratio(it) ?: 0.0) >= .9 }
             val skips = group.count { play -> first.audioDurationMs > 0 && play.sumOf { it.listenedMs } < minOf(30_000, first.audioDurationMs / 4) && (play.any { it.reason == "skip_or_queue_change" } || actions[play.first().playId].orEmpty().any { it.reason == "track_change" }) }
             SongHabit(key, first.title, first.artist, group.size, group.flatten().sumOf { it.listenedMs },
                 gaps.takeIf { it.isNotEmpty() }?.get(gaps.size / 2), streaks[key] ?: 1, completed, skips,
-                first.libraryAddedAt.takeIf { it > 0 && starts.first() >= it }?.let { starts.first() - it })
+                first.libraryAddedAt.takeIf { it > 0 && starts.first() >= it }?.let { starts.first() - it }, ratios.takeIf { it.isNotEmpty() }?.average())
         }.sortedByDescending { it.listenedMs }
         return ListeningInsights(monthly.toSortedMap(), hours.toList(), genres.toList().sortedByDescending { it.second }.toMap(),
-            artists.toList().sortedByDescending { it.second }.toMap(), transitions, habits, plays.size)
+            artists.toList().sortedByDescending { it.second }.toMap(), transitions, habits, plays.size, places, outputs)
     }
 }

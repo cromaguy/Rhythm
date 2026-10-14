@@ -46,9 +46,9 @@ class CatalogImportRepository(context: Context) {
         val result = context.imageLoader.execute(ImageRequest.Builder(context)
             .data(url).size(1200).allowHardware(false).build()) as? SuccessResult
             ?: error("Artwork could not be downloaded")
-        val file = File(context.cacheDir, "catalog-artwork-${UUID.randomUUID()}.jpg")
+        val file = File(context.cacheDir, "catalog-artwork-${UUID.randomUUID()}.webp")
         file.outputStream().use {
-            check(result.drawable.toBitmap().compress(Bitmap.CompressFormat.JPEG, 92, it))
+            check(result.drawable.toBitmap().compress(chromahub.rhythm.app.util.ArtworkStorage.format(), 86, it))
         }
         Uri.fromFile(file)
     }

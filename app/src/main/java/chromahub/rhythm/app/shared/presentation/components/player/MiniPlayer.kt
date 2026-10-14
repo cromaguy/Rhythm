@@ -28,37 +28,11 @@ fun MiniPlayer(
     isMediaLoading: Boolean = false,
     verticalDragEnabled: Boolean = true
 ) {
-    val context = LocalContext.current
-    val appSettings = remember { AppSettings.getInstance(context) }
-    val miniPlayerThemeId by appSettings.miniPlayerThemeId.collectAsState()
-
-    if (miniPlayerThemeId == "EXPRESSIVE") {
-        ExpressiveMiniPlayer(
-            song = song,
-            isPlaying = isPlaying,
-            progress = progress,
-            onPlayPause = onPlayPause,
-            onPlayerClick = onPlayerClick,
-            onSkipNext = onSkipNext,
-            onSkipPrevious = onSkipPrevious,
-            onDismiss = onDismiss,
-            isMediaLoading = isMediaLoading,
-            verticalDragEnabled = verticalDragEnabled,
-            modifier = modifier
-        )
-    } else {
-        MaterialMiniPlayer(
-            song = song,
-            isPlaying = isPlaying,
-            progress = progress,
-            onPlayPause = onPlayPause,
-            onPlayerClick = onPlayerClick,
-            onSkipNext = onSkipNext,
-            onSkipPrevious = onSkipPrevious,
-            onDismiss = onDismiss,
-            isMediaLoading = isMediaLoading,
-            verticalDragEnabled = verticalDragEnabled,
-            modifier = modifier
-        )
-    }
+    MaterialMiniPlayer(
+        song = song, isPlaying = isPlaying, progress = progress,
+        onPlayPause = onPlayPause, onPlayerClick = onPlayerClick,
+        onSkipNext = onSkipNext, onSkipPrevious = onSkipPrevious,
+        onDismiss = onDismiss, isMediaLoading = isMediaLoading,
+        verticalDragEnabled = verticalDragEnabled, modifier = modifier
+    )
 }

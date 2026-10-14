@@ -103,8 +103,8 @@ fun HomeSectionOrderBottomSheet(
     val showListeningStats by appSettings.homeShowListeningStats.collectAsState()
     val showRhythmGuard by appSettings.homeShowRhythmGuard.collectAsState()
     
-    // Fixed sections: DISCOVER always first (not reorderable)
-    val fixedSections = setOf("GREETING", "DISCOVER", "MOOD")
+    // Unsupported legacy sections stay hidden; every visible section can move.
+    val fixedSections = setOf("GREETING", "MOOD")
     var reorderableList by remember { mutableStateOf(sectionOrder.filter { it !in fixedSections }.toList()) }
     var visibilityMap by remember {
         mutableStateOf(
@@ -128,14 +128,14 @@ fun HomeSectionOrderBottomSheet(
     fun getSectionInfo(sectionId: String): Pair<String, MaterialSymbolIcon> {
         return when (sectionId) {
             "GREETING" -> Pair("Greeting", RhythmIcons.WavingHand)
-            "RECENTLY_PLAYED" -> Pair("Recently Played", MaterialSymbolIcon("history"))
-            "DISCOVER" -> Pair("Discover Carousel", MaterialSymbolIcon("explore"))
-            "ARTISTS" -> Pair("Top Artists", RhythmIcons.Artist)
-            "NEW_RELEASES" -> Pair("New Releases", MaterialSymbolIcon("new_releases"))
-            "RECENTLY_ADDED" -> Pair("Recently Added", RhythmIcons.Music.Album)
-            "RECOMMENDED" -> Pair("Recommended", MaterialSymbolIcon("recommend"))
-            "RHYTHM_GUARD" -> Pair("Rhythm Guard", RhythmIcons.Security)
-            "STATS" -> Pair("Listening Stats", MaterialSymbolIcon("insert_chart"))
+            "RECENTLY_PLAYED" -> Pair(context.getString(R.string.home_recently_played), MaterialSymbolIcon("history"))
+            "DISCOVER" -> Pair(context.getString(R.string.home_section_discover), MaterialSymbolIcon("explore"))
+            "ARTISTS" -> Pair(context.getString(R.string.home_top_artists), RhythmIcons.Artist)
+            "NEW_RELEASES" -> Pair(context.getString(R.string.home_new_releases), MaterialSymbolIcon("new_releases"))
+            "RECENTLY_ADDED" -> Pair(context.getString(R.string.home_recently_added), RhythmIcons.Music.Album)
+            "RECOMMENDED" -> Pair(context.getString(R.string.personal_collections_title), MaterialSymbolIcon("recommend"))
+            "RHYTHM_GUARD" -> Pair(context.getString(R.string.settings_rhythm_guard), RhythmIcons.Security)
+            "STATS" -> Pair(context.getString(R.string.home_listening_stats), MaterialSymbolIcon("insert_chart"))
             else -> Pair(sectionId, RhythmIcons.Music.Song)
         }
     }
@@ -156,105 +156,14 @@ fun HomeSectionOrderBottomSheet(
         containerColor = MaterialTheme.colorScheme.surfaceContainer,
         modifier = Modifier.widthIn(max = 640.dp).fillMaxWidth()
     ) {
-        val totalSectionCards = reorderableList.size + 1
+        val totalSectionCards = reorderableList.size
 
-        StandardBottomSheetHeader(
-            title = context.getString(R.string.bottomsheet_home_section_order),
-            subtitle = context.getString(R.string.bottomsheet_reorder_toggle_visibility),
-            visible = true
-        )
+        Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(context.getString(R.string.bottomsheet_home_section_order), style = MaterialTheme.typography.headlineSmall)
+            Text(context.getString(R.string.bottomsheet_reorder_toggle_visibility), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
 
         Column(modifier = Modifier.fillMaxWidth()) {
-            // Fixed Discover Carousel section (always first, not reorderable)
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp)
-            ) {
-                val (discoverName, discoverIcon) = getSectionInfo("DISCOVER")
-                val isDiscoverVisible = visibilityMap["DISCOVER"] ?: true
-                
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 4.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainerHighest
-                    ),
-                    shape = groupedBottomSheetItemShape(0, totalSectionCards)
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(16.dp),
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            // Fixed position indicator
-                            Surface(
-                                shape = CircleShape,
-                                color = MaterialTheme.colorScheme.tertiaryContainer,
-                                modifier = Modifier.size(36.dp)
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Icon(
-                                        imageVector = RhythmIcons.Pushpin,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                }
-                            }
-                            
-                            Icon(
-                                imageVector = discoverIcon,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(24.dp)
-                            )
-                            
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = discoverName,
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Medium,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                Text(
-                                    text = stringResource(R.string.homesectionorderbottomsheet_fixed_position),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
-                        
-                        // Visibility toggle only (no reorder buttons)
-                        IconButton(
-                            onClick = {
-                                HapticUtils.performHapticFeedback(context, haptics, HapticType.LIGHT)
-                                visibilityMap = visibilityMap.toMutableMap().apply {
-                                    this["DISCOVER"] = !isDiscoverVisible
-                                }
-                            },
-                            modifier = Modifier.size(40.dp)
-                        ) {
-                            Icon(
-                                imageVector = if (isDiscoverVisible) RhythmIcons.Visibility else RhythmIcons.VisibilityOff,
-                                contentDescription = if (isDiscoverVisible) "Hide carousel" else "Show carousel",
-                                tint = if (isDiscoverVisible) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(4.dp))
-
             // Reorderable list using DragDropLazyColumn inside AdaptiveSheetScrollContainer
             AdaptiveSheetScrollContainer(
                 lazyListState = lazyListState,
@@ -288,7 +197,7 @@ fun HomeSectionOrderBottomSheet(
                         else 
                             MaterialTheme.colorScheme.surfaceContainerHigh
                     ),
-                    shape = groupedBottomSheetItemShape(index + 1, totalSectionCards)
+                    shape = groupedBottomSheetItemShape(index, totalSectionCards)
                 ) {
                     Row(
                         modifier = Modifier
@@ -360,7 +269,7 @@ fun HomeSectionOrderBottomSheet(
                             ) {
                                 Icon(
                                     imageVector = if (isVisible) RhythmIcons.Visibility else RhythmIcons.VisibilityOff,
-                                    contentDescription = if (isVisible) "Hide section" else "Show section",
+                                    contentDescription = context.getString(if (isVisible) R.string.personal_hide_section else R.string.personal_show_section),
                                     tint = if (isVisible) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
                                     modifier = Modifier.size(20.dp)
                                 )
@@ -398,8 +307,8 @@ fun HomeSectionOrderBottomSheet(
                     onClick = {
                         HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
                         val defaultOrder = listOf(
-                            "RECENTLY_PLAYED", "ARTISTS", "RHYTHM_GUARD",
-                            "NEW_RELEASES", "RECENTLY_ADDED", "RECOMMENDED", "STATS"
+                            "RECOMMENDED", "RECENTLY_PLAYED", "DISCOVER", "RECENTLY_ADDED",
+                            "ARTISTS", "NEW_RELEASES", "STATS", "RHYTHM_GUARD"
                         )
                         reorderableList = defaultOrder
                         visibilityMap = mapOf(
@@ -425,8 +334,8 @@ fun HomeSectionOrderBottomSheet(
                     onClick = {
                         HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
 
-                        // Save section order (DISCOVER first, then user-ordered sections)
-                        val finalOrder = listOf("DISCOVER") + reorderableList
+                        // Preserve the exact order chosen by the user.
+                        val finalOrder = reorderableList
                         appSettings.setHomeSectionOrder(finalOrder)
 
                         // Save visibility for each section.

@@ -25,7 +25,7 @@ class AudioAnalysisWorker(context: Context, params: WorkerParameters) : Coroutin
         for (song in songs) {
             coroutineContext.ensureActive()
             val signature = "${song.dateModified}:${song.duration}"
-            if (ledger.feature(song.uri.toString(), signature) != null) continue
+            if (ledger.feature(song.uri.toString(), signature)?.version == 2) continue
             val failureKey = "audio_failure:${song.uri}"
             if ((ledger.state(failureKey)?.toLongOrNull() ?: 0) > System.currentTimeMillis()) continue
             if (isStopped) return@withContext Result.success()

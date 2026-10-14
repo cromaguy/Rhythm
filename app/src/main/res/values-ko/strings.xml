@@ -3,7 +3,7 @@
     <string name="app_name">T2Rhythm</string>
     <!-- Common Labels -->
     <string name="home">홈</string>
-    <string name="library">도서관</string>
+    <string name="library">라이브러리</string>
     <string name="search">검색</string>
     <!-- Media3 notification configuration -->
     <string name="media3_notification_channel_name">T2Rhythm 음악</string>
@@ -273,7 +273,7 @@
     <string name="settings_about_version_label">버전</string>
     <string name="settings_about_build">빌드</string>
     <string name="settings_about_target_sdk">타겟 SDK</string>
-    <string name="settings_about_architecture">건축</string>
+    <string name="settings_about_architecture">아키텍처</string>
     <string name="settings_about_architecture_value">ARM64 &amp; ARM32</string>
     <string name="settings_about_credits">개발자</string>
     <string name="settings_about_team_desc">혁신적인 경험을 창조하는 열정적인 개발자</string>
@@ -326,7 +326,7 @@
     <!-- Mood & Moments -->
     
     <!-- Recently Played -->
-    <string name="home_recently_played">최근 플레이한 항목</string>
+    <string name="home_recently_played">최근 들은 음악</string>
     <string name="home_recently_played_subtitle">음악 여행을 계속하세요</string>
     <string name="home_no_recent_activity">최근 활동 없음</string>
     <string name="home_no_recent_activity_desc">여기에서 최근 재생한 노래를 보려면 듣기 시작하세요.</string>
@@ -341,7 +341,7 @@
     <string name="update_whats_new">새로운 소식:</string>
     <string name="update_now">지금 업데이트</string>
     <!-- LibraryScreen -->
-    <string name="library_title">도서관</string>
+    <string name="library_title">라이브러리</string>
     <string name="library_your_playlists">재생 목록</string>
     <string name="library_your_albums">당신의 앨범</string>
     <string name="library_your_artists">당신의 아티스트</string>
@@ -393,7 +393,7 @@
     <!-- Common Terms -->
     <string name="common_rhythm">T2Rhythm</string>
     <string name="common_home">홈</string>
-    <string name="common_library">도서관</string>
+    <string name="common_library">라이브러리</string>
     <!-- Splash/Loading -->
     <string name="splash_tagline">내 음악과 기록을 내 기기에.</string>
     <string name="splash_ready">그루브 준비 완료!</string>
@@ -444,7 +444,7 @@
     <string name="onboarding_sleep_timer_desc">취침 타이머: 설정된 시간 이후 재생 자동 중지(지금 재생 중 화면에서 액세스)</string>
     <string name="onboarding_library_title">음악 라이브러리 정리</string>
     <string name="onboarding_library_desc">앨범, 아티스트 및 노래가 표시되는 방식을 사용자 정의하세요. 원하는 레이아웃, 정렬 순서, 탭 배열을 선택하세요.</string>
-    <string name="onboarding_library_how_works">도서관 조직의 작동 방식</string>
+    <string name="onboarding_library_how_works">라이브러리 조직의 작동 방식</string>
     <string name="onboarding_library_1">즐겨찾기에 빠르게 액세스할 수 있도록 라이브러리에서 탭 순서를 사용자 정의하세요.</string>
     <string name="onboarding_library_2">라이브러리 화면에서 직접 재생 목록 생성 및 관리</string>
     <string name="onboarding_theme_title">Rhythm을(를) 당신의 것으로 만드세요</string>
@@ -542,7 +542,7 @@
     <string name="option_stable">안정</string>
     <string name="option_beta">베타</string>
     <string name="option_home">홈</string>
-    <string name="option_library">도서관</string>
+    <string name="option_library">라이브러리</string>
     <!-- Onboarding Media Scan -->
     <string name="onboarding_how_it_works">작동 원리</string>
     <!-- Onboarding Setup Complete -->
@@ -675,7 +675,7 @@
     <string name="player_chip_order_saved">플레이어 칩 순서 및 가시성이 저장되었습니다.</string>
     <!-- Components: Library Tab Order -->
     <string name="library_tab_order_title">라이브러리 탭 순서</string>
-    <string name="library_tab_order_desc">가시성 재정렬 및 전환</string>
+    <string name="library_tab_order_desc">길게 눌러 순서를 바꾸고 표시할 영역을 선택하세요.</string>
     <!-- Components: Playback Bottom Sheet -->
     <string name="playback_lyrics_priority_desc">가사의 소스, 동작, 레이아웃, 크기 및 스타일 구성</string>
     <string name="playback_settings">재생 설정</string>
@@ -815,7 +815,7 @@
     <string name="settings_queue_playback_desc">자동 추가, 반복</string>
     <string name="settings_equalizer_title">이퀄라이저</string>
     <string name="settings_equalizer_desc">저음, 고음</string>
-    <string name="settings_section_library_content">도서관 및 미디어</string>
+    <string name="settings_section_library_content">라이브러리 및 미디어</string>
     <string name="settings_media_scan_title">미디어 스캔</string>
     <string name="settings_media_scan_desc">폴더 스캔</string>
     <string name="settings_playlists_title">재생 목록</string>
@@ -947,7 +947,7 @@
     <string name="bottomsheet_disc_option">디스크 %1$d</string>
     <!-- Bottom Sheet: Home Section Order -->
     <string name="bottomsheet_home_section_order">홈 섹션 순서</string>
-    <string name="bottomsheet_reorder_toggle_visibility">가시성 재정렬 및 전환</string>
+    <string name="bottomsheet_reorder_toggle_visibility">길게 눌러 순서를 바꾸고 표시할 영역을 선택하세요.</string>
     <!-- Bottom Sheet: Cast -->
     <string name="bottomsheet_active_device">활성</string>
     <!-- Bottom Sheet: Backup/Restore -->
@@ -1201,7 +1201,7 @@
     <string name="sleep_timer_set_control">자동 재생 제어 설정</string>
     <!-- Home Sections -->
     <string name="home_section_recently_played">최근 재생됨</string>
-    <string name="home_section_discover">캐러셀을 발견하세요</string>
+    <string name="home_section_discover">앨범 둘러보기</string>
     <string name="home_section_new_releases">신규 출시</string>
     <string name="home_section_one_visible">하나 이상의 섹션이 표시되어야 합니다.</string>
     <!-- Library Tabs -->
@@ -1304,7 +1304,7 @@
     <string name="settings_decoration_intensity">장식 강도</string>
     <string name="settings_disable_unused_gestures">더 빠른 응답을 위해 사용하지 않는 제스처를 비활성화합니다.</string>
     <string name="settings_disable_unused_sections">더 빠른 로딩을 위해 사용하지 않는 섹션을 비활성화합니다.</string>
-    <string name="settings_discover_carousel">캐러셀을 발견하세요</string>
+    <string name="settings_discover_carousel">앨범 둘러보기</string>
     <string name="settings_discover_carousel_info">캐러셀에서 추천 앨범을 소개합니다.</string>
     <string name="settings_display_options">표시 옵션</string>
     <string name="settings_examples">예</string>
@@ -1601,7 +1601,7 @@
     <string name="settings_home_greeting_search_desc">인사말 메시지 표시</string>
     <string name="settings_home_recently_played">최근 재생됨</string>
     <string name="settings_home_recently_played_desc">최근 재생된 프로그램</string>
-    <string name="settings_home_discover_carousel">캐러셀을 발견하세요</string>
+    <string name="settings_home_discover_carousel">앨범 둘러보기</string>
     <string name="settings_home_discover_carousel_desc">발견 캐러셀 표시</string>
     <string name="settings_home_carousel_auto_scroll">캐러셀 자동 스크롤</string>
     <string name="settings_home_carousel_auto_scroll_desc">자동 스크롤 캐러셀</string>
@@ -1633,7 +1633,7 @@
     <string name="settings_shape_player_controls_desc">플레이어 컨트롤 모양</string>
     <string name="settings_shape_mini_player">미니 플레이어 모양</string>
     <string name="settings_shape_mini_player_desc">미니 플레이어 모양</string>
-    <string name="settings_library_settings">도서관 체험</string>
+    <string name="settings_library_settings">라이브러리 체험</string>
     <string name="settings_library_settings_desc">등급, 구성 및 작품 행위</string>
     <string name="settings_library_group_organization">조직 및 등급</string>
     <string name="settings_library_combine_discs">디스크 결합</string>
@@ -2225,7 +2225,7 @@
     <string name="dialog_switch_to_go">T2Rhythm Go로 전환할까요?</string>
     <string name="dialog_switch_to_local">로컬로 전환하시겠습니까?</string>
     <string name="dialog_switch_to_go_desc">This item belongs to T2Rhythm Go. 지금 스트리밍 모드로 전환하여 스트리밍하고 재생하시겠습니까?</string>
-    <string name="dialog_switch_to_local_desc">이 항목은 귀하의 지역 도서관에 속합니다. 오프라인 트랙을 재생하려면 지금 로컬 모드로 전환하시겠습니까?</string>
+    <string name="dialog_switch_to_local_desc">이 항목은 귀하의 지역 라이브러리에 속합니다. 오프라인 트랙을 재생하려면 지금 로컬 모드로 전환하시겠습니까?</string>
     <!-- Section order content descriptions -->
 
     <!-- Add To Playlist additions -->
@@ -3190,4 +3190,56 @@
     <string name="decoder_filter_engines">엔진</string>
     <string name="decoder_filter_dolby">Dolby 및 Atmos</string>
     <string name="decoder_filter_lossless">무손실 및 고해상도</string>
+    <string name="personal_audio">음악</string>
+    <string name="personal_video">영상</string>
+    <string name="personal_weather">날씨 맥락 기록</string>
+    <string name="personal_weather_hint">온라인에서 대략적인 지역으로 Open-Meteo 날씨를 조회합니다. API 키는 필요 없으며, 조회 시각과 함께 기기에 보관합니다. 위치 기록을 켜야 합니다.</string>
+    <string name="personal_weather_unknown">날씨 정보 없음</string>
+    <string name="personal_weather_value">%1$s · %2$.1f°C</string>
+    <string name="personal_weather_clear">맑음</string>
+    <string name="personal_weather_cloudy">흐림</string>
+    <string name="personal_weather_fog">안개</string>
+    <string name="personal_weather_rain">비</string>
+    <string name="personal_weather_snow">눈</string>
+    <string name="personal_weather_storm">뇌우</string>
+    <string name="personal_completion_average">재생당 평균 청취율: %1$.1f%%</string>
+    <string name="personal_collections_title">나를 위한 음악</string>
+    <string name="personal_collections_hint">내 기록으로 만드는 맞춤 믹스</string>
+    <string name="personal_daylist">시간대 믹스</string>
+    <string name="personal_daily_mix">데일리 믹스</string>
+    <string name="personal_rediscovery">음악 재발견</string>
+    <string name="personal_similar">유사곡 라디오</string>
+    <string name="personal_liked_mix">좋아요 장르 믹스</string>
+    <string name="personal_fewer_repeats">반복 줄이기</string>
+    <string name="personal_collection_local">내 라이브러리에서 만드는 믹스입니다. 기존 재생목록은 변경하지 않습니다.</string>
+    <string name="personal_all_genres">모든 장르</string>
+    <string name="personal_save_playlist">재생목록 저장</string>
+    <string name="personal_smart_reorder">추정 BPM·키로 자연스럽게 정렬</string>
+    <string name="personal_collection_saved">재생목록을 저장했습니다.</string>
+    <string name="personal_collection_empty">조건에 맞는 곡이 아직 없습니다. 음악을 추가하거나 청취 기록을 쌓아 주세요.</string>
+    <string name="personal_snooze">30일 동안 추천 쉬기</string>
+    <string name="personal_hide">추천에서 제외</string>
+    <string name="personal_restore">추천 제외 해제</string>
+    <string name="personal_exclusions">추천에서 쉬는 음악</string>
+    <string name="personal_exclusions_hint">제외는 개인 믹스와 자동 추천에 적용됩니다. 파일을 지우거나 직접 재생하는 목록을 바꾸지 않습니다.</string>
+    <string name="personal_autoplay">맞춤 자동 이어듣기</string>
+    <string name="personal_autoplay_hint">큐가 끝나면 내 라이브러리의 유사곡으로 이어 듣습니다. 반복 모드와 지정한 큐를 우선합니다.</string>
+    <string name="personal_smart_shuffle">현재 큐에 맞춤 곡 섞기</string>
+    <string name="personal_smart_shuffle_hint">현재 곡과 기존 순서는 유지하고 세 곡마다 새 추천을 넣습니다.</string>
+    <string name="personal_t2_theme">T2Rhythm</string>
+    <string name="personal_noise">주변 소리 수준 측정</string>
+    <string name="personal_noise_hint">마이크를 허용하면 앱이 보이는 동안 짧게 측정합니다. 원음은 저장하지 않습니다. 기기 감도와 스피커 재생에 영향을 받는 상대적인 입력 수준입니다.</string>
+    <string name="personal_noise_denied">주변 소리 측정에는 마이크 권한이 필요합니다.</string>
+    <string name="personal_proposed_mix">지금 추천하는 플레이리스트</string>
+    <string name="personal_mix_count">%1$d곡 · 내 라이브러리</string>
+    <string name="personal_like">좋아요</string>
+    <string name="personal_dislike">싫어요</string>
+    <string name="personal_feedback_toggle_hint">한 번 더 누르면 취소하고 다른 반응을 누르면 바꿉니다. 플레이리스트 평가와 개별 곡 선호는 따로 반영합니다.</string>
+    <string name="personal_move_section">추천 영역 위치 변경</string>
+    <string name="personal_more_mixes">다른 맞춤 믹스</string>
+    <string name="personal_mix_feedbacks">플레이리스트 평가</string>
+    <string name="personal_insert_shuffle_guard">일반 셔플을 끄면 기존 큐 순서를 유지하며 추천곡을 넣을 수 있습니다.</string>
+    <string name="personal_feedback_short">같은 반응을 다시 누르면 취소돼요.</string>
+    <string name="personal_hide_section">영역 숨기기</string>
+    <string name="personal_show_section">영역 표시</string>
 </resources>

@@ -52,6 +52,9 @@ data class ListeningRecord(
     val year: Int = 0,
     val trackNumber: Int = 0,
     val discNumber: Int = 1,
+    val situation: ListeningSituation? = null,
+    val playedAudioMs: Long? = null,
+    val playCompletionRatio: Double? = null,
 )
 
 /** Indexed on-device source of truth. Raw journals are retained forever and can rebuild the DB. */
@@ -104,12 +107,12 @@ class ListeningLedger private constructor(private val context: Context) : SQLite
         }
         check(writableDatabase.insertWithOnConflict("records", null, values, SQLiteDatabase.CONFLICT_REPLACE) != -1L)
     }
-    fun records(start: Long? = null, end: Long = Long.MAX_VALUE, kind: String = "segment"): List<ListeningRecord> {
+    fun records(start: Long? = null, end: Long = Long.MAX_VALUE, kind: String = "segment", limit: Int = Int.MAX_VALUE): List<ListeningRecord> {
         val result = mutableListOf<ListeningRecord>()
-        readableDatabase.rawQuery("SELECT payload FROM records WHERE kind = ? AND ended >= ? AND started <= ? ORDER BY started", arrayOf(kind, (start ?: 0).toString(), end.toString())).use { cursor ->
+        readableDatabase.rawQuery("SELECT payload FROM records WHERE kind = ? AND ended >= ? AND started <= ? ORDER BY started DESC LIMIT ?", arrayOf(kind, (start ?: 0).toString(), end.toString(), limit.coerceAtLeast(1).toString())).use { cursor ->
             while (cursor.moveToNext()) result += gson.fromJson(cursor.getString(0), ListeningRecord::class.java)
         }
-        return result
+        return result.asReversed()
     }
     data class Affinity(val songKey: String, val artist: String, val genre: String?, val listenedMs: Long, val plays: Int, val lastAt: Long)
     fun affinities(): List<Affinity> {

@@ -558,6 +558,7 @@ fun HomeScreen(
                 onViewAllArtists = onViewAllArtists,
                 onSearchClick = onSearchClick,
                 onSettingsClick = onSettingsClick,
+                onMovePersonalization = { showHomeSectionOrderSheet = true },
                 onNavigateToLibrary = onNavigateToLibrary,
                 onNavigateToPlaylist = onNavigateToPlaylist,
                 onNavigateToStats = onNavigateToStats,
@@ -594,6 +595,7 @@ private fun ModernScrollableContent(
     onViewAllArtists: () -> Unit,
     onSearchClick: () -> Unit,
     onSettingsClick: () -> Unit = {},
+    onMovePersonalization: () -> Unit = {},
     onNavigateToLibrary: () -> Unit = {},
     onNavigateToPlaylist: (String) -> Unit = {},
     onNavigateToStats: () -> Unit = {},
@@ -609,7 +611,6 @@ private fun ModernScrollableContent(
     val heightSizeClass = windowSizeClass.heightSizeClass
     val scrollState = rememberScrollState()
     val allSongs by musicViewModel.filteredSongs.collectAsState()
-    val tasteRevision by remember { chromahub.rhythm.app.features.local.data.experience.ListeningLedger.get(context).changes }.collectAsState()
     val playingForRecommendations by musicViewModel.currentSong.collectAsState()
 
     // Home Screen Customization Settings
@@ -953,20 +954,8 @@ private fun ModernScrollableContent(
                 "RECOMMENDED" -> {
                     if (showRecommended) {
                         val favoriteSongsState = musicViewModel.favoriteSongs.collectAsState()
-                        val recommendedSongs by rememberOffMain(emptyList<Song>(), recentlyPlayed, songs, recommendedCount, favoriteSongsState.value, tasteRevision, playingForRecommendations?.id) {
-                            chromahub.rhythm.app.features.local.data.experience.PersonalTasteRepository.recommend(
-                                context, songs, favoriteSongsState.value.toList(), playingForRecommendations?.id, recommendedCount
-                            )
-                        }
-
-                        ModernRecommendedSection(
-                            recommendedSongs = recommendedSongs,
-                            personalized = true,
-                            artists = availableArtists,
-                            onSongClick = onSongClick,
-                            onPlayClick = { songsToPlay ->
-                                musicViewModel.playSongs(songsToPlay)
-                            }
+                        chromahub.rhythm.app.features.local.presentation.metadata.PersonalCollectionsPanel(
+                            songs, favoriteSongsState.value.toList(), playingForRecommendations?.id, musicViewModel, onMovePersonalization
                         )
                     }
                 }
@@ -2261,6 +2250,11 @@ private fun ModernRecommendedSection(
     personalized: Boolean = false
 ) {
     val context = LocalContext.current
+    LaunchedEffect(personalized, recommendedSongs.map { it.uri.toString() }) {
+        if (personalized && recommendedSongs.isNotEmpty()) kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            chromahub.rhythm.app.features.local.data.experience.RecommendationLearning.get(context).presented(recommendedSongs.map { it.uri.toString() })
+        }
+    }
     val haptics = LocalHapticFeedback.current
     val appSettings = remember { AppSettings.getInstance(context) }
     val artistSeparatorEnabled by appSettings.artistSeparatorEnabled.collectAsState()
@@ -2277,7 +2271,7 @@ private fun ModernRecommendedSection(
 
         if (personalized) recommendedSongs.firstOrNull()?.let { song ->
             val reasons = chromahub.rhythm.app.features.local.data.experience.PersonalTasteRepository.reasons(song.uri.toString()).map { reason ->
-                context.getString(when (reason) { "time" -> R.string.personal_reason_time; "transition" -> R.string.personal_reason_transition; "routine" -> R.string.personal_reason_routine; "artist" -> R.string.personal_reason_artist; "genre" -> R.string.personal_reason_genre; "audio" -> R.string.personal_reason_audio; "favorite" -> R.string.personal_reason_favorite; "rediscovery" -> R.string.personal_reason_rediscovery; else -> R.string.personal_reason_unplayed })
+                context.getString(when (reason) { "place" -> R.string.context_reason_place; "output" -> R.string.context_reason_output; "weekday" -> R.string.context_reason_weekday; "learned" -> R.string.context_reason_learned; "exploration" -> R.string.context_reason_exploration; "time" -> R.string.personal_reason_time; "transition" -> R.string.personal_reason_transition; "routine" -> R.string.personal_reason_routine; "artist" -> R.string.personal_reason_artist; "genre" -> R.string.personal_reason_genre; "audio" -> R.string.personal_reason_audio; "favorite" -> R.string.personal_reason_favorite; "rediscovery" -> R.string.personal_reason_rediscovery; else -> R.string.personal_reason_unplayed })
             }
             if (reasons.isNotEmpty()) Text(reasons.joinToString(" · "), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
         }
@@ -2389,6 +2383,11 @@ private fun ModernRecommendedSection(
                         Button(
                             onClick = {
                                 HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
+                                if (personalized) recommendedSongs.firstOrNull()?.let { first ->
+                                    kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+                                        chromahub.rhythm.app.features.local.data.experience.RecommendationLearning.get(context).selected(first.uri.toString())
+                                    }
+                                }
                                 onPlayClick(recommendedSongs)
                             },
                             colors = ButtonDefaults.buttonColors(

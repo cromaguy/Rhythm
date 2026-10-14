@@ -4383,7 +4383,8 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                     
                     // If repeat mode is off and we're at the end of the queue, stop playback
                     if (controller.repeatMode == Player.REPEAT_MODE_OFF && 
-                        controller.currentMediaItemIndex == controller.mediaItemCount - 1) {
+                        controller.currentMediaItemIndex == controller.mediaItemCount - 1 &&
+                        !chromahub.rhythm.app.features.local.data.experience.PersonalCollections.autoplay(getApplication())) {
                         controller.pause()
                         _isPlaying.value = false
                     }
@@ -8625,6 +8626,33 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
     /**
      * Add a song to the queue
      */
+    fun addPersonalizedQueueSongs() {
+        val captured = _currentQueue.value; val current = _currentSong.value ?: return
+        viewModelScope.launch {
+            val additions = withContext(Dispatchers.IO) {
+                val favorites = runCatching { com.google.gson.JsonParser.parseString(appSettings.favoriteSongs.value ?: "[]").asJsonArray.map { it.asString } }.getOrDefault(emptyList())
+                chromahub.rhythm.app.features.local.data.experience.PersonalCollections.generate(getApplication(), _songs.value, favorites, current.id,
+                    chromahub.rhythm.app.features.local.data.experience.PersonalCollection.SIMILAR, 30)
+            }
+            val controller = mediaController ?: return@launch
+            if (_currentQueue.value != captured || _currentSong.value?.id != current.id) return@launch
+            if (controller.shuffleModeEnabled) {
+                android.widget.Toast.makeText(getApplication<android.app.Application>(), R.string.personal_insert_shuffle_guard, android.widget.Toast.LENGTH_SHORT).show(); return@launch
+            }
+            // Insert into the existing timeline; never restart the current song or reshuffle explicit items.
+            val suffix = (controller.currentMediaItemIndex + 1 until controller.mediaItemCount).mapNotNull { resolveSongFromMediaItem(controller.getMediaItemAt(it)) }
+            val merged = chromahub.rhythm.app.features.local.data.experience.PersonalCollections.smartInsert(suffix,
+                additions.filterNot { pick -> captured.songs.any { it.uri == pick.uri } })
+            var cursor = controller.currentMediaItemIndex + 1
+            val originalKeys = suffix.map { it.uri.toString() }.toSet()
+            merged.forEach { song ->
+                if (song.uri.toString() !in originalKeys) controller.addMediaItem(cursor, song.toMediaItem())
+                cursor++
+            }
+            syncQueueWithMediaController()
+        }
+    }
+
     fun addSongToQueue(song: Song) {
         Log.d(TAG, "Adding song to queue: ${song.title}")
         

@@ -40,15 +40,20 @@ class PersonalArchive(private val context: Context) {
                 albumArtist = tag(android.media.MediaMetadataRetriever.METADATA_KEY_ALBUMARTIST) ?: song.albumArtist)
             retriever.embeddedPicture?.let { bytes ->
                 require(bytes.size <= 20 * 1024 * 1024)
-                val extension = if (bytes.take(4) == listOf(137.toByte(), 80.toByte(), 78.toByte(), 71.toByte())) "png" else "jpg"
-                atomicWrite(File(directory, "$key.$extension"), bytes)
+                // Original bytes remain available for exact rollback; display copy is WebP.
+                atomicWrite(File(directory, "$key.original-artwork"), bytes)
+                android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size)?.let { bitmap ->
+                    try { chromahub.rhythm.app.util.ArtworkStorage.write(bitmap, File(directory, "$key.webp"), lossless = true) } finally { bitmap.recycle() }
+                }
             }
         } finally { retriever.release() }
-        val image = File(directory, "$key.artwork")
+        val image = File(directory, "$key.webp")
         if (!image.exists()) song.artworkUri?.let { uri -> runCatching {
             context.contentResolver.openInputStream(uri)?.use { input ->
                 val data = input.readBytesBounded(20 * 1024 * 1024)
-                atomicWrite(image, data)
+                android.graphics.BitmapFactory.decodeByteArray(data, 0, data.size)?.let { bitmap ->
+                    try { chromahub.rhythm.app.util.ArtworkStorage.write(bitmap, image) } finally { bitmap.recycle() }
+                }
             }
         } }
         atomicWrite(record, CatalogSongCodec.encode(original).toByteArray())
@@ -102,12 +107,33 @@ class PersonalArchive(private val context: Context) {
         var count = 0
         val metadata = base.findFile("music_metadata")
         val local = File(context.filesDir, "music_metadata")
-        listOf("records", "images", "lyrics", "originals", "audio_features").forEach { category ->
-            metadata?.findFile(category)?.listFiles()?.filter { it.isFile && it.name?.contains(".previous-") != true && it.name?.contains(".pending-") != true }?.forEach { remote ->
+        listOf("records", "images", "lyrics", "originals", "audio_features", "recommendations", "videos", "entities", "context", "personalization").forEach { category ->
+            fun descend(folder: DocumentFile, prefix: String = ""): List<Pair<String, DocumentFile>> = folder.listFiles().flatMap { child ->
+                val name = child.name ?: return@flatMap emptyList()
+                require('/' !in name && '\\' !in name && name != ".." && name != ".")
+                val relative = if (prefix.isEmpty()) name else "$prefix/$name"
+                require(relative.count { it == '/' } < 8)
+                if (child.isDirectory) descend(child, relative) else listOf(relative to child)
+            }
+            metadata?.findFile(category)?.let { descend(it) }?.filter { (_, it) -> it.isFile && it.name?.contains(".previous-") != true && it.name?.contains(".pending-") != true }?.forEach { (relative, remote) ->
                 val name = remote.name ?: return@forEach
                 require('/' !in name && '\\' !in name && name != "..")
-                val destination = File(File(local, category), name)
-                if (destination.exists()) return@forEach // Restore fills gaps; never destroys newer personal data.
+                val destination = File(File(local, category), relative)
+                if (destination.exists() && category != "recommendations") return@forEach // Restore fills gaps; never destroys newer personal data.
+                if (category == "recommendations" || category == "videos" && remote.name?.substringAfterLast('.') in setOf("mp4", "webm")) {
+                    destination.parentFile!!.mkdirs()
+                    val pending = File.createTempFile("restore-", ".tmp", destination.parentFile)
+                    try {
+                        context.contentResolver.openInputStream(remote.uri)?.use { input -> pending.outputStream().use { output ->
+                            val buffer = ByteArray(8192); var size = 0L
+                            while (true) { val n = input.read(buffer); if (n < 0) break; size += n; require(size <= 1024L * 1024 * 1024); output.write(buffer, 0, n) }
+                        } } ?: return@forEach
+                        check(pending.length() == remote.length())
+                        val final = if (category == "recommendations" && destination.exists()) File(destination.parentFile, destination.nameWithoutExtension + "-import-" + chromahub.rhythm.app.util.UpdateIntegrity.fileDigest(pending).take(12) + ".jsonl") else destination
+                        if (!final.exists()) { check(pending.renameTo(final)); count++ }
+                    } finally { pending.delete() }
+                    return@forEach
+                }
                 val bytes = context.contentResolver.openInputStream(remote.uri)?.use { it.readBytesBounded(if (category == "images" || category == "originals") 20 * 1024 * 1024 else 2 * 1024 * 1024) } ?: return@forEach
                 if (category == "records") {
                     val root = com.google.gson.JsonParser.parseString(bytes.toString(Charsets.UTF_8)).asJsonObject
@@ -130,6 +156,14 @@ class PersonalArchive(private val context: Context) {
                 if (!preserved.exists()) atomicCopy(scratch, preserved)
             } finally { scratch.delete() }
         }
+        val rules = base.findFile("experience.json")
+        if (!File(context.filesDir, "experience.json").exists() && rules != null) {
+            context.contentResolver.openInputStream(rules.uri)?.use { input ->
+                val json = input.readBytesBounded(64_000).toString(Charsets.UTF_8)
+                chromahub.rhythm.app.features.local.data.experience.ExperienceProfile.apply(context, json); count++
+            }
+        }
+        ledger.invalidate()
         CatalogEnrichmentService.get(context).reloadStored()
         enqueue(context); count
     }
@@ -170,7 +204,7 @@ class PersonalArchive(private val context: Context) {
         }
     }
     companion object {
-        private fun mime(name: String) = when (name.substringAfterLast('.')) { "jpg" -> "image/jpeg"; "png" -> "image/png"; "json" -> "application/json"; else -> "text/plain" }
+        private fun mime(name: String) = when (name.substringAfterLast('.')) { "webp" -> "image/webp"; "webm" -> "video/webm"; "mp4" -> "video/mp4"; "jpg" -> "image/jpeg"; "png" -> "image/png"; "json" -> "application/json"; "jsonl", "txt", "lrc" -> "text/plain"; else -> "application/octet-stream" }
         fun atomicWrite(destination: File, bytes: ByteArray) {
             destination.parentFile!!.mkdirs()
             val file = AtomicFile(destination); val stream = file.startWrite()

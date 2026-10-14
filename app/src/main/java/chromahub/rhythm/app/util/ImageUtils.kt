@@ -88,7 +88,7 @@ object ImageUtils {
             canvas.drawText(letter, x, y, paint)
             
             // Create a unique filename based on name and size
-            val filename = "placeholder_${safeName.hashCode()}_${size}.png"
+            val filename = "placeholder_${safeName.hashCode()}_${size}.webp"
             val file = File(cacheDir, filename)
             
             // Check if file already exists
@@ -98,7 +98,7 @@ object ImageUtils {
             
             // Save to cache
             FileOutputStream(file).use { out ->
-                bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
+                bitmap.compress(ArtworkStorage.format(), 86, out)
                 out.flush()
             }
             

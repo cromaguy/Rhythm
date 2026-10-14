@@ -409,7 +409,8 @@ fun UpdatesSettingsScreen(onBackClick: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // 1. Live Update Status display (No card bg, onboarding-like placements and wavy loaders)
-            item {
+            item { Text(stringResource(R.string.update_verified_hint), modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp), style = MaterialTheme.typography.bodySmall) }
+        item {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()

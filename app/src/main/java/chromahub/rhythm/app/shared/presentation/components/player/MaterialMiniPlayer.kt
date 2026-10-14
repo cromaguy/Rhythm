@@ -307,7 +307,7 @@ fun MaterialMiniPlayer(
                     onPlayerClick()
                 }
             },
-            shape = ExpressiveShapes.Large, // Expressive organic shape
+            shape = RoundedCornerShape(20.dp), // T2Rhythm fixed mini-player shell
             colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.surfaceContainer,
                 contentColor = MaterialTheme.colorScheme.onSurface

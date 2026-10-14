@@ -123,6 +123,9 @@ fun ExtraControlBottomSheet(
     lyrics: LyricsData?,
     onAddToPlaylist: () -> Unit,
     onEditControls: (() -> Unit)? = null,
+    onMusicVideo: (() -> Unit)? = null,
+    onSmartShuffle: (() -> Unit)? = null,
+    onRecommendationFeedback: (() -> Unit)? = null,
     onPlaybackSpeed: () -> Unit,
     onPlaybackPitch: () -> Unit = {},
     onEqualizer: () -> Unit,
@@ -153,6 +156,10 @@ fun ExtraControlBottomSheet(
     val onTertiary = MaterialTheme.colorScheme.onTertiaryContainer
 
     val actions = buildList {
+        onSmartShuffle?.let { action -> add(ControlAction(MaterialSymbolIcon("shuffle"), context.getString(R.string.personal_smart_shuffle), context.getString(R.string.personal_smart_shuffle_hint), secondary, onSecondary) { dismissAndDo(action) }) }
+        onMusicVideo?.let { action -> add(ControlAction(MaterialSymbolIcon("smart_display"), context.getString(R.string.mv_manage), null, secondary, onSecondary) { dismissAndDo(action) }) }
+        onRecommendationFeedback?.let { action -> add(ControlAction(MaterialSymbolIcon("tune"), context.getString(R.string.context_feedback), null, secondary, onSecondary) { dismissAndDo(action) }) }
+
         onEditControls?.let { editControls ->
             add(ControlAction(
                 icon = RhythmIcons.Edit,

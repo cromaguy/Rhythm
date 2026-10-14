@@ -202,7 +202,7 @@ class UpdateNotificationWorker(
             
             if (channel == "nightly") {
                 var nightlyVersionTag: String? = null
-                val runsResponse = gitHubApiService.getWorkflowRuns("cromaguy", "Rhythm", "nightly.yml")
+                val runsResponse = gitHubApiService.getWorkflowRuns("tak2-08", "T2Rhythm", "nightly.yml")
                 if (runsResponse.isSuccessful && runsResponse.body() != null) {
                     val latestRun = runsResponse.body()?.workflow_runs?.firstOrNull {
                         it.status == "completed" && it.conclusion == "success"
@@ -218,16 +218,16 @@ class UpdateNotificationWorker(
 
                 // Also check releases for any equal/higher Stable or Beta releases
                 var releaseVersionTag: String? = null
-                val releasesResponse = gitHubApiService.getReleases("cromaguy", "Rhythm")
+                val releasesResponse = gitHubApiService.getReleases("tak2-08", "T2Rhythm")
                 if (releasesResponse.isSuccessful && releasesResponse.body() != null) {
                     val allReleases = releasesResponse.body()
                     val bestRelease = allReleases?.filter { !it.draft }?.maxWithOrNull { r1, r2 ->
-                        val v1 = r1.name.ifEmpty { r1.tag_name }
-                        val v2 = r2.name.ifEmpty { r2.tag_name }
+                        val v1 = r1.tag_name
+                        val v2 = r2.tag_name
                         VersionComparator.compare(v1, v2, isPreRelease1 = r1.prerelease, isPreRelease2 = r2.prerelease)
                     }
                     if (bestRelease != null) {
-                        releaseVersionTag = bestRelease.name.ifEmpty { bestRelease.tag_name }
+                        releaseVersionTag = bestRelease.tag_name
                     }
                 }
 
@@ -268,16 +268,16 @@ class UpdateNotificationWorker(
             // Fetch releases for stable or beta channels with conditional headers
             val response = if (channel == "beta") {
                 gitHubApiService.getReleasesWithHeaders(
-                    owner = "cromaguy",
-                    repo = "Rhythm",
+                    owner = "tak2-08",
+                    repo = "T2Rhythm",
                     perPage = 10,
                     ifNoneMatch = lastETag,
                     ifModifiedSince = lastModified
                 )
             } else {
                 gitHubApiService.getLatestReleaseWithHeaders(
-                    owner = "cromaguy",
-                    repo = "Rhythm",
+                    owner = "tak2-08",
+                    repo = "T2Rhythm",
                     ifNoneMatch = lastETag,
                     ifModifiedSince = lastModified
                 )
@@ -308,8 +308,8 @@ class UpdateNotificationWorker(
                             @Suppress("UNCHECKED_CAST")
                             val releaseList = (response.body() as? List<chromahub.rhythm.app.network.GitHubRelease>)
                             releaseList?.filter { !it.draft }?.maxWithOrNull { r1, r2 ->
-                                val v1 = r1.name.ifEmpty { r1.tag_name }
-                                val v2 = r2.name.ifEmpty { r2.tag_name }
+                                val v1 = r1.tag_name
+                                val v2 = r2.tag_name
                                 VersionComparator.compare(v1, v2, isPreRelease1 = r1.prerelease, isPreRelease2 = r2.prerelease)
                             }
                         } else {
@@ -317,7 +317,7 @@ class UpdateNotificationWorker(
                         }
                         
                         if (bestRelease != null) {
-                            val newVersionTag = bestRelease.name.ifEmpty { bestRelease.tag_name }
+                            val newVersionTag = bestRelease.tag_name
                             val isNewer = VersionComparator.isNewer(
                                 candidate = newVersionTag,
                                 current = BuildConfig.VERSION_NAME,

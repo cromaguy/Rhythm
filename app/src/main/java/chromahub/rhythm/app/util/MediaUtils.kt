@@ -360,15 +360,15 @@ object MediaUtils {
         if (removeArtwork || artworkUri == null) return
 
         try {
-            val mimeType = context.contentResolver.getType(artworkUri) ?: "image/jpeg"
-            val artworkBytes =
+            val originalBytes =
                 context.contentResolver.openInputStream(artworkUri)?.use { it.readBytes() }
 
-            if (artworkBytes == null || artworkBytes.isEmpty()) {
+            if (originalBytes == null || originalBytes.isEmpty()) {
                 Log.w(TAG, "Selected artwork URI has no readable data: $artworkUri")
                 return
             }
 
+            val (artworkBytes, mimeType) = ArtworkStorage.forEmbedding(originalBytes)
             val artwork = ArtworkFactory.getNew().apply {
                 setMimeType(mimeType)
                 setBinaryData(artworkBytes)
@@ -3031,7 +3031,7 @@ object MediaUtils {
             directoriesToSearch.add(File(File(parent, altDirName), EMBEDDED_ARTWORK_CACHE_DIR))
         }
 
-        val extensions = listOf("jpg", "png", "webp", "gif", "bmp", "img")
+        val extensions = listOf("webp", "jpg", "png", "gif", "bmp", "img")
         for (dir in directoriesToSearch) {
             val modernCandidate = findFirstExistingArtworkFile(
                 directory = dir,
@@ -3108,14 +3108,14 @@ object MediaUtils {
         val detectedExtension = detectArtworkExtension(embeddedArt)
 
         val cachedFile = if (lossless) {
-            val target = File(artworkCacheDir, "$prefix.$detectedExtension")
+            val target = File(artworkCacheDir, "$prefix.webp")
             when {
                 target.exists() && target.length() > 0L -> target
-                writeBytesAtomically(target, embeddedArt) -> target
-                else -> null
+                writeLosslessWebpArtwork(target, embeddedArt) -> target
+                else -> File(artworkCacheDir, "$prefix.$detectedExtension").takeIf { writeBytesAtomically(it, embeddedArt) }
             }
         } else {
-            val lossyTarget = File(artworkCacheDir, "$prefix.jpg")
+            val lossyTarget = File(artworkCacheDir, "$prefix.webp")
             when {
                 lossyTarget.exists() && lossyTarget.length() > 0L -> lossyTarget
                 writeLossyArtwork(lossyTarget, embeddedArt) -> lossyTarget
@@ -3135,6 +3135,14 @@ object MediaUtils {
         return cachedFile.toUri()
     }
 
+    private fun writeLosslessWebpArtwork(target: File, bytes: ByteArray): Boolean {
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
+        if (bounds.outWidth.toLong() * bounds.outHeight > 32_000_000 || bounds.outWidth <= 0 || bounds.outHeight <= 0) return false
+        val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size) ?: return false
+        return try { writeBitmapAtomically(target, bitmap, ArtworkStorage.format(true), 100) } finally { bitmap.recycle() }
+    }
+
     private fun writeLossyArtwork(targetFile: File, embeddedArt: ByteArray): Boolean {
         val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         BitmapFactory.decodeByteArray(embeddedArt, 0, embeddedArt.size, bounds)
@@ -3147,7 +3155,7 @@ object MediaUtils {
             ?: return false
 
         return try {
-            writeBitmapAtomically(targetFile, bitmap, Bitmap.CompressFormat.JPEG, 88)
+            writeBitmapAtomically(targetFile, bitmap, ArtworkStorage.format(), 86)
         } finally {
             bitmap.recycle()
         }
@@ -3600,9 +3608,9 @@ object MediaUtils {
                     Log.d(TAG, "TAGLIB: Removed artwork")
                 } else if (artworkUri != null) {
                     try {
-                        val mimeType = context.contentResolver.getType(artworkUri) ?: "image/jpeg"
-                        val artworkBytes = context.contentResolver.openInputStream(artworkUri)?.use { it.readBytes() }
-                        if (artworkBytes != null && artworkBytes.isNotEmpty()) {
+                        val originalBytes = context.contentResolver.openInputStream(artworkUri)?.use { it.readBytes() }
+                        if (originalBytes != null && originalBytes.isNotEmpty()) {
+                            val (artworkBytes, mimeType) = ArtworkStorage.forEmbedding(originalBytes)
                             val picture = Picture(
                                 data = artworkBytes,
                                 description = "Front Cover",

@@ -27,6 +27,8 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.ui.res.stringResource
+import chromahub.rhythm.app.R
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -239,7 +241,7 @@ fun RhythmPlayButton(
                 PlaybackBufferingLoader(Modifier.size(40.dp), contentColor)
             } else {
                 Text(
-                    text = if (isPlaying) "Pause" else "Play",
+                    text = stringResource(if (isPlaying) R.string.action_pause else R.string.cd_play),
                     style = MaterialTheme.typography.headlineMedium.copy(
                         fontWeight = FontWeight.Bold
                     ),

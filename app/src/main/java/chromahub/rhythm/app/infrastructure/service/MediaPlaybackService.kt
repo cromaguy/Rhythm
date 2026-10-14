@@ -141,6 +141,7 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
     
     // Player listener reference for proper cleanup
     private var playerListener: Player.Listener? = null
+    private var personalAutoplayJob: Job? = null
     private var listeningRecorder: chromahub.rhythm.app.features.local.data.experience.ListeningRecorder? = null
     
     // BroadcastReceiver to listen for favorite changes from ViewModel
@@ -1025,6 +1026,11 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
             }
 
             override fun onPlaybackStateChanged(playbackState: Int) {
+                if (playbackState == Player.STATE_ENDED && player.repeatMode == Player.REPEAT_MODE_OFF && player.playWhenReady &&
+                    chromahub.rhythm.app.features.local.data.experience.PersonalCollections.autoplay(this@MediaPlaybackService)) {
+                    continuePersonalRadio()
+                }
+
                 if (playbackState == Player.STATE_READY && getPlayerAudioSessionId() != 0) {
                     val currentSessionId = getPlayerAudioSessionId()
                     val needsInit = !audioEffectsInitialized || currentAudioEffectsSessionId != currentSessionId
@@ -2833,6 +2839,40 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
     /**
      * Helper function to convert MediaItem to Song for scrobbling and widgets
      */
+    private fun continuePersonalRadio() {
+        if (personalAutoplayJob?.isActive == true) return
+        val anchor = player.currentMediaItem?.mediaId ?: return
+        val queueSize = player.mediaItemCount
+        personalAutoplayJob = serviceScope.launch {
+            try {
+                val picks = withContext(Dispatchers.IO) {
+                    val songs = chromahub.rhythm.app.features.local.di.LocalMusicModule.provideMusicRepository(this@MediaPlaybackService).loadSongs()
+                    val favorites = runCatching { com.google.gson.JsonParser.parseString(appSettings.favoriteSongs.value ?: "[]").asJsonArray.map { it.asString } }.getOrDefault(emptyList())
+                    chromahub.rhythm.app.features.local.data.experience.PersonalCollections.generate(this@MediaPlaybackService, songs, favorites, anchor,
+                        chromahub.rhythm.app.features.local.data.experience.PersonalCollection.SIMILAR, count = 20)
+                }
+                // A user pause, another queue, repeat or guard timeout always wins over asynchronous recommendations.
+                if (player.currentMediaItem?.mediaId != anchor || player.mediaItemCount != queueSize ||
+                    player.playbackState != Player.STATE_ENDED || !player.playWhenReady || player.repeatMode != Player.REPEAT_MODE_OFF ||
+                    appSettings.rhythmGuardTimeoutUntilMs.value > System.currentTimeMillis() ||
+                    !chromahub.rhythm.app.features.local.data.experience.PersonalCollections.autoplay(this@MediaPlaybackService)) return@launch
+                if (picks.isEmpty()) { player.pause(); return@launch }
+                withContext(Dispatchers.IO) {
+                    val learning = chromahub.rhythm.app.features.local.data.experience.RecommendationLearning.get(this@MediaPlaybackService)
+                    learning.presented(picks.map { it.uri.toString() }); learning.selected(picks.first().uri.toString())
+                }
+                // Recheck after durable journal writes before touching the playback queue.
+                if (player.currentMediaItem?.mediaId != anchor || player.mediaItemCount != queueSize || !player.playWhenReady || player.playbackState != Player.STATE_ENDED) return@launch
+                player.addMediaItems(picks.map { song -> MediaItem.Builder().setMediaId(song.id).setUri(song.uri).setMediaMetadata(
+                    MediaMetadata.Builder().setTitle(song.title).setArtist(song.artist).setAlbumTitle(song.album).setAlbumArtist(song.albumArtist)
+                        .setGenre(song.genre).setDurationMs(song.duration).setArtworkUri(song.artworkUri)
+                        .setExtras(Bundle().apply { putLong("t2rhythm.dateAdded", song.dateAdded); putString("t2rhythm.path", song.path) }).build()).build() })
+                player.seekToDefaultPosition(queueSize); player.prepare(); player.play()
+            } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
+            catch (error: Exception) { Log.w(TAG, "Local personalized autoplay unavailable", error) }
+        }
+    }
+
     private fun convertMediaItemToSong(mediaItem: MediaItem): Song? {
         return try {
             val extras = mediaItem.mediaMetadata.extras
@@ -2856,7 +2896,7 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
                     ?: "",
                 uri = mediaItem.requestMetadata.mediaUri ?: mediaItem.localConfiguration?.uri ?: Uri.EMPTY,
                 artworkUri = mediaItem.mediaMetadata.artworkUri,
-                duration = player.duration.takeIf { it > 0 } ?: 0L,
+                duration = mediaItem.mediaMetadata.durationMs?.takeIf { it > 0 } ?: player.duration.takeIf { it > 0 } ?: 0L,
                 trackNumber = 0,
                 year = 0,
                 genre = mediaItem.mediaMetadata.genre?.toString(),

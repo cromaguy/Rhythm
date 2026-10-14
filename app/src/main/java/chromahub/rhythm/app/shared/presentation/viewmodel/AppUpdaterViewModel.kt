@@ -34,6 +34,7 @@ import chromahub.rhythm.app.network.NetworkManager
 import chromahub.rhythm.app.shared.data.model.AppSettings
 import chromahub.rhythm.app.util.ChangelogFilter
 import chromahub.rhythm.app.util.VersionComparator
+import chromahub.rhythm.app.util.UpdateIntegrity
 import com.google.gson.Gson
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -77,6 +78,7 @@ data class AppVersion(
     val releaseNotes: String = "",
     val isPreRelease: Boolean = false,
     val buildNumber: Int = 0,
+    val sha256: String? = null,
 )
 
 data class ReleaseContent(
@@ -222,7 +224,7 @@ class AppUpdaterViewModel(
         ensureDownloadNotificationChannel()
 
         // Load any persisted download state
-        loadDownloadState()
+        viewModelScope.launch(Dispatchers.IO) { loadDownloadState() }
 
         viewModelScope.launch {
             combine(_appSettings.updateChannel, _appSettings.updateSource) { channel, source ->
@@ -274,12 +276,18 @@ class AppUpdaterViewModel(
                 val file = File(downloadedFilePath)
                 if (file.exists() && file.length() > 0) {
                     // Verify file integrity if checksum available
-                    val isValid =
-                        activeDownload?.checksum?.let { checksum ->
-                            verifyFileChecksum(file, checksum)
-                        } ?: true
+                    val isValid = runCatching {
+                        UpdateIntegrity.verifyBytes(file, downloadPrefs.getLong("verified_size", 0), downloadPrefs.getString("verified_checksum", null))
+                        UpdateIntegrity.verifyPackage(getApplication(), file)
+                    }.isSuccess
 
                     if (isValid) {
+                        val info = getApplication<Application>().packageManager.getPackageArchiveInfo(file.path, 0)
+                        val code = if (Build.VERSION.SDK_INT >= 28) info?.longVersionCode else info?.versionCode?.toLong()
+                        if (code != null && code <= BuildConfig.VERSION_CODE) {
+                            clearDownloadState(); _downloadProgress.value = 0f
+                            return
+                        }
                         _downloadedFile.value = file
                         _downloadProgress.value = 100f
                         Log.d(tag, "Found completed download: ${file.absolutePath}")
@@ -577,8 +585,8 @@ class AppUpdaterViewModel(
             }
 
         return filteredReleases.maxWithOrNull { r1, r2 ->
-            val v1 = r1.name.ifEmpty { r1.tag_name }
-            val v2 = r2.name.ifEmpty { r2.tag_name }
+            val v1 = r1.tag_name
+            val v2 = r2.tag_name
             VersionComparator.compare(v1, v2, isPreRelease1 = r1.prerelease, isPreRelease2 = r2.prerelease)
         }
     }
@@ -608,7 +616,7 @@ class AppUpdaterViewModel(
         val apkAsset = selectReleaseApkAsset(release)
         val downloadUrl = apkAsset?.browser_download_url ?: release.html_url
         val apkSize = apkAsset?.size ?: 0
-        val versionName = release.name.ifEmpty { release.tag_name }
+        val versionName = release.tag_name.removePrefix("v").removePrefix("V")
 
         return AppVersion(
             versionName = versionName,
@@ -618,6 +626,7 @@ class AppUpdaterViewModel(
             knownIssues = releaseContent.knownIssues,
             downloadUrl = downloadUrl,
             apkAssetName = apkAsset?.name ?: "",
+            sha256 = UpdateIntegrity.sha256(apkAsset?.digest),
             apkSize = apkSize,
             releaseNotes = release.body,
             isPreRelease = release.prerelease,
@@ -850,6 +859,11 @@ class AppUpdaterViewModel(
                 return@launch
             }
 
+            if (UpdateIntegrity.sha256(latestVersion.sha256) == null || !latestVersion.apkAssetName.endsWith(".apk", true)) {
+                _error.value = getApplication<Application>().getString(R.string.update_integrity_missing)
+                openInBrowser(downloadUrl)
+                return@launch
+            }
             // Start or resume download
             downloadApkInApp(downloadUrl, latestVersion.apkAssetName, expectedSize = latestVersion.apkSize)
         }
@@ -904,457 +918,79 @@ class AppUpdaterViewModel(
         expectedSize: Long = 0,
         retryAttempt: Int = 0,
     ) {
-        if (_isDownloading.value) {
-            return // Already downloading
+        if (_isDownloading.value) return
+        val release = _latestVersion.value?.takeIf { it.downloadUrl == downloadUrl }
+        val expectedDigest = release?.sha256 ?: activeDownload?.checksum
+        val size = if (expectedSize > 0) expectedSize else activeDownload?.totalBytes ?: 0
+        if (File(fileName).name != fileName || '\\' in fileName || !fileName.endsWith(".apk", true) || size <= 0 || UpdateIntegrity.sha256(expectedDigest) == null) {
+            _error.value = getApplication<Application>().getString(R.string.update_integrity_failed)
+            return
         }
-
-        // Cancel any stale notification from a previous session
+        val resume = activeDownload?.url == downloadUrl && activeDownload?.fileName == fileName
+        val previous = if (resume) activeDownload else null
+        if (!resume) { _downloadedFile.value = null; activeDownload = null; _downloadState.value = null }
+        _isDownloading.value = true; _error.value = null
         cancelDownloadNotification()
-
-        _downloadProgress.value = 0f
-        _error.value = null
-
-        val shouldResumeDownload =
-            activeDownload != null &&
-                activeDownload?.url == downloadUrl
-
-        if (!shouldResumeDownload) {
-            // Starting fresh download - clear previous state and delete partial files
-            _downloadedFile.value = null
-
-            // Delete any existing partial download file
+        viewModelScope.launch(Dispatchers.IO) {
             val context = getApplication<Application>()
-            val downloadDir =
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)
-                } else {
-                    Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-                }
-            downloadDir?.let { dir ->
-                val existingFile = File(dir, fileName)
-                if (existingFile.exists()) {
-                    Log.d(tag, "Deleting partial download file: ${existingFile.absolutePath}")
-                    existingFile.delete()
-                }
-            }
-
-            activeDownload = null
-        }
-
-        _isDownloading.value = true
-        lastNotifiedProgressPercent = -1
-        showDownloadProgressNotification(0)
-
-        // Use viewModelScope with IO dispatcher for background work
-        // The download continues in background even if user navigates away
-        viewModelScope.launch(Dispatchers.IO) {
+            val directory = File(context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS) ?: context.filesDir, "verified-updates").apply { mkdirs() }
+            val file = File(directory, fileName)
+            var call: Call? = null
             try {
-                // Use app-specific external storage instead of public Downloads
-                val context = getApplication<Application>()
-                val downloadDir =
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                        // For Android 10 and above, use app-specific directory
-                        context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)
-                    } else {
-                        // For older versions, check permission first
-                        if (ContextCompat.checkSelfPermission(
-                                context,
-                                Manifest.permission.WRITE_EXTERNAL_STORAGE,
-                            ) != PackageManager.PERMISSION_GRANTED
-                        ) {
-                            viewModelScope.launch {
-                                _error.value = "Storage permission required to download updates"
-                                _isDownloading.value = false
-                            }
-                            return@launch
-                        }
-                        Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+                if (!resume) file.delete()
+                var offset = file.length()
+                if (offset >= size) { file.delete(); offset = 0 }
+                val client = OkHttpClient.Builder().connectTimeout(30, TimeUnit.SECONDS).readTimeout(30, TimeUnit.SECONDS).build()
+                val request = Request.Builder().url(downloadUrl).header("User-Agent", "T2Rhythm/${BuildConfig.VERSION_NAME}")
+                if (offset > 0) {
+                    request.header("Range", "bytes=$offset-")
+                    previous?.etag?.let { request.header("If-Range", it) }
+                }
+                call = client.newCall(request.build()); activeCall = call
+                call.execute().use { response ->
+                    check(response.isSuccessful) { "HTTP ${response.code}" }
+                    val append = response.code == 206 && offset > 0
+                    if (response.code == 206) {
+                        val range = Regex("bytes (\\d+)-(\\d+)/(\\d+)").matchEntire(response.header("Content-Range").orEmpty()) ?: error("Invalid range")
+                        require(range.groupValues[1].toLong() == offset && range.groupValues[3].toLong() == size) { "Resumed APK range mismatch" }
                     }
-
-                if (downloadDir == null) {
-                    viewModelScope.launch {
-                        _error.value = "Could not access storage"
-                        _isDownloading.value = false
-                    }
-                    return@launch
-                }
-
-                // Ensure download directory exists
-                if (!downloadDir.exists()) {
-                    downloadDir.mkdirs()
-                }
-
-                // Create or get existing file
-                val file = File(downloadDir, fileName)
-                var existingLength = 0L
-
-                // Validate existing file before resume
-                if (file.exists() && activeDownload != null && shouldResumeDownload) {
-                    existingLength = file.length()
-
-                    // Validate file size matches expected resume position
-                    if (existingLength != activeDownload?.resumePosition) {
-                        Log.w(tag, "File size mismatch (expected: ${activeDownload?.resumePosition}, actual: $existingLength), deleting")
-                        file.delete()
-                        existingLength = 0L
-                        activeDownload = null
-                    }
-                } else if (file.exists()) {
-                    // File exists but we're not resuming - delete it
-                    Log.d(tag, "Deleting existing file for fresh download")
-                    file.delete()
-                }
-
-                // Create OkHttp client with longer timeouts
-                val client =
-                    OkHttpClient
-                        .Builder()
-                        .connectTimeout(30, TimeUnit.SECONDS)
-                        .readTimeout(30, TimeUnit.SECONDS)
-                        .writeTimeout(30, TimeUnit.SECONDS)
-                        .build()
-
-                // Create request with resume support
-                val requestBuilder =
-                    Request
-                        .Builder()
-                        .url(downloadUrl)
-                        .header("User-Agent", "Rhythm-App/${BuildConfig.VERSION_NAME} (Android)")
-
-                // Add range header if resuming
-                if (existingLength > 0 && activeDownload != null) {
-                    Log.d(tag, "Resuming download from byte $existingLength")
-                    requestBuilder.header("Range", "bytes=$existingLength-")
-                    activeDownload?.etag?.let { requestBuilder.header("If-Match", it) }
-                    activeDownload?.lastModified?.let { requestBuilder.header("If-Unmodified-Since", it) }
-                }
-
-                val request = requestBuilder.build()
-
-                // Execute request
-                activeCall = client.newCall(request)
-                activeCall?.enqueue(
-                    object : Callback {
-                        override fun onFailure(
-                            call: Call,
-                            e: IOException,
-                        ) {
-                            viewModelScope.launch {
-                                if (!call.isCanceled()) {
-                                    Log.e(tag, "Download failed", e)
-                                    handleDownloadFailure(downloadUrl, fileName, retryAttempt, e.message ?: "Unknown error")
-                                }
-                            }
+                    if (!append) offset = 0
+                    activeDownload = DownloadState(fileName, downloadUrl, size, offset, response.header("ETag"), response.header("Last-Modified"), offset, expectedDigest, retryAttempt)
+                    _downloadState.value = activeDownload; saveDownloadState()
+                    var written = offset; var savedPercent = -1
+                    response.body.byteStream().use { input -> FileOutputStream(file, append).use { output ->
+                        val buffer = ByteArray(64 * 1024)
+                        while (true) {
+                            if (!_isDownloading.value || activeCall !== call) return@launch
+                            val n = input.read(buffer); if (n < 0) break
+                            written += n; require(written <= size) { "APK exceeds declared size" }; output.write(buffer, 0, n)
+                            val progress = (written * 100.0 / size).toFloat().coerceIn(0f, 100f)
+                            _downloadProgress.value = progress; maybeUpdateDownloadProgressNotification(progress)
+                            activeDownload = activeDownload?.copy(downloadedBytes = written, resumePosition = written); _downloadState.value = activeDownload
+                            if (progress.toInt() / 5 != savedPercent) { output.flush(); output.fd.sync(); saveDownloadState(); savedPercent = progress.toInt() / 5 }
                         }
-
-                        override fun onResponse(
-                            call: Call,
-                            response: Response,
-                        ) {
-                            // Handle HTTP 412 Precondition Failed - file changed on server
-                            if (response.code == 412) {
-                                Log.w(tag, "Server file changed (HTTP 412), restarting download")
-                                viewModelScope.launch {
-                                    _isDownloading.value = false
-                                    activeDownload = null
-                                    activeCall = null
-                                    // Delete partial file and restart
-                                    file.delete()
-                                    handleDownloadFailure(downloadUrl, fileName, retryAttempt, "File changed on server", forceRetry = true)
-                                }
-                                return
-                            }
-
-                            if (!response.isSuccessful && response.code != 206) {
-                                viewModelScope.launch {
-                                    handleDownloadFailure(
-                                        downloadUrl,
-                                        fileName,
-                                        retryAttempt,
-                                        "HTTP ${response.code} - ${response.message}",
-                                    )
-                                }
-                                return
-                            }
-
-                            try {
-                                // Get content length and resume info
-                                val contentLength = response.body.contentLength()
-                                val totalLength =
-                                    if (response.code == 206) {
-                                        val range = response.header("Content-Range")
-                                        range?.substringAfter("/")?.toLongOrNull() ?: 0L
-                                    } else {
-                                        contentLength
-                                    }
-
-                                var resumePosition = existingLength
-                                if (resumePosition > 0 && response.code != 206) {
-                                    Log.w(tag, "Server ignored range request with HTTP ${response.code}; restarting download from scratch")
-                                    resumePosition = 0L
-                                    file.delete()
-                                }
-
-                                // Store download state
-                                val checksumHeader = response.header("X-Checksum-SHA256") ?: response.header("Digest")
-                                activeDownload =
-                                    DownloadState(
-                                        fileName = fileName,
-                                        url = downloadUrl,
-                                        totalBytes = totalLength,
-                                        downloadedBytes = resumePosition,
-                                        etag = response.header("ETag"),
-                                        lastModified = response.header("Last-Modified"),
-                                        resumePosition = resumePosition,
-                                        checksum = checksumHeader,
-                                        retryCount = retryAttempt,
-                                    )
-                                viewModelScope.launch {
-                                    _downloadState.value = activeDownload
-                                }
-
-                                // Create output stream
-                                val outputStream = FileOutputStream(file, resumePosition > 0)
-
-                                // Get input stream
-                                val inputStream = response.body.byteStream()
-
-                                // Create buffer
-                                val buffer = ByteArray(8192)
-                                var bytesRead: Int
-                                var totalBytesRead = resumePosition
-
-                                // Read input stream
-                                while (inputStream.read(buffer).also { bytesRead = it } != -1) {
-                                    if (!_isDownloading.value) {
-                                        // Download was cancelled
-                                        break
-                                    }
-
-                                    outputStream.write(buffer, 0, bytesRead)
-                                    totalBytesRead += bytesRead
-
-                                    // Update progress
-                                    val totalBytes =
-                                        if (totalLength > 0) {
-                                            totalLength
-                                        } else if (response.code == 206 && resumePosition > 0) {
-                                            resumePosition + contentLength.coerceAtLeast(0)
-                                        } else {
-                                            contentLength
-                                        }
-                                    if (totalBytes > 0) {
-                                        val progress = (totalBytesRead.toFloat() / totalBytes.toFloat()) * 100f
-                                        viewModelScope.launch {
-                                            _downloadProgress.value = progress.coerceIn(0f, 100f)
-                                            maybeUpdateDownloadProgressNotification(_downloadProgress.value)
-                                            activeDownload = activeDownload?.copy(downloadedBytes = totalBytesRead)
-                                            _downloadState.value = activeDownload
-
-                                            // Save state periodically (every 5% progress)
-                                            if (progress % 5f < 1f) {
-                                                saveDownloadState()
-                                            }
-                                        }
-                                    }
-                                }
-
-                                // Close streams
-                                outputStream.flush()
-                                outputStream.close()
-                                inputStream.close()
-
-                                if (!_isDownloading.value) {
-                                    Log.d(tag, "Download cancelled/paused by user. Keeping partial file.")
-                                    return
-                                }
-
-                                // Verify file integrity
-                                val fileSize = file.length()
-                                // Prefer HTTP headers (Content-Range/Content-Length) which reflect the actual file
-                                // being downloaded. Fall back to GitHub API's expectedSize only if HTTP headers
-                                // are unavailable (e.g. chunked transfer with no Content-Length).
-                                val httpExpectedSize = if (totalLength > 0) totalLength else contentLength
-                                val finalExpectedSize = if (httpExpectedSize > 0) httpExpectedSize else expectedSize
-
-                                if (finalExpectedSize == 0L) {
-                                    Log.w(
-                                        tag,
-                                        "No reference size available (HTTP Content-Length unavailable and GitHub API returned 0) — skipping size verification for $fileName ($fileSize bytes)",
-                                    )
-                                } else if (fileSize != finalExpectedSize) {
-                                    Log.w(
-                                        tag,
-                                        "File size mismatch (expected: $finalExpectedSize [HTTP: $httpExpectedSize, GitHub: $expectedSize], actual: $fileSize) — proceeding anyway; checksum will verify integrity",
-                                    )
-                                } else {
-                                    Log.d(tag, "File size verification passed: $fileSize bytes (expected: $finalExpectedSize)")
-                                }
-
-                                // Verify checksum if available
-                                val checksumValid =
-                                    activeDownload?.checksum?.let { expectedChecksum ->
-                                        val actualChecksum = calculateFileChecksum(file)
-                                        val isValid = verifyChecksum(actualChecksum, expectedChecksum)
-                                        if (!isValid) {
-                                            Log.e(tag, "Checksum verification failed. Expected: $expectedChecksum, Actual: $actualChecksum")
-                                        }
-                                        isValid
-                                    } ?: true
-
-                                if (!checksumValid) {
-                                    viewModelScope.launch {
-                                        file.delete() // Delete corrupted file
-                                        handleDownloadFailure(downloadUrl, fileName, retryAttempt, "Checksum verification failed")
-                                    }
-                                    return
-                                }
-
-                                // Download complete and verified
-                                viewModelScope.launch(Dispatchers.IO) {
-                                    if (_isDownloading.value) {
-                                        val isZip = fileName.endsWith(".zip", ignoreCase = true)
-                                        if (isZip) {
-                                            _isExtracting.value = true
-                                        }
-                                        val finalFile =
-                                            if (isZip) {
-                                                val apkFile = File(file.parentFile, fileName.replace(".zip", ".apk", ignoreCase = true))
-                                                if (extractApkFromZip(file, apkFile)) {
-                                                    file.delete() // delete the zip file
-                                                    _isExtracting.value = false
-                                                    apkFile
-                                                } else {
-                                                    _isExtracting.value = false
-                                                    _isDownloading.value = false
-                                                    _downloadProgress.value = 0f
-                                                    activeDownload = null
-                                                    _downloadState.value = null
-                                                    clearDownloadState()
-                                                    cancelDownloadNotification()
-                                                    withContext(Dispatchers.Main) {
-                                                        _error.value =
-                                                            "Failed to extract APK from ZIP. The ZIP file is still saved — you can extract it manually or try downloading again."
-                                                    }
-                                                    return@launch
-                                                }
-                                            } else {
-                                                file
-                                            }
-
-                                        _isDownloading.value = false
-                                        _downloadProgress.value = 100f
-                                        _downloadedFile.value = finalFile
-                                        showDownloadCompletedNotification(finalFile.name)
-
-                                        // Calculate and store final checksum
-                                        val finalChecksum = calculateFileChecksum(finalFile)
-                                        activeDownload = activeDownload?.copy(checksum = finalChecksum)
-                                        saveDownloadState() // Save final state with checksum
-                                        // Clear active download but keep downloaded file info
-                                        activeDownload = null
-                                        activeCall = null
-                                        _downloadState.value = null
-                                        Log.d(
-                                            tag,
-                                            "Download complete: ${finalFile.absolutePath} (${finalFile.length()} bytes, checksum: $finalChecksum)",
-                                        )
-                                    }
-                                }
-                            } catch (e: Exception) {
-                                viewModelScope.launch {
-                                    if (_isDownloading.value) {
-                                        Log.e(tag, "Download failed during write", e)
-                                        handleDownloadFailure(downloadUrl, fileName, retryAttempt, e.message ?: "Unknown error")
-                                    }
-                                }
-                            }
-                        }
-                    },
-                )
-            } catch (e: Exception) {
-                Log.e(tag, "Download setup failed", e)
-                _isDownloading.value = false
-                _error.value = "Download failed: ${e.message ?: "Unknown error"}"
-                activeDownload = null
-                activeCall = null
-                _downloadState.value = null
-                cancelDownloadNotification()
+                        output.flush(); output.fd.sync()
+                    } }
+                }
+                if (!_isDownloading.value || activeCall !== call) return@launch
+                UpdateIntegrity.verifyBytes(file, size, expectedDigest)
+                UpdateIntegrity.verifyPackage(context, file, release?.versionCode)
+                downloadPrefs.edit(commit = true) { putString("verified_checksum", expectedDigest); putLong("verified_size", size) }
+                _downloadedFile.value = file; _downloadProgress.value = 100f; _isDownloading.value = false
+                activeDownload = null; activeCall = null; _downloadState.value = null; saveDownloadState()
+                showDownloadCompletedNotification(file.name)
+            } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                call?.cancel(); throw cancelled
+            } catch (invalid: IllegalArgumentException) {
+                if (activeCall === call) {
+                    file.delete(); _isDownloading.value = false; activeDownload = null; activeCall = null
+                    _downloadState.value = null; clearDownloadState(); cancelDownloadNotification()
+                    _error.value = context.getString(R.string.update_integrity_failed)
+                }
+            } catch (error: Exception) {
+                if (_isDownloading.value && activeCall === call) handleDownloadFailure(downloadUrl, fileName, retryAttempt, error.message ?: "Download failed")
             }
         }
-    }
-
-    /**
-     * Handle download failures with retry logic
-     */
-    private fun handleSizeMismatch(
-        downloadUrl: String,
-        fileName: String,
-        retryAttempt: Int,
-        file: File,
-        expectedSize: Long,
-        actualSize: Long,
-        isHttpSizeAbsent: Boolean = false,
-    ) {
-        Log.w(
-            tag,
-            "File size mismatch (expected: $expectedSize, actual: $actualSize, httpSizeAbsent: $isHttpSizeAbsent) — proceeding with download anyway",
-        )
-
-        _isDownloading.value = false
-        activeCall = null
-        activeDownload = null
-        _downloadState.value = null
-        clearDownloadState()
-        cancelDownloadNotification()
-
-        viewModelScope.launch(Dispatchers.IO) {
-            finishDownload(file, fileName)
-        }
-    }
-
-    private fun finishDownload(
-        file: File,
-        fileName: String,
-    ) {
-        val isZip = fileName.endsWith(".zip", ignoreCase = true)
-        if (isZip) {
-            _isExtracting.value = true
-        }
-        val finalFile =
-            if (isZip) {
-                val apkFile = File(file.parentFile, fileName.replace(".zip", ".apk", ignoreCase = true))
-                if (extractApkFromZip(file, apkFile)) {
-                    file.delete()
-                    _isExtracting.value = false
-                    apkFile
-                } else {
-                    _isExtracting.value = false
-                    _isDownloading.value = false
-                    _downloadProgress.value = 0f
-                    clearDownloadState()
-                    cancelDownloadNotification()
-                    _error.value = "Failed to extract APK from ZIP. Opening GitHub releases instead."
-                    openInBrowser("https://github.com/$githubOwner/$githubRepo/releases")
-                    return
-                }
-            } else {
-                file
-            }
-
-        _isDownloading.value = false
-        _downloadProgress.value = 100f
-        _downloadedFile.value = finalFile
-        showDownloadCompletedNotification(finalFile.name)
-
-        val finalChecksum = calculateFileChecksum(finalFile)
-        activeDownload = null
-        activeCall = null
-        _downloadState.value = null
-        Log.d(
-            tag,
-            "Download complete (proceeded despite size mismatch): ${finalFile.absolutePath} (${finalFile.length()} bytes, checksum: $finalChecksum)",
-        )
     }
 
     private fun handleDownloadFailure(
@@ -1375,11 +1011,7 @@ class AppUpdaterViewModel(
         // Update activeDownload's resumePosition and retryCount so we can resume during retry
         val context = getApplication<Application>()
         val downloadDir =
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)
-            } else {
-                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-            }
+            File(context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS) ?: context.filesDir, "verified-updates")
         val file = downloadDir?.let { File(it, fileName) }
         val currentSize = file?.length() ?: 0L
 
@@ -1401,7 +1033,7 @@ class AppUpdaterViewModel(
 
             viewModelScope.launch {
                 delay(delayMs)
-                if (!_isDownloading.value) {
+                if (!_isDownloading.value && activeDownload?.url == downloadUrl) {
                     Log.d(tag, "Retrying download (attempt $nextRetryAttempt)")
                     val expectedSize = _latestVersion.value?.apkSize ?: 0
                     downloadApkInApp(downloadUrl, fileName, expectedSize, nextRetryAttempt)
@@ -1419,86 +1051,8 @@ class AppUpdaterViewModel(
     }
 
     fun proceedWithMismatchedDownload() {
-        val pending = pendingMismatchedDownload
-        if (pending == null) {
-            _error.value = "No mismatched download is available to proceed with."
-            return
-        }
-
-        val file = File(pending.filePath)
-        if (!file.exists() || file.length() == 0L) {
-            cleanupUpdaterDownloadAfterFailure("Downloaded update file is missing or empty.", file)
-            return
-        }
-
-        _error.value = null
-        _isDownloading.value = true
-        _downloadProgress.value = 100f
         _canProceedWithMismatchedDownload.value = false
-
-        // Track proceed attempts to avoid infinite loops on persistent extraction failures
-        val maxProceedAttempts = 3
-        val proceedAttempt = activeDownload?.retryCount?.coerceAtMost(maxProceedAttempts) ?: 0
-
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                val finalFile =
-                    if (pending.fileName.endsWith(".zip", ignoreCase = true)) {
-                        _isExtracting.value = true
-                        val apkFile = File(file.parentFile, pending.fileName.replace(".zip", ".apk", ignoreCase = true))
-                        if (extractApkFromZip(file, apkFile)) {
-                            file.delete()
-                            _isExtracting.value = false
-                            apkFile
-                        } else {
-                            _isExtracting.value = false
-                            _isDownloading.value = false
-                            if (proceedAttempt >= maxProceedAttempts) {
-                                _error.value =
-                                    "Could not extract an APK from the downloaded ZIP after $maxProceedAttempts attempts. The ZIP file has been kept at: ${file.absolutePath}. Reset to download again."
-                                pendingMismatchedDownload = null
-                                clearDownloadState()
-                                cancelDownloadNotification()
-                            } else {
-                                activeDownload = activeDownload?.copy(retryCount = proceedAttempt + 1)
-                                _canProceedWithMismatchedDownload.value = true
-                                _error.value =
-                                    "Could not extract an APK from the downloaded ZIP. The ZIP file is still saved — you can try again or reset."
-                            }
-                            return@launch
-                        }
-                    } else {
-                        file
-                    }
-
-                _isDownloading.value = false
-                _downloadProgress.value = 100f
-                _downloadedFile.value = finalFile
-                pendingMismatchedDownload = null
-                activeDownload = null
-                activeCall = null
-                _downloadState.value = null
-                _canProceedWithMismatchedDownload.value = false
-                saveDownloadState()
-                showDownloadCompletedNotification(finalFile.name)
-                Log.w(tag, "Proceeding with size-mismatched download: ${finalFile.absolutePath} (${finalFile.length()} bytes)")
-            } catch (e: Exception) {
-                Log.e(tag, "Proceeding with mismatched download failed", e)
-                _isDownloading.value = false
-                if (proceedAttempt >= maxProceedAttempts) {
-                    _error.value =
-                        "Could not use the downloaded update after $maxProceedAttempts attempts. The file has been kept at: ${file.absolutePath}. Reset to download again."
-                    pendingMismatchedDownload = null
-                    clearDownloadState()
-                    cancelDownloadNotification()
-                } else {
-                    activeDownload = activeDownload?.copy(retryCount = proceedAttempt + 1)
-                    _canProceedWithMismatchedDownload.value = true
-                    _error.value =
-                        "Could not use the downloaded update: ${e.message ?: "Unknown error"}. The file is still saved — you can try again or reset."
-                }
-            }
-        }
+        _error.value = getApplication<Application>().getString(R.string.update_integrity_failed)
     }
 
     private fun cleanupUpdaterDownloadAfterFailure(
@@ -1507,11 +1061,7 @@ class AppUpdaterViewModel(
     ) {
         val context = getApplication<Application>()
         val downloadDir =
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)
-            } else {
-                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-            }
+            File(context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS) ?: context.filesDir, "verified-updates")
         val activeFile =
             activeDownload?.fileName?.let { fileName ->
                 downloadDir?.let { File(it, fileName) }
@@ -1631,33 +1181,8 @@ class AppUpdaterViewModel(
             false
         }
 
-    private fun selectReleaseApkAsset(release: GitHubRelease): GitHubAsset? {
-        val flavor = resolveUpdateSourceFlavor().lowercase(Locale.ROOT)
-
-        val uploadedApks =
-            release.assets.filter { asset ->
-                asset.state == "uploaded" && asset.name.endsWith(".apk", ignoreCase = true)
-            }
-
-        val flavorAssets =
-            uploadedApks.filter { asset ->
-                val lowerName = asset.name.lowercase(Locale.ROOT)
-                when (flavor) {
-                    "fdroid" -> lowerName.contains("fdroidrelease") || lowerName.contains("-fdroid-")
-                    "github" -> lowerName.contains("githubrelease") || lowerName.contains("-github-")
-                    else -> false
-                }
-            }
-
-        if (flavorAssets.isEmpty()) {
-            Log.w(tag, "No APK asset matched current flavor '$flavor' for release ${release.tag_name}")
-            return null
-        }
-
-        return flavorAssets.firstOrNull { asset -> isUniversalApkName(asset.name) }
-            ?: flavorAssets.firstOrNull { asset -> !hasAbiSuffix(asset.name) }
-            ?: flavorAssets.firstOrNull()
-    }
+    private fun selectReleaseApkAsset(release: GitHubRelease): GitHubAsset? = UpdateIntegrity.selectAsset(
+        release.assets, resolveUpdateSourceFlavor().lowercase(Locale.ROOT), BuildConfig.DEBUG, Build.SUPPORTED_ABIS.toList())
 
     private fun resolveUpdateSourceFlavor(): String =
         when (_appSettings.updateSource.value.lowercase(Locale.ROOT)) {
@@ -1678,6 +1203,20 @@ class AppUpdaterViewModel(
      * Install the downloaded APK with improved error handling
      */
     fun installDownloadedApk() {
+        viewModelScope.launch {
+            val file = _downloadedFile.value ?: return@launch
+            val valid = withContext(Dispatchers.IO) { runCatching {
+                UpdateIntegrity.verifyBytes(file, downloadPrefs.getLong("verified_size", 0), downloadPrefs.getString("verified_checksum", null))
+                UpdateIntegrity.verifyPackage(getApplication(), file, _latestVersion.value?.versionCode)
+            }.isSuccess }
+            if (valid) launchVerifiedInstaller() else {
+                _error.value = getApplication<Application>().getString(R.string.update_integrity_failed)
+                _downloadedFile.value = null; clearDownloadState()
+            }
+        }
+    }
+
+    private fun launchVerifiedInstaller() {
         val file = _downloadedFile.value
         if (file == null || !file.exists()) {
             _error.value = "No downloaded file found"
@@ -1727,24 +1266,19 @@ class AppUpdaterViewModel(
             // Check if there's an app that can handle this intent
             if (intent.resolveActivity(context.packageManager) != null) {
                 context.startActivity(intent)
-                // IMPORTANT: Clear download state after successful launch of installer
-                // This prevents the app from thinking the update is still downloaded
-                // and showing "Install Update" again after the user installs it.
-                _downloadedFile.value = null
-                activeDownload = null
-                _downloadState.value = null
-                clearDownloadState() // Clear persisted state as well
+                // Installer launch is not installation success. Keep the verified APK so cancel/retry works.
+                saveDownloadState()
             } else {
                 // Keep _downloadedFile so user can retry from Settings
                 _error.value =
                     "No app available to install APK files. The APK file is still saved — go to your file manager to install it manually."
-                clearDownloadState()
+                saveDownloadState()
             }
         } catch (e: Exception) {
             Log.e(tag, "Error installing APK", e)
             // Keep _downloadedFile so user can retry install
-            _error.value = "Could not install APK: ${e.message ?: "Unknown error"}. Tap Install to try again."
-            clearDownloadState()
+            _error.value = getApplication<Application>().getString(R.string.update_install_retry)
+            saveDownloadState()
         }
     }
 
@@ -1762,11 +1296,7 @@ class AppUpdaterViewModel(
         try {
             val context = getApplication<Application>()
             val downloadDir =
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)
-                } else {
-                    Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-                }
+                File(context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS) ?: context.filesDir, "verified-updates")
 
             activeDownload?.let { downloadState ->
                 downloadDir?.let { dir ->

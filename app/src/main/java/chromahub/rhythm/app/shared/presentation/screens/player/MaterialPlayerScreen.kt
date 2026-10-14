@@ -140,6 +140,7 @@ import androidx.compose.runtime.toMutableStateList
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.zIndex
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
@@ -310,6 +311,7 @@ fun MaterialPlayerScreen(
     expansionFraction: Float = 1f
 ) {
     val context = LocalContext.current
+    var musicVideoActive by remember(song?.id) { mutableStateOf(false) }
     val density = LocalDensity.current
     val haptic = LocalHapticFeedback.current
     val scope = rememberCoroutineScope()
@@ -344,10 +346,11 @@ fun MaterialPlayerScreen(
     val onTapLyricsView = if (tapLyricsToFullScreen) onOpenFullScreenLyrics else null
     
     // Expressive shape for player artwork display
-    val playerArtworkShape = rememberExpressiveShapeFor(
+    val basePlayerArtworkShape = rememberExpressiveShapeFor(
         ExpressiveShapeTarget.PLAYER_ART,
         RoundedCornerShape(28.dp)
     )
+    val playerArtworkShape = if (musicVideoActive) RoundedCornerShape(16.dp) else basePlayerArtworkShape
     
     // Progress bar customization settings
     val playerProgressStyle by appSettingsInstance.playerProgressStyle.collectAsState()
@@ -1745,6 +1748,10 @@ fun MaterialPlayerScreen(
                                 },
                             contentAlignment = Alignment.TopCenter // Align content to the center
                         ) {
+                            if (song != null && !showLyricsView) {
+                                chromahub.rhythm.app.shared.presentation.components.player.MusicVideoArtwork(song, isPlaying,
+                                    positionMs = { (progress() * song.duration).toLong() }, modifier = Modifier.fillMaxSize().zIndex(5f), onActiveChange = { musicVideoActive = it })
+                            }
                             // Render album art (hidden during lyrics view unless playerShowArtBelowLyrics is on)
                             if (!showLyricsView || playerShowArtBelowLyrics) {
                             if (song != null) {
@@ -1780,7 +1787,7 @@ fun MaterialPlayerScreen(
                                                     .clip(playerArtworkShape)
                                             )
 
-                                            if (canvasArtwork?.preferredAnimationUrl != null) {
+                                            if (!musicVideoActive && canvasArtwork?.preferredAnimationUrl != null) {
                                                 CanvasArtworkPlayer(
                                                     primaryUrl = canvasArtwork.animated,
                                                     fallbackUrl = canvasArtwork.videoUrl,
