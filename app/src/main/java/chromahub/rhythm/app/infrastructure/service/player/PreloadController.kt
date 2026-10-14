@@ -19,7 +19,6 @@ import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.datasource.ResolvingDataSource
 import androidx.media3.datasource.DataSpec
-import chromahub.rhythm.app.features.streaming.di.StreamingMusicModule
 import chromahub.rhythm.app.shared.data.model.AppSettings
 import kotlinx.coroutines.runBlocking
 import java.util.concurrent.ConcurrentHashMap
@@ -50,16 +49,7 @@ class PreloadController(
                 DefaultDataSource.Factory(context, DefaultHttpDataSource.Factory()),
                 object : ResolvingDataSource.Resolver {
                     override fun resolveDataSpec(dataSpec: DataSpec): DataSpec {
-                        if (dataSpec.uri.scheme == "streaming") {
-                            val trackId = dataSpec.uri.lastPathSegment
-                            if (!trackId.isNullOrBlank()) {
-                                val repository = StreamingMusicModule.provideStreamingMusicRepository(context)
-                                val freshUrl = runBlocking { repository.getStreamingUrl(trackId) }
-                                if (!freshUrl.isNullOrBlank()) {
-                                    return dataSpec.withUri((freshUrl).toUri())
-                                }
-                            }
-                        }
+
                         return dataSpec
                     }
                 }

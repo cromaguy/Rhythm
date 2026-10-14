@@ -1277,7 +1277,7 @@ fun ColorSchemeCircle(
             if (isSelected) {
                 Icon(
                     imageVector = RhythmIcons.Check,
-                    contentDescription = stringResource(R.string.streaming_selected),
+                    contentDescription = stringResource(R.string.cd_selected),
                     tint = if (option.primaryColor.luminance() > 0.5f) {
                         Color.Black.copy(alpha = 0.72f)
                     } else {
@@ -1363,7 +1363,7 @@ fun FontCard(
                 if (isSelected) {
                     Icon(
                         imageVector = RhythmIcons.CheckCircle,
-                        contentDescription = stringResource(R.string.streaming_selected),
+                        contentDescription = stringResource(R.string.cd_selected),
                         tint = MaterialTheme.colorScheme.onPrimaryContainer,
                         modifier = Modifier.size(28.dp)
                     )

@@ -388,7 +388,7 @@ fun FestiveTypeOption(
             if (selected) {
                 Icon(
                     imageVector = RhythmIcons.Check,
-                    contentDescription = stringResource(R.string.streaming_selected),
+                    contentDescription = stringResource(R.string.cd_selected),
                     
                     modifier = Modifier.size(24.dp)
                 )

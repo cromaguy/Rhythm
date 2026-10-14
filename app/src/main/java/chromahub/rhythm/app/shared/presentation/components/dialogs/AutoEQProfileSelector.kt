@@ -605,7 +605,7 @@ private fun ProfileCard(
                 ) {
                     Icon(
                         imageVector = RhythmIcons.Check,
-                        contentDescription = stringResource(R.string.streaming_selected),
+                        contentDescription = stringResource(R.string.cd_selected),
                         tint = MaterialTheme.colorScheme.onPrimary,
                         modifier = Modifier.size(14.dp)
                     )

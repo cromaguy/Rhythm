@@ -17,8 +17,8 @@
     <string name="catalog_strict_duration">Require matching track length</string>
     <string name="catalog_scan_rules_hint">Choose the scan rule, then edit the lists it uses. Exclusions win in hybrid mode.</string>
     <string name="catalog_editing_list">List to edit · scan rule stays unchanged</string>
-    <string name="catalog_included_list">Included songs and folders</string>
-    <string name="catalog_excluded_list">Excluded songs and folders</string>
+    <string name="catalog_included_list">Included</string>
+    <string name="catalog_excluded_list">Excluded</string>
     <string name="personal_archive_title">Permanent backup folder</string>
     <string name="personal_archive_hint">Keep original metadata and artwork, JSON records, image files, TXT/LRC lyrics and monthly listening journals as ordinary files. No ZIP is required.</string>
     <string name="personal_archive_permission">Grant access to the backup folder. Local originals are retained until synchronization succeeds.</string>

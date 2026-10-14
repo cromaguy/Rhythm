@@ -7,9 +7,7 @@ package chromahub.rhythm.app.features.local.presentation.screens.onboarding
 
 enum class OnboardingStep {
     WELCOME,
-    APP_MODE_CHOICE, // Step to select Local vs Streaming (GO) mode
-    STREAMING_SERVICE_CHOICE, // Step to choose streaming provider (Jellyfin vs Subsonic/Navidrome)
-    STREAMING_SETUP, // Step to setup credentials for streaming servers
+    APP_MODE_CHOICE, // T2Rhythm introduction
     PERMISSIONS,
     RHYTHM_GUARD, // Core hearing safety setup
     UPDATER, // Core update preferences

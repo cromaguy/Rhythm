@@ -245,8 +245,8 @@
     <string name="dialog_delete_playlist_message">هل أنت متأكد من رغبتك في حذف \"%1$s\"؟ لا يمكن التراجع عن هذا الإجراء.</string>
     <string name="dialog_delete">حذف</string>
     <string name="dialog_cancel">إلغاء</string>
-    <string name="streaming_settings_switch_provider_confirm_title">هل تريد تبديل مزود البث؟</string>
-    <string name="streaming_settings_switch_provider_confirm_desc">المزود الحالي: %1$s\nهل تريد التبديل إلى: %2$s؟ سيؤدي هذا إلى قطع اتصال الموفر النشط حاليًا.</string>
+
+
     <string name="action_switch">التبديل</string>
     <!-- Playlist Detail Screen -->
     <string name="playlist_rename_title">إعادة تسمية قائمة التشغيل</string>
@@ -1486,69 +1486,21 @@
     <string name="settings_interval_once_a_day">مرة واحدة في اليوم</string>
     <string name="settings_interval_once_a_week">مرة واحدة في الأسبوع</string>
     <!-- Experimental Features -->
-    <string name="streaming_integration_title">T2Rhythm Go</string>
-    <string name="streaming_integration_services">خدمات التكامل</string>
-    <string name="streaming_integration_services_empty">لم يتم توصيل أي خدمات حتى الآن</string>
-    <string name="streaming_settings_title">الإعدادات</string>
-    <string name="streaming_settings_group_services">الخدمات</string>
-    <string name="streaming_settings_group_actions">الإجراءات</string>
-    <string name="streaming_settings_preferred_service">الخدمة المفضلة</string>
-    <string name="streaming_settings_quality">جودة البث</string>
-    <string name="streaming_settings_service_sheet_desc">اختر الخدمة المتصلة T2Rhythm Go التي يجب أن تعطي الأولوية لها بشكل افتراضي.</string>
-    <string name="streaming_settings_quality_sheet_desc">حدد جودة الصوت المفضلة لديك لتشغيل البث.</string>
-    <string name="streaming_quality_low">منخفض</string>
-    <string name="streaming_quality_normal">عادي</string>
-    <string name="streaming_quality_high">عالية</string>
-    <string name="streaming_quality_lossless">بلا خسارة</string>
-    <string name="streaming_quality_low_desc">وضع توفير البيانات بجودة منخفضة (~96 كيلوبت في الثانية).</string>
-    <string name="streaming_quality_normal_desc">الجودة المتوازنة واستخدام البيانات (~160 كيلوبت في الثانية).</string>
-    <string name="streaming_quality_high_desc">صوت عالي الجودة (~320 كيلوبت في الثانية).</string>
-    <string name="streaming_quality_lossless_desc">أفضل جودة عندما تكون مدعومة (FLAC/ALAC).</string>
-    <string name="streaming_settings_group_wellbeing">رؤى T2Rhythm.</string>
-    <string name="streaming_open_full_settings">افتح الإعدادات الكاملة</string>
-    <string name="streaming_open_full_settings_desc">افتح الإعدادات على مستوى التطبيق والتي تتم مشاركتها عبر الأوضاع</string>
-    <string name="streaming_switch_to_local_mode">قم بالتبديل إلى الوضع المحلي</string>
-    <string name="streaming_switch_to_local_mode_desc">العودة إلى الملاحة الموسيقى المحلية</string>
-    <string name="streaming_status_title">حالة البث</string>
-    <string name="streaming_status_selected_service">تم التحديد: %1$s</string>
-    <string name="streaming_status_connected">الحساب متصل</string>
-    <string name="streaming_status_not_connected">المصادقة معلقة</string>
-    <string name="streaming_status_badge_connected">متصل</string>
-    <string name="streaming_status_badge_pending">في انتظار المراجعة</string>
-    <string name="streaming_status_badge_refreshing">منعش</string>
-    <string name="streaming_status_connect_hint">قم بإدارة الخدمة المحددة أدناه لربط حسابك.</string>
-    <string name="streaming_selected">مختار</string>
-    <string name="streaming_connect">تواصل</string>
-    <string name="streaming_manage">إدارة</string>
-    <string name="streaming_service_setup_server_url">عنوان URL للخادم</string>
-    <string name="streaming_service_setup_server_url_hint">https://your-server.example.com</string>
-    <string name="streaming_service_setup_server_url_supporting">مطلوب لمقدمي الخدمات الذين يحتاجون إلى عنوان خادم.</string>
-    <string name="streaming_service_setup_username">اسم المستخدم أو البريد الإلكتروني</string>
-    <string name="streaming_service_setup_username_hint">أدخل اسم مستخدم حسابك</string>
-    <string name="streaming_service_setup_password">كلمة المرور</string>
-    <string name="streaming_service_setup_password_hint">أدخل كلمة مرور حسابك</string>
-    <string name="streaming_service_setup_remember_password">تذكر كلمة المرور على هذا الجهاز</string>
-    <string name="streaming_service_setup_remember_password_desc">قم بتخزين بيانات الاعتماد محليًا حتى يتمكن T2Rhythm من إعادة الاتصال تلقائيًا لاحقًا.</string>
-    <string name="streaming_service_setup_connecting">الاتصال…</string>
-    <string name="streaming_service_setup_disconnecting">قطع الاتصال…</string>
-    <string name="streaming_service_setup_action_hint">قم بتعبئة الحقول المطلوبة لتوصيل هذه الخدمة.</string>
+
     <string name="streaming_service_setup_reconnect">إعادة الاتصال</string>
-    <string name="streaming_service_setup_disconnect">قطع الاتصال</string>
-    <string name="streaming_service_setup_connected_as">متصل كـ %1$s</string>
+
+
     <string name="streaming_home_selected_service_unavailable">الخدمة المحددة غير متصلة</string>
     <string name="streaming_home_connect_selected_service">قم بتوصيل %1$s لتحميل الصفحة الرئيسية والبحث.</string>
-    <string name="streaming_home_widget_new_releases_subtitle">الألبومات المضافة مؤخرًا من %1$s</string>
-    <string name="streaming_home_widget_empty_hint">قد يستغرق ذلك بعض الوقت بعد الاتصال أو التحديث.</string>
+
+
     <string name="streaming_library_syncing">جارٍ تحميل البث المباشر…</string>
-    <string name="streaming_home_no_content_title">لا يوجد محتوى منزلي بعد</string>
+
     <string name="streaming_home_no_content_hint">حاول التحديث بعد انتهاء مزامنة الخدمة.</string>
     <string name="streaming_home_guard_break_active">استراحة نشطة: %1$s يسار</string>
     <string name="streaming_home_guard_exposure">اليوم: %1$d / %2$d دقيقة</string>
     <string name="streaming_not_selected">غير محدد</string>
-    <string name="streaming_service_subsonic">Subsonic</string>
-    <string name="streaming_service_subsonic_desc">قم بتوصيل Navidrome وخوادم Subsonic المتوافقة</string>
-    <string name="streaming_service_jellyfin">Jellyfin</string>
-    <string name="streaming_service_jellyfin_desc">يمكنك البث من مكتبة Jellyfin الشخصية الخاصة بك</string>
+
     <!-- Backup &amp; Restore -->
     <string name="settings_backup_restore">النسخ الاحتياطي والاستعادة</string>
     <string name="settings_auto_backup">النسخ الاحتياطي التلقائي</string>
@@ -1715,8 +1667,8 @@
     <string name="settings_broadcast_status_enabled_desc">حالة تشغيل البث</string>
     <string name="settings_bluetooth_lyrics_enabled">وضع كلمات الأغاني عبر البلوتوث</string>
     <string name="settings_bluetooth_lyrics_enabled_desc">بث الخط الغنائي الحالي عبر بيانات تعريف البلوتوث</string>
-    <string name="exp_go_mode">Go Mode</string>
-    <string name="exp_go_mode_desc">التبديل إلى T2Rhythm Go streaming mode</string>
+
+
     <!-- Home Screen Search Strings -->
     <string name="settings_home_section_order">أمر القسم</string>
     <string name="settings_home_section_order_desc">إعادة ترتيب أقسام المنزل</string>
@@ -1943,14 +1895,10 @@
     <string name="musicviewmodel_failed_to_play_next">فشل اللعب التالي: لم تتم تهيئة اللاعب</string>
     <string name="streaminghomesectionorderbottomsheet_streaming_section_order_and">يتم إعادة تعيين ترتيب قسم البث والرؤية إلى الوضع الافتراضي</string>
     <string name="streaminghomesectionorderbottomsheet_streaming_section_order_and_1">تم حفظ ترتيب قسم البث وإمكانية الرؤية</string>
-    <string name="gosettingsscreen_configure_current_provider">قم بتكوين الموفر الحالي</string>
-    <string name="gosettingsscreen_network">الشبكة</string>
-    <string name="gosettingsscreen_enable_streaming_over_mobile">تمكين البث عبر بيانات الهاتف المحمول</string>
-    <string name="gosettingsscreen_connection_is_healthy">الاتصال سليم</string>
-    <string name="streaminghomescreen_leave_go_mode">Leave Go Mode</string>
+
     <string name="streamingsettingsscreen_streaming_restricted">البث مقيد</string>
-    <string name="streamingmusicviewmodel_failed_to_play_next">فشل التشغيل التالي: غير قادر على حل عنوان URL</string>
-    <string name="streamingmusicviewmodel_failed_to_add_to">فشلت الإضافة إلى قائمة الانتظار: غير قادر على حل عنوان URL</string>
+
+
     <string name="rhythmmusicwidget_album_art_placeholder">العنصر النائب لصورة الألبوم</string>
     <string name="rhythmwidgetpreview_rhythm_glance_widget_previews">معاينات عناصر واجهة المستخدم T2Rhythm Glance.</string>
     <string name="rhythmwidgetpreview_str_11_compact_widget">1×1 القطعة المدمجة</string>
@@ -2570,7 +2518,7 @@
     <string name="edit_album_title">تحرير الألبوم</string>
     <string name="edit_album_desc">تحرير العلامات والأعمال الفنية لجميع الأغاني في هذا الألبوم.</string>
     <string name="edit_album_saving">جارٍ تحديث البيانات التعريفية للألبوم…</string>
-    <string name="streaming_service_setup_auto_detect">الكشف التلقائي</string>
+
     <string name="nearby_server_discovery_title">الخوادم القريبة</string>
     <string name="nearby_server_discovery_desc">حدد خادمًا تم اكتشافه على شبكتك المحلية</string>
     <string name="nearby_server_discovery_scanning">جارٍ البحث عن الخوادم القريبة…</string>

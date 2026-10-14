@@ -213,8 +213,8 @@
     <string name="dialog_delete_playlist_message">আপনি কি \"%1$s\" মুছতে চান? এই ক্রিয়াটি পূর্বাবস্থায় ফেরানো যাবে না৷</string>
     <string name="dialog_delete">মুছুন</string>
     <string name="dialog_cancel">বাতিল</string>
-    <string name="streaming_settings_switch_provider_confirm_title">স্ট্রিমিং প্রদানকারী পাল্টান?</string>
-    <string name="streaming_settings_switch_provider_confirm_desc">বর্তমান প্রদানকারী: %1$s\nএ স্যুইচ করুন: %2$s? এটি বর্তমানে সক্রিয় প্রদানকারীর সংযোগ বিচ্ছিন্ন করবে।</string>
+
+
     <string name="action_switch">সুইচ</string>
     <!-- Playlist Detail Screen -->
     <string name="playlist_rename_title">প্লেলিস্টের নাম পরিবর্তন করুন</string>
@@ -1426,69 +1426,21 @@
     <string name="settings_interval_once_a_day">দিনে একবার</string>
     <string name="settings_interval_once_a_week">সপ্তাহে একবার</string>
     <!-- Experimental Features -->
-    <string name="streaming_integration_title">T2Rhythm Go</string>
-    <string name="streaming_integration_services">ইন্টিগ্রেশন সার্ভিসেস</string>
-    <string name="streaming_integration_services_empty">কোন পরিষেবা এখনও সংযুক্ত</string>
-    <string name="streaming_settings_title">সেটিংস</string>
-    <string name="streaming_settings_group_services">পরিষেবা</string>
-    <string name="streaming_settings_group_actions">কর্ম</string>
-    <string name="streaming_settings_preferred_service">পছন্দের পরিষেবা</string>
-    <string name="streaming_settings_quality">স্ট্রিমিং গুণমান</string>
-    <string name="streaming_settings_service_sheet_desc">ডিফল্টরূপে কোন সংযুক্ত পরিষেবা T2Rhythm Go কে অগ্রাধিকার দেওয়া উচিত তা চয়ন করুন৷</string>
-    <string name="streaming_settings_quality_sheet_desc">স্ট্রিমিং প্লেব্যাকের জন্য আপনার পছন্দের অডিও গুণমান নির্বাচন করুন।</string>
-    <string name="streaming_quality_low">কম</string>
-    <string name="streaming_quality_normal">স্বাভাবিক</string>
-    <string name="streaming_quality_high">উচ্চ</string>
-    <string name="streaming_quality_lossless">ক্ষতিহীন</string>
-    <string name="streaming_quality_low_desc">ডাটা সেভার মোড কম মানের সাথে (~96 kbps)।</string>
-    <string name="streaming_quality_normal_desc">সুষম গুণমান এবং ডেটা ব্যবহার (~160 kbps)।</string>
-    <string name="streaming_quality_high_desc">উচ্চ মানের অডিও (~320 kbps)।</string>
-    <string name="streaming_quality_lossless_desc">সর্বোত্তম মানের যেখানে সমর্থিত (FLAC/ALAC)।</string>
-    <string name="streaming_settings_group_wellbeing">T2Rhythm অন্তর্দৃষ্টি</string>
-    <string name="streaming_open_full_settings">সম্পূর্ণ সেটিংস খুলুন</string>
-    <string name="streaming_open_full_settings_desc">মোড জুড়ে শেয়ার করা অ্যাপ-ওয়াইড সেটিংস খুলুন</string>
-    <string name="streaming_switch_to_local_mode">স্থানীয় মোডে স্যুইচ করুন</string>
-    <string name="streaming_switch_to_local_mode_desc">স্থানীয় সঙ্গীত নেভিগেশন ফিরে</string>
-    <string name="streaming_status_title">স্ট্রিমিং স্ট্যাটাস</string>
-    <string name="streaming_status_selected_service">নির্বাচিত: %1$s</string>
-    <string name="streaming_status_connected">অ্যাকাউন্ট সংযুক্ত</string>
-    <string name="streaming_status_not_connected">প্রমাণীকরণ মুলতুবি</string>
-    <string name="streaming_status_badge_connected">সংযুক্ত</string>
-    <string name="streaming_status_badge_pending">মুলতুবি</string>
-    <string name="streaming_status_badge_refreshing">রিফ্রেশিং</string>
-    <string name="streaming_status_connect_hint">আপনার অ্যাকাউন্ট সংযোগ করতে নীচের নির্বাচিত পরিষেবা পরিচালনা করুন৷</string>
-    <string name="streaming_selected">নির্বাচিত</string>
-    <string name="streaming_connect">সংযোগ করুন</string>
-    <string name="streaming_manage">পরিচালনা করুন</string>
-    <string name="streaming_service_setup_server_url">সার্ভার URL</string>
-    <string name="streaming_service_setup_server_url_hint">https://your-server.example.com</string>
-    <string name="streaming_service_setup_server_url_supporting">একটি সার্ভার ঠিকানা প্রয়োজন যে প্রদানকারীদের জন্য প্রয়োজন.</string>
-    <string name="streaming_service_setup_username">ব্যবহারকারীর নাম বা ইমেইল</string>
-    <string name="streaming_service_setup_username_hint">আপনার অ্যাকাউন্ট ব্যবহারকারীর নাম লিখুন</string>
-    <string name="streaming_service_setup_password">পাসওয়ার্ড</string>
-    <string name="streaming_service_setup_password_hint">আপনার অ্যাকাউন্ট পাসওয়ার্ড লিখুন</string>
-    <string name="streaming_service_setup_remember_password">এই ডিভাইসে পাসওয়ার্ড মনে রাখবেন</string>
-    <string name="streaming_service_setup_remember_password_desc">শংসাপত্রগুলি স্থানীয়ভাবে সংরক্ষণ করুন যাতে T2Rhythm পরে স্বয়ংক্রিয়ভাবে পুনরায় সংযোগ করতে পারে৷</string>
-    <string name="streaming_service_setup_connecting">সংযোগ করা হচ্ছে…</string>
-    <string name="streaming_service_setup_disconnecting">সংযোগ বিচ্ছিন্ন করা হচ্ছে…</string>
-    <string name="streaming_service_setup_action_hint">এই পরিষেবাটি সংযোগ করতে প্রয়োজনীয় ক্ষেত্রগুলি পূরণ করুন৷</string>
+
     <string name="streaming_service_setup_reconnect">পুনরায় সংযোগ করুন</string>
-    <string name="streaming_service_setup_disconnect">সংযোগ বিচ্ছিন্ন করুন</string>
-    <string name="streaming_service_setup_connected_as">%1$s হিসাবে সংযুক্ত</string>
+
+
     <string name="streaming_home_selected_service_unavailable">নির্বাচিত পরিষেবা সংযুক্ত নয়</string>
     <string name="streaming_home_connect_selected_service">হোম এবং অনুসন্ধান লোড করতে %1$s সংযোগ করুন৷</string>
-    <string name="streaming_home_widget_new_releases_subtitle">%1$s থেকে সম্প্রতি যোগ করা অ্যালবামগুলি</string>
-    <string name="streaming_home_widget_empty_hint">আপনি সংযোগ বা রিফ্রেশ করার পরে এটি একটি মুহূর্ত নিতে পারে।</string>
+
+
     <string name="streaming_library_syncing">আপনার স্ট্রিমিং ফিড লোড হচ্ছে…</string>
-    <string name="streaming_home_no_content_title">এখনো কোনো হোম কন্টেন্ট নেই</string>
+
     <string name="streaming_home_no_content_hint">আপনার পরিষেবা সিঙ্ক করা শেষ হলে রিফ্রেশ করার চেষ্টা করুন।</string>
     <string name="streaming_home_guard_break_active">ব্রেক সক্রিয়: %1$s বাকি</string>
     <string name="streaming_home_guard_exposure">আজ: %1$d / %2$d মিনিট</string>
     <string name="streaming_not_selected">নির্বাচিত হয়নি</string>
-    <string name="streaming_service_subsonic">Subsonic</string>
-    <string name="streaming_service_subsonic_desc">সংযোগ করুন Navidrome এবং সামঞ্জস্যপূর্ণ Subsonic সার্ভার৷</string>
-    <string name="streaming_service_jellyfin">Jellyfin</string>
-    <string name="streaming_service_jellyfin_desc">আপনার ব্যক্তিগত Jellyfin লাইব্রেরি থেকে স্ট্রিম করুন</string>
+
     <!-- Backup &amp; Restore -->
     <string name="settings_backup_restore">ব্যাকআপ এবং পুনরুদ্ধার</string>
     <string name="settings_auto_backup">অটো-ব্যাকআপ</string>
@@ -1655,8 +1607,8 @@
     <string name="settings_broadcast_status_enabled_desc">সম্প্রচার খেলা অবস্থা</string>
     <string name="settings_bluetooth_lyrics_enabled">ব্লুটুথ লিরিক্স মোড</string>
     <string name="settings_bluetooth_lyrics_enabled_desc">ব্লুটুথ মেটাডেটার মাধ্যমে বর্তমান লিরিক লাইন সম্প্রচার করুন</string>
-    <string name="exp_go_mode">Go Mode</string>
-    <string name="exp_go_mode_desc">T2Rhythm Go streaming mode এ স্যুইচ করুন</string>
+
+
     <!-- Home Screen Search Strings -->
     <string name="settings_home_section_order">ধারা আদেশ</string>
     <string name="settings_home_section_order_desc">বাড়ির বিভাগগুলি পুনরায় সাজান</string>
@@ -1883,14 +1835,10 @@
     <string name="musicviewmodel_failed_to_play_next">পরবর্তী খেলতে ব্যর্থ: প্লেয়ার শুরু হয়নি</string>
     <string name="streaminghomesectionorderbottomsheet_streaming_section_order_and">স্ট্রিমিং বিভাগের ক্রম এবং দৃশ্যমানতা ডিফল্টে রিসেট</string>
     <string name="streaminghomesectionorderbottomsheet_streaming_section_order_and_1">স্ট্রিমিং বিভাগের ক্রম এবং দৃশ্যমানতা সংরক্ষণ করা হয়েছে</string>
-    <string name="gosettingsscreen_configure_current_provider">বর্তমান প্রদানকারী কনফিগার করুন</string>
-    <string name="gosettingsscreen_network">নেটওয়ার্ক</string>
-    <string name="gosettingsscreen_enable_streaming_over_mobile">মোবাইল ডেটার মাধ্যমে স্ট্রিমিং সক্ষম করুন</string>
-    <string name="gosettingsscreen_connection_is_healthy">সংযোগ স্বাস্থ্যকর</string>
-    <string name="streaminghomescreen_leave_go_mode">Leave Go Mode</string>
+
     <string name="streamingsettingsscreen_streaming_restricted">স্ট্রিমিং সীমাবদ্ধ</string>
-    <string name="streamingmusicviewmodel_failed_to_play_next">পরবর্তী খেলতে ব্যর্থ: URL সমাধান করতে অক্ষম</string>
-    <string name="streamingmusicviewmodel_failed_to_add_to">সারিতে যোগ করতে ব্যর্থ: URL সমাধান করতে অক্ষম</string>
+
+
     <string name="rhythmmusicwidget_album_art_placeholder">অ্যালবাম আর্ট প্লেসহোল্ডার</string>
     <string name="rhythmwidgetpreview_rhythm_glance_widget_previews">T2Rhythm Glance উইজেট প্রিভিউ</string>
     <string name="rhythmwidgetpreview_str_11_compact_widget">১×১ কমপ্যাক্ট উইজেট</string>
@@ -2486,7 +2434,7 @@
     <string name="edit_album_title">অ্যালবাম সম্পাদনা করুন</string>
     <string name="edit_album_desc">এই অ্যালবামের সমস্ত গানের জন্য ট্যাগ এবং শিল্পকর্ম সম্পাদনা করুন।</string>
     <string name="edit_album_saving">অ্যালবামের মেটাডেটা আপডেট করা হচ্ছে…</string>
-    <string name="streaming_service_setup_auto_detect">স্বয়ংক্রিয় সনাক্ত</string>
+
     <string name="nearby_server_discovery_title">কাছাকাছি সার্ভার</string>
     <string name="nearby_server_discovery_desc">আপনার স্থানীয় নেটওয়ার্কে আবিষ্কৃত একটি সার্ভার নির্বাচন করুন</string>
     <string name="nearby_server_discovery_scanning">কাছাকাছি সার্ভারের জন্য স্ক্যান করা হচ্ছে…</string>

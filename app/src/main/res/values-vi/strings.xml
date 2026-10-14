@@ -205,8 +205,8 @@
     <string name="dialog_delete_playlist_message">Bạn có chắc chắn muốn xóa \"%1$s\" không? Không thể hoàn tác hành động này.</string>
     <string name="dialog_delete">Xóa</string>
     <string name="dialog_cancel">Hủy bỏ</string>
-    <string name="streaming_settings_switch_provider_confirm_title">Chuyển đổi nhà cung cấp dịch vụ phát trực tuyến?</string>
-    <string name="streaming_settings_switch_provider_confirm_desc">Nhà cung cấp hiện tại: %1$s\nChuyển sang: %2$s? Điều này sẽ ngắt kết nối nhà cung cấp hiện đang hoạt động.</string>
+
+
     <string name="action_switch">Chuyển đổi</string>
     <!-- Playlist Detail Screen -->
     <string name="playlist_rename_title">Đổi tên danh sách phát</string>
@@ -1411,69 +1411,21 @@
     <string name="settings_interval_once_a_day">Mỗi ngày một lần</string>
     <string name="settings_interval_once_a_week">Mỗi tuần một lần</string>
     <!-- Experimental Features -->
-    <string name="streaming_integration_title">T2Rhythm Go</string>
-    <string name="streaming_integration_services">Dịch vụ tích hợp</string>
-    <string name="streaming_integration_services_empty">Chưa có dịch vụ nào được kết nối</string>
-    <string name="streaming_settings_title">Cài đặt</string>
-    <string name="streaming_settings_group_services">Dịch vụ</string>
-    <string name="streaming_settings_group_actions">Hành động</string>
-    <string name="streaming_settings_preferred_service">Dịch vụ ưu tiên</string>
-    <string name="streaming_settings_quality">Chất lượng phát trực tuyến</string>
-    <string name="streaming_settings_service_sheet_desc">Chọn dịch vụ được kết nối T2Rhythm Go sẽ ưu tiên theo mặc định.</string>
-    <string name="streaming_settings_quality_sheet_desc">Chọn chất lượng âm thanh ưa thích của bạn để phát lại trực tuyến.</string>
-    <string name="streaming_quality_low">Thấp</string>
-    <string name="streaming_quality_normal">Bình thường</string>
-    <string name="streaming_quality_high">Cao</string>
-    <string name="streaming_quality_lossless">Không tổn thất</string>
-    <string name="streaming_quality_low_desc">Chế độ tiết kiệm dữ liệu với chất lượng giảm (~96 kbps).</string>
-    <string name="streaming_quality_normal_desc">Chất lượng cân bằng và mức sử dụng dữ liệu (~160 kbps).</string>
-    <string name="streaming_quality_high_desc">Âm thanh chất lượng cao (~320 kbps).</string>
-    <string name="streaming_quality_lossless_desc">Chất lượng tốt nhất ở nơi được hỗ trợ (FLAC/ALAC).</string>
-    <string name="streaming_settings_group_wellbeing">T2Rhythm Thông tin chi tiết</string>
-    <string name="streaming_open_full_settings">Mở cài đặt đầy đủ</string>
-    <string name="streaming_open_full_settings_desc">Mở cài đặt toàn ứng dụng được chia sẻ giữa các chế độ</string>
-    <string name="streaming_switch_to_local_mode">Chuyển sang Chế độ cục bộ</string>
-    <string name="streaming_switch_to_local_mode_desc">Quay lại điều hướng âm nhạc cục bộ</string>
-    <string name="streaming_status_title">Trạng thái phát trực tuyến</string>
-    <string name="streaming_status_selected_service">Đã chọn: %1$s</string>
-    <string name="streaming_status_connected">Đã kết nối tài khoản</string>
-    <string name="streaming_status_not_connected">Đang chờ xác thực</string>
-    <string name="streaming_status_badge_connected">Đã kết nối</string>
-    <string name="streaming_status_badge_pending">Đang chờ xử lý</string>
-    <string name="streaming_status_badge_refreshing">Làm mới</string>
-    <string name="streaming_status_connect_hint">Quản lý dịch vụ đã chọn bên dưới để kết nối tài khoản của bạn.</string>
-    <string name="streaming_selected">Đã chọn</string>
-    <string name="streaming_connect">Kết nối</string>
-    <string name="streaming_manage">Quản lý</string>
-    <string name="streaming_service_setup_server_url">URL máy chủ</string>
-    <string name="streaming_service_setup_server_url_hint">https://your-server.example.com</string>
-    <string name="streaming_service_setup_server_url_supporting">Bắt buộc đối với các nhà cung cấp cần địa chỉ máy chủ.</string>
-    <string name="streaming_service_setup_username">Tên người dùng hoặc Email</string>
-    <string name="streaming_service_setup_username_hint">Nhập tên người dùng tài khoản của bạn</string>
-    <string name="streaming_service_setup_password">Mật khẩu</string>
-    <string name="streaming_service_setup_password_hint">Nhập mật khẩu tài khoản của bạn</string>
-    <string name="streaming_service_setup_remember_password">Ghi nhớ mật khẩu trên thiết bị này</string>
-    <string name="streaming_service_setup_remember_password_desc">Lưu trữ thông tin xác thực cục bộ để T2Rhythm có thể tự động kết nối lại sau.</string>
-    <string name="streaming_service_setup_connecting">Đang kết nối…</string>
-    <string name="streaming_service_setup_disconnecting">Đang ngắt kết nối…</string>
-    <string name="streaming_service_setup_action_hint">Điền vào các trường bắt buộc để kết nối dịch vụ này.</string>
+
     <string name="streaming_service_setup_reconnect">Kết nối lại</string>
-    <string name="streaming_service_setup_disconnect">Ngắt kết nối</string>
-    <string name="streaming_service_setup_connected_as">Đã kết nối dưới dạng %1$s</string>
+
+
     <string name="streaming_home_selected_service_unavailable">Dịch vụ đã chọn không được kết nối</string>
     <string name="streaming_home_connect_selected_service">Kết nối %1$s để tải Trang chủ và Tìm kiếm.</string>
-    <string name="streaming_home_widget_new_releases_subtitle">Album được thêm gần đây từ %1$s</string>
-    <string name="streaming_home_widget_empty_hint">Quá trình này có thể mất chút thời gian sau khi bạn kết nối hoặc làm mới.</string>
+
+
     <string name="streaming_library_syncing">Đang tải nguồn cấp dữ liệu phát trực tuyến của bạn…</string>
-    <string name="streaming_home_no_content_title">Chưa có nội dung gia đình</string>
+
     <string name="streaming_home_no_content_hint">Hãy thử làm mới sau khi dịch vụ của bạn đồng bộ hóa xong.</string>
     <string name="streaming_home_guard_break_active">Nghỉ hoạt động: còn lại %1$s</string>
     <string name="streaming_home_guard_exposure">Hôm nay: %1$d / %2$d phút</string>
     <string name="streaming_not_selected">Không được chọn</string>
-    <string name="streaming_service_subsonic">Subsonic</string>
-    <string name="streaming_service_subsonic_desc">Kết nối máy chủ Navidrome và Subsonic tương thích</string>
-    <string name="streaming_service_jellyfin">Jellyfin</string>
-    <string name="streaming_service_jellyfin_desc">Phát trực tuyến từ thư viện Jellyfin cá nhân của bạn</string>
+
     <!-- Backup &amp; Restore -->
     <string name="settings_backup_restore">Sao lưu và khôi phục</string>
     <string name="settings_auto_backup">Tự động sao lưu</string>
@@ -1640,8 +1592,8 @@
     <string name="settings_broadcast_status_enabled_desc">Trạng thái phát sóng</string>
     <string name="settings_bluetooth_lyrics_enabled">Chế độ lời bài hát qua Bluetooth</string>
     <string name="settings_bluetooth_lyrics_enabled_desc">Phát dòng lời bài hát hiện tại qua siêu dữ liệu Bluetooth</string>
-    <string name="exp_go_mode">Go Mode</string>
-    <string name="exp_go_mode_desc">Chuyển sang T2Rhythm Go streaming mode</string>
+
+
     <!-- Home Screen Search Strings -->
     <string name="settings_home_section_order">Thứ tự phần</string>
     <string name="settings_home_section_order_desc">Sắp xếp lại phần nhà</string>
@@ -1868,14 +1820,10 @@
     <string name="musicviewmodel_failed_to_play_next">Không thể chơi tiếp theo: Trình phát chưa được khởi tạo</string>
     <string name="streaminghomesectionorderbottomsheet_streaming_section_order_and">Thứ tự phần phát trực tuyến và khả năng hiển thị được đặt lại về mặc định</string>
     <string name="streaminghomesectionorderbottomsheet_streaming_section_order_and_1">Đã lưu thứ tự phần phát trực tuyến và khả năng hiển thị</string>
-    <string name="gosettingsscreen_configure_current_provider">Cấu hình nhà cung cấp hiện tại</string>
-    <string name="gosettingsscreen_network">Mạng</string>
-    <string name="gosettingsscreen_enable_streaming_over_mobile">Bật truyền phát qua dữ liệu di động</string>
-    <string name="gosettingsscreen_connection_is_healthy">Kết nối tốt</string>
-    <string name="streaminghomescreen_leave_go_mode">Leave Go Mode</string>
+
     <string name="streamingsettingsscreen_streaming_restricted">Hạn chế phát trực tuyến</string>
-    <string name="streamingmusicviewmodel_failed_to_play_next">Không thể phát tiếp theo: Không thể phân giải URL</string>
-    <string name="streamingmusicviewmodel_failed_to_add_to">Không thể thêm vào hàng đợi: Không thể phân giải URL</string>
+
+
     <string name="rhythmmusicwidget_album_art_placeholder">Trình giữ chỗ ảnh bìa album</string>
     <string name="rhythmwidgetpreview_rhythm_glance_widget_previews">Bản xem trước tiện ích T2Rhythm Glance</string>
     <string name="rhythmwidgetpreview_str_11_compact_widget">Tiện ích nhỏ gọn 1×1</string>
@@ -2465,7 +2413,7 @@
     <string name="edit_album_title">Chỉnh sửa album</string>
     <string name="edit_album_desc">Chỉnh sửa thẻ và hình minh họa cho tất cả các bài hát trong album này.</string>
     <string name="edit_album_saving">Đang cập nhật siêu dữ liệu album…</string>
-    <string name="streaming_service_setup_auto_detect">Tự động phát hiện</string>
+
     <string name="nearby_server_discovery_title">Máy chủ lân cận</string>
     <string name="nearby_server_discovery_desc">Chọn máy chủ được phát hiện trên mạng cục bộ của bạn</string>
     <string name="nearby_server_discovery_scanning">Đang quét các máy chủ lân cận…</string>

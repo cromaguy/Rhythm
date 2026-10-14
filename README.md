@@ -1,261 +1,73 @@
-> T2Rhythm 개인 음악 보관함: [사용 안내](docs/PERSONAL_MUSIC_ARCHIVE.md) · [최신 APK](https://github.com/tak2-08/T2Rhythm/releases/latest)
-
-> **T2Rhythm 업데이트:** [최신 APK](https://github.com/tak2-08/T2Rhythm/releases/latest) · [음악 정보 일괄 수집·영구 저장·가사 자동 저장 안내](docs/MUSIC_METADATA_CRAWLER.md)
->
-> 가사는 기존 API 우선순위와 폴백 설정을 따릅니다. 음악 사이트 크롤링은 가사 API 목록에서 켤 수 있습니다.
-
-
 <div align="center">
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="assets/icon.png">
-  <source media="(prefers-color-scheme: light)" srcset="assets/icon.png">
-  <img src="assets/icon_full.png" alt="Rhythm Music Player" width="220" style="border-radius: 32px; margin: 20px 0; box-shadow: 0 8px 24px rgba(0,0,0,0.2);">
-</picture>
+<img src="assets/icon_full.png" alt="T2Rhythm" width="160" />
 
-# Project Rhythm
-**Your Music, Your Rhythm.**
+# T2Rhythm
 
-<a href="https://trendshift.io/repositories/15217" target="_blank"><img src="https://trendshift.io/api/badge/repositories/15217" alt="cromaguy%2FRhythm | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
+**한국 음악에 맞춘, 온디바이스 개인 음악 앱**
 
-[![Platform](https://img.shields.io/badge/Android-34A853?style=flat-square&logo=android&logoColor=white)](https://android.com)
-[![API Level](https://img.shields.io/badge/API-26%2B-4285f4?style=flat-square&logo=android&logoColor=white)](https://android-arsenal.com/api?level=26)
-[![Kotlin](https://img.shields.io/badge/Kotlin-100%25-7c4dff?style=flat-square&logo=kotlin&logoColor=white)](https://kotlinlang.org/)
-[![License](https://img.shields.io/badge/License-GPL_v3-4285f4?style=flat-square)](docs/LICENSE)
-<br>
-[![Release](https://img.shields.io/github/v/release/cromaguy/Rhythm?style=flat-square&logo=github&color=673ab7&logoColor=white)](https://github.com/cromaguy/Rhythm/releases/latest)
-[![Downloads](https://img.shields.io/github/downloads/cromaguy/Rhythm/total?style=flat-square&logo=download&color=00bcd4&logoColor=white)](https://github.com/cromaguy/Rhythm/releases)
-[![Stars](https://img.shields.io/github/stars/cromaguy/Rhythm?style=flat-square&logo=star&color=ffc107&logoColor=white)](https://github.com/cromaguy/Rhythm/stargazers)
-[<img src="https://shields.rbtlog.dev/simple/chromahub.rhythm.app?style=flat-square" alt="RB shield">](https://shields.rbtlog.dev/chromahub.rhythm.app)
-[![Translation status](https://hosted.weblate.org/widget/rhythm/strings/svg-badge.svg)](https://hosted.weblate.org/engage/rhythm/)
+내 음악을 듣고, 정보를 채우고, 오래 보관하고, 나의 청취 기록으로 다음 곡을 발견하세요.
 
-### [🌐 Website](https://rhythmweb.vercel.app/) • [▶️ Google Play](https://play.google.com/store/apps/details?id=chromahub.rhythm.play) • [📥 Download](https://github.com/cromaguy/Rhythm/releases/latest) • [🎧 Discord](https://discord.gg/XjPyUYPQYc) • [💬 Telegram](https://t.me/RhythmSupport) • [📖 Wiki](https://github.com/cromaguy/Rhythm/wiki)
+[![Android](https://img.shields.io/badge/Android-8.0%2B-34A853)](https://android.com)
+[![Release](https://img.shields.io/github/v/release/tak2-08/T2Rhythm)](https://github.com/tak2-08/T2Rhythm/releases/latest)
+[![License](https://img.shields.io/badge/License-GPL--3.0-4285f4)](docs/LICENSE)
+
+[**최신 APK 다운로드**](https://github.com/tak2-08/T2Rhythm/releases/latest) · [사용 안내](docs/PERSONAL_MUSIC_ARCHIVE.md) · [문제 제보](https://github.com/tak2-08/T2Rhythm/issues)
 
 </div>
 
----
+T2Rhythm은 **Rhythm을 바탕으로 만든 한국형 오픈소스 음악 앱**입니다. 기기에 저장된 음원을 중심으로 벅스·멜론·지니의 음악 정보와 가사를 연결하고, 음악 파일과 청취 기록을 직접 관리하는 경험을 지향합니다. 서버 스트리밍 모드인 Rhythm Go는 제거했습니다.
 
-## 💖 Support the Developer
+## 한국 음악 정보와 가사
 
-Building and maintaining **Rhythm** is a massive labor of love, provided completely free and open-source. If you love using this app, please consider supporting development!
+- 기본 사이트 순서는 **벅스 → 멜론 → 지니**입니다. 곡·앨범·아티스트 정보와 아트워크, 가사에 공통 설정을 사용합니다.
+- 라이브러리 전체의 정보를 일괄 갱신합니다. 기본은 빈 항목만 채우기이며, 전체 또는 선택한 항목만 강제로 덮어쓸 수 있습니다.
+- 제목·아티스트·앨범과 곡 길이로 후보를 확인합니다. 인트로 차이를 고려해 길이 오차를 지정할 수 있습니다(기본 3%, 범위 0~30%, 최소 1초).
+- 가사는 기존 API 우선순위와 폴백을 따르며, 파일 저장과 음원 내장 저장을 지원합니다.
+- 요청 간격, 캐시와 재시도 대기로 사이트의 부하를 줄입니다. 여러 후보가 남거나 길이를 검증할 수 없는 경우에는 자동 적용을 제한합니다.
 
-<div align="center">
+음악 사이트 연동은 내 음원의 정보와 가사를 보완하는 기능이며, 사이트의 유료 음원을 제공하는 서비스는 아닙니다.
 
-| ☕ **One-Time Support** | 🤝 **Ongoing Sponsorship** |
-| :---: | :---: |
-| [![Ko-Fi](https://img.shields.io/badge/Buy_Me_A_Coffee-F16061?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/anjishnunandi)<br><br>[![PayPal](https://img.shields.io/badge/PayPal-00457C?style=for-the-badge&logo=paypal&logoColor=white)](http://paypal.me/AnjishnuNandi) | [![Patreon](https://img.shields.io/badge/Patreon-F96854?style=for-the-badge&logo=patreon&logoColor=white)](https://patreon.com/AnjishnuNandi)<br><br>[![GitHub Sponsor](https://img.shields.io/badge/GitHub_Sponsors-EA4AAA?style=for-the-badge&logo=github&logoColor=white)](https://github.com/sponsors/cromaguy) |
+## 오래 간직하는 나의 음악 보관함
 
-</div>
+- 태그·아트워크·가사를 실제 음원 파일에 저장하고, 변경 전 원본 정보를 보관합니다.
+- 기존 `Documents/RhythmBackups/T2Rhythm` 또는 선택한 폴더에 JSON, 이미지, TXT/LRC와 월별 청취 기록을 **일반 파일**로 저장합니다.
+- 누락 파일 복원과 청취 기록 병합을 지원합니다. 백업 폴더의 접근 권한을 허용해야 할 수 있습니다.
+- 화이트리스트·블랙리스트·하이브리드 스캔을 지원합니다. 스캔 규칙과 편집할 목록을 따로 선택하며, 하이브리드에서는 제외 규칙이 우선합니다.
 
----
+## 내 기록으로 만드는 개인 추천
 
-## ✨ Why Choose Rhythm?
+청취 기록과 분석은 **기기 안에서** 처리합니다. 기록을 기간이 지났다는 이유로 자동 삭제하지 않습니다.
 
-Rhythm is a modern, open-source music player built with **Material 3 Expressive** design. It delivers professional-grade audio with High-Resolution playback, EAC3-JOC/Dolby Atmos via FFmpeg, and completely respects your privacy.
+- 재생 날짜·시간대·실제 청취 시간·반복·건너뛰기·탐색·속도와 당시의 음원 정보를 누적합니다.
+- 월별 선호 아티스트·장르, 장르 전환, 재청취 간격과 새로 추가한 곡의 관계를 분석합니다.
+- 충전·유휴 상태에서 전체 PCM 지문, 파형, 음량과 주파수 특성을 분석합니다.
+- 누적 선호와 최근 청취 흐름, 음향 유사도를 개인 믹스에 반영하고 추천 이유를 표시합니다.
+- 추천 가중치·홈 영역 순서는 지원하는 JSON 규칙으로 갱신할 수 있습니다. 선택적 Wi-Fi 규칙 갱신은 청취 기록을 업로드하지 않습니다.
 
-| 🎨 **Design & UI** | 🎵 **Audio Engine** |
-| :--- | :--- |
-| **Material You:** Dynamic theming with wallpaper colors (Android 12+). | **Pro Audio:** Media3 ExoPlayer with gapless playback & High-Res mode. |
-| **Expressive UI:** Refined adaptive shapes and Material 3 design. | **10-Band EQ:** Professional equalizer with 6032+ AutoEQ device presets. |
-| **Tablet UI:** Optimized multi-pane layout for tablets. | **Replay Gain:** Track/album loudness normalization. |
-| **Material Symbols:** Crisp, scalable variable-weight icons. | **Crossfade:** Smooth transitions with adjustable duration. |
+음향 유사도는 추천을 위한 보조 신호이며 같은 곡이나 장르를 확정하는 모델은 아닙니다. 비정상 종료나 전원 손실 시 마지막 체크포인트 이후의 청취는 손실될 수 있습니다.
 
-| 🎤 **Features & Tools** | 🔒 **Privacy & Data** |
-| :--- | :--- |
-| **Synced Lyrics:** LRCLib integration with word-by-word highlighting + full-screen view. | **100% FOSS:** Completely open-source with zero tracking. |
-| **Smart Library:** A–Z scroll bar, multi-select batch operations, Album Artists & Dates tabs. | **Offline Capable:** Designed to work flawlessly without the internet. |
-| **Rhythm Stats 2.0:** Comprehensive stats with Overview, Songs, Albums, Artists, History. | **Local First:** Your data and habits stay securely on your device. |
-| **Go Mode (Streaming):** Local + server playback (Subsonic, Navidrome, Jellyfin) with nearby-server discovery. | |
-| **Rhythm Go Downloads:** Download streaming tracks for offline playback. | |
-| **Rhythm Guard:** Integrated hearing safety and volume protection. | |
-| **Mono Audio:** Downmix to mono for single-earpiece listening. | |
-| **Foldable Ready:** Posture-aware player layouts that adapt to tabletop, book, and separated-screen postures. | |
-| **Home Screen Widgets:** Multiple layouts including a dedicated Lyrics widget. | |
+## 음악 감상과 한국어 경험
 
-> **System Requirements:** Android 8.0+ (API 26) • 2GB RAM • 50MB Storage
+Material 3 기반 화면, 이퀄라이저·AutoEQ, 끊김 없는 재생·크로스페이드, 동기화 가사, 위젯과 청취 통계를 제공합니다. 한국어의 누락 문구를 보완하고, 라이브러리 검색은 서버 연결 없이 동작합니다.
 
----
+설정의 **내 음악 보관함**에서 음악 사이트, 일괄 갱신, 영구 백업과 청취 분석을 관리할 수 있습니다.
 
-## 📱 Screenshots
+## 설치와 개발
 
-<div align="center">
-<table>
-<tr>
-<td align="center" width="25%">
-<img src="assets/ScreenShots/Phone/Home.png" alt="Home" width="180" style="border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);"/>
-<br/><b>🏠 Smart Home</b>
-</td>
-<td align="center" width="25%">
-<img src="assets/ScreenShots/Phone/Player_2.png" alt="Player" width="180" style="border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);"/>
-<br/><b>▶️ Beautiful Player</b>
-</td>
-<td align="center" width="25%">
-<img src="assets/ScreenShots/Phone/Player_Lyrics_View.png" alt="Lyrics" width="180" style="border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);"/>
-<br/><b>🎤 Synced Lyrics</b>
-</td>
-<td align="center" width="25%">
-<img src="assets/ScreenShots/Phone/Playlist.png" alt="Library" width="180" style="border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);"/>
-<br/><b>📚 Rich Library</b>
-</td>
-</tr>
-<tr>
-<td align="center">
-<img src="assets/ScreenShots/Phone/Queue.png" alt="Queue" width="180" style="border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);"/>
-<br/><b>📋 Smart Queue</b>
-</td>
-<td align="center">
-<img src="assets/ScreenShots/Phone/Search.png" alt="Search" width="180" style="border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);"/>
-<br/><b>🔍 Instant Search</b>
-</td>
-<td align="center">
-<img src="assets/ScreenShots/Phone/Settings.png" alt="Settings" width="180" style="border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);"/>
-<br/><b>⚙️ Deep Settings</b>
-</td>
-<td align="center">
-<img src="assets/ScreenShots/Phone/Artist.png" alt="Artist" width="180" style="border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);"/>
-<br/><b>🎤 Artist Pages</b>
-</td>
-</tr>
-</table>
-</div>
+Android 8.0(API 26) 이상이 필요합니다. [릴리스](https://github.com/tak2-08/T2Rhythm/releases/latest)의 일반 APK를 설치하세요. Debug APK는 별도 테스트 패키지입니다.
 
-### Tablet
+추천 데이터 규칙은 재설치 없이 바꿀 수 있지만, 네이티브 기능과 권한을 바꾸려면 APK 업데이트가 필요합니다. 설치 전에는 음악 보관함을 백업해 주세요.
 
-<div align="center">
-<table>
-<tr>
-<td align="center" width="25%">
-<img src="assets/ScreenShots/Tablet/Player.png" alt="Player" width="240" style="border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);"/>
-<br/><b>▶️ Now Playing</b>
-</td>
-<td align="center" width="25%">
-<img src="assets/ScreenShots/Tablet/Library.png" alt="Library" width="240" style="border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);"/>
-<br/><b>📚 Library</b>
-</td>
-<td align="center" width="25%">
-<img src="assets/ScreenShots/Tablet/Lyrics_View.png" alt="Lyrics" width="240" style="border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);"/>
-<br/><b>🎤 Synced Lyrics</b>
-</td>
-<td align="center" width="25%">
-<img src="assets/ScreenShots/Tablet/Album.png" alt="Album" width="240" style="border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);"/>
-<br/><b>💿 Album Detail</b>
-</td>
-</tr>
-<tr>
-<td align="center">
-<img src="assets/ScreenShots/Tablet/Search.png" alt="Search" width="240" style="border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);"/>
-<br/><b>🔍 Search</b>
-</td>
-<td align="center">
-<img src="assets/ScreenShots/Tablet/Rhythm_Stats.png" alt="Stats" width="240" style="border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);"/>
-<br/><b>📊 Playback Stats</b>
-</td>
-<td align="center">
-<img src="assets/ScreenShots/Tablet/Settings.png" alt="Settings" width="240" style="border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);"/>
-<br/><b>⚙️ Settings</b>
-</td>
-<td align="center">
-<img src="assets/ScreenShots/Tablet/About.png" alt="About" width="240" style="border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);"/>
-<br/><b>ℹ️ About</b>
-</td>
-</tr>
-</table>
-</div>
+```bash
+./gradlew :crawler:test :app:testGithubDebugUnitTest
+./gradlew :app:assembleGithubDebug :app:lintGithubDebug
+./gradlew :app:assembleGithubRelease
+```
 
----
+- [개인 음악 보관함·기록 형식·분석 안내](docs/PERSONAL_MUSIC_ARCHIVE.md)
+- [음악 정보 수집과 자동 저장 안내](docs/MUSIC_METADATA_CRAWLER.md)
 
-## 📥 Download & Install
+## 기반 프로젝트와 라이선스
 
-Choose your preferred platform to download the latest version of Rhythm:
-
-<div align="center">
-
-| Source | Badge | Details |
-| :--- | :---: | :--- |
-| **Google Play** | [<img src="assets/badge-googleplay.png" alt="Get it on Google Play" height="35">](https://play.google.com/store/apps/details?id=chromahub.rhythm.play) | [Install on Android](https://play.google.com/store/apps/details?id=chromahub.rhythm.play) • [Join from Web (Open Testing)](https://play.google.com/apps/testing/chromahub.rhythm.play) |
-| **GitHub** | [<img src="assets/badge-github.png" alt="Download APK" height="35">](https://github.com/cromaguy/Rhythm/releases/latest) | Direct APK download (Full Features) |
-| **F-Droid** | [<img src="assets/badge-fdroid.png" alt="F-Droid" height="35">](https://f-droid.org/packages/chromahub.rhythm.app) | Official repository (Full Features) |
-| **IzzyOnDroid** | [<img src="assets/badge-izzyondroid.png" alt="IzzyOnDroid" height="35">](https://apt.izzysoft.de/fdroid/index/apk/chromahub.rhythm.app) | Privacy-focused repo (Full Features) |
-| **Obtainium** | [<img src="assets/badge-obtainium.png" alt="Obtainium" height="35">](https://apps.obtainium.imranr.dev/redirect?r=obtainium://add/https://github.com/cromaguy/Rhythm/) | Auto-updates straight from GitHub |
-| **OpenAPK** | [<img src="assets/badge-openapk.png" alt="OpenAPK" height="35">](https://www.openapk.net/rhythm/chromahub.rhythm.app/) | Alternative APK source |
-
-</div>
-
-> 💡 **Note:** F-Droid, IzzyOnDroid, and GitHub releases include all features, including Deezer & YouTube Music artwork, LRCLib lyrics, and YouTube Music artwork. See [Build Variants](docs/BUILD_VARIANTS.md) or the [Wiki Build Instructions](https://github.com/cromaguy/Rhythm/wiki/Build-Instructions) for details. Need help? Check out the [Installation Guide](https://github.com/cromaguy/Rhythm/wiki/Installation-Guide).
-
----
-
-## 🛠 Technology Stack
-
-Built with modern tools and clean architecture:
-
-* **UI & Design:** Jetpack Compose, Material 3, Glance Widgets, Coil, AndroidX Palette.
-* **Audio Engine:** Media3 ExoPlayer, FFmpeg Decoder, JAudioTagger.
-* **Architecture:** MVVM + Clean Architecture, 100% Kotlin, Kotlin Coroutines + Flow.
-* **Data & Network:** Room + SQLite, Retrofit, OkHttp, Gson.
-* **Build & Management:** AGP, Kotlin, WorkManager, LeakCanary.
-
-📖 **Full tech stack:** Read more in the [Wiki](https://github.com/cromaguy/Rhythm/wiki/Technology-Stack).
-
----
-
-## 🌍 Translations
-
-Rhythm is translated into **28+ languages** by the community via **Weblate**. You don't need to write code to contribute — just visit the link below and start translating!
-
-<div align="center">
-
-[![Translation status](https://hosted.weblate.org/widget/rhythm/strings/multi-auto.svg)](https://hosted.weblate.org/engage/rhythm/)
-
-</div>
-
-| Language | Status |
-| :--- | :--- |
-| 🇬🇧 English | Source (always 100%) |
-| 🌐 28+ others | [View all on Weblate](https://hosted.weblate.org/projects/rhythm/#languages) |
-
-**How to help translate:**
-1. Go to [hosted.weblate.org/engage/rhythm/](https://hosted.weblate.org/engage/rhythm/)
-2. Register a free account
-3. Pick your language and start translating
-
-> ⚠️ Please do **not** submit PRs that edit `values-*/strings.xml` files directly — translations are managed exclusively through Weblate, which syncs back automatically.
-
----
-
-## 🤝 Contributing & Community
-
-We welcome contributions! See our [CONTRIBUTING.md](https://github.com/cromaguy/Rhythm/blob/main/docs/CONTRIBUTING.md) for guidelines.
-
-* 🐛 **Found a bug?** [Open an issue](https://github.com/cromaguy/Rhythm/issues)
-* 💡 **Have an idea?** [Request a feature](https://github.com/cromaguy/Rhythm/issues)
-* 💬 **Want to chat?** [Join Discord](https://discord.gg/XjPyUYPQYc), [Telegram](https://t.me/RhythmSupport) or [GitHub Discussions](https://github.com/cromaguy/Rhythm/discussions)
-* 📖 **Need help?** [Read the Wiki](https://github.com/cromaguy/Rhythm/wiki)
-* 🌍 **Want to translate?** [Translate on Weblate](https://hosted.weblate.org/engage/rhythm/)
-
----
-
-## 🏆 Credits
-
-**Lead Developer & Architect:** [Anjishnu Nandi](https://github.com/cromaguy)
-
-**Huge Thanks To:**
-* [Izzy](https://github.com/IzzySoft) - IzzyOnDroid repository management
-* [linsui](https://github.com/linsui) & [Licaon_Kter](https://github.com/licaon-kter) - F-Droid repository management
-* [theovilardo](https://github.com/theovilardo) - Guide & PixelPlayer's Lead Dev
-* [Nick](https://github.com/nift4) - Guide & Gramophone's Maintainer
-* [Alex](https://github.com/Paxsenix0) - Lyrically API's Lead Dev
-* [vivi](https://github.com/vivizzz007) - Guide & Lead Developer of Vivi Music
-* The **Google Material Design Team**, **AOSP**, **JetBrains**, and the fantastic **Open Source Community**.
-
----
-
-<div align="center">
-
-### ✨ Made with ❤️ by Team ChromaHub
-
-<sub>**License:** [GNU General Public License v3.0](docs/LICENSE)</sub><br>
-<sub>© 2026 Team ChromaHub. All rights reserved.</sub><br>
-<sub>⭐ If Rhythm improved your daily listening, don't forget to star the repository! ⭐</sub>
-
-</div>
+[Rhythm](https://github.com/cromaguy/Rhythm)의 원작자 Anjishnu Nandi와 오픈소스 기여자에게 감사드립니다. T2Rhythm은 기존 저작권 표시와 **GPL-3.0-or-later** 라이선스를 따릅니다. 사용한 라이브러리의 라이선스는 앱 안에서도 확인할 수 있습니다. 자세한 내용은 [라이선스](docs/LICENSE)를 참고하세요.

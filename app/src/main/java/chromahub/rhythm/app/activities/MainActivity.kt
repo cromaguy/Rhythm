@@ -144,8 +144,6 @@ import chromahub.rhythm.app.features.local.presentation.screens.OnboardingScreen
 import chromahub.rhythm.app.features.local.presentation.screens.onboarding.OnboardingStep
 import chromahub.rhythm.app.features.local.presentation.screens.onboarding.PermissionScreenState
 import androidx.core.content.pm.ShortcutManagerCompat
-import chromahub.rhythm.app.features.streaming.presentation.viewmodel.StreamingMusicViewModel
-import chromahub.rhythm.app.features.streaming.presentation.viewmodel.StreamingSyncStage
 import chromahub.rhythm.app.core.domain.model.SourceType
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -161,7 +159,7 @@ class MainActivity : AppCompatActivity() {
     private val musicViewModel: MusicViewModel by viewModels()
     private val themeViewModel: ThemeViewModel by viewModels()
     private val appUpdaterViewModel: AppUpdaterViewModel by viewModels() // Inject AppUpdaterViewModel
-    private val streamingMusicViewModel: StreamingMusicViewModel by viewModels()
+
     private lateinit var appSettings: AppSettings // Declare AppSettings
 
     private var mediaRouter: MediaRouter? = null
@@ -182,13 +180,13 @@ class MainActivity : AppCompatActivity() {
             musicViewModel.refreshAudioDevices()
         }
     }
-    
+
     companion object {
         const val DISPLAY_AUDIO_EFFECT_CONTROL_PANEL_REQUEST = 1002
         const val EXTRA_OPEN_PLAYER = "OPEN_PLAYER"
         const val EXTRA_OPEN_QUEUE = "OPEN_QUEUE"
     }
-    
+
     // Track coroutine jobs to prevent memory leaks
     private val lifecycleScopeJobs = mutableListOf<kotlinx.coroutines.Job>()
 
@@ -198,10 +196,10 @@ class MainActivity : AppCompatActivity() {
         enableEdgeToEdge()
 
         appSettings = AppSettings.getInstance(applicationContext) // AppSettings already initialized in Application
-        
+
         // We'll delay intent handling until after initialization
         val startupIntent = intent
-        
+
         setContent {
             val useSystemTheme by themeViewModel.useSystemTheme.collectAsState()
             val darkMode by themeViewModel.darkMode.collectAsState()
@@ -216,7 +214,7 @@ class MainActivity : AppCompatActivity() {
             val expressiveColors by appSettings.expressiveColors.collectAsState()
             val themeIntensity by appSettings.themeIntensity.collectAsState()
             val appMode by appSettings.appMode.collectAsState()
-            
+
             // Determine the theme based on settings
             val isDarkTheme = if (useSystemTheme) {
                 // Use system default
@@ -225,7 +223,7 @@ class MainActivity : AppCompatActivity() {
                 // Use app setting
                 darkMode
             }
-            
+
             RhythmTheme(
                 darkTheme = isDarkTheme,
                 amoledTheme = amoledTheme && isDarkTheme,
@@ -302,7 +300,7 @@ class MainActivity : AppCompatActivity() {
                         lastCrashLog?.let {
                             // CrashActivity is now responsible for showing the dialog
                         }
-                        
+
                         // Handle startup intents once, after the library is ready.
                         if (!hasHandledStartupIntents) {
                             hasHandledStartupIntents = true
@@ -334,12 +332,7 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
                     val scanProgress by musicViewModel.scanProgress.collectAsState()
-                    val isStreamingMode = appMode == "STREAMING"
-                    val streamingSyncProgress by streamingMusicViewModel.syncProgress.collectAsState()
-                    val streamingCurrentService by streamingMusicViewModel.currentService.collectAsState()
-                    val streamingServiceName = remember(streamingCurrentService) {
-                        streamingMusicViewModel.getSourceTypeName(streamingCurrentService)
-                    }
+
 
                     Box(modifier = Modifier.fillMaxSize()) {
                         AnimatedVisibility(
@@ -353,7 +346,7 @@ class MainActivity : AppCompatActivity() {
                                     RhythmNavigation(
                                         musicViewModel = musicViewModel,
                                         themeViewModel = themeViewModel,
-                                        streamingMusicViewModel = streamingMusicViewModel
+
                                     )
                                 },
                                 themeViewModel = themeViewModel,
@@ -363,12 +356,12 @@ class MainActivity : AppCompatActivity() {
                                 onSetIsLoading = { isLoading = it },
                                 onSetIsInitializingApp = { isInitializingApp = it },
                                 musicViewModel = musicViewModel,
-                                streamingViewModel = streamingMusicViewModel,
+
                                 showMediaScanLoader = showMediaScanLoader,
                                 onShowMediaScanLoaderChange = { showMediaScanLoader = it }
                             )
                         }
-                        
+
                         AnimatedVisibility(
                             visible = !isInitialized,
                             exit = fadeOut(animationSpec = tween(600, easing = androidx.compose.animation.core.EaseInCubic))
@@ -410,7 +403,7 @@ class MainActivity : AppCompatActivity() {
                                         )
                                         Text(
                                             text = stringResource(
-                                                if (appMode == "STREAMING") R.string.streaming_integration_title else R.string.common_rhythm
+                                                R.string.common_rhythm
                                             ),
                                             style = MaterialTheme.typography.headlineSmall,
                                             fontWeight = FontWeight.Bold,
@@ -424,22 +417,8 @@ class MainActivity : AppCompatActivity() {
                                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                                     )
 
-                                    val preparingScanText = remember(isStreamingMode, scanProgress, streamingSyncProgress, streamingServiceName) {
-                                         if (isStreamingMode) {
-                                             when (streamingSyncProgress.stage) {
-                                                 StreamingSyncStage.Syncing -> {
-                                                     if (streamingSyncProgress.total > 0) {
-                                                         "Syncing $streamingServiceName: ${streamingSyncProgress.current} / ${streamingSyncProgress.total}"
-                                                     } else if (streamingSyncProgress.songsCount > 0) {
-                                                         "Syncing $streamingServiceName: ${streamingSyncProgress.songsCount} tracks"
-                                                     } else {
-                                                         "Connecting to $streamingServiceName…"
-                                                     }
-                                                 }
-                                                 StreamingSyncStage.Error -> "Sync error"
-                                                 StreamingSyncStage.Complete, StreamingSyncStage.Idle -> null
-                                             }
-                                         } else {
+                                    val preparingScanText = remember(scanProgress) {
+                                         run {
                                              when (scanProgress.stage) {
                                                  is ScanPhase.Songs -> if (scanProgress.total > 0) "Scanning media: ${scanProgress.current} / ${scanProgress.total}" else "Scanning media…"
                                                  is ScanPhase.Incremental -> if (scanProgress.total > 0) "Checking new files: ${scanProgress.current} / ${scanProgress.total}" else "Checking for new music…"
@@ -506,34 +485,8 @@ class MainActivity : AppCompatActivity() {
 
                         var isScanBubbleDismissedManually by remember { mutableStateOf(false) }
 
-                        LaunchedEffect(isStreamingMode, scanProgress.stage, streamingSyncProgress.stage) {
-                            if (isStreamingMode) {
-                                when (streamingSyncProgress.stage) {
-                                    StreamingSyncStage.Syncing -> {
-                                        if (!isScanBubbleDismissedManually) {
-                                            showMediaScanLoader = true
-                                        }
-                                    }
-                                    StreamingSyncStage.Complete -> {
-                                        if (showMediaScanLoader) {
-                                            delay(2000)
-                                            showMediaScanLoader = false
-                                        }
-                                        isScanBubbleDismissedManually = false
-                                    }
-                                    StreamingSyncStage.Error -> {
-                                        if (showMediaScanLoader) {
-                                            delay(3000)
-                                            showMediaScanLoader = false
-                                        }
-                                        isScanBubbleDismissedManually = false
-                                    }
-                                    StreamingSyncStage.Idle -> {
-                                        showMediaScanLoader = false
-                                        isScanBubbleDismissedManually = false
-                                    }
-                                }
-                            } else {
+                        LaunchedEffect(scanProgress.stage) {
+                            run {
                                 val stage = scanProgress.stage
                                 val isScanning = stage !is ScanPhase.Idle &&
                                                  stage !is ScanPhase.Complete &&
@@ -567,21 +520,8 @@ class MainActivity : AppCompatActivity() {
                                 .statusBarsPadding()
                                 .padding(top = 16.dp)
                         ) {
-                            val scanProgressValue: Float? = remember(isStreamingMode, scanProgress, streamingSyncProgress) {
-                                if (isStreamingMode) {
-                                    when (streamingSyncProgress.stage) {
-                                        StreamingSyncStage.Idle -> null
-                                        StreamingSyncStage.Syncing -> {
-                                            if (streamingSyncProgress.total > 0) {
-                                                (streamingSyncProgress.current.toFloat() / streamingSyncProgress.total.toFloat()).coerceIn(0.05f, 0.95f)
-                                            } else {
-                                                null
-                                            }
-                                        }
-                                        StreamingSyncStage.Complete -> 1.0f
-                                        StreamingSyncStage.Error -> null
-                                    }
-                                } else {
+                            val scanProgressValue: Float? = remember(scanProgress) {
+                                run {
                                     when (scanProgress.stage) {
                                         is ScanPhase.Idle -> null
                                         is ScanPhase.Songs -> {
@@ -605,15 +545,8 @@ class MainActivity : AppCompatActivity() {
                                 }
                             }
 
-                            val scanLabelText = remember(isStreamingMode, scanProgress.stage, streamingSyncProgress.stage, streamingServiceName) {
-                                if (isStreamingMode) {
-                                    when (streamingSyncProgress.stage) {
-                                        StreamingSyncStage.Syncing -> "Syncing $streamingServiceName"
-                                        StreamingSyncStage.Complete -> "$streamingServiceName Updated"
-                                        StreamingSyncStage.Error -> "Sync Error"
-                                        StreamingSyncStage.Idle -> streamingServiceName
-                                    }
-                                } else {
+                            val scanLabelText = remember(scanProgress.stage) {
+                                run {
                                     when (scanProgress.stage) {
                                         is ScanPhase.Songs -> "Scanning Music Library"
                                         is ScanPhase.Incremental, is ScanPhase.SavingDb -> "Updating Music Library"
@@ -625,33 +558,8 @@ class MainActivity : AppCompatActivity() {
                                 }
                             }
 
-                            val scanStatusText = remember(isStreamingMode, scanProgress, streamingSyncProgress) {
-                                if (isStreamingMode) {
-                                    when (streamingSyncProgress.stage) {
-                                        StreamingSyncStage.Idle -> "Initializing..."
-                                        StreamingSyncStage.Syncing -> {
-                                            if (streamingSyncProgress.total > 0) {
-                                                if (streamingSyncProgress.songsCount > 0) {
-                                                    "${streamingSyncProgress.current} of ${streamingSyncProgress.total} albums (${streamingSyncProgress.songsCount} songs)"
-                                                } else {
-                                                    "${streamingSyncProgress.current} of ${streamingSyncProgress.total} albums"
-                                                }
-                                            } else if (streamingSyncProgress.songsCount > 0) {
-                                                "${streamingSyncProgress.songsCount} songs synced"
-                                            } else {
-                                                "Fetching library..."
-                                            }
-                                        }
-                                        StreamingSyncStage.Complete -> {
-                                            if (streamingSyncProgress.songsCount > 0) {
-                                                "${streamingSyncProgress.songsCount} songs up to date"
-                                            } else {
-                                                "Up to date"
-                                            }
-                                        }
-                                        StreamingSyncStage.Error -> "Failed to sync library"
-                                    }
-                                } else {
+                            val scanStatusText = remember(scanProgress) {
+                                run {
                                     when (scanProgress.stage) {
                                         is ScanPhase.Idle -> "Initializing..."
                                         is ScanPhase.Songs, is ScanPhase.Incremental -> "${scanProgress.current} of ${scanProgress.total} tracks"
@@ -692,7 +600,7 @@ class MainActivity : AppCompatActivity() {
                                                         swipeOffsetY.animateTo(-500f, tween(200))
                                                         isScanBubbleDismissedManually = true
                                                         showMediaScanLoader = false
-                                                        if (!isStreamingMode) {
+                                                        run {
                                                             appSettings.setInitialMediaScanCompleted(true)
                                                         }
                                                     }
@@ -707,7 +615,7 @@ class MainActivity : AppCompatActivity() {
                                                         swipeOffsetX.animateTo(targetX, tween(200))
                                                         isScanBubbleDismissedManually = true
                                                         showMediaScanLoader = false
-                                                        if (!isStreamingMode) {
+                                                        run {
                                                             appSettings.setInitialMediaScanCompleted(true)
                                                         }
                                                     }
@@ -775,19 +683,19 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
-    
+
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
         // Handle the new intent
         handleIntent(intent)
     }
-    
+
     private fun handleIntent(intent: Intent?) {
         if (intent == null) return
-        
+
         Log.d(TAG, "Handling intent: ${intent.action}, data: ${intent.data}")
-        
+
         try {
             val shouldOpenPlayer = intent.getBooleanExtra(EXTRA_OPEN_PLAYER, false)
 
@@ -799,7 +707,7 @@ class MainActivity : AppCompatActivity() {
                 // No additional action needed as the navigation will handle it
                 return
             }
-            
+
             when (intent.action) {
                 "chromahub.rhythm.app.action.SHORTCUT_PLAY_PAUSE" -> {
                     ShortcutManagerCompat.reportShortcutUsed(this, "shortcut_play_pause")
@@ -829,7 +737,7 @@ class MainActivity : AppCompatActivity() {
                     // Handle external audio file with validation
                     intent.data?.let { uri ->
                         Log.d(TAG, "Received ACTION_VIEW intent with URI: $uri")
-                        
+
                         if (isValidAndSafeUri(uri)) {
                             handleExternalAudioFile(uri)
                         } else {
@@ -854,7 +762,7 @@ class MainActivity : AppCompatActivity() {
             Toast.makeText(this, R.string.mainactivity_error_opening_file, Toast.LENGTH_SHORT).show()
         }
     }
-    
+
     private fun isValidAndSafeUri(uri: Uri): Boolean {
         return try {
             // Validate URI scheme - be more permissive
@@ -863,24 +771,24 @@ class MainActivity : AppCompatActivity() {
                 Log.w(TAG, "Unsupported URI scheme: $scheme for URI: $uri")
                 return false
             }
-            
+
             // For content URIs, be more permissive with authorities
             if (scheme == "content") {
                 val authority = uri.authority
                 Log.d(TAG, "Content URI authority: $authority")
-                
+
                 // Allow more authorities, including third-party file managers
                 val suspiciousAuthorities = setOf(
                     "com.malicious.app",
                     "suspicious.authority"
                 )
-                
+
                 if (authority != null && suspiciousAuthorities.any { authority.contains(it) }) {
                     Log.w(TAG, "Potentially malicious content authority: $authority")
                     return false
                 }
             }
-            
+
             // Validate file path for file URIs - be more permissive
             if (scheme == "file") {
                 val path = uri.path
@@ -888,7 +796,7 @@ class MainActivity : AppCompatActivity() {
                     Log.w(TAG, "File URI with null path")
                     return false
                 }
-                
+
                 try {
                     // Check for path traversal attempts but be less strict
                     val file = java.io.File(path)
@@ -901,7 +809,7 @@ class MainActivity : AppCompatActivity() {
                     return false
                 }
             }
-            
+
             // Try to access the URI to verify it exists and is readable
             try {
                 contentResolver.openInputStream(uri)?.use { inputStream ->
@@ -914,7 +822,7 @@ class MainActivity : AppCompatActivity() {
                 Log.w(TAG, "Cannot read from URI: $uri", e)
                 return false
             }
-            
+
             true
         } catch (e: SecurityException) {
             Log.w(TAG, "Security exception accessing URI: $uri", e)
@@ -924,20 +832,20 @@ class MainActivity : AppCompatActivity() {
             false
         }
     }
-    
+
     private fun handleExternalAudioFile(uri: Uri) {
         Log.d(TAG, "Handling external audio file: $uri")
-        
+
         // Validate URI and check if it's an audio file
         if (!isValidAudioUri(uri)) {
             Log.e(TAG, "Invalid or unsupported audio file: $uri")
             Toast.makeText(applicationContext, R.string.mainactivity_unsupported_file_format, Toast.LENGTH_SHORT).show()
             return
         }
-        
+
         val mimeType = MediaUtils.getMimeType(applicationContext, uri)
         Log.d(TAG, "File is recognized as audio with mime type: $mimeType")
-        
+
         // Extract metadata from the audio file with proper error handling
         val job = lifecycleScope.launch {
             try {
@@ -948,14 +856,14 @@ class MainActivity : AppCompatActivity() {
                     Toast.makeText(applicationContext, R.string.mainactivity_failed_to_initialize_media, Toast.LENGTH_SHORT).show()
                     return@launch
                 }
-                
+
                 // Extract metadata on a background thread
                 val song = withContext(Dispatchers.IO) {
                     MediaUtils.extractMetadataFromUri(applicationContext, uri)
                 }
-                
+
                 Log.d(TAG, "Extracted song metadata: ${song.title} by ${song.artist} from ${song.album}")
-                
+
                 // Ensure service connection with timeout
                 val serviceConnected = waitForServiceConnection(timeoutMs = 5000)
                 if (!serviceConnected) {
@@ -963,17 +871,17 @@ class MainActivity : AppCompatActivity() {
                     fallbackPlayExternalFile(uri)
                     return@launch
                 }
-                
+
                 // Play the external file
                 musicViewModel.playExternalAudioFile(song)
-                
+
                 // Verify playback started with timeout
                 val playbackStarted = waitForPlaybackStart(timeoutMs = 3000)
                 if (!playbackStarted) {
                     Log.w(TAG, "Playback didn't start, using fallback method")
                     fallbackPlayExternalFile(uri)
                 }
-                
+
             } catch (e: Exception) {
                 Log.e(TAG, "Error processing external audio file", e)
                 val errorMessage = when (e) {
@@ -984,11 +892,11 @@ class MainActivity : AppCompatActivity() {
                 Toast.makeText(applicationContext, errorMessage, Toast.LENGTH_SHORT).show()
             }
         }
-        
+
         // Track the job for cleanup
         lifecycleScopeJobs.add(job)
     }
-    
+
     private fun isValidAudioUri(uri: Uri): Boolean {
         return try {
             val mimeType = MediaUtils.getMimeType(applicationContext, uri)
@@ -1033,7 +941,7 @@ class MainActivity : AppCompatActivity() {
             false
         }
     }
-    
+
     private suspend fun startMediaServiceAndWait(): Boolean {
         return try {
             val serviceIntent = Intent(this, chromahub.rhythm.app.infrastructure.service.MediaPlaybackService::class.java)
@@ -1048,7 +956,7 @@ class MainActivity : AppCompatActivity() {
             if (!started) {
                 return false
             }
-            
+
             // Wait for service to be ready
             var attempts = 0
             while (attempts < 10 && !musicViewModel.isServiceConnected()) {
@@ -1061,7 +969,7 @@ class MainActivity : AppCompatActivity() {
             false
         }
     }
-    
+
     private suspend fun waitForServiceConnection(timeoutMs: Long): Boolean {
         val startTime = System.currentTimeMillis()
         var lastConnectAttemptMs = 0L
@@ -1078,11 +986,11 @@ class MainActivity : AppCompatActivity() {
         }
         return false
     }
-    
+
     private suspend fun waitForPlaybackStart(timeoutMs: Long): Boolean {
         val startTime = System.currentTimeMillis()
         delay(500) // Initial delay to let playback initialize
-        
+
         while (System.currentTimeMillis() - startTime < timeoutMs) {
             if (musicViewModel.isPlaying()) {
                 return true
@@ -1091,7 +999,7 @@ class MainActivity : AppCompatActivity() {
         }
         return false
     }
-    
+
     private suspend fun fallbackPlayExternalFile(uri: Uri) {
         try {
             Log.d(TAG, "Using direct service intent as fallback")
@@ -1109,7 +1017,7 @@ class MainActivity : AppCompatActivity() {
                 Toast.makeText(applicationContext, R.string.externalplaybackactivity_failed_to_play_audio, Toast.LENGTH_SHORT).show()
                 return
             }
-            
+
             // Give fallback some time to start
             delay(1000)
             if (!musicViewModel.isPlaying()) {
@@ -1181,7 +1089,7 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         Log.d(TAG, "MainActivity onDestroy - cleaning up resources")
         musicViewModel.ensurePlaylistsSaved()
-        
+
         // Cancel all tracked coroutine jobs to prevent memory leaks
         lifecycleScopeJobs.forEach { job ->
             if (job.isActive) {
@@ -1190,7 +1098,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
         lifecycleScopeJobs.clear()
-        
+
         // Auto-trim cache if usage exceeds 90% of max.
         // Run in a standalone CoroutineScope since lifecycleScope is cancelled when super.onDestroy() runs.
         kotlinx.coroutines.CoroutineScope(Dispatchers.IO).launch {
@@ -1201,17 +1109,17 @@ class MainActivity : AppCompatActivity() {
                 Log.e(TAG, "Error during cache auto-trim on app destroy", e)
             }
         }
-        
+
         super.onDestroy()
     }
-    
+
     // Helper function to get step name for accessibility
     private fun getStepName(step: OnboardingStep): String {
         return when (step) {
             OnboardingStep.WELCOME -> "Welcome"
             OnboardingStep.APP_MODE_CHOICE -> "App Mode Choice"
-            OnboardingStep.STREAMING_SERVICE_CHOICE -> "Streaming Service Choice"
-            OnboardingStep.STREAMING_SETUP -> "Streaming Setup"
+
+
             OnboardingStep.PERMISSIONS -> "Permissions"
             OnboardingStep.RHYTHM_GUARD -> "Rhythm Guard"
             OnboardingStep.UPDATER -> "Updates"

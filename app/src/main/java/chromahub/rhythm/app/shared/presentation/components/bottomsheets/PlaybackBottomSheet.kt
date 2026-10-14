@@ -116,8 +116,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import chromahub.rhythm.app.shared.presentation.components.bottomsheets.AdaptiveSheetScrollContainer
 import chromahub.rhythm.app.shared.presentation.components.bottomsheets.groupedBottomSheetItemShape
-import chromahub.rhythm.app.features.streaming.presentation.screens.streamingQualityOptions
-import chromahub.rhythm.app.features.streaming.presentation.screens.streamingQualityLabel
 import chromahub.rhythm.app.shared.presentation.components.player.VolumeSlider
 import java.util.Locale
 
@@ -140,15 +138,15 @@ fun PlaybackBottomSheet(
 ) {
     val context = LocalContext.current
     val haptics = LocalHapticFeedback.current
-    
+
     // System volume state
     var systemVolume by remember { mutableFloatStateOf(0.5f) }
     var systemMaxVolume by remember { mutableIntStateOf(15) }
-    
+
     // Collect settings
     val playbackSpeed by musicViewModel.playbackSpeed.collectAsState()
     val playbackPitch by musicViewModel.playbackPitch.collectAsState()
-    val streamingQuality by appSettings.streamingQuality.collectAsState()
+
     val appMode by appSettings.appMode.collectAsState()
     val syncSpeedAndPitch by appSettings.syncSpeedAndPitch.collectAsState()
     val gaplessPlayback by appSettings.gaplessPlayback.collectAsState()
@@ -171,10 +169,9 @@ fun PlaybackBottomSheet(
     val batterySaverMode by appSettings.batterySaverMode.collectAsState()
     val batterySaverEnableOffload by appSettings.batterySaverEnableOffload.collectAsState()
     val isOffloadEnforced = batterySaverEnabled && (batterySaverMode == "auto" || (batterySaverMode == "manual" && batterySaverEnableOffload))
-    
+
     var showSpeedPitchSheet by remember { mutableStateOf(false) }
 
-    var showQualitySheet by remember { mutableStateOf(false) }
 
     // Initialize system volume and monitor for changes
     LaunchedEffect(Unit) {
@@ -185,7 +182,7 @@ fun PlaybackBottomSheet(
         systemVolume = currentVolume.toFloat() / maxVolume.toFloat()
         systemMaxVolume = maxVolume
     }
-    
+
     // Monitor system volume changes using ContentObserver (no polling)
     LaunchedEffect(Unit) {
         val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
@@ -239,7 +236,7 @@ fun PlaybackBottomSheet(
             PlaybackHeader(
                 haptics = haptics
             )
-            
+
             Spacer(modifier = Modifier.height(16.dp))
 
             AnimateIn {
@@ -276,22 +273,8 @@ fun PlaybackBottomSheet(
                     contentPadding = PaddingValues(top = 8.dp, bottom = 16.dp, end = endPadding),
                     verticalArrangement = Arrangement.spacedBy(20.dp)
                 ) {
-                if (appMode == "STREAMING") {
-                    item {
-                        AnimateIn {
-                            StreamingQualityCard(
-                                selectedQuality = streamingQuality,
-                                onOpenQualitySheet = {
-                                    showQualitySheet = true
-                                },
-                                haptics = haptics,
-                                context = context,
-                                modifier = Modifier.padding(horizontal = 24.dp)
-                            )
-                        }
-                    }
-                }
-                
+
+
                 // Playback Quick Settings Section
                 item {
                     AnimateIn {
@@ -322,7 +305,7 @@ fun PlaybackBottomSheet(
                         )
                     }
                 }
-                
+
                 // Audio Effects Section
                 item {
                     AnimateIn {
@@ -382,18 +365,6 @@ fun PlaybackBottomSheet(
 }
 
     // Quality selection bottom sheet
-    if (showQualitySheet) {
-        QualitySelectionBottomSheet(
-            selectedQuality = streamingQuality.uppercase(),
-            onDismiss = { showQualitySheet = false },
-            onSelect = { quality ->
-                HapticUtils.performHapticFeedback(context, haptics, HapticType.LIGHT)
-                appSettings.setStreamingQuality(quality)
-                showQualitySheet = false
-            }
-        )
-    }
-
     if (showSpeedPitchSheet) {
         PlaybackSpeedAndPitchBottomSheet(
             currentSpeed = playbackSpeed,
@@ -988,20 +959,12 @@ private fun PlaybackQuickSettingsCard(
                     icon = RhythmIcons.Settings,
                     title = {
                         Text(
-                            text = if (appMode == "STREAMING") {
-                                "Go Mode"
-                            } else {
-                                context.getString(R.string.settings_queue_playback_title)
-                            }
+                            text = context.getString(R.string.settings_queue_playback_title)
                         )
                     },
                     description = {
                         Text(
-                            text = if (appMode == "STREAMING") {
-                                "Open Go settings for provider and streaming controls"
-                            } else {
-                                context.getString(R.string.settings_queue_playback_desc)
-                            }
+                            text = context.getString(R.string.settings_queue_playback_desc)
                         )
                     },
                     trailingContent = {
@@ -1014,13 +977,7 @@ private fun PlaybackQuickSettingsCard(
                     },
                     onClick = {
                         HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
-                        if (appMode == "STREAMING") {
-                            if (onNavigateToGoMode != null) {
-                                onNavigateToGoMode.invoke()
-                            } else {
-                                navigateToSettings.invoke()
-                            }
-                        } else {
+                        run {
                             navigateToSettings.invoke()
                         }
                     }
@@ -1043,43 +1000,6 @@ private fun PlaybackQuickSettingsCard(
     }
 }
 
-@Composable
-private fun StreamingQualityCard(
-    selectedQuality: String,
-    onOpenQualitySheet: () -> Unit,
-    haptics: androidx.compose.ui.hapticfeedback.HapticFeedback,
-    context: Context,
-    modifier: Modifier = Modifier
-) {
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-    ) {
-        Material3SettingsGroup(
-            title = context.getString(R.string.streaming_settings_quality),
-            items = listOf(
-                Material3SettingsItem(
-                    icon = MaterialSymbolIcon("high_quality", filled = true),
-                    title = { Text(text = context.getString(R.string.streaming_settings_quality)) },
-                    description = { Text(text = streamingQualityLabel(selectedQuality, context)) },
-                    trailingContent = {
-                        Icon(
-                            imageVector = RhythmIcons.Forward,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    },
-                    onClick = {
-                        HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
-                        onOpenQualitySheet()
-                    }
-                )
-            ),
-            containerColor = MaterialTheme.colorScheme.surface
-        )
-    }
-}
 
 @Composable
 private fun PlaybackPitchCard(
@@ -1092,7 +1012,7 @@ private fun PlaybackPitchCard(
     modifier: Modifier = Modifier
 ) {
     var selectedPitch by remember(currentPitch) { mutableFloatStateOf(currentPitch) }
-    
+
     Card(
         modifier = modifier
             .fillMaxWidth()
@@ -1118,21 +1038,21 @@ private fun PlaybackPitchCard(
                 Icon(
                     imageVector = MaterialSymbolIcon("graphic_eq", filled = true),
                     contentDescription = stringResource(R.string.settings_playback_pitch),
-                    
+
                     modifier = Modifier.size(24.dp)
                 )
-                
+
                 Spacer(modifier = Modifier.width(12.dp))
-                
+
                 Text(
                     text = context.getString(R.string.player_pitch_label),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurface
                 )
-                
+
                 Spacer(modifier = Modifier.weight(1f))
-                
+
                 // Current pitch display
                 Text(
                     text = "${String.format(Locale.ROOT, "%.2f", selectedPitch)}x",
@@ -1188,9 +1108,9 @@ private fun PlaybackPitchCard(
                     }
                 )
             }
-            
+
             Spacer(modifier = Modifier.height(8.dp))
-            
+
             // Slider with labels
             Column {
                 Row(
@@ -1208,9 +1128,9 @@ private fun PlaybackPitchCard(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-                
+
                 Spacer(modifier = Modifier.height(8.dp))
-                
+
                 val pitchSliderState = remember(selectedPitch) {
                     SliderState(
                         value = selectedPitch,
@@ -1235,9 +1155,9 @@ private fun PlaybackPitchCard(
                     )
                 )
             }
-            
+
             Spacer(modifier = Modifier.height(12.dp))
-            
+
             val pitchPresetsListState = rememberLazyListState()
             LazyRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -1538,103 +1458,3 @@ private fun AudioEffectsCard(
         )
     }
 }
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun QualitySelectionBottomSheet(
-    selectedQuality: String,
-    onDismiss: () -> Unit,
-    onSelect: (String) -> Unit
-) {
-    val sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded))
-    val scrollState = rememberScrollState()
-
-    RhythmAdaptiveModalSheet(
-        adaptiveType = SheetAdaptiveType.WIDE_DIALOG,
-        onDismissRequest = onDismiss,
-        sheetState = sheetState,
-        dragHandle = { BottomSheetDefaults.DragHandle(color = MaterialTheme.colorScheme.primary) },
-        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-        containerColor = MaterialTheme.colorScheme.surfaceContainer,
-        modifier = Modifier.widthIn(max = 640.dp).fillMaxWidth()
-    ) {
-        StandardBottomSheetHeader(
-            title = stringResource(id = chromahub.rhythm.app.R.string.streaming_settings_quality),
-            subtitle = stringResource(id = chromahub.rhythm.app.R.string.streaming_settings_quality_sheet_desc),
-            visible = true
-        )
-        AdaptiveSheetScrollContainer(
-            scrollState = scrollState,
-            modifier = Modifier.fillMaxWidth()
-        ) { endPadding ->
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .verticalScroll(scrollState)
-                    .padding(start = 24.dp, end = 24.dp + endPadding, bottom = 24.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                streamingQualityOptions.forEachIndexed { index, option ->
-                    val isSelected = selectedQuality == option.value
-
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = groupedBottomSheetItemShape(index, streamingQualityOptions.size),
-                        colors = CardDefaults.cardColors(
-                            containerColor = if (isSelected) {
-                                MaterialTheme.colorScheme.primaryContainer
-                            } else {
-                                MaterialTheme.colorScheme.surfaceContainerHigh
-                            }
-                        ),
-                        onClick = { onSelect(option.value) }
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = MaterialSymbolIcon("high_quality"),
-                                contentDescription = null,
-                                tint = if (isSelected) {
-                                    MaterialTheme.colorScheme.onPrimaryContainer
-                                } else {
-                                    MaterialTheme.colorScheme.onSurfaceVariant
-                                },
-                                modifier = Modifier.size(if (isSelected) 30.dp else 26.dp)
-                            )
-
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = stringResource(id = option.titleRes),
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-                                    color = if (isSelected) {
-                                        MaterialTheme.colorScheme.onPrimaryContainer
-                                    } else {
-                                        MaterialTheme.colorScheme.onSurface
-                                    }
-                                )
-                            }
-
-                            if (isSelected) {
-                                Icon(
-                                    imageVector = RhythmIcons.Check,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-

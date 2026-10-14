@@ -132,7 +132,7 @@ fun CrossfadeSettingsScreen(
                             )
                         } else if (isOffloadEnforced) {
                             Text(
-                                text = "Disabled under Lite Mode to conserve battery.",
+                                text = context.getString(chromahub.rhythm.app.R.string.ui_disabled_under_lite_mode_to_conserve_battery),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )

@@ -213,8 +213,8 @@
     <string name="dialog_delete_playlist_message">Är du säker på att du vill ta bort \"%1$s\"? Denna åtgärd kan inte ångras.</string>
     <string name="dialog_delete">Ta bort</string>
     <string name="dialog_cancel">Avbryt</string>
-    <string name="streaming_settings_switch_provider_confirm_title">Byt streamingleverantör?</string>
-    <string name="streaming_settings_switch_provider_confirm_desc">Nuvarande leverantör: %1$s\nByt till: %2$s? Detta kommer att koppla bort den för närvarande aktiva leverantören.</string>
+
+
     <string name="action_switch">Växla</string>
     <!-- Playlist Detail Screen -->
     <string name="playlist_rename_title">Byt namn på spellista</string>
@@ -1426,69 +1426,21 @@
     <string name="settings_interval_once_a_day">En gång om dagen</string>
     <string name="settings_interval_once_a_week">En gång i veckan</string>
     <!-- Experimental Features -->
-    <string name="streaming_integration_title">T2Rhythm Go</string>
-    <string name="streaming_integration_services">Integrationstjänster</string>
-    <string name="streaming_integration_services_empty">Inga tjänster anslutna ännu</string>
-    <string name="streaming_settings_title">Inställningar</string>
-    <string name="streaming_settings_group_services">Tjänster</string>
-    <string name="streaming_settings_group_actions">Åtgärder</string>
-    <string name="streaming_settings_preferred_service">Önskad tjänst</string>
-    <string name="streaming_settings_quality">Strömningskvalitet</string>
-    <string name="streaming_settings_service_sheet_desc">Välj vilken ansluten tjänst T2Rhythm Go ska prioritera som standard.</string>
-    <string name="streaming_settings_quality_sheet_desc">Välj önskad ljudkvalitet för strömmande uppspelning.</string>
-    <string name="streaming_quality_low">Låg</string>
-    <string name="streaming_quality_normal">Normal</string>
-    <string name="streaming_quality_high">Hög</string>
-    <string name="streaming_quality_lossless">Förlustfri</string>
-    <string name="streaming_quality_low_desc">Datasparläge med reducerad kvalitet (~96 kbps).</string>
-    <string name="streaming_quality_normal_desc">Balanserad kvalitet och dataanvändning (~160 kbps).</string>
-    <string name="streaming_quality_high_desc">Ljud av hög kvalitet (~320 kbps).</string>
-    <string name="streaming_quality_lossless_desc">Bästa kvalitet där stöds (FLAC/ALAC).</string>
-    <string name="streaming_settings_group_wellbeing">T2Rhythm Insikter</string>
-    <string name="streaming_open_full_settings">Öppna Fullständiga inställningar</string>
-    <string name="streaming_open_full_settings_desc">Öppna app-omfattande inställningar som delas mellan olika lägen</string>
-    <string name="streaming_switch_to_local_mode">Växla till lokalt läge</string>
-    <string name="streaming_switch_to_local_mode_desc">Återgå till lokal musiknavigering</string>
-    <string name="streaming_status_title">Streaming Status</string>
-    <string name="streaming_status_selected_service">Valt: %1$s</string>
-    <string name="streaming_status_connected">Konto anslutet</string>
-    <string name="streaming_status_not_connected">Autentisering väntar</string>
-    <string name="streaming_status_badge_connected">Ansluten</string>
-    <string name="streaming_status_badge_pending">Väntar</string>
-    <string name="streaming_status_badge_refreshing">Uppfriskande</string>
-    <string name="streaming_status_connect_hint">Hantera den valda tjänsten nedan för att ansluta ditt konto.</string>
-    <string name="streaming_selected">Vald</string>
-    <string name="streaming_connect">Anslut</string>
-    <string name="streaming_manage">Hantera</string>
-    <string name="streaming_service_setup_server_url">Server URL</string>
-    <string name="streaming_service_setup_server_url_hint">https://din-server.exempel.com</string>
-    <string name="streaming_service_setup_server_url_supporting">Krävs för leverantörer som behöver en serveradress.</string>
-    <string name="streaming_service_setup_username">Användarnamn eller e-post</string>
-    <string name="streaming_service_setup_username_hint">Ange ditt kontoanvändarnamn</string>
-    <string name="streaming_service_setup_password">Lösenord</string>
-    <string name="streaming_service_setup_password_hint">Ange ditt kontolösenord</string>
-    <string name="streaming_service_setup_remember_password">Kom ihåg lösenordet på den här enheten</string>
-    <string name="streaming_service_setup_remember_password_desc">Lagra autentiseringsuppgifter lokalt så att T2Rhythm kan återansluta automatiskt senare.</string>
-    <string name="streaming_service_setup_connecting">Ansluter…</string>
-    <string name="streaming_service_setup_disconnecting">Kopplar bort…</string>
-    <string name="streaming_service_setup_action_hint">Fyll i de obligatoriska fälten för att ansluta denna tjänst.</string>
+
     <string name="streaming_service_setup_reconnect">Återanslut</string>
-    <string name="streaming_service_setup_disconnect">Koppla från</string>
-    <string name="streaming_service_setup_connected_as">Ansluten som %1$s</string>
+
+
     <string name="streaming_home_selected_service_unavailable">Den valda tjänsten är inte ansluten</string>
     <string name="streaming_home_connect_selected_service">Anslut %1$s för att ladda Hem och Sök.</string>
-    <string name="streaming_home_widget_new_releases_subtitle">Nyligen tillagda album från %1$s</string>
-    <string name="streaming_home_widget_empty_hint">Detta kan ta en stund efter att du anslutit eller uppdaterat.</string>
+
+
     <string name="streaming_library_syncing">Laddar ditt streamingflöde…</string>
-    <string name="streaming_home_no_content_title">Inget heminnehåll ännu</string>
+
     <string name="streaming_home_no_content_hint">Försök att uppdatera efter att din tjänst har slutfört synkroniseringen.</string>
     <string name="streaming_home_guard_break_active">Paus aktiv: %1$s kvar</string>
     <string name="streaming_home_guard_exposure">Idag: %1$d / %2$d min</string>
     <string name="streaming_not_selected">Ej vald</string>
-    <string name="streaming_service_subsonic">Subsonic</string>
-    <string name="streaming_service_subsonic_desc">Anslut Navidrome och kompatibla Subsonic-servrar</string>
-    <string name="streaming_service_jellyfin">Jellyfin</string>
-    <string name="streaming_service_jellyfin_desc">Streama från ditt personliga Jellyfin-bibliotek</string>
+
     <!-- Backup &amp; Restore -->
     <string name="settings_backup_restore">Säkerhetskopiering och återställning</string>
     <string name="settings_auto_backup">Automatisk säkerhetskopiering</string>
@@ -1655,8 +1607,8 @@
     <string name="settings_broadcast_status_enabled_desc">Uppspelningsstatus för sändning</string>
     <string name="settings_bluetooth_lyrics_enabled">Bluetooth-textläge</string>
     <string name="settings_bluetooth_lyrics_enabled_desc">Sänd aktuell lyrisk linje via Bluetooth-metadata</string>
-    <string name="exp_go_mode">Go Mode</string>
-    <string name="exp_go_mode_desc">Byt till T2Rhythm Go streaming mode</string>
+
+
     <!-- Home Screen Search Strings -->
     <string name="settings_home_section_order">Sektionsordning</string>
     <string name="settings_home_section_order_desc">Ändra ordning på hemsektioner</string>
@@ -1883,14 +1835,10 @@
     <string name="musicviewmodel_failed_to_play_next">Det gick inte att spela nästa: Spelaren har inte initierats</string>
     <string name="streaminghomesectionorderbottomsheet_streaming_section_order_and">Strömmande avsnittsordning och synlighet återställs till standard</string>
     <string name="streaminghomesectionorderbottomsheet_streaming_section_order_and_1">Strömmande avsnittsordning och synlighet sparad</string>
-    <string name="gosettingsscreen_configure_current_provider">Konfigurera aktuell leverantör</string>
-    <string name="gosettingsscreen_network">Nätverk</string>
-    <string name="gosettingsscreen_enable_streaming_over_mobile">Aktivera streaming över mobildata</string>
-    <string name="gosettingsscreen_connection_is_healthy">Anslutningen är sund</string>
-    <string name="streaminghomescreen_leave_go_mode">Leave Go Mode</string>
+
     <string name="streamingsettingsscreen_streaming_restricted">Strömningsbegränsad</string>
-    <string name="streamingmusicviewmodel_failed_to_play_next">Det gick inte att spela nästa: Det gick inte att lösa URL</string>
-    <string name="streamingmusicviewmodel_failed_to_add_to">Det gick inte att lägga till i kön: Det gick inte att lösa URL</string>
+
+
     <string name="rhythmmusicwidget_album_art_placeholder">Platshållare för albumkonst</string>
     <string name="rhythmwidgetpreview_rhythm_glance_widget_previews">T2Rhythm Glance Widget-förhandsvisningar</string>
     <string name="rhythmwidgetpreview_str_11_compact_widget">1×1 kompakt widget</string>
@@ -2486,7 +2434,7 @@
     <string name="edit_album_title">Redigera album</string>
     <string name="edit_album_desc">Redigera taggar och konstverk för alla låtar i detta album.</string>
     <string name="edit_album_saving">Uppdaterar albummetadata…</string>
-    <string name="streaming_service_setup_auto_detect">Automatisk upptäckt</string>
+
     <string name="nearby_server_discovery_title">Närliggande servrar</string>
     <string name="nearby_server_discovery_desc">Välj en server som upptäckts på ditt lokala nätverk</string>
     <string name="nearby_server_discovery_scanning">Söker efter närliggande servrar…</string>

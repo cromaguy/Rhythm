@@ -1408,7 +1408,7 @@ fun PlayerTextAlignmentBottomSheet(
                             if (isSelected) {
                                 Icon(
                                     imageVector = RhythmIcons.Check,
-                                    contentDescription = stringResource(R.string.streaming_selected),
+                                    contentDescription = stringResource(R.string.cd_selected),
                                     tint = MaterialTheme.colorScheme.onPrimaryContainer,
                                     modifier = Modifier.size(20.dp)
                                 )

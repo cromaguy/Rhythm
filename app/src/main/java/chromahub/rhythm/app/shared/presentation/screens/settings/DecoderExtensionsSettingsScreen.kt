@@ -146,7 +146,7 @@ fun DecoderExtensionsSettingsScreen(
 
     fun copyToClipboard(label: String, value: String) {
         clipboardManager.setText(AnnotatedString("$label: $value"))
-        Toast.makeText(context, "$label copied", Toast.LENGTH_SHORT).show()
+        Toast.makeText(context, context.getString(R.string.about_copied_format, label), Toast.LENGTH_SHORT).show()
     }
 
     val visibleCodecs = remember(selectedFilter) {
@@ -247,7 +247,13 @@ fun DecoderExtensionsSettingsScreen(
                             },
                             label = {
                                 Text(
-                                    text = option,
+                                    text = when (option) {
+                                        "All" -> context.getString(R.string.library_category_all)
+                                        "Engines" -> context.getString(R.string.decoder_filter_engines)
+                                        "Dolby & Atmos" -> context.getString(R.string.decoder_filter_dolby)
+                                        "Lossless & Hi-Res" -> context.getString(R.string.decoder_filter_lossless)
+                                        else -> option
+                                    },
                                     style = MaterialTheme.typography.labelMedium,
                                     fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
                                 )
@@ -289,8 +295,8 @@ fun DecoderExtensionsSettingsScreen(
                             add(
                                 SettingItem(
                                     icon = null,
-                                    title = "Media3 FFmpeg Decoder",
-                                    description = "Bundled Jellyfin Media3 extension (v1.9.0+1). Software decoding for AC-4, EAC3-JOC Atmos, AC-3, WMA, ALAC, DTS & TrueHD.",
+                                    title = context.getString(chromahub.rhythm.app.R.string.ui_media3_ffmpeg_decoder),
+                                    description = context.getString(chromahub.rhythm.app.R.string.ui_bundled_jellyfin_media3_extension_v1_9_0_1_software_decoding_for),
                                     toggleState = ffmpegActive,
                                     onToggleChange = { isChecked ->
                                         HapticUtils.performHapticFeedback(context, haptics, HapticType.LIGHT)
@@ -303,8 +309,8 @@ fun DecoderExtensionsSettingsScreen(
                         add(
                             SettingItem(
                                 icon = null,
-                                title = "Media3 MIDI Synthesizer",
-                                description = "Bundled Media3 MIDI extension (v1.5.0+). Synthesizes Standard MIDI sequences (.mid, .midi).",
+                                title = context.getString(chromahub.rhythm.app.R.string.ui_media3_midi_synthesizer),
+                                description = context.getString(chromahub.rhythm.app.R.string.ui_bundled_media3_midi_extension_v1_5_0_synthesizes_standard_midi_s),
                                 toggleState = midiActive,
                                 onToggleChange = { isChecked ->
                                     HapticUtils.performHapticFeedback(context, haptics, HapticType.LIGHT)
@@ -317,8 +323,8 @@ fun DecoderExtensionsSettingsScreen(
                             add(
                                 SettingItem(
                                     icon = null,
-                                    title = "Native FLAC Extension",
-                                    description = "Bundled libFLAC architecture fallback for non-standard 24/32-bit FLAC streams.",
+                                    title = context.getString(chromahub.rhythm.app.R.string.ui_native_flac_extension),
+                                    description = context.getString(chromahub.rhythm.app.R.string.ui_bundled_libflac_architecture_fallback_for_non_standard_24_32_bit),
                                     toggleState = flacActive,
                                     onToggleChange = { isChecked ->
                                         HapticUtils.performHapticFeedback(context, haptics, HapticType.LIGHT)
@@ -329,8 +335,8 @@ fun DecoderExtensionsSettingsScreen(
                             add(
                                 SettingItem(
                                     icon = null,
-                                    title = "Native Opus Extension",
-                                    description = "Direct C++ libopus fallback for ultra-low latency & Ogg/WebM streams.",
+                                    title = context.getString(chromahub.rhythm.app.R.string.ui_native_opus_extension),
+                                    description = context.getString(chromahub.rhythm.app.R.string.ui_direct_c_libopus_fallback_for_ultra_low_latency_ogg_webm_streams),
                                     toggleState = opusActive,
                                     onToggleChange = { isChecked ->
                                         HapticUtils.performHapticFeedback(context, haptics, HapticType.LIGHT)
@@ -378,9 +384,9 @@ fun DecoderExtensionsSettingsScreen(
                                     val badge = if (isSupported) {
                                         if (codec.requiredExtensionId == "ffmpeg") "FFMPEG" else "MIDI"
                                     } else {
-                                        "UNSUPPORTED"
+                                        context.getString(R.string.native_unsupported)
                                     }
-                                    val value = if (isSupported) "Supported" else stringResource(R.string.settings_decoder_extensions_not_supported_exoplayer)
+                                    val value = if (isSupported) context.getString(R.string.native_supported) else stringResource(R.string.settings_decoder_extensions_not_supported_exoplayer)
                                     val subtitle = if (isSupported) {
                                         if (codec.requiredExtensionId == "ffmpeg") {
                                             stringResource(R.string.settings_decoder_extensions_supported_ffmpeg)
@@ -388,7 +394,7 @@ fun DecoderExtensionsSettingsScreen(
                                             stringResource(R.string.settings_decoder_extensions_supported_midi)
                                         }
                                     } else {
-                                        "Requires ${codec.extensionName} (Disabled)"
+                                        context.getString(R.string.decoder_requires_extension, codec.extensionName)
                                     }
 
                                     DecoderConnectedCard(

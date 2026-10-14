@@ -711,8 +711,8 @@ fun LyricsEditorBottomSheet(
                     RhythmToggleButtonGroup(
                         options = listOf(
                             RhythmToggleOption(text = stringResource(R.string.settings_default)),
-                            RhythmToggleOption(text = "Online"),
-                            RhythmToggleOption(text = "Embedded"),
+                            RhythmToggleOption(text = context.getString(chromahub.rhythm.app.R.string.ui_online)),
+                            RhythmToggleOption(text = context.getString(chromahub.rhythm.app.R.string.ui_embedded)),
                             RhythmToggleOption(text = "LRC")
                         ),
                         selectedIndices = setOf(

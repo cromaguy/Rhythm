@@ -883,7 +883,7 @@ fun PlaylistDetailScreen(
                     if (!isDefault && (onExportPlaylist != null || onExportPlaylistToCustomLocation != null)) {
                         add(
                             RhythmMenuItem(
-                                title = "Export playlist",
+                                title = context.getString(chromahub.rhythm.app.R.string.ui_export_playlist),
                                 icon = MaterialSymbolIcon("file_upload"),
                                 iconContainerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f),
                                 iconTint = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -899,7 +899,7 @@ fun PlaylistDetailScreen(
                     if (!isDefault && onImportPlaylist != null) {
                         add(
                             RhythmMenuItem(
-                                title = "Import playlist",
+                                title = context.getString(chromahub.rhythm.app.R.string.cd_import_playlist),
                                 icon = RhythmIcons.Actions.Download,
                                 iconContainerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f),
                                 iconTint = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -915,7 +915,7 @@ fun PlaylistDetailScreen(
                     if (canEditPlaylist) {
                         add(
                             RhythmMenuItem(
-                                title = "Customize image",
+                                title = context.getString(chromahub.rhythm.app.R.string.ui_customize_image),
                                 icon = RhythmIcons.Image,
                                 iconContainerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f),
                                 iconTint = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -931,7 +931,7 @@ fun PlaylistDetailScreen(
                     if (!isDefault) {
                         add(
                             RhythmMenuItem(
-                                title = "Rename playlist",
+                                title = context.getString(chromahub.rhythm.app.R.string.ui_rename_playlist),
                                 icon = RhythmIcons.Edit,
                                 iconContainerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.6f),
                                 iconTint = MaterialTheme.colorScheme.onSecondaryContainer,
@@ -948,7 +948,7 @@ fun PlaylistDetailScreen(
                     if (!isDefault) {
                         add(
                             RhythmMenuItem(
-                                title = "Delete playlist",
+                                title = context.getString(chromahub.rhythm.app.R.string.ui_delete_playlist),
                                 icon = RhythmIcons.Delete,
                                 iconContainerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.6f),
                                 iconTint = MaterialTheme.colorScheme.onErrorContainer,

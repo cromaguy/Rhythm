@@ -205,8 +205,8 @@
     <string name="dialog_delete_playlist_message">您確定要刪除「%1$s」嗎？此操作無法撤銷。</string>
     <string name="dialog_delete">刪除</string>
     <string name="dialog_cancel">取消</string>
-    <string name="streaming_settings_switch_provider_confirm_title">切換串流媒體提供者？</string>
-    <string name="streaming_settings_switch_provider_confirm_desc">目前提供者：%1$s\n切換到：%2$s？這將斷開目前​​活動的提供者的連線。</string>
+
+
     <string name="action_switch">開關</string>
     <!-- Playlist Detail Screen -->
     <string name="playlist_rename_title">重新命名播放清單</string>
@@ -1411,69 +1411,21 @@
     <string name="settings_interval_once_a_day">每日一次</string>
     <string name="settings_interval_once_a_week">每週一次</string>
     <!-- Experimental Features -->
-    <string name="streaming_integration_title">T2Rhythm Go</string>
-    <string name="streaming_integration_services">整合服務</string>
-    <string name="streaming_integration_services_empty">尚未連線服務</string>
-    <string name="streaming_settings_title">設定</string>
-    <string name="streaming_settings_group_services">服務</string>
-    <string name="streaming_settings_group_actions">行動</string>
-    <string name="streaming_settings_preferred_service">偏好的服務</string>
-    <string name="streaming_settings_quality">串流品質</string>
-    <string name="streaming_settings_service_sheet_desc">選擇預設應優先考慮的連線服務 T2Rhythm Go。</string>
-    <string name="streaming_settings_quality_sheet_desc">選擇您喜歡的串流播放音訊品質。</string>
-    <string name="streaming_quality_low">低</string>
-    <string name="streaming_quality_normal">正常</string>
-    <string name="streaming_quality_high">高</string>
-    <string name="streaming_quality_lossless">無損</string>
-    <string name="streaming_quality_low_desc">品質較低的資料保護模式 (~96 kbps)。</string>
-    <string name="streaming_quality_normal_desc">在音質和數據流量上取得平衡（~160 kbps）。</string>
-    <string name="streaming_quality_high_desc">高品質音訊（~320 kbps）。</string>
-    <string name="streaming_quality_lossless_desc">支援的最佳品質 (FLAC/ALAC)。</string>
-    <string name="streaming_settings_group_wellbeing">T2Rhythm Insights</string>
-    <string name="streaming_open_full_settings">開啟完整設定</string>
-    <string name="streaming_open_full_settings_desc">開啟跨模式共用的應用程式設定</string>
-    <string name="streaming_switch_to_local_mode">切換到本地模式</string>
-    <string name="streaming_switch_to_local_mode_desc">返回本地音樂導航</string>
-    <string name="streaming_status_title">串流狀態</string>
-    <string name="streaming_status_selected_service">選擇：%1$s</string>
-    <string name="streaming_status_connected">帳戶已連接</string>
-    <string name="streaming_status_not_connected">待認證</string>
-    <string name="streaming_status_badge_connected">已連接</string>
-    <string name="streaming_status_badge_pending">待定</string>
-    <string name="streaming_status_badge_refreshing">清爽</string>
-    <string name="streaming_status_connect_hint">管理下方選定的服務以連結您的帳戶。</string>
-    <string name="streaming_selected">已選</string>
-    <string name="streaming_connect">連接</string>
-    <string name="streaming_manage">管理</string>
-    <string name="streaming_service_setup_server_url">伺服器位址</string>
-    <string name="streaming_service_setup_server_url_hint">https://your-server.example.com</string>
-    <string name="streaming_service_setup_server_url_supporting">對於需要伺服器位址的供應商來說是必要的。</string>
-    <string name="streaming_service_setup_username">使用者名稱或電子郵件</string>
-    <string name="streaming_service_setup_username_hint">輸入您的帳號使用者名稱</string>
-    <string name="streaming_service_setup_password">密碼</string>
-    <string name="streaming_service_setup_password_hint">輸入您的帳號密碼</string>
-    <string name="streaming_service_setup_remember_password">記住此裝置上的密碼</string>
-    <string name="streaming_service_setup_remember_password_desc">在本機上儲存憑證，以便 T2Rhythm 稍後可以自動重新連線。</string>
-    <string name="streaming_service_setup_connecting">正在連結…</string>
-    <string name="streaming_service_setup_disconnecting">斷開連線…</string>
-    <string name="streaming_service_setup_action_hint">填寫必填欄位以連接此服務。</string>
+
     <string name="streaming_service_setup_reconnect">重新連接</string>
-    <string name="streaming_service_setup_disconnect">斷開連接</string>
-    <string name="streaming_service_setup_connected_as">連接為 %1$s</string>
+
+
     <string name="streaming_home_selected_service_unavailable">所選服務未連接</string>
     <string name="streaming_home_connect_selected_service">連接%1$s以載入主頁和搜尋。</string>
-    <string name="streaming_home_widget_new_releases_subtitle">最近新增的來自 %1$s 的專輯</string>
-    <string name="streaming_home_widget_empty_hint">連接或刷新後，這可能需要一些時間。</string>
+
+
     <string name="streaming_library_syncing">正在載入您的串流媒體來源…</string>
-    <string name="streaming_home_no_content_title">還沒有主頁內容</string>
+
     <string name="streaming_home_no_content_hint">服務完成同步後嘗試刷新。</string>
     <string name="streaming_home_guard_break_active">休息啟動中：剩餘 %1$s</string>
     <string name="streaming_home_guard_exposure">今天：%1$d / %2$d 分鐘</string>
     <string name="streaming_not_selected">未選擇</string>
-    <string name="streaming_service_subsonic">Subsonic</string>
-    <string name="streaming_service_subsonic_desc">連接Navidrome和相容的Subsonic伺服器</string>
-    <string name="streaming_service_jellyfin">Jellyfin</string>
-    <string name="streaming_service_jellyfin_desc">從您的個人 Jellyfin 庫中串流</string>
+
     <!-- Backup &amp; Restore -->
     <string name="settings_backup_restore">備份與復原</string>
     <string name="settings_auto_backup">自動備份</string>
@@ -1640,8 +1592,8 @@
     <string name="settings_broadcast_status_enabled_desc">廣播播放狀態</string>
     <string name="settings_bluetooth_lyrics_enabled">藍牙歌詞模式</string>
     <string name="settings_bluetooth_lyrics_enabled_desc">透過藍牙詳細資料傳輸目前歌詞行數</string>
-    <string name="exp_go_mode">Go Mode</string>
-    <string name="exp_go_mode_desc">切换到Rhythm Go streaming mode</string>
+
+
     <!-- Home Screen Search Strings -->
     <string name="settings_home_section_order">章節順序</string>
     <string name="settings_home_section_order_desc">重新排序主頁部分</string>
@@ -1868,14 +1820,10 @@
     <string name="musicviewmodel_failed_to_play_next">無法播放下一個：播放器未初始化</string>
     <string name="streaminghomesectionorderbottomsheet_streaming_section_order_and">串流區塊順序和可見性重設為預設值</string>
     <string name="streaminghomesectionorderbottomsheet_streaming_section_order_and_1">已儲存串流區塊順序和可見性</string>
-    <string name="gosettingsscreen_configure_current_provider">配置目前提供者</string>
-    <string name="gosettingsscreen_network">網路</string>
-    <string name="gosettingsscreen_enable_streaming_over_mobile">啟用行動數據串流</string>
-    <string name="gosettingsscreen_connection_is_healthy">連線正常</string>
-    <string name="streaminghomescreen_leave_go_mode">離開 Go Mode</string>
+
     <string name="streamingsettingsscreen_streaming_restricted">串流媒體限制</string>
-    <string name="streamingmusicviewmodel_failed_to_play_next">無法播放下一個：無法解析 URL</string>
-    <string name="streamingmusicviewmodel_failed_to_add_to">新增到佇列失敗：無法解析 URL</string>
+
+
     <string name="rhythmmusicwidget_album_art_placeholder">專輯封面圖佔位符</string>
     <string name="rhythmwidgetpreview_rhythm_glance_widget_previews">T2Rhythm Glance 小工具預覽</string>
     <string name="rhythmwidgetpreview_str_11_compact_widget">1×1 緊湊小部件</string>
@@ -2465,7 +2413,7 @@
     <string name="edit_album_title">編輯相冊</string>
     <string name="edit_album_desc">編輯該專輯中所有歌曲的標籤和插圖。</string>
     <string name="edit_album_saving">正在更新專輯詳細資訊…</string>
-    <string name="streaming_service_setup_auto_detect">自動偵測</string>
+
     <string name="nearby_server_discovery_title">附近的伺服器</string>
     <string name="nearby_server_discovery_desc">選擇在您的本機網路上發現的伺服器</string>
     <string name="nearby_server_discovery_scanning">掃描附近的伺服器…</string>

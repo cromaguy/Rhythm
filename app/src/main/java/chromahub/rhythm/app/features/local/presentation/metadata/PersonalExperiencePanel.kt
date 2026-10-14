@@ -63,8 +63,8 @@ fun PersonalExperiencePanel() {
             OutlinedButton(onClick = { chooseMonth = true }, modifier = Modifier.fillMaxWidth()) { Text(month + " · " + stringResource(R.string.personal_month_choose)) }
             insight?.let { data ->
                 Text(context.getString(R.string.personal_month_summary, data.totalPlays, data.habits.size, data.monthly.values.sum() / 60_000), style = MaterialTheme.typography.titleSmall)
-                data.artists.entries.take(3).forEach { Text(it.key + " · " + it.value / 60_000 + " min", style = MaterialTheme.typography.bodyMedium) }
-                data.genres.entries.take(3).forEach { Text(it.key + " · " + it.value / 60_000 + " min", style = MaterialTheme.typography.bodySmall) }
+                data.artists.entries.take(3).forEach { Text(context.getString(R.string.personal_dimension_minutes, it.key, it.value / 60_000), style = MaterialTheme.typography.bodyMedium) }
+                data.genres.entries.take(3).forEach { Text(context.getString(R.string.personal_dimension_minutes, it.key, it.value / 60_000), style = MaterialTheme.typography.bodySmall) }
                 val peak = data.hourly.indices.maxByOrNull { data.hourly[it] }
                 if (peak != null && data.hourly[peak] > 0) Text(context.getString(R.string.personal_peak_hour, peak), style = MaterialTheme.typography.bodySmall)
                 data.transitions.entries.sortedByDescending { it.value }.take(3).forEach {

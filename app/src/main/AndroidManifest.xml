@@ -15,7 +15,6 @@
     <!-- Optional permission for auto-update installation from GitHub -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" android:required="false" />
     <uses-permission android:name="android.permission.VIBRATE" />
-    <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     
     <!-- Bluetooth permissions -->
@@ -97,8 +96,6 @@
             android:exported="true"
             tools:ignore="ExportedReceiver">
         </receiver>
-        
-
 
         <!-- Rhythm Music Widget (Modern Glance with Material 3) -->
         <receiver

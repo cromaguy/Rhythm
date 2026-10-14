@@ -112,50 +112,50 @@ fun NativeCapabilitiesSettingsScreen(
     val hardwareItems = remember(systemSummary, totalStorageBytes, freeStorageBytes, refreshRate) {
         listOf(
             NativeGridItem(
-                label = "Device Model",
+                label = context.getString(chromahub.rhythm.app.R.string.ui_device_model),
                 value = "${systemSummary.brand} ${systemSummary.model}",
-                subtitle = "Manufacturer: ${Build.MANUFACTURER}",
+                subtitle = context.getString(R.string.native_manufacturer, Build.MANUFACTURER),
                 onClick = { copyToClipboard("Device", "${systemSummary.brand} ${systemSummary.model}") }
             ),
             NativeGridItem(
-                label = "SoC / Hardware",
+                label = context.getString(chromahub.rhythm.app.R.string.ui_soc_hardware),
                 value = Build.HARDWARE.ifBlank { "Unknown" },
-                subtitle = "Board: ${Build.BOARD}",
+                subtitle = context.getString(R.string.native_board, Build.BOARD),
                 onClick = { copyToClipboard("Hardware", "${Build.HARDWARE} (${Build.BOARD})") }
             ),
             NativeGridItem(
-                label = "CPU Architecture",
+                label = context.getString(chromahub.rhythm.app.R.string.ui_cpu_architecture),
                 value = Build.SUPPORTED_ABIS.firstOrNull() ?: "Unknown",
                 subtitle = Build.SUPPORTED_ABIS.drop(1).take(2).joinToString(", ").ifBlank { null },
                 onClick = { copyToClipboard("Architecture", Build.SUPPORTED_ABIS.joinToString(", ")) }
             ),
             NativeGridItem(
-                label = "Platform Release",
+                label = context.getString(chromahub.rhythm.app.R.string.ui_platform_release),
                 value = "Android ${Build.VERSION.RELEASE}",
-                subtitle = "API Level ${Build.VERSION.SDK_INT}",
+                subtitle = context.getString(R.string.native_api_level, Build.VERSION.SDK_INT),
                 onClick = { copyToClipboard("Android Version", "Android ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})") }
             ),
             NativeGridItem(
-                label = "System RAM",
+                label = context.getString(chromahub.rhythm.app.R.string.ui_system_ram),
                 value = formatNativeSize(systemSummary.totalRamBytes),
-                subtitle = "${formatNativeSize(systemSummary.availableRamBytes)} Available",
+                subtitle = context.getString(R.string.native_available, formatNativeSize(systemSummary.availableRamBytes)),
                 onClick = { copyToClipboard("RAM", "${formatNativeSize(systemSummary.totalRamBytes)} (${formatNativeSize(systemSummary.availableRamBytes)} Available)") }
             ),
             NativeGridItem(
-                label = "Internal Storage",
+                label = context.getString(chromahub.rhythm.app.R.string.ui_internal_storage),
                 value = formatNativeSize(totalStorageBytes),
                 subtitle = "${formatNativeSize(freeStorageBytes)} Free",
                 onClick = { copyToClipboard("Storage", "${formatNativeSize(totalStorageBytes)} (${formatNativeSize(freeStorageBytes)} Free)") }
             ),
             NativeGridItem(
-                label = "Display Screen",
+                label = context.getString(chromahub.rhythm.app.R.string.ui_display_screen),
                 value = "${displayMetrics.widthPixels} × ${displayMetrics.heightPixels}",
                 subtitle = "${refreshRate.roundToInt()} Hz • ${displayMetrics.densityDpi} DPI",
                 onClick = { copyToClipboard("Display", "${displayMetrics.widthPixels}x${displayMetrics.heightPixels} @ ${refreshRate.roundToInt()}Hz") }
             ),
             NativeGridItem(
-                label = "Security Patch",
-                value = Build.VERSION.SECURITY_PATCH.ifBlank { "Current" },
+                label = context.getString(chromahub.rhythm.app.R.string.ui_security_patch),
+                value = Build.VERSION.SECURITY_PATCH.ifBlank { context.getString(R.string.native_current) },
                 subtitle = "Build ID: ${Build.ID}",
                 onClick = { copyToClipboard("Security Patch", Build.VERSION.SECURITY_PATCH) }
             )
@@ -166,51 +166,51 @@ fun NativeCapabilitiesSettingsScreen(
         val isOffloadSupported = capabilities.offloadSupportedFormats.isNotEmpty()
         listOf(
             NativeGridItem(
-                label = "Native HAL Rate",
+                label = context.getString(chromahub.rhythm.app.R.string.ui_native_hal_rate),
                 value = "${capabilities.nativeSampleRate} Hz",
                 badge = "HAL",
                 isHighlighted = true,
-                subtitle = "Hardware clock rate",
+                subtitle = context.getString(chromahub.rhythm.app.R.string.ui_hardware_clock_rate),
                 onClick = { copyToClipboard("Native HAL Rate", "${capabilities.nativeSampleRate} Hz") }
             ),
             NativeGridItem(
-                label = "Buffer Frame Burst",
+                label = context.getString(chromahub.rhythm.app.R.string.ui_buffer_frame_burst),
                 value = "${capabilities.framesPerBuffer} frames",
-                badge = "LOW LATENCY",
-                subtitle = "Kernel burst quantum",
+                badge = context.getString(chromahub.rhythm.app.R.string.ui_low_latency),
+                subtitle = context.getString(chromahub.rhythm.app.R.string.ui_kernel_burst_quantum),
                 onClick = { copyToClipboard("Native Buffer Size", "${capabilities.framesPerBuffer} frames") }
             ),
             NativeGridItem(
-                label = "DSP Audio Offload",
-                value = if (isOffloadSupported) "Supported (${capabilities.offloadSupportedFormats.size} formats)" else "Unsupported",
-                badge = if (isOffloadSupported) "HW DSP" else "DISABLED",
+                label = context.getString(chromahub.rhythm.app.R.string.ui_dsp_audio_offload),
+                value = if (isOffloadSupported) context.getString(R.string.native_formats_supported, capabilities.offloadSupportedFormats.size) else context.getString(R.string.native_unsupported),
+                badge = if (isOffloadSupported) "HW DSP" else context.getString(R.string.native_disabled),
                 isHighlighted = isOffloadSupported,
                 subtitle = if (isOffloadSupported) capabilities.offloadSupportedFormats.joinToString(", ") else "Direct DAC power saving",
-                onClick = { copyToClipboard("DSP Offload", if (isOffloadSupported) capabilities.offloadSupportedFormats.joinToString(", ") else "Unsupported") }
+                onClick = { copyToClipboard("DSP Offload", if (isOffloadSupported) capabilities.offloadSupportedFormats.joinToString(", ") else context.getString(R.string.native_unsupported)) }
             ),
             NativeGridItem(
-                label = "Pro Audio Stack",
-                value = if (capabilities.isProAudioSupported) "Supported" else "Unsupported",
-                badge = "FEATURE",
+                label = context.getString(chromahub.rhythm.app.R.string.ui_pro_audio_stack),
+                value = if (capabilities.isProAudioSupported) context.getString(R.string.native_supported) else context.getString(R.string.native_unsupported),
+                badge = context.getString(chromahub.rhythm.app.R.string.ui_feature),
                 isHighlighted = capabilities.isProAudioSupported,
-                subtitle = "Pro-level audio routing",
-                onClick = { copyToClipboard("Pro Audio", if (capabilities.isProAudioSupported) "Supported" else "Unsupported") }
+                subtitle = context.getString(chromahub.rhythm.app.R.string.ui_pro_level_audio_routing),
+                onClick = { copyToClipboard("Pro Audio", if (capabilities.isProAudioSupported) context.getString(R.string.native_supported) else context.getString(R.string.native_unsupported)) }
             ),
             NativeGridItem(
-                label = "Fast Track Audio",
-                value = if (capabilities.isLowLatencySupported) "Supported" else "Unsupported",
-                badge = "FAST TRACK",
+                label = context.getString(chromahub.rhythm.app.R.string.ui_fast_track_audio),
+                value = if (capabilities.isLowLatencySupported) context.getString(R.string.native_supported) else context.getString(R.string.native_unsupported),
+                badge = context.getString(chromahub.rhythm.app.R.string.ui_fast_track),
                 isHighlighted = capabilities.isLowLatencySupported,
-                subtitle = "Direct mixer bypass",
-                onClick = { copyToClipboard("Low Latency", if (capabilities.isLowLatencySupported) "Supported" else "Unsupported") }
+                subtitle = context.getString(chromahub.rhythm.app.R.string.ui_direct_mixer_bypass),
+                onClick = { copyToClipboard("Low Latency", if (capabilities.isLowLatencySupported) context.getString(R.string.native_supported) else context.getString(R.string.native_unsupported)) }
             ),
             NativeGridItem(
-                label = "32-Bit Float PCM",
-                value = if (isFloatSupported) "Supported" else "Unsupported",
+                label = context.getString(chromahub.rhythm.app.R.string.ui_32_bit_float_pcm),
+                value = if (isFloatSupported) context.getString(R.string.native_supported) else context.getString(R.string.native_unsupported),
                 badge = "IEEE 754",
                 isHighlighted = isFloatSupported,
-                subtitle = "Full dynamic precision",
-                onClick = { copyToClipboard("32-Bit Float PCM", if (isFloatSupported) "Supported" else "Unsupported") }
+                subtitle = context.getString(chromahub.rhythm.app.R.string.ui_full_dynamic_precision),
+                onClick = { copyToClipboard("32-Bit Float PCM", if (isFloatSupported) context.getString(R.string.native_supported) else context.getString(R.string.native_unsupported)) }
             )
         )
     }
@@ -230,17 +230,17 @@ fun NativeCapabilitiesSettingsScreen(
         } else {
             listOf(
                 NativeGridItem(
-                    label = "Built-in Speaker",
+                    label = context.getString(chromahub.rhythm.app.R.string.ui_built_in_speaker),
                     value = "Available",
-                    badge = "SPEAKER",
+                    badge = context.getString(chromahub.rhythm.app.R.string.ui_speaker),
                     isHighlighted = true,
-                    subtitle = "Device internal speaker"
+                    subtitle = context.getString(chromahub.rhythm.app.R.string.ui_device_internal_speaker)
                 ),
                 NativeGridItem(
-                    label = "Audio Headset",
+                    label = context.getString(chromahub.rhythm.app.R.string.ui_audio_headset),
                     value = "Ready",
-                    badge = "WIRED",
-                    subtitle = "3.5mm / USB type-C jack"
+                    badge = context.getString(chromahub.rhythm.app.R.string.ui_wired),
+                    subtitle = context.getString(chromahub.rhythm.app.R.string.ui_3_5mm_usb_type_c_jack)
                 )
             )
         }
@@ -251,7 +251,7 @@ fun NativeCapabilitiesSettingsScreen(
             NativeGridItem(
                 label = dec.name,
                 value = getNativeMimeDisplayName(dec.mimeType),
-                badge = "HARDWARE",
+                badge = context.getString(chromahub.rhythm.app.R.string.ui_hardware),
                 isHighlighted = true,
                 subtitle = "Max instances: ${dec.maxInstances}",
                 onClick = { copyToClipboard("Hardware Decoder", "${dec.name} (${dec.mimeType})") }

@@ -1695,7 +1695,7 @@ private fun EditSongSheet(
             isSaving = false
             Toast.makeText(
                 context, 
-                "Storage permission is required to edit audio file metadata", 
+                context.getString(chromahub.rhythm.app.R.string.ui_storage_permission_is_required_to_edit_audio_file_metadata),
                 Toast.LENGTH_LONG
             ).show()
         }
@@ -1711,7 +1711,7 @@ private fun EditSongSheet(
             isSaving = false
             Toast.makeText(
                 context,
-                "Media permissions are required to edit audio file metadata",
+                context.getString(chromahub.rhythm.app.R.string.ui_media_permissions_are_required_to_edit_audio_file_metadata),
                 Toast.LENGTH_LONG
             ).show()
         }
@@ -1914,7 +1914,7 @@ private fun EditSongSheet(
                                             type = RhythmButtonType.Filled,
                                             icon = RhythmIcons.Image,
                                             iconSize = 18.dp,
-                                            text = "Change"
+                                            text = context.getString(chromahub.rhythm.app.R.string.ui_change)
                                         )
 
                                         RhythmDetailActionButton(
@@ -1944,7 +1944,7 @@ private fun EditSongSheet(
                                         type = RhythmButtonType.Filled,
                                         icon = RhythmIcons.Image,
                                         iconSize = 18.dp,
-                                        text = "Select Artwork"
+                                        text = context.getString(chromahub.rhythm.app.R.string.ui_select_artwork)
                                     )
                                 }
 
@@ -2274,12 +2274,12 @@ private fun EditSongSheet(
                 text = {
                     Column {
                         Text(
-                            "The changes you're about to make will permanently modify the audio file's metadata.",
+                            context.getString(chromahub.rhythm.app.R.string.ui_the_changes_you_re_about_to_make_will_permanently_modify_the_aud_b3f9a4),
                             style = MaterialTheme.typography.bodyMedium
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            "This action cannot be undone. Make sure you have a backup if needed.",
+                            context.getString(chromahub.rhythm.app.R.string.ui_this_action_cannot_be_undone_make_sure_you_have_a_backup_if_need),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                         )
@@ -2462,7 +2462,7 @@ private fun EditSongSheet(
                             type = RhythmButtonType.Filled,
                             icon = RhythmIcons.Image,
                             iconSize = 18.dp,
-                            text = "Select Artwork"
+                            text = context.getString(chromahub.rhythm.app.R.string.ui_select_artwork)
                         )
                     }
 
@@ -2727,12 +2727,12 @@ private fun EditSongSheet(
             text = {
                 Column {
                     Text(
-                        "The changes you're about to make will permanently modify the audio file's metadata.",
+                        context.getString(chromahub.rhythm.app.R.string.ui_the_changes_you_re_about_to_make_will_permanently_modify_the_aud_b3f9a4),
                         style = MaterialTheme.typography.bodyMedium
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        "This action cannot be undone. Make sure you have a backup if needed.",
+                        context.getString(chromahub.rhythm.app.R.string.ui_this_action_cannot_be_undone_make_sure_you_have_a_backup_if_need),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                     )

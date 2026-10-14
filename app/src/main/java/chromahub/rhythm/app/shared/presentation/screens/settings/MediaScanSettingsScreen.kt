@@ -1245,7 +1245,7 @@ fun MediaScanSettingsScreen(onBackClick: () -> Unit) {
                                         horizontalArrangement = Arrangement.SpaceBetween
                                     ) {
                                         Text(
-                                            text = "0s (All)",
+                                            text = context.getString(chromahub.rhythm.app.R.string.ui_0s_all),
                                             style = MaterialTheme.typography.labelSmall,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )

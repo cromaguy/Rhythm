@@ -786,7 +786,7 @@ private fun CategoryMetricsSection(
 
                         if (entries.isEmpty()) {
                             Text(
-                                "No data available for this category yet.",
+                                androidx.compose.ui.res.stringResource(chromahub.rhythm.app.R.string.ui_no_data_available_for_this_category_yet),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )

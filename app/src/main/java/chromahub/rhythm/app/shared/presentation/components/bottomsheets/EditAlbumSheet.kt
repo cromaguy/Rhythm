@@ -936,12 +936,12 @@ fun EditAlbumSheet(
             text = {
                 Column {
                     Text(
-                        "The changes you're about to make will permanently modify the audio files' metadata.",
+                        context.getString(chromahub.rhythm.app.R.string.ui_the_changes_you_re_about_to_make_will_permanently_modify_the_aud),
                         style = MaterialTheme.typography.bodyMedium
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        "This action cannot be undone. Make sure you have a backup if needed.",
+                        context.getString(chromahub.rhythm.app.R.string.ui_this_action_cannot_be_undone_make_sure_you_have_a_backup_if_need),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                     )

@@ -17,8 +17,8 @@
     <string name="catalog_strict_duration">곡 길이 일치 확인</string>
     <string name="catalog_scan_rules_hint">스캔 규칙을 고른 뒤 포함·제외 목록을 편집하세요. 하이브리드에서는 제외 조건이 우선합니다.</string>
     <string name="catalog_editing_list">편집할 목록 · 스캔 규칙은 유지됩니다</string>
-    <string name="catalog_included_list">포함할 음원·폴더</string>
-    <string name="catalog_excluded_list">제외할 음원·폴더</string>
+    <string name="catalog_included_list">포함 목록</string>
+    <string name="catalog_excluded_list">제외 목록</string>
     <string name="personal_archive_title">영구 백업 폴더</string>
     <string name="personal_archive_hint">원래 태그·아트워크, 정보 JSON, 이미지 파일, TXT/LRC 가사, 월별 청취 원본 기록을 일반 파일로 보관합니다. ZIP으로 묶지 않습니다.</string>
     <string name="personal_archive_permission">백업 폴더 접근 권한이 필요합니다. 동기화가 완료될 때까지 앱 내부 원본도 보존합니다.</string>

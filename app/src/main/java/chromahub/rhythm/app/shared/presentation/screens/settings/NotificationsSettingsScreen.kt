@@ -70,7 +70,6 @@ fun NotificationsSettingsScreen(onBackClick: () -> Unit) {
     val showCodecNotifications by appSettings.showCodecNotifications.collectAsState()
     val libraryOperationsNotificationsEnabled by appSettings.libraryOperationsNotificationsEnabled.collectAsState()
     val sleepTimerNotificationsEnabled by appSettings.sleepTimerNotificationsEnabled.collectAsState()
-    val streamingNotificationsEnabled by appSettings.streamingNotificationsEnabled.collectAsState()
     val updateNotificationsEnabled by appSettings.updateNotificationsEnabled.collectAsState()
     val rhythmGuardAlertNotificationsEnabled by appSettings.rhythmGuardAlertNotificationsEnabled.collectAsState()
     val rhythmGuardTimerNotificationsEnabled by appSettings.rhythmGuardTimerNotificationsEnabled.collectAsState()
@@ -138,18 +137,6 @@ fun NotificationsSettingsScreen(onBackClick: () -> Unit) {
                         stringResource(R.string.notifications_sleep_timer_status_desc),
                         toggleState = sleepTimerNotificationsEnabled,
                         onToggleChange = { appSettings.setSleepTimerNotificationsEnabled(it) }
-                    )
-                )
-            ),
-            SettingGroup(
-                title = stringResource(R.string.notifications_cloud_streaming),
-                items = listOf(
-                    SettingItem(
-                        MaterialSymbolIcon("cloud"),
-                        stringResource(R.string.notifications_cloud_sync_alerts),
-                        stringResource(R.string.notifications_cloud_sync_alerts_desc),
-                        toggleState = streamingNotificationsEnabled,
-                        onToggleChange = { appSettings.setStreamingNotificationsEnabled(it) }
                     )
                 )
             ),

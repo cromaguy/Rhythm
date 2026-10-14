@@ -221,8 +221,8 @@
     <string name="dialog_delete_playlist_message">Tem certeza de que deseja excluir \"%1$s\"? Esta ação não pode ser desfeita.</string>
     <string name="dialog_delete">Excluir</string>
     <string name="dialog_cancel">Cancelar</string>
-    <string name="streaming_settings_switch_provider_confirm_title">Mudar de provedor de streaming?</string>
-    <string name="streaming_settings_switch_provider_confirm_desc">Provedor atual: %1$s\nMudar para: %2$s? Isso desconectará o provedor atualmente ativo.</string>
+
+
     <string name="action_switch">Trocar</string>
     <!-- Playlist Detail Screen -->
     <string name="playlist_rename_title">Renomear lista de reprodução</string>
@@ -1441,69 +1441,21 @@
     <string name="settings_interval_once_a_day">Uma vez por dia</string>
     <string name="settings_interval_once_a_week">Uma vez por semana</string>
     <!-- Experimental Features -->
-    <string name="streaming_integration_title">T2Rhythm Go</string>
-    <string name="streaming_integration_services">Serviços de Integração</string>
-    <string name="streaming_integration_services_empty">Nenhum serviço conectado ainda</string>
-    <string name="streaming_settings_title">Configurações</string>
-    <string name="streaming_settings_group_services">Serviços</string>
-    <string name="streaming_settings_group_actions">Ações</string>
-    <string name="streaming_settings_preferred_service">Serviço Preferencial</string>
-    <string name="streaming_settings_quality">Qualidade de streaming</string>
-    <string name="streaming_settings_service_sheet_desc">Escolha qual serviço conectado T2Rhythm Go deve priorizar por padrão.</string>
-    <string name="streaming_settings_quality_sheet_desc">Selecione sua qualidade de áudio preferida para reprodução de streaming.</string>
-    <string name="streaming_quality_low">Baixo</string>
-    <string name="streaming_quality_normal">Normal</string>
-    <string name="streaming_quality_high">Alto</string>
-    <string name="streaming_quality_lossless">Sem perdas</string>
-    <string name="streaming_quality_low_desc">Modo de economia de dados com qualidade reduzida (~96 kbps).</string>
-    <string name="streaming_quality_normal_desc">Qualidade e uso de dados equilibrados (~160 kbps).</string>
-    <string name="streaming_quality_high_desc">Áudio de alta qualidade (~320 kbps).</string>
-    <string name="streaming_quality_lossless_desc">Melhor qualidade quando compatível (FLAC/ALAC).</string>
-    <string name="streaming_settings_group_wellbeing">T2Rhythm Informações</string>
-    <string name="streaming_open_full_settings">Abra configurações completas</string>
-    <string name="streaming_open_full_settings_desc">Abra as configurações de todo o aplicativo compartilhadas entre os modos</string>
-    <string name="streaming_switch_to_local_mode">Mudar para o modo local</string>
-    <string name="streaming_switch_to_local_mode_desc">Retornar à navegação musical local</string>
-    <string name="streaming_status_title">Status de transmissão</string>
-    <string name="streaming_status_selected_service">Selecionado: %1$s</string>
-    <string name="streaming_status_connected">Conta conectada</string>
-    <string name="streaming_status_not_connected">Autenticação pendente</string>
-    <string name="streaming_status_badge_connected">Conectado</string>
-    <string name="streaming_status_badge_pending">Pendente</string>
-    <string name="streaming_status_badge_refreshing">Refrescante</string>
-    <string name="streaming_status_connect_hint">Gerencie o serviço selecionado abaixo para conectar sua conta.</string>
-    <string name="streaming_selected">Selecionado</string>
-    <string name="streaming_connect">Conectar</string>
-    <string name="streaming_manage">Gerenciar</string>
-    <string name="streaming_service_setup_server_url">URL do servidor</string>
-    <string name="streaming_service_setup_server_url_hint">https://seu-servidor.exemplo.com</string>
-    <string name="streaming_service_setup_server_url_supporting">Obrigatório para provedores que precisam de um endereço de servidor.</string>
-    <string name="streaming_service_setup_username">Nome de usuário ou e-mail</string>
-    <string name="streaming_service_setup_username_hint">Digite o nome de usuário da sua conta</string>
-    <string name="streaming_service_setup_password">Senha</string>
-    <string name="streaming_service_setup_password_hint">Digite a senha da sua conta</string>
-    <string name="streaming_service_setup_remember_password">Lembre-se da senha neste dispositivo</string>
-    <string name="streaming_service_setup_remember_password_desc">Armazene credenciais localmente para que T2Rhythm possa se reconectar automaticamente mais tarde.</string>
-    <string name="streaming_service_setup_connecting">Conectando…</string>
-    <string name="streaming_service_setup_disconnecting">Desconectando…</string>
-    <string name="streaming_service_setup_action_hint">Preencha os campos obrigatórios para conectar este serviço.</string>
+
     <string name="streaming_service_setup_reconnect">Reconectar</string>
-    <string name="streaming_service_setup_disconnect">Desconectar</string>
-    <string name="streaming_service_setup_connected_as">Conectado como %1$s</string>
+
+
     <string name="streaming_home_selected_service_unavailable">O serviço selecionado não está conectado</string>
     <string name="streaming_home_connect_selected_service">Conecte %1$s para carregar a página inicial e a pesquisa.</string>
-    <string name="streaming_home_widget_new_releases_subtitle">Álbuns adicionados recentemente de %1$s</string>
-    <string name="streaming_home_widget_empty_hint">Isso pode demorar um pouco após você conectar ou atualizar.</string>
+
+
     <string name="streaming_library_syncing">Carregando seu feed de streaming…</string>
-    <string name="streaming_home_no_content_title">Ainda não há conteúdo inicial</string>
+
     <string name="streaming_home_no_content_hint">Tente atualizar depois que o serviço terminar a sincronização.</string>
     <string name="streaming_home_guard_break_active">Pausa ativa: %1$s restante</string>
     <string name="streaming_home_guard_exposure">Hoje: %1$d / %2$d min</string>
     <string name="streaming_not_selected">Não selecionado</string>
-    <string name="streaming_service_subsonic">Subsonic</string>
-    <string name="streaming_service_subsonic_desc">Conecte Navidrome e servidores Subsonic compatíveis</string>
-    <string name="streaming_service_jellyfin">Jellyfin</string>
-    <string name="streaming_service_jellyfin_desc">Transmita da sua biblioteca pessoal Jellyfin</string>
+
     <!-- Backup &amp; Restore -->
     <string name="settings_backup_restore">Backup e restauração</string>
     <string name="settings_auto_backup">Backup automático</string>
@@ -1670,8 +1622,8 @@
     <string name="settings_broadcast_status_enabled_desc">Status da reprodução da transmissão</string>
     <string name="settings_bluetooth_lyrics_enabled">Modo de letras Bluetooth</string>
     <string name="settings_bluetooth_lyrics_enabled_desc">Transmitir a linha da letra atual via metadados Bluetooth</string>
-    <string name="exp_go_mode">Go Mode</string>
-    <string name="exp_go_mode_desc">Mudar para T2Rhythm Go streaming mode</string>
+
+
     <!-- Home Screen Search Strings -->
     <string name="settings_home_section_order">Ordem das Seções</string>
     <string name="settings_home_section_order_desc">Reordenar seções iniciais</string>
@@ -1898,14 +1850,10 @@
     <string name="musicviewmodel_failed_to_play_next">Falha ao jogar a seguir: jogador não inicializado</string>
     <string name="streaminghomesectionorderbottomsheet_streaming_section_order_and">Ordem da seção de streaming e visibilidade redefinidas para o padrão</string>
     <string name="streaminghomesectionorderbottomsheet_streaming_section_order_and_1">Ordem e visibilidade da seção de streaming salvas</string>
-    <string name="gosettingsscreen_configure_current_provider">Configurar provedor atual</string>
-    <string name="gosettingsscreen_network">Rede</string>
-    <string name="gosettingsscreen_enable_streaming_over_mobile">Habilitar streaming por dados móveis</string>
-    <string name="gosettingsscreen_connection_is_healthy">A conexão está saudável</string>
-    <string name="streaminghomescreen_leave_go_mode">Leave Go Mode</string>
+
     <string name="streamingsettingsscreen_streaming_restricted">Transmissão restrita</string>
-    <string name="streamingmusicviewmodel_failed_to_play_next">Falha ao reproduzir a seguir: não foi possível resolver o URL</string>
-    <string name="streamingmusicviewmodel_failed_to_add_to">Falha ao adicionar à fila: não é possível resolver o URL</string>
+
+
     <string name="rhythmmusicwidget_album_art_placeholder">Espaço reservado para arte do álbum</string>
     <string name="rhythmwidgetpreview_rhythm_glance_widget_previews">Pré-visualizações de widgets T2Rhythm Glance</string>
     <string name="rhythmwidgetpreview_str_11_compact_widget">Widget compacto 1×1</string>
@@ -2507,7 +2455,7 @@
     <string name="edit_album_title">Editar álbum</string>
     <string name="edit_album_desc">Edite tags e arte de todas as músicas deste álbum.</string>
     <string name="edit_album_saving">Atualizando metadados do álbum…</string>
-    <string name="streaming_service_setup_auto_detect">Detecção automática</string>
+
     <string name="nearby_server_discovery_title">Servidores próximos</string>
     <string name="nearby_server_discovery_desc">Selecione um servidor descoberto em sua rede local</string>
     <string name="nearby_server_discovery_scanning">Procurando servidores próximos…</string>

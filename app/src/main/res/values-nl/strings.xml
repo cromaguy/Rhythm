@@ -213,8 +213,8 @@
     <string name="dialog_delete_playlist_message">Weet u zeker dat u \"%1$s\" wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt.</string>
     <string name="dialog_delete">Verwijderen</string>
     <string name="dialog_cancel">Annuleren</string>
-    <string name="streaming_settings_switch_provider_confirm_title">Van streamingprovider wisselen?</string>
-    <string name="streaming_settings_switch_provider_confirm_desc">Huidige aanbieder: %1$s\nOverstappen naar: %2$s? Hierdoor wordt de momenteel actieve provider ontkoppeld.</string>
+
+
     <string name="action_switch">Schakelaar</string>
     <!-- Playlist Detail Screen -->
     <string name="playlist_rename_title">Hernoem de afspeellijst</string>
@@ -1426,69 +1426,21 @@
     <string name="settings_interval_once_a_day">Eén keer per dag</string>
     <string name="settings_interval_once_a_week">Eén keer per week</string>
     <!-- Experimental Features -->
-    <string name="streaming_integration_title">T2Rhythm Go</string>
-    <string name="streaming_integration_services">Integratiediensten</string>
-    <string name="streaming_integration_services_empty">Nog geen services verbonden</string>
-    <string name="streaming_settings_title">Instellingen</string>
-    <string name="streaming_settings_group_services">Diensten</string>
-    <string name="streaming_settings_group_actions">Acties</string>
-    <string name="streaming_settings_preferred_service">Voorkeursservice</string>
-    <string name="streaming_settings_quality">Streamingkwaliteit</string>
-    <string name="streaming_settings_service_sheet_desc">Kies welke verbonden service T2Rhythm Go standaard prioriteit moet krijgen.</string>
-    <string name="streaming_settings_quality_sheet_desc">Selecteer de gewenste audiokwaliteit voor streaming afspelen.</string>
-    <string name="streaming_quality_low">Laag</string>
-    <string name="streaming_quality_normal">Normaal</string>
-    <string name="streaming_quality_high">Hoog</string>
-    <string name="streaming_quality_lossless">Zonder verlies</string>
-    <string name="streaming_quality_low_desc">Databesparingsmodus met verminderde kwaliteit (~96 kbps).</string>
-    <string name="streaming_quality_normal_desc">Evenwichtige kwaliteit en datagebruik (~160 kbps).</string>
-    <string name="streaming_quality_high_desc">Audio van hoge kwaliteit (~320 kbps).</string>
-    <string name="streaming_quality_lossless_desc">Beste kwaliteit indien ondersteund (FLAC/ALAC).</string>
-    <string name="streaming_settings_group_wellbeing">T2Rhythm Inzichten</string>
-    <string name="streaming_open_full_settings">Open Volledige instellingen</string>
-    <string name="streaming_open_full_settings_desc">Open instellingen voor de hele app, gedeeld in verschillende modi</string>
-    <string name="streaming_switch_to_local_mode">Schakel over naar de lokale modus</string>
-    <string name="streaming_switch_to_local_mode_desc">Keer terug naar lokale muzieknavigatie</string>
-    <string name="streaming_status_title">Streamingstatus</string>
-    <string name="streaming_status_selected_service">Geselecteerd: %1$s</string>
-    <string name="streaming_status_connected">Account verbonden</string>
-    <string name="streaming_status_not_connected">Authenticatie in behandeling</string>
-    <string name="streaming_status_badge_connected">Verbonden</string>
-    <string name="streaming_status_badge_pending">In behandeling</string>
-    <string name="streaming_status_badge_refreshing">Verfrissend</string>
-    <string name="streaming_status_connect_hint">Beheer hieronder de geselecteerde service om uw account te koppelen.</string>
-    <string name="streaming_selected">Geselecteerd</string>
-    <string name="streaming_connect">Verbinden</string>
-    <string name="streaming_manage">Beheer</string>
-    <string name="streaming_service_setup_server_url">Server-URL</string>
-    <string name="streaming_service_setup_server_url_hint">https://uw-server.example.com</string>
-    <string name="streaming_service_setup_server_url_supporting">Vereist voor providers die een serveradres nodig hebben.</string>
-    <string name="streaming_service_setup_username">Gebruikersnaam of e-mailadres</string>
-    <string name="streaming_service_setup_username_hint">Voer uw accountgebruikersnaam in</string>
-    <string name="streaming_service_setup_password">Wachtwoord</string>
-    <string name="streaming_service_setup_password_hint">Voer uw accountwachtwoord in</string>
-    <string name="streaming_service_setup_remember_password">Onthoud het wachtwoord op dit apparaat</string>
-    <string name="streaming_service_setup_remember_password_desc">Sla inloggegevens lokaal op, zodat T2Rhythm later automatisch opnieuw verbinding kan maken.</string>
-    <string name="streaming_service_setup_connecting">Verbinden…</string>
-    <string name="streaming_service_setup_disconnecting">Verbinding verbreken…</string>
-    <string name="streaming_service_setup_action_hint">Vul de verplichte velden in om verbinding te maken met deze dienst.</string>
+
     <string name="streaming_service_setup_reconnect">Opnieuw verbinden</string>
-    <string name="streaming_service_setup_disconnect">Verbinding verbreken</string>
-    <string name="streaming_service_setup_connected_as">Verbonden als %1$s</string>
+
+
     <string name="streaming_home_selected_service_unavailable">Geselecteerde service is niet verbonden</string>
     <string name="streaming_home_connect_selected_service">Sluit %1$s aan om Home en Zoeken te laden.</string>
-    <string name="streaming_home_widget_new_releases_subtitle">Recent toegevoegde albums van %1$s</string>
-    <string name="streaming_home_widget_empty_hint">Dit kan even duren nadat je verbinding hebt gemaakt of hebt vernieuwd.</string>
+
+
     <string name="streaming_library_syncing">Je streamingfeed laden…</string>
-    <string name="streaming_home_no_content_title">Nog geen homecontent</string>
+
     <string name="streaming_home_no_content_hint">Probeer te vernieuwen nadat de synchronisatie van uw service is voltooid.</string>
     <string name="streaming_home_guard_break_active">Pauze actief: %1$s over</string>
     <string name="streaming_home_guard_exposure">Vandaag: %1$d / %2$d min</string>
     <string name="streaming_not_selected">Niet geselecteerd</string>
-    <string name="streaming_service_subsonic">Subsonic</string>
-    <string name="streaming_service_subsonic_desc">Verbind Navidrome en compatibele Subsonic-servers</string>
-    <string name="streaming_service_jellyfin">Jellyfin</string>
-    <string name="streaming_service_jellyfin_desc">Stream vanuit uw persoonlijke Jellyfin-bibliotheek</string>
+
     <!-- Backup &amp; Restore -->
     <string name="settings_backup_restore">Back-up en herstel</string>
     <string name="settings_auto_backup">Automatische back-up</string>
@@ -1655,8 +1607,8 @@
     <string name="settings_broadcast_status_enabled_desc">Afspeelstatus uitzending</string>
     <string name="settings_bluetooth_lyrics_enabled">Bluetooth-lyricsmodus</string>
     <string name="settings_bluetooth_lyrics_enabled_desc">Zend de huidige tekstregel uit via Bluetooth-metagegevens</string>
-    <string name="exp_go_mode">Go Mode</string>
-    <string name="exp_go_mode_desc">Schakel over naar T2Rhythm Go streaming mode</string>
+
+
     <!-- Home Screen Search Strings -->
     <string name="settings_home_section_order">Sectievolgorde</string>
     <string name="settings_home_section_order_desc">Home-secties opnieuw ordenen</string>
@@ -1883,14 +1835,10 @@
     <string name="musicviewmodel_failed_to_play_next">Kan niet verder spelen: Speler is niet geïnitialiseerd</string>
     <string name="streaminghomesectionorderbottomsheet_streaming_section_order_and">Volgorde en zichtbaarheid van streamingsecties worden teruggezet naar de standaardinstellingen</string>
     <string name="streaminghomesectionorderbottomsheet_streaming_section_order_and_1">Volgorde en zichtbaarheid van streamingsecties opgeslagen</string>
-    <string name="gosettingsscreen_configure_current_provider">Huidige provider configureren</string>
-    <string name="gosettingsscreen_network">Netwerk</string>
-    <string name="gosettingsscreen_enable_streaming_over_mobile">Schakel streaming via mobiele data in</string>
-    <string name="gosettingsscreen_connection_is_healthy">De verbinding is gezond</string>
-    <string name="streaminghomescreen_leave_go_mode">Leave Go Mode</string>
+
     <string name="streamingsettingsscreen_streaming_restricted">Streaming beperkt</string>
-    <string name="streamingmusicviewmodel_failed_to_play_next">Kan volgende niet afspelen: kan URL niet omzetten</string>
-    <string name="streamingmusicviewmodel_failed_to_add_to">Kan niet toevoegen aan wachtrij: kan URL niet omzetten</string>
+
+
     <string name="rhythmmusicwidget_album_art_placeholder">Tijdelijke aanduiding voor albumhoezen</string>
     <string name="rhythmwidgetpreview_rhythm_glance_widget_previews">T2Rhythm Glance Widgetvoorbeelden</string>
     <string name="rhythmwidgetpreview_str_11_compact_widget">1×1 compacte widget</string>
@@ -2486,7 +2434,7 @@
     <string name="edit_album_title">Album bewerken</string>
     <string name="edit_album_desc">Bewerk tags en illustraties voor alle nummers in dit album.</string>
     <string name="edit_album_saving">Albummetagegevens bijwerken…</string>
-    <string name="streaming_service_setup_auto_detect">Automatische detectie</string>
+
     <string name="nearby_server_discovery_title">Servers in de buurt</string>
     <string name="nearby_server_discovery_desc">Selecteer een server die op uw lokale netwerk is gevonden</string>
     <string name="nearby_server_discovery_scanning">Scannen naar servers in de buurt…</string>

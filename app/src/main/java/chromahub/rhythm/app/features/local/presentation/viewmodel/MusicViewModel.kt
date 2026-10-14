@@ -5529,16 +5529,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
         currentPlaybackAccumulatedTime = 0L
         
         // Report playback start for streaming items
-        if (songId.startsWith("streaming://") || songId.contains("::")) {
-            viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
-                try {
-                    val repository = chromahub.rhythm.app.features.streaming.di.StreamingMusicModule.provideStreamingMusicRepository(getApplication())
-                    repository.reportPlaybackStart(songId)
-                } catch (e: Exception) {
-                    Log.e(TAG, "Failed to scrobble playback start for song: $songId", e)
-                }
-            }
-        }
+
         
         // Check if player is actually playing right now
         val actuallyPlaying = mediaController?.isPlaying == true
@@ -5615,16 +5606,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                 }
                 
                 // Report playback stop/scrobble for streaming items
-                if (songId.startsWith("streaming://") || songId.contains("::")) {
-                    viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
-                        try {
-                            val repository = chromahub.rhythm.app.features.streaming.di.StreamingMusicModule.provideStreamingMusicRepository(getApplication())
-                            repository.reportPlaybackStop(songId, actualDuration)
-                        } catch (e: Exception) {
-                            Log.e(TAG, "Failed to scrobble playback stop for song: $songId", e)
-                        }
-                    }
-                }
+
             } else {
                 Log.d(TAG, "Skipping playback record for short duration: ${actualDuration}ms")
             }

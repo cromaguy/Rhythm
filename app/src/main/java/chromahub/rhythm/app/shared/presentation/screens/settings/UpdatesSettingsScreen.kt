@@ -1242,7 +1242,7 @@ fun UpdatesSettingsScreen(onBackClick: () -> Unit) {
                                 if (isSelected) {
                                     Icon(
                                         imageVector = RhythmIcons.CheckCircle,
-                                        contentDescription = stringResource(R.string.streaming_selected),
+                                        contentDescription = stringResource(R.string.cd_selected),
                                         tint = MaterialTheme.colorScheme.onPrimaryContainer,
                                         modifier = Modifier.size(24.dp)
                                     )
@@ -1341,7 +1341,7 @@ fun UpdatesSettingsScreen(onBackClick: () -> Unit) {
                                 if (isSelected) {
                                     Icon(
                                         imageVector = RhythmIcons.CheckCircle,
-                                        contentDescription = stringResource(R.string.streaming_selected),
+                                        contentDescription = stringResource(R.string.cd_selected),
                                         tint = MaterialTheme.colorScheme.onPrimaryContainer,
                                         modifier = Modifier.size(24.dp)
                                     )
@@ -1463,7 +1463,7 @@ fun UpdatesSettingsScreen(onBackClick: () -> Unit) {
                                 if (isSelected) {
                                     Icon(
                                         imageVector = RhythmIcons.CheckCircle,
-                                        contentDescription = stringResource(R.string.streaming_selected),
+                                        contentDescription = stringResource(R.string.cd_selected),
                                         tint = MaterialTheme.colorScheme.onPrimaryContainer,
                                         modifier = Modifier.size(24.dp)
                                     )

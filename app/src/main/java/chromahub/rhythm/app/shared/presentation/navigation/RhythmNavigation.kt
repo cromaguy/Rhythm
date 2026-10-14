@@ -18,7 +18,6 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.os.Build
 import androidx.compose.animation.AnimatedContent
-import chromahub.rhythm.app.features.streaming.presentation.viewmodel.StreamingMusicViewModel
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.EaseInOutQuart
@@ -97,13 +96,10 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import chromahub.rhythm.app.activities.MainActivity
 import chromahub.rhythm.app.activities.RhythmGuardTimeoutActivity
 import chromahub.rhythm.app.R
-import chromahub.rhythm.app.core.domain.model.AppMode
 import chromahub.rhythm.app.features.local.presentation.navigation.LocalNavigation
-import chromahub.rhythm.app.shared.data.repository.UserPreferencesRepository
 import chromahub.rhythm.app.shared.data.repository.PlaybackStatsRepository
 import chromahub.rhythm.app.shared.data.repository.StatsTimeRange
 import chromahub.rhythm.app.shared.presentation.components.common.RhythmWavyProgressLoader
-import chromahub.rhythm.app.shared.presentation.viewmodel.AppModeViewModel
 import chromahub.rhythm.app.features.local.presentation.viewmodel.MusicViewModel
 import chromahub.rhythm.app.shared.presentation.viewmodel.ThemeViewModel
 import chromahub.rhythm.app.shared.data.model.AppSettings
@@ -124,9 +120,8 @@ import chromahub.rhythm.app.ui.LocalMiniPlayerPadding
 import java.util.Locale
 
 
-
 /**
- * Main navigation composable that handles switching between Local and Streaming modes.
+ * Root navigation for the T2Rhythm on-device music library.
  * Acts as the root navigation for the entire app.
  */
 @Composable
@@ -134,17 +129,17 @@ fun RhythmNavigation(
     modifier: Modifier = Modifier,
     musicViewModel: MusicViewModel = viewModel(),
     themeViewModel: ThemeViewModel = viewModel(),
-    streamingMusicViewModel: StreamingMusicViewModel = viewModel(),
+
     navigateToSettingsTrigger: Boolean = false,
     onSettingsNavigationComplete: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
     val appSettings = remember { AppSettings.getInstance(context) }
     val appMode by appSettings.appMode.collectAsState()
-    
+
     // Create a NavHostController that can be passed to both local and streaming navigation
     val rootNavController = rememberNavController()
-    
+
     // Navigate to settings when triggered
     LaunchedEffect(navigateToSettingsTrigger) {
         if (navigateToSettingsTrigger) {
@@ -154,19 +149,19 @@ fun RhythmNavigation(
             onSettingsNavigationComplete?.invoke()
         }
     }
-    
+
     // Settings navigation callback that works for both modes
     val navigateToSettings: () -> Unit = {
         rootNavController.navigate("settings") {
             launchSingleTop = true
         }
     }
-    
+
     val defaultMiniPlayerPadding = WindowInsets.navigationBars
         .only(WindowInsetsSides.Bottom)
         .asPaddingValues()
 
-    // Switch between Local and Streaming navigation based on app mode with animated transitions.
+    // The local music library is the only application mode.
     // RhythmGuardWarningHost is mounted at root so warnings appear above all screens and bottom sheets.
     CompositionLocalProvider(LocalMiniPlayerPadding provides defaultMiniPlayerPadding) {
         Box(modifier = modifier.fillMaxSize()) {
@@ -186,49 +181,14 @@ fun RhythmNavigation(
             }
         ) {
             composable("main") {
-                AnimatedContent(
-                    targetState = appMode,
-                    modifier = Modifier.fillMaxSize(),
-                    transitionSpec = {
-                        fadeIn(
-                            animationSpec = tween(400)
-                        ) + slideInHorizontally(
-                            initialOffsetX = { if (targetState == "STREAMING") it else -it },
-                            animationSpec = tween(500, easing = EaseInOutQuart)
-                        ) togetherWith fadeOut(
-                            animationSpec = tween(400)
-                        ) + slideOutHorizontally(
-                            targetOffsetX = { if (targetState == "STREAMING") -it else it },
-                            animationSpec = tween(500, easing = EaseInOutQuart)
-                        )
-                    },
-                    label = "appModeTransition"
-                ) { mode ->
-                    when (mode) {
-                        "STREAMING" -> {
-                            // Streaming (Go) content is hosted on the shared Home/Library screens
-                            LocalNavigation(
-                                viewModel = musicViewModel,
-                                themeViewModel = themeViewModel,
-                                appSettings = appSettings,
-                                streamingMusicViewModel = streamingMusicViewModel
-                            )
-                        }
-
-                        else -> {
-                            // Use LocalNavigation for local mode (default)
-                            LocalNavigation(
-                                viewModel = musicViewModel,
-                                themeViewModel = themeViewModel,
-                                appSettings = appSettings,
-                                streamingMusicViewModel = streamingMusicViewModel
-                            )
-                        }
-                    }
-                }
+                LocalNavigation(
+                    viewModel = musicViewModel,
+                    themeViewModel = themeViewModel,
+                    appSettings = appSettings
+                )
             }
 
-            // Settings screen (shared between both modes)
+            // Settings screen
             composable(
                 route = "settings",
                 enterTransition = {
@@ -1917,267 +1877,4 @@ private fun setSystemMusicVolumeFraction(context: android.content.Context, fract
     if (maxVolume <= 0) return
     val targetVolume = (fraction.coerceIn(0f, 1f) * maxVolume).toInt().coerceIn(0, maxVolume)
     audioManager.setStreamVolume(android.media.AudioManager.STREAM_MUSIC, targetVolume, 0)
-}
-
-/**
- * Mode selector screen that allows users to switch between Local and Streaming modes.
- * Can be shown as a full screen or as a bottom sheet.
- */
-@Composable
-fun ModeSelectorScreen(
-    currentMode: AppMode,
-    onModeSelected: (AppMode) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Text(
-            text = stringResource(R.string.rhythmnavigation_choose_your_experience),
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onBackground
-        )
-        
-        Spacer(modifier = Modifier.height(8.dp))
-        
-        Text(
-            text = stringResource(R.string.rhythmnavigation_switch_between_local_music),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        
-        Spacer(modifier = Modifier.height(48.dp))
-        
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            // Local Mode Card
-            ModeCard(
-                title = stringResource(R.string.rhythmnavigation_local),
-                description = stringResource(R.string.rhythmnavigation_local_desc),
-                icon = if (currentMode == AppMode.LOCAL) RhythmIcons.MusicNote else RhythmIcons.MusicNote,
-                isSelected = currentMode == AppMode.LOCAL,
-                onClick = { onModeSelected(AppMode.LOCAL) },
-                modifier = Modifier.weight(1f)
-            )
-            
-            // Streaming Mode Card
-            ModeCard(
-                title = stringResource(R.string.rhythmnavigation_streaming),
-                description = stringResource(R.string.rhythmnavigation_streaming_desc),
-                icon = if (currentMode == AppMode.STREAMING) MaterialSymbolIcon("cloud_queue", filled = true) else MaterialSymbolIcon("cloud_queue"),
-                isSelected = currentMode == AppMode.STREAMING,
-                onClick = { onModeSelected(AppMode.STREAMING) },
-                modifier = Modifier.weight(1f)
-            )
-        }
-    }
-}
-
-/**
- * Card component for displaying a mode option in the mode selector.
- */
-@Composable
-private fun ModeCard(
-    title: String,
-    description: String,
-    icon: chromahub.rhythm.app.shared.presentation.components.icons.MaterialSymbolIcon,
-    isSelected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Card(
-        modifier = modifier
-            .clip(RoundedCornerShape(20.dp))
-            .clickable(onClick = onClick),
-        colors = CardDefaults.cardColors(
-            containerColor = if (isSelected) {
-                MaterialTheme.colorScheme.primaryContainer
-            } else {
-                MaterialTheme.colorScheme.surfaceVariant
-            }
-        ),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = if (isSelected) 8.dp else 2.dp
-        )
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(20.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Surface(
-                shape = RoundedCornerShape(16.dp),
-                color = if (isSelected) {
-                    MaterialTheme.colorScheme.primary
-                } else {
-                    MaterialTheme.colorScheme.surface
-                },
-                modifier = Modifier.size(64.dp)
-            ) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = title,
-                        modifier = Modifier.size(32.dp),
-                        tint = if (isSelected) {
-                            MaterialTheme.colorScheme.onPrimary
-                        } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                        }
-                    )
-                }
-            }
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
-                color = if (isSelected) {
-                    MaterialTheme.colorScheme.onPrimaryContainer
-                } else {
-                    MaterialTheme.colorScheme.onSurfaceVariant
-                }
-            )
-            
-            Spacer(modifier = Modifier.height(4.dp))
-            
-            Text(
-                text = description,
-                style = MaterialTheme.typography.bodySmall,
-                color = if (isSelected) {
-                    MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
-                } else {
-                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                }
-            )
-            
-            Spacer(modifier = Modifier.height(12.dp))
-            
-            // Selection indicator
-            AnimatedVisibility(
-                visible = isSelected,
-                enter = scaleIn(animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy)) + fadeIn(),
-                exit = scaleOut() + fadeOut()
-            ) {
-                Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color = MaterialTheme.colorScheme.primary
-                ) {
-                    Text(
-                        text = stringResource(R.string.bottomsheet_active_device),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
-                    )
-                }
-            }
-        }
-    }
-}
-
-/**
- * Compact mode switcher that can be placed in a navigation bar or header.
- */
-@Composable
-fun CompactModeSwitcher(
-    currentMode: AppMode,
-    onModeToggle: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Surface(
-        modifier = modifier
-            .clip(RoundedCornerShape(16.dp))
-            .clickable(onClick = onModeToggle),
-        color = MaterialTheme.colorScheme.surfaceVariant,
-        shape = RoundedCornerShape(16.dp)
-    ) {
-        Row(
-            modifier = Modifier.padding(4.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Local indicator
-            Surface(
-                shape = RoundedCornerShape(12.dp),
-                color = if (currentMode == AppMode.LOCAL) {
-                    MaterialTheme.colorScheme.primary
-                } else {
-                    MaterialTheme.colorScheme.surfaceVariant
-                },
-                modifier = Modifier.padding(2.dp)
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = RhythmIcons.MusicNote,
-                        contentDescription = stringResource(R.string.rhythmnavigation_local),
-                        modifier = Modifier.size(16.dp),
-                        tint = if (currentMode == AppMode.LOCAL) {
-                            MaterialTheme.colorScheme.onPrimary
-                        } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                        }
-                    )
-                    if (currentMode == AppMode.LOCAL) {
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = stringResource(R.string.rhythmnavigation_local),
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onPrimary
-                        )
-                    }
-                }
-            }
-            
-            // Streaming indicator
-            Surface(
-                shape = RoundedCornerShape(12.dp),
-                color = if (currentMode == AppMode.STREAMING) {
-                    MaterialTheme.colorScheme.primary
-                } else {
-                    MaterialTheme.colorScheme.surfaceVariant
-                },
-                modifier = Modifier.padding(2.dp)
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = MaterialSymbolIcon("cloud_queue"),
-                        contentDescription = stringResource(R.string.rhythmnavigation_streaming),
-                        modifier = Modifier.size(16.dp),
-                        tint = if (currentMode == AppMode.STREAMING) {
-                            MaterialTheme.colorScheme.onPrimary
-                        } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                        }
-                    )
-                    if (currentMode == AppMode.STREAMING) {
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = stringResource(R.string.rhythmnavigation_stream),
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onPrimary
-                        )
-                    }
-                }
-            }
-        }
-    }
 }

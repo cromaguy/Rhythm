@@ -143,7 +143,7 @@ fun AutoEQSuggestionDialog(
             // Status message: only displayed when an existing AutoEQ profile is ready to apply
             if (savedDevice.autoEQProfileName != null) {
                 Text(
-                    text = "This device has an AutoEQ profile configured. Would you like to apply it now?",
+                    text = context.getString(chromahub.rhythm.app.R.string.ui_this_device_has_an_autoeq_profile_configured_would_you_like_to_a),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,

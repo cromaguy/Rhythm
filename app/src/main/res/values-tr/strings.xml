@@ -213,8 +213,8 @@
     <string name="dialog_delete_playlist_message">\"%1$s\" dosyasını silmek istediğinizden emin misiniz? Bu eylem geri alınamaz.</string>
     <string name="dialog_delete">Sil</string>
     <string name="dialog_cancel">İptal</string>
-    <string name="streaming_settings_switch_provider_confirm_title">Yayın Sağlayıcısı Değiştirilsin mi?</string>
-    <string name="streaming_settings_switch_provider_confirm_desc">Mevcut sağlayıcı: %1$s\nŞuna geçilsin mi: %2$s? Bu, şu anda aktif olan sağlayıcının bağlantısını kesecektir.</string>
+
+
     <string name="action_switch">Anahtar</string>
     <!-- Playlist Detail Screen -->
     <string name="playlist_rename_title">Çalma Listesini Yeniden Adlandırın</string>
@@ -1426,69 +1426,21 @@
     <string name="settings_interval_once_a_day">Günde bir kez</string>
     <string name="settings_interval_once_a_week">Haftada bir kez</string>
     <!-- Experimental Features -->
-    <string name="streaming_integration_title">T2Rhythm Go</string>
-    <string name="streaming_integration_services">Entegrasyon Hizmetleri</string>
-    <string name="streaming_integration_services_empty">Henüz bağlı hizmet yok</string>
-    <string name="streaming_settings_title">Ayarlar</string>
-    <string name="streaming_settings_group_services">Hizmetler</string>
-    <string name="streaming_settings_group_actions">Eylemler</string>
-    <string name="streaming_settings_preferred_service">Tercih Edilen Hizmet</string>
-    <string name="streaming_settings_quality">Yayın Kalitesi</string>
-    <string name="streaming_settings_service_sheet_desc">Varsayılan olarak hangi bağlı hizmete T2Rhythm Go öncelik verilmesi gerektiğini seçin.</string>
-    <string name="streaming_settings_quality_sheet_desc">Akışlı oynatma için tercih ettiğiniz ses kalitesini seçin.</string>
-    <string name="streaming_quality_low">Düşük</string>
-    <string name="streaming_quality_normal">Normal</string>
-    <string name="streaming_quality_high">Yüksek</string>
-    <string name="streaming_quality_lossless">Kayıpsız</string>
-    <string name="streaming_quality_low_desc">Düşük kalitede veri tasarrufu modu (~96 kbps).</string>
-    <string name="streaming_quality_normal_desc">Dengeli kalite ve veri kullanımı (~160 kbps).</string>
-    <string name="streaming_quality_high_desc">Yüksek kaliteli ses (~320 kbps).</string>
-    <string name="streaming_quality_lossless_desc">Desteklendiği yerde en iyi kalite (FLAC/ALAC).</string>
-    <string name="streaming_settings_group_wellbeing">T2Rhythm Analizler</string>
-    <string name="streaming_open_full_settings">Tam Ayarları Aç</string>
-    <string name="streaming_open_full_settings_desc">Modlar arasında paylaşılan uygulama genelindeki ayarları açın</string>
-    <string name="streaming_switch_to_local_mode">Yerel Moda Geç</string>
-    <string name="streaming_switch_to_local_mode_desc">Yerel müzik navigasyonuna geri dönün</string>
-    <string name="streaming_status_title">Yayın Durumu</string>
-    <string name="streaming_status_selected_service">Seçilen: %1$s</string>
-    <string name="streaming_status_connected">Hesap bağlandı</string>
-    <string name="streaming_status_not_connected">Kimlik doğrulama bekleniyor</string>
-    <string name="streaming_status_badge_connected">Bağlandı</string>
-    <string name="streaming_status_badge_pending">Beklemede</string>
-    <string name="streaming_status_badge_refreshing">Canlandırıcı</string>
-    <string name="streaming_status_connect_hint">Hesabınızı bağlamak için aşağıda seçilen hizmeti yönetin.</string>
-    <string name="streaming_selected">Seçildi</string>
-    <string name="streaming_connect">Bağlan</string>
-    <string name="streaming_manage">Yönet</string>
-    <string name="streaming_service_setup_server_url">Sunucu URL\'si</string>
-    <string name="streaming_service_setup_server_url_hint">https://sunucunuz.example.com</string>
-    <string name="streaming_service_setup_server_url_supporting">Sunucu adresine ihtiyaç duyan sağlayıcılar için gereklidir.</string>
-    <string name="streaming_service_setup_username">Kullanıcı Adı veya E-posta</string>
-    <string name="streaming_service_setup_username_hint">Hesabınızın kullanıcı adını girin</string>
-    <string name="streaming_service_setup_password">Şifre</string>
-    <string name="streaming_service_setup_password_hint">Hesap şifrenizi girin</string>
-    <string name="streaming_service_setup_remember_password">Bu cihazdaki şifreyi hatırla</string>
-    <string name="streaming_service_setup_remember_password_desc">T2Rhythm\'ın daha sonra otomatik olarak yeniden bağlanabilmesi için kimlik bilgilerini yerel olarak saklayın.</string>
-    <string name="streaming_service_setup_connecting">Bağlanıyor…</string>
-    <string name="streaming_service_setup_disconnecting">Bağlantı kesiliyor…</string>
-    <string name="streaming_service_setup_action_hint">Bu servise bağlanmak için gerekli alanları doldurunuz.</string>
+
     <string name="streaming_service_setup_reconnect">Yeniden bağlan</string>
-    <string name="streaming_service_setup_disconnect">Bağlantıyı kes</string>
-    <string name="streaming_service_setup_connected_as">%1$s olarak bağlandı</string>
+
+
     <string name="streaming_home_selected_service_unavailable">Seçilen hizmet bağlı değil</string>
     <string name="streaming_home_connect_selected_service">Ana Sayfa ve Arama\'yı yüklemek için %1$s\'ı bağlayın.</string>
-    <string name="streaming_home_widget_new_releases_subtitle">%1$s\'dan yeni eklenen albümler</string>
-    <string name="streaming_home_widget_empty_hint">Bağlandıktan veya yenilendikten sonra bu işlem biraz zaman alabilir.</string>
+
+
     <string name="streaming_library_syncing">Akış feed\'iniz yükleniyor…</string>
-    <string name="streaming_home_no_content_title">Henüz ev içeriği yok</string>
+
     <string name="streaming_home_no_content_hint">Hizmetiniz senkronizasyonu tamamladıktan sonra yenilemeyi deneyin.</string>
     <string name="streaming_home_guard_break_active">Mola aktif: %1$s kaldı</string>
     <string name="streaming_home_guard_exposure">Bugün: %1$d / %2$d dk.</string>
     <string name="streaming_not_selected">Seçilmedi</string>
-    <string name="streaming_service_subsonic">Subsonic</string>
-    <string name="streaming_service_subsonic_desc">Navidrome ve uyumlu Subsonic sunucularını bağlayın</string>
-    <string name="streaming_service_jellyfin">Jellyfin</string>
-    <string name="streaming_service_jellyfin_desc">Kişisel Jellyfin kitaplığınızdan akış yapın</string>
+
     <!-- Backup &amp; Restore -->
     <string name="settings_backup_restore">Yedekleme ve Geri Yükleme</string>
     <string name="settings_auto_backup">Otomatik yedekleme</string>
@@ -1655,8 +1607,8 @@
     <string name="settings_broadcast_status_enabled_desc">Yayın oynatma durumu</string>
     <string name="settings_bluetooth_lyrics_enabled">Bluetooth Şarkı Sözü Modu</string>
     <string name="settings_bluetooth_lyrics_enabled_desc">Geçerli şarkı sözü satırını Bluetooth meta verileri aracılığıyla yayınlayın</string>
-    <string name="exp_go_mode">Go Mode</string>
-    <string name="exp_go_mode_desc">T2Rhythm Go streaming mode\'a geç</string>
+
+
     <!-- Home Screen Search Strings -->
     <string name="settings_home_section_order">Bölüm Sırası</string>
     <string name="settings_home_section_order_desc">Ana bölümleri yeniden sıralayın</string>
@@ -1883,14 +1835,10 @@
     <string name="musicviewmodel_failed_to_play_next">Sonraki oynatılamadı: Oyuncu başlatılmadı</string>
     <string name="streaminghomesectionorderbottomsheet_streaming_section_order_and">Akış bölümünün sırası ve görünürlüğü varsayılana sıfırlandı</string>
     <string name="streaminghomesectionorderbottomsheet_streaming_section_order_and_1">Akış bölümünün sırası ve görünürlüğü kaydedildi</string>
-    <string name="gosettingsscreen_configure_current_provider">Geçerli Sağlayıcıyı Yapılandır</string>
-    <string name="gosettingsscreen_network">Ağ</string>
-    <string name="gosettingsscreen_enable_streaming_over_mobile">Mobil veriler üzerinden akışı etkinleştir</string>
-    <string name="gosettingsscreen_connection_is_healthy">Bağlantı sağlıklı</string>
-    <string name="streaminghomescreen_leave_go_mode">Leave Go Mode</string>
+
     <string name="streamingsettingsscreen_streaming_restricted">Akış Kısıtlı</string>
-    <string name="streamingmusicviewmodel_failed_to_play_next">Sonraki oynatılamadı: URL çözümlenemiyor</string>
-    <string name="streamingmusicviewmodel_failed_to_add_to">Kuyruğa eklenemedi: URL çözümlenemiyor</string>
+
+
     <string name="rhythmmusicwidget_album_art_placeholder">Albüm Kapağı Yer Tutucusu</string>
     <string name="rhythmwidgetpreview_rhythm_glance_widget_previews">T2Rhythm Glance Widget Önizlemeleri</string>
     <string name="rhythmwidgetpreview_str_11_compact_widget">1×1 Kompakt Widget</string>
@@ -2486,7 +2434,7 @@
     <string name="edit_album_title">Albümü Düzenle</string>
     <string name="edit_album_desc">Bu albümdeki tüm şarkıların etiketlerini ve resimlerini düzenleyin.</string>
     <string name="edit_album_saving">Albüm meta verileri güncelleniyor…</string>
-    <string name="streaming_service_setup_auto_detect">Otomatik algılama</string>
+
     <string name="nearby_server_discovery_title">Yakındaki Sunucular</string>
     <string name="nearby_server_discovery_desc">Yerel ağınızda bulunan bir sunucuyu seçin</string>
     <string name="nearby_server_discovery_scanning">Yakındaki sunucular taranıyor…</string>

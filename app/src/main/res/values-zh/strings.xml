@@ -205,8 +205,8 @@
     <string name="dialog_delete_playlist_message">您确定要删除“%1$s”吗？此操作无法撤消。</string>
     <string name="dialog_delete">删除</string>
     <string name="dialog_cancel">取消</string>
-    <string name="streaming_settings_switch_provider_confirm_title">切换流媒体提供商？</string>
-    <string name="streaming_settings_switch_provider_confirm_desc">当前提供商：%1$s\n切换到：%2$s？这将断开当前活动的提供者的连接。</string>
+
+
     <string name="action_switch">开关</string>
     <!-- Playlist Detail Screen -->
     <string name="playlist_rename_title">重命名播放列表</string>
@@ -1411,69 +1411,21 @@
     <string name="settings_interval_once_a_day">每日一次</string>
     <string name="settings_interval_once_a_week">每周一次</string>
     <!-- Experimental Features -->
-    <string name="streaming_integration_title">T2Rhythm Go</string>
-    <string name="streaming_integration_services">集成服务</string>
-    <string name="streaming_integration_services_empty">尚未连接服务</string>
-    <string name="streaming_settings_title">设置</string>
-    <string name="streaming_settings_group_services">服务</string>
-    <string name="streaming_settings_group_actions">操作</string>
-    <string name="streaming_settings_preferred_service">首选服务</string>
-    <string name="streaming_settings_quality">流媒体质量</string>
-    <string name="streaming_settings_service_sheet_desc">选择默认情况下应优先考虑的连接服务 T2Rhythm Go。</string>
-    <string name="streaming_settings_quality_sheet_desc">选择您喜欢的流媒体播放音频质量。</string>
-    <string name="streaming_quality_low">低</string>
-    <string name="streaming_quality_normal">正常</string>
-    <string name="streaming_quality_high">高</string>
-    <string name="streaming_quality_lossless">无损</string>
-    <string name="streaming_quality_low_desc">质量较低的数据保护模式 (~96 kbps)。</string>
-    <string name="streaming_quality_normal_desc">平衡的质量和数据使用（~160 kbps）。</string>
-    <string name="streaming_quality_high_desc">高品质音频（~320 kbps）。</string>
-    <string name="streaming_quality_lossless_desc">支持的最佳质量 (FLAC/ALAC)。</string>
-    <string name="streaming_settings_group_wellbeing">T2Rhythm Insights</string>
-    <string name="streaming_open_full_settings">打开完整设置</string>
-    <string name="streaming_open_full_settings_desc">打开跨模式共享的应用程序范围设置</string>
-    <string name="streaming_switch_to_local_mode">切换到本地模式</string>
-    <string name="streaming_switch_to_local_mode_desc">返回本地音乐导航</string>
-    <string name="streaming_status_title">流媒体状态</string>
-    <string name="streaming_status_selected_service">已选择：%1$s</string>
-    <string name="streaming_status_connected">账户已连接</string>
-    <string name="streaming_status_not_connected">待认证</string>
-    <string name="streaming_status_badge_connected">已连接</string>
-    <string name="streaming_status_badge_pending">待定</string>
-    <string name="streaming_status_badge_refreshing">刷新中</string>
-    <string name="streaming_status_connect_hint">管理下面选定的服务以连接您的帐户。</string>
-    <string name="streaming_selected">已选</string>
-    <string name="streaming_connect">连接</string>
-    <string name="streaming_manage">管理</string>
-    <string name="streaming_service_setup_server_url">服务器地址（URL）</string>
-    <string name="streaming_service_setup_server_url_hint">https://your-server.example.com</string>
-    <string name="streaming_service_setup_server_url_supporting">对于需要服务器地址的提供商来说是必需的。</string>
-    <string name="streaming_service_setup_username">用户名或电子邮件</string>
-    <string name="streaming_service_setup_username_hint">输入您的帐户用户名</string>
-    <string name="streaming_service_setup_password">密码</string>
-    <string name="streaming_service_setup_password_hint">输入您的帐户密码</string>
-    <string name="streaming_service_setup_remember_password">记住此设备上的密码</string>
-    <string name="streaming_service_setup_remember_password_desc">在本地存储凭据，以便 T2Rhythm 稍后可以自动重新连接。</string>
-    <string name="streaming_service_setup_connecting">正在连接……</string>
-    <string name="streaming_service_setup_disconnecting">断开连接……</string>
-    <string name="streaming_service_setup_action_hint">填写必填字段以连接此服务。</string>
+
     <string name="streaming_service_setup_reconnect">重新连接</string>
-    <string name="streaming_service_setup_disconnect">断开连接</string>
-    <string name="streaming_service_setup_connected_as">连接为 %1$s</string>
+
+
     <string name="streaming_home_selected_service_unavailable">所选服务未连接</string>
     <string name="streaming_home_connect_selected_service">连接%1$s以加载主页和搜索。</string>
-    <string name="streaming_home_widget_new_releases_subtitle">最近添加的来自 %1$s 的专辑</string>
-    <string name="streaming_home_widget_empty_hint">连接或刷新后，这可能需要一些时间。</string>
+
+
     <string name="streaming_library_syncing">正在加载您的流媒体源…</string>
-    <string name="streaming_home_no_content_title">还没有主页内容</string>
+
     <string name="streaming_home_no_content_hint">服务完成同步后尝试刷新。</string>
     <string name="streaming_home_guard_break_active">中断已激活：还剩 %1$s</string>
     <string name="streaming_home_guard_exposure">今天：%1$d / %2$d 分钟</string>
     <string name="streaming_not_selected">未选择</string>
-    <string name="streaming_service_subsonic">Subsonic</string>
-    <string name="streaming_service_subsonic_desc">连接Navidrome和兼容的Subsonic服务器</string>
-    <string name="streaming_service_jellyfin">Jellyfin</string>
-    <string name="streaming_service_jellyfin_desc">从您的个人 Jellyfin 库中串流</string>
+
     <!-- Backup &amp; Restore -->
     <string name="settings_backup_restore">备份与恢复</string>
     <string name="settings_auto_backup">自动备份</string>
@@ -1640,8 +1592,8 @@
     <string name="settings_broadcast_status_enabled_desc">广播播放状态</string>
     <string name="settings_bluetooth_lyrics_enabled">蓝牙歌词模式</string>
     <string name="settings_bluetooth_lyrics_enabled_desc">通过蓝牙元数据广播当前歌词行</string>
-    <string name="exp_go_mode">Go 模式</string>
-    <string name="exp_go_mode_desc">切换到 T2Rhythm Go 流媒体播放模式</string>
+
+
     <!-- Home Screen Search Strings -->
     <string name="settings_home_section_order">章节顺序</string>
     <string name="settings_home_section_order_desc">重新排序主页部分</string>
@@ -1868,14 +1820,10 @@
     <string name="musicviewmodel_failed_to_play_next">无法播放下一个：播放器未初始化</string>
     <string name="streaminghomesectionorderbottomsheet_streaming_section_order_and">流媒体部分顺序和可见性重置为默认值</string>
     <string name="streaminghomesectionorderbottomsheet_streaming_section_order_and_1">已保存流媒体部分顺序和可见性</string>
-    <string name="gosettingsscreen_configure_current_provider">配置当前提供商</string>
-    <string name="gosettingsscreen_network">网络</string>
-    <string name="gosettingsscreen_enable_streaming_over_mobile">启用移动数据流</string>
-    <string name="gosettingsscreen_connection_is_healthy">连接正常</string>
-    <string name="streaminghomescreen_leave_go_mode">解除 Go 模式</string>
+
     <string name="streamingsettingsscreen_streaming_restricted">流媒体限制</string>
-    <string name="streamingmusicviewmodel_failed_to_play_next">无法播放下一个：无法解析 URL</string>
-    <string name="streamingmusicviewmodel_failed_to_add_to">添加到队列失败：无法解析 URL</string>
+
+
     <string name="rhythmmusicwidget_album_art_placeholder">专辑艺术占位符</string>
     <string name="rhythmwidgetpreview_rhythm_glance_widget_previews">T2Rhythm Glance 小部件预览</string>
     <string name="rhythmwidgetpreview_str_11_compact_widget">1×1 紧凑小部件</string>
@@ -2465,7 +2413,7 @@
     <string name="edit_album_title">编辑专辑</string>
     <string name="edit_album_desc">编辑该专辑中所有歌曲的标签和插图。</string>
     <string name="edit_album_saving">正在更新专辑元数据…</string>
-    <string name="streaming_service_setup_auto_detect">自动检测</string>
+
     <string name="nearby_server_discovery_title">附近的服务器</string>
     <string name="nearby_server_discovery_desc">选择在您的本地网络上发现的服务器</string>
     <string name="nearby_server_discovery_scanning">扫描附近的服务器…</string>

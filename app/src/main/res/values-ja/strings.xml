@@ -205,8 +205,8 @@
     <string name="dialog_delete_playlist_message">「%1$s」を削除してもよろしいですか?この操作は元に戻すことができません。</string>
     <string name="dialog_delete">削除</string>
     <string name="dialog_cancel">キャンセル</string>
-    <string name="streaming_settings_switch_provider_confirm_title">ストリーミングプロバイダーを切り替えますか?</string>
-    <string name="streaming_settings_switch_provider_confirm_desc">現在のプロバイダー: %1$s\nに切り替えます: %2$s?これにより、現在アクティブなプロバイダーが切断されます。</string>
+
+
     <string name="action_switch">スイッチ</string>
     <!-- Playlist Detail Screen -->
     <string name="playlist_rename_title">プレイリストの名前を変更する</string>
@@ -1411,69 +1411,21 @@
     <string name="settings_interval_once_a_day">1日1回</string>
     <string name="settings_interval_once_a_week">週に1回</string>
     <!-- Experimental Features -->
-    <string name="streaming_integration_title">T2Rhythm Go</string>
-    <string name="streaming_integration_services">統合サービス</string>
-    <string name="streaming_integration_services_empty">まだ接続されているサービスはありません</string>
-    <string name="streaming_settings_title">設定</string>
-    <string name="streaming_settings_group_services">サービス</string>
-    <string name="streaming_settings_group_actions">アクション</string>
-    <string name="streaming_settings_preferred_service">優先サービス</string>
-    <string name="streaming_settings_quality">ストリーミング品質</string>
-    <string name="streaming_settings_service_sheet_desc">T2Rhythm Go がデフォルトで優先する接続サービスを選択します。</string>
-    <string name="streaming_settings_quality_sheet_desc">ストリーミング再生の好みの音質を選択します。</string>
-    <string name="streaming_quality_low">低い</string>
-    <string name="streaming_quality_normal">ノーマル</string>
-    <string name="streaming_quality_high">高</string>
-    <string name="streaming_quality_lossless">ロスレス</string>
-    <string name="streaming_quality_low_desc">品質を低下させたデータ セーバー モード (~96 kbps)。</string>
-    <string name="streaming_quality_normal_desc">バランスの取れた品質とデータ使用量 (~160 kbps)。</string>
-    <string name="streaming_quality_high_desc">高品質オーディオ (~320 kbps)。</string>
-    <string name="streaming_quality_lossless_desc">サポートされている場合は最高の品質 (FLAC/ALAC)。</string>
-    <string name="streaming_settings_group_wellbeing">T2Rhythm の洞察</string>
-    <string name="streaming_open_full_settings">すべての設定を開く</string>
-    <string name="streaming_open_full_settings_desc">モード間で共有されるアプリ全体の設定を開く</string>
-    <string name="streaming_switch_to_local_mode">ローカルモードに切り替える</string>
-    <string name="streaming_switch_to_local_mode_desc">ローカルミュージックナビゲーションに戻ります</string>
-    <string name="streaming_status_title">ストリーミング状況</string>
-    <string name="streaming_status_selected_service">選択済み: %1$s</string>
-    <string name="streaming_status_connected">アカウントが接続されました</string>
-    <string name="streaming_status_not_connected">認証保留中</string>
-    <string name="streaming_status_badge_connected">接続されました</string>
-    <string name="streaming_status_badge_pending">保留中</string>
-    <string name="streaming_status_badge_refreshing">さわやか</string>
-    <string name="streaming_status_connect_hint">アカウントを接続するには、以下で選択したサービスを管理します。</string>
-    <string name="streaming_selected">選択済み</string>
-    <string name="streaming_connect">接続する</string>
-    <string name="streaming_manage">管理する</string>
-    <string name="streaming_service_setup_server_url">サーバーURL</string>
-    <string name="streaming_service_setup_server_url_hint">https://your-server.example.com</string>
-    <string name="streaming_service_setup_server_url_supporting">サーバーアドレスが必要なプロバイダーに必須。</string>
-    <string name="streaming_service_setup_username">ユーザー名またはメールアドレス</string>
-    <string name="streaming_service_setup_username_hint">アカウントのユーザー名を入力します</string>
-    <string name="streaming_service_setup_password">パスワード</string>
-    <string name="streaming_service_setup_password_hint">アカウントのパスワードを入力してください</string>
-    <string name="streaming_service_setup_remember_password">このデバイスにパスワードを記憶する</string>
-    <string name="streaming_service_setup_remember_password_desc">T2Rhythm が後で自動的に再接続できるように、資格情報をローカルに保存します。</string>
-    <string name="streaming_service_setup_connecting">接続中…</string>
-    <string name="streaming_service_setup_disconnecting">切断中…</string>
-    <string name="streaming_service_setup_action_hint">このサービスに接続するには、必須フィールドに入力します。</string>
+
     <string name="streaming_service_setup_reconnect">再接続</string>
-    <string name="streaming_service_setup_disconnect">切断</string>
-    <string name="streaming_service_setup_connected_as">%1$s として接続されました</string>
+
+
     <string name="streaming_home_selected_service_unavailable">選択したサービスが接続されていません</string>
     <string name="streaming_home_connect_selected_service">%1$s を接続して、ホームと検索をロードします。</string>
-    <string name="streaming_home_widget_new_releases_subtitle">%1$s から最近追加されたアルバム</string>
-    <string name="streaming_home_widget_empty_hint">接続または更新後、しばらく時間がかかる場合があります。</string>
+
+
     <string name="streaming_library_syncing">ストリーミング フィードを読み込み中…</string>
-    <string name="streaming_home_no_content_title">ホームコンテンツはまだありません</string>
+
     <string name="streaming_home_no_content_hint">サービスの同期が完了したら、更新してみてください。</string>
     <string name="streaming_home_guard_break_active">ブレイクアクティブ: 残り %1$s</string>
     <string name="streaming_home_guard_exposure">今日: %1$d / %2$d 分</string>
     <string name="streaming_not_selected">未選択</string>
-    <string name="streaming_service_subsonic">Subsonic</string>
-    <string name="streaming_service_subsonic_desc">Navidrome と互換性のある Subsonic サーバーを接続します</string>
-    <string name="streaming_service_jellyfin">Jellyfin</string>
-    <string name="streaming_service_jellyfin_desc">個人の Jellyfin ライブラリからストリーミングする</string>
+
     <!-- Backup &amp; Restore -->
     <string name="settings_backup_restore">バックアップと復元</string>
     <string name="settings_auto_backup">自動バックアップ</string>
@@ -1640,8 +1592,8 @@
     <string name="settings_broadcast_status_enabled_desc">ブロードキャストの再生状況</string>
     <string name="settings_bluetooth_lyrics_enabled">Bluetooth歌詞モード</string>
     <string name="settings_bluetooth_lyrics_enabled_desc">Bluetooth メタデータ経由で現在の歌詞ラインをブロードキャストする</string>
-    <string name="exp_go_mode">Go Mode</string>
-    <string name="exp_go_mode_desc">T2Rhythm Go streaming mode に切り替えます</string>
+
+
     <!-- Home Screen Search Strings -->
     <string name="settings_home_section_order">セクションの順序</string>
     <string name="settings_home_section_order_desc">ホームセクションを並べ替える</string>
@@ -1868,14 +1820,10 @@
     <string name="musicviewmodel_failed_to_play_next">次の再生に失敗しました: プレーヤーが初期化されていません</string>
     <string name="streaminghomesectionorderbottomsheet_streaming_section_order_and">ストリーミング セクションの順序と表示設定がデフォルトにリセットされる</string>
     <string name="streaminghomesectionorderbottomsheet_streaming_section_order_and_1">ストリーミング セクションの順序と可視性が保存されました</string>
-    <string name="gosettingsscreen_configure_current_provider">現在のプロバイダーの構成</string>
-    <string name="gosettingsscreen_network">ネットワーク</string>
-    <string name="gosettingsscreen_enable_streaming_over_mobile">モバイルデータ経由のストリーミングを有効にする</string>
-    <string name="gosettingsscreen_connection_is_healthy">接続は正常です</string>
-    <string name="streaminghomescreen_leave_go_mode">Leave Go Mode</string>
+
     <string name="streamingsettingsscreen_streaming_restricted">ストリーミング制限あり</string>
-    <string name="streamingmusicviewmodel_failed_to_play_next">次の再生に失敗しました: URL を解決できません</string>
-    <string name="streamingmusicviewmodel_failed_to_add_to">キューに追加できませんでした: URL を解決できません</string>
+
+
     <string name="rhythmmusicwidget_album_art_placeholder">アルバム アート プレースホルダー</string>
     <string name="rhythmwidgetpreview_rhythm_glance_widget_previews">T2Rhythm Glance ウィジェットのプレビュー</string>
     <string name="rhythmwidgetpreview_str_11_compact_widget">1×1コンパクトウィジェット</string>
@@ -2465,7 +2413,7 @@
     <string name="edit_album_title">アルバム編集</string>
     <string name="edit_album_desc">このアルバム内のすべての曲のタグとアートワークを編集します。</string>
     <string name="edit_album_saving">アルバムのメタデータを更新しています…</string>
-    <string name="streaming_service_setup_auto_detect">自動検出</string>
+
     <string name="nearby_server_discovery_title">近くのサーバー</string>
     <string name="nearby_server_discovery_desc">ローカルネットワーク上で検出されたサーバーを選択します</string>
     <string name="nearby_server_discovery_scanning">近くのサーバーをスキャン中…</string>

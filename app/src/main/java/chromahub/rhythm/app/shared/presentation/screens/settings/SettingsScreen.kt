@@ -191,7 +191,7 @@ object SettingsRoutes {
     const val RHYTHM_GUARD = "rhythm_guard_settings"
     @Deprecated("Use RHYTHM_GUARD")
     const val RHYTHM_AURA = RHYTHM_GUARD
-    const val GO_SETTINGS = "go_settings"
+
     const val BATTERY_SAVER = "battery_saver_settings"
     const val REPLAY_GAIN = "replay_gain_settings"
     const val CROSSFADE = "crossfade_settings"
@@ -232,7 +232,7 @@ fun SettingsScreen(
     val hapticFeedback = LocalHapticFeedback.current
     val context = LocalContext.current
     val appSettings = AppSettings.getInstance(context)
-    
+
     // Collect states for toggles
     val updatesEnabled by appSettings.updatesEnabled.collectAsState()
     val hapticFeedbackEnabled by appSettings.hapticFeedbackEnabled.collectAsState()
@@ -243,11 +243,11 @@ fun SettingsScreen(
     val rhythmGuardMode by appSettings.rhythmGuardMode.collectAsState()
     val showSettingsSuggestions by appSettings.showSettingsSuggestions.collectAsState()
     val showKeyboardOnSearchOpen by appSettings.showKeyboardOnSearchOpen.collectAsState()
-    
+
     var showDefaultScreenDialog by remember { mutableStateOf(false) }
     var showLanguageSwitcher by remember { mutableStateOf(false) }
     var showFdroidWarningDialog by remember { mutableStateOf(false) }
-    
+
     // Search state
     var searchQuery by remember { mutableStateOf("") }
     val searchIndex = remember(context) { buildSettingsSearchIndex(context) }
@@ -615,11 +615,11 @@ fun SettingsScreen(
                 }
             } // End of else branch for search
         } // End of Column
-        
+
         // Default screen selection bottom sheet
         if (showDefaultScreenDialog) {
             val sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded))
-            
+
             RhythmAdaptiveModalSheet(
                 adaptiveType = SheetAdaptiveType.AUTO_DIALOG,
                 onDismissRequest = { showDefaultScreenDialog = false },
@@ -683,9 +683,9 @@ fun SettingsScreen(
                                         MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.size(if (defaultScreen == "home") 30.dp else 26.dp)
                                 )
-                                
+
                                 Spacer(modifier = Modifier.width(16.dp))
-                                
+
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
                                         text = context.getString(R.string.common_home),
@@ -705,18 +705,18 @@ fun SettingsScreen(
                                             MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
-                                
+
                                 if (defaultScreen == "home") {
                                     Icon(
                                         imageVector = RhythmIcons.CheckCircle,
-                                        contentDescription = stringResource(R.string.streaming_selected),
+                                        contentDescription = stringResource(R.string.cd_selected),
                                         tint = MaterialTheme.colorScheme.onPrimaryContainer,
                                         modifier = Modifier.size(24.dp)
                                     )
                                 }
                             }
                         }
-                        
+
                         // Library option
                         Card(
                             onClick = {
@@ -748,9 +748,9 @@ fun SettingsScreen(
                                         MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.size(if (defaultScreen == "library") 30.dp else 26.dp)
                                 )
-                                
+
                                 Spacer(modifier = Modifier.width(16.dp))
-                                
+
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
                                         text = context.getString(R.string.common_library),
@@ -770,11 +770,11 @@ fun SettingsScreen(
                                             MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
-                                
+
                                 if (defaultScreen == "library") {
                                     Icon(
                                         imageVector = RhythmIcons.CheckCircle,
-                                        contentDescription = stringResource(R.string.streaming_selected),
+                                        contentDescription = stringResource(R.string.cd_selected),
                                         tint = MaterialTheme.colorScheme.onPrimaryContainer,
                                         modifier = Modifier.size(24.dp)
                                     )
@@ -785,13 +785,13 @@ fun SettingsScreen(
                 }
             }
         }
-        
+
         if (showLanguageSwitcher) {
             LanguageSwitcherBottomSheet(
                 onDismiss = { showLanguageSwitcher = false }
             )
         }
-        
+
         if (showFdroidWarningDialog) {
             FdroidUpdateWarningDialog(
                 onDismiss = { showFdroidWarningDialog = false },
@@ -800,7 +800,7 @@ fun SettingsScreen(
                 }
             )
         }
-        
+
         // App Mode selection dialog
     }
 }
@@ -811,7 +811,7 @@ fun SettingRow(item: SettingItem) {
     val context = LocalContext.current
     val appSettings = AppSettings.getInstance(context)
     val hapticFeedbackEnabled by appSettings.hapticFeedbackEnabled.collectAsState()
-    
+
     // Animation states
     var isPressed by remember { mutableStateOf(false) }
     val scale by animateFloatAsState(
@@ -822,7 +822,7 @@ fun SettingRow(item: SettingItem) {
         ),
         label = "setting_scale"
     )
-    
+
     val iconBackgroundColor by animateColorAsState(
         targetValue = when {
             item.toggleState == true -> MaterialTheme.colorScheme.primaryContainer
@@ -835,7 +835,7 @@ fun SettingRow(item: SettingItem) {
         ),
         label = "icon_bg_color"
     )
-    
+
     val iconTintColor by animateColorAsState(
         targetValue = when {
             item.toggleState == true -> MaterialTheme.colorScheme.onPrimaryContainer
@@ -847,7 +847,7 @@ fun SettingRow(item: SettingItem) {
         ),
         label = "icon_tint_color"
     )
-    
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -878,10 +878,10 @@ fun SettingRow(item: SettingItem) {
                     )
                 }
             }
-            
+
             Spacer(modifier = Modifier.width(16.dp))
         }
-        
+
         Column(
             modifier = Modifier
                 .weight(1f)
@@ -1167,18 +1167,9 @@ fun SettingsScreenWrapper(
                         SettingsRoutes.LABS, SettingsRoutes.EXPERIMENTAL_FEATURES -> LabsSettingsScreen(
                             onBackClick = handleBack,
                             onNavigateTo = onNavigateToSubsetting,
-                            onNavigateToGoSettings = { onNavigateToSubsetting(SettingsRoutes.GO_SETTINGS) }
+
                         )
-                        SettingsRoutes.GO_SETTINGS -> chromahub.rhythm.app.features.streaming.presentation.screens.GoSettingsScreen(
-                            onBackClick = handleBack,
-                            onConfigureCurrentProvider = { serviceId ->
-                                appSettings.setInitialStreamingRoute("streaming_service_setup/$serviceId")
-                                appSettings.setAppMode("STREAMING")
-                                if (!navController.popBackStack()) {
-                                    safeNavigateToMain(navController)
-                                }
-                            }
-                        )
+
                         SettingsRoutes.API_MANAGEMENT -> ApiManagementSettingsScreen(onBackClick = handleBack)
                         SettingsRoutes.CACHE_MANAGEMENT -> CacheManagementSettingsScreen(onBackClick = handleBack)
                         SettingsRoutes.BACKUP_RESTORE -> BackupRestoreSettingsScreen(onBackClick = handleBack)
@@ -1323,18 +1314,9 @@ fun SettingsScreenWrapper(
                 SettingsRoutes.LABS, SettingsRoutes.EXPERIMENTAL_FEATURES -> LabsSettingsScreen(
                     onBackClick = handleBack,
                     onNavigateTo = onNavigateToSubsetting,
-                    onNavigateToGoSettings = { onNavigateToSubsetting(SettingsRoutes.GO_SETTINGS) }
+
                 )
-                SettingsRoutes.GO_SETTINGS -> chromahub.rhythm.app.features.streaming.presentation.screens.GoSettingsScreen(
-                    onBackClick = handleBack,
-                    onConfigureCurrentProvider = { serviceId ->
-                        appSettings.setInitialStreamingRoute("streaming_service_setup/$serviceId")
-                        appSettings.setAppMode("STREAMING")
-                        if (!navController.popBackStack()) {
-                            safeNavigateToMain(navController)
-                        }
-                    }
-                )
+
                 SettingsRoutes.API_MANAGEMENT -> ApiManagementSettingsScreen(onBackClick = handleBack)
                 SettingsRoutes.CACHE_MANAGEMENT -> CacheManagementSettingsScreen(onBackClick = handleBack)
                 SettingsRoutes.BACKUP_RESTORE -> BackupRestoreSettingsScreen(onBackClick = handleBack)
@@ -1427,11 +1409,11 @@ fun SettingsTipsRow(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    
+
     // Playback stats
     var todayExposureMinutes by remember { mutableIntStateOf(0) }
     var currentRiskLevel by remember { mutableStateOf(RhythmGuardRiskLevel.LOW) }
-    
+
     val appSettings = remember { chromahub.rhythm.app.shared.data.model.AppSettings.getInstance(context) }
     val limitMinutes by appSettings.rhythmGuardAlertThresholdMinutes.collectAsState()
     val manualVolumeFloat by appSettings.rhythmGuardManualVolumeThreshold.collectAsState()
@@ -1444,18 +1426,18 @@ fun SettingsTipsRow(
     LaunchedEffect(limitMinutes, manualVolumeFloat) {
         val statsRepo = chromahub.rhythm.app.shared.data.repository.PlaybackStatsRepository.getInstance(context)
         val audioManager = context.getSystemService(android.content.Context.AUDIO_SERVICE) as android.media.AudioManager
-        
+
         while (true) {
             val stats = statsRepo.loadSummary(chromahub.rhythm.app.shared.data.repository.StatsTimeRange.TODAY)
             todayExposureMinutes = (stats.totalDurationMs / 60000).toInt()
-            
+
             val maxVol = audioManager.getStreamMaxVolume(android.media.AudioManager.STREAM_MUSIC)
             val currentVol = audioManager.getStreamVolume(android.media.AudioManager.STREAM_MUSIC)
             val currentVolumePercent = if (maxVol > 0) ((currentVol.toFloat() / maxVol) * 100).toInt() else 0
-            
+
             val safeLimit = if (limitMinutes > 0) limitMinutes else 90
             val safeThreshold = (manualVolumeFloat * 100).toInt().coerceAtLeast(1)
-            
+
             currentRiskLevel = chromahub.rhythm.app.shared.presentation.navigation.rhythmGuardResolveRiskLevel(
                 currentVolumePercent = currentVolumePercent, 
                 safeThresholdPercent = safeThreshold,
@@ -1465,10 +1447,10 @@ fun SettingsTipsRow(
             kotlinx.coroutines.delay(2000)
         }
     }
-    
+
     // Generate a fixed seed when the view enters to keep shuffle stable during recompositions
     val shuffleSeed = rememberSaveable { kotlin.random.Random.nextInt() }
-    
+
     val tips = remember(
         rhythmGuardMode,
         appMode,
@@ -1503,7 +1485,7 @@ fun SettingsTipsRow(
                     "MANUAL" -> "${context.getString(R.string.settings_tip_rhythm_guard_manual)} ${todayExposureMinutes} min played today."
                     else -> "${context.getString(R.string.settings_tip_rhythm_guard_auto)} ${todayExposureMinutes} min tracked ${dayMomentLabel}."
                 }
-                
+
                 val progress = (todayExposureMinutes.toFloat() / 90f).coerceIn(0.05f, 1f)
 
                 add(

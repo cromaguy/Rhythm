@@ -284,7 +284,7 @@ fun FontSourceDialog(
                                 if (isSelected) {
                                     Icon(
                                         imageVector = RhythmIcons.CheckCircle,
-                                        contentDescription = stringResource(R.string.streaming_selected),
+                                        contentDescription = stringResource(R.string.cd_selected),
                                         tint = MaterialTheme.colorScheme.onPrimaryContainer,
                                         modifier = Modifier.size(28.dp)
                                     )

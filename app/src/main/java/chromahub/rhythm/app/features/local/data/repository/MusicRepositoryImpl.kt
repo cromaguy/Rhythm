@@ -4592,19 +4592,7 @@ class MusicRepository(context: Context) {
             val isStreaming = (songId != null && (songId.contains("::") || songId.startsWith("subsonic", ignoreCase = true) || songId.startsWith("jellyfin", ignoreCase = true))) ||
                 (songUri != null && (songUri.scheme.equals("http", ignoreCase = true) || songUri.scheme.equals("https", ignoreCase = true) || songUri.scheme.equals("streaming", ignoreCase = true)))
 
-            if (isStreaming) {
-                try {
-                    val streamingRepo = chromahub.rhythm.app.features.streaming.di.StreamingMusicModule.provideStreamingMusicRepository(context)
-                    val streamingLyrics = streamingRepo.getLyrics(songId.orEmpty(), artist, title)
-                    if (streamingLyrics != null && streamingLyrics.hasLyrics()) {
-                        Log.d(TAG, "Found lyrics from streaming provider for: $artist - $title (source=${streamingLyrics.source})")
-                        return@fetchFromEmbedded streamingLyrics
-                    }
-                } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled
-                } catch (e: Exception) {
-                    Log.w(TAG, "Failed to fetch streaming lyrics for $songId: ${e.message}")
-                }
-            }
+
 
             // Try to get embedded lyrics from the provided songUri first
             var embeddedLyrics = songUri?.let { uri -> getEmbeddedLyrics(uri) }

@@ -946,7 +946,7 @@ fun SingleCardExplorerContent(
             },
             title = {
                 Text(
-                    "Create Playlist from Folder",
+                    context.getString(chromahub.rhythm.app.R.string.ui_create_playlist_from_folder),
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold
                 )

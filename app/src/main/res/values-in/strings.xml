@@ -205,8 +205,8 @@
     <string name="dialog_delete_playlist_message">Apakah Anda yakin ingin menghapus \"%1$s\"? Tindakan ini tidak dapat dibatalkan.</string>
     <string name="dialog_delete">Hapus</string>
     <string name="dialog_cancel">Batal</string>
-    <string name="streaming_settings_switch_provider_confirm_title">Ganti Penyedia Streaming?</string>
-    <string name="streaming_settings_switch_provider_confirm_desc">Penyedia saat ini: %1$s\nBeralih ke: %2$s? Ini akan memutuskan sambungan penyedia yang sedang aktif.</string>
+
+
     <string name="action_switch">Beralih</string>
     <!-- Playlist Detail Screen -->
     <string name="playlist_rename_title">Ganti Nama Daftar Putar</string>
@@ -1411,69 +1411,21 @@
     <string name="settings_interval_once_a_day">Sekali sehari</string>
     <string name="settings_interval_once_a_week">Seminggu sekali</string>
     <!-- Experimental Features -->
-    <string name="streaming_integration_title">T2Rhythm Go</string>
-    <string name="streaming_integration_services">Layanan Integrasi</string>
-    <string name="streaming_integration_services_empty">Belum ada layanan yang terhubung</string>
-    <string name="streaming_settings_title">Pengaturan</string>
-    <string name="streaming_settings_group_services">Layanan</string>
-    <string name="streaming_settings_group_actions">Tindakan</string>
-    <string name="streaming_settings_preferred_service">Layanan Pilihan</string>
-    <string name="streaming_settings_quality">Kualitas Streaming</string>
-    <string name="streaming_settings_service_sheet_desc">Pilih layanan terhubung mana yang harus diprioritaskan oleh T2Rhythm Go secara default.</string>
-    <string name="streaming_settings_quality_sheet_desc">Pilih kualitas audio pilihan Anda untuk pemutaran streaming.</string>
-    <string name="streaming_quality_low">Rendah</string>
-    <string name="streaming_quality_normal">Biasa</string>
-    <string name="streaming_quality_high">Tinggi</string>
-    <string name="streaming_quality_lossless">Tanpa kerugian</string>
-    <string name="streaming_quality_low_desc">Mode penghemat data dengan kualitas lebih rendah (~96 kbps).</string>
-    <string name="streaming_quality_normal_desc">Kualitas dan penggunaan data seimbang (~160 kbps).</string>
-    <string name="streaming_quality_high_desc">Audio berkualitas tinggi (~320 kbps).</string>
-    <string name="streaming_quality_lossless_desc">Kualitas terbaik jika didukung (FLAC/ALAC).</string>
-    <string name="streaming_settings_group_wellbeing">T2Rhythm Wawasan</string>
-    <string name="streaming_open_full_settings">Buka Pengaturan Penuh</string>
-    <string name="streaming_open_full_settings_desc">Buka pengaturan seluruh aplikasi yang dibagikan ke seluruh mode</string>
-    <string name="streaming_switch_to_local_mode">Beralih ke Mode Lokal</string>
-    <string name="streaming_switch_to_local_mode_desc">Kembali ke navigasi musik lokal</string>
-    <string name="streaming_status_title">Status Streaming</string>
-    <string name="streaming_status_selected_service">Terpilih: %1$s</string>
-    <string name="streaming_status_connected">Akun terhubung</string>
-    <string name="streaming_status_not_connected">Otentikasi tertunda</string>
-    <string name="streaming_status_badge_connected">Terhubung</string>
-    <string name="streaming_status_badge_pending">Tertunda</string>
-    <string name="streaming_status_badge_refreshing">Menyegarkan</string>
-    <string name="streaming_status_connect_hint">Kelola layanan yang dipilih di bawah ini untuk menghubungkan akun Anda.</string>
-    <string name="streaming_selected">Dipilih</string>
-    <string name="streaming_connect">Hubungkan</string>
-    <string name="streaming_manage">Kelola</string>
-    <string name="streaming_service_setup_server_url">URL server</string>
-    <string name="streaming_service_setup_server_url_hint">https://server-anda.example.com</string>
-    <string name="streaming_service_setup_server_url_supporting">Wajib bagi penyedia yang membutuhkan alamat server.</string>
-    <string name="streaming_service_setup_username">Nama Pengguna atau Email</string>
-    <string name="streaming_service_setup_username_hint">Masukkan nama pengguna akun Anda</string>
-    <string name="streaming_service_setup_password">Kata sandi</string>
-    <string name="streaming_service_setup_password_hint">Masukkan kata sandi akun Anda</string>
-    <string name="streaming_service_setup_remember_password">Ingat kata sandi pada perangkat ini</string>
-    <string name="streaming_service_setup_remember_password_desc">Simpan kredensial secara lokal sehingga T2Rhythm dapat terhubung kembali secara otomatis nanti.</string>
-    <string name="streaming_service_setup_connecting">Menghubungkan…</string>
-    <string name="streaming_service_setup_disconnecting">Memutuskan sambungan…</string>
-    <string name="streaming_service_setup_action_hint">Isi kolom yang wajib diisi untuk menghubungkan layanan ini.</string>
+
     <string name="streaming_service_setup_reconnect">Hubungkan kembali</string>
-    <string name="streaming_service_setup_disconnect">Putuskan sambungan</string>
-    <string name="streaming_service_setup_connected_as">Terhubung sebagai %1$s</string>
+
+
     <string name="streaming_home_selected_service_unavailable">Layanan yang dipilih tidak terhubung</string>
     <string name="streaming_home_connect_selected_service">Hubungkan %1$s untuk memuat Beranda dan Pencarian.</string>
-    <string name="streaming_home_widget_new_releases_subtitle">Album yang baru ditambahkan dari %1$s</string>
-    <string name="streaming_home_widget_empty_hint">Ini mungkin memakan waktu beberapa saat setelah Anda terhubung atau menyegarkan.</string>
+
+
     <string name="streaming_library_syncing">Memuat umpan streaming Anda…</string>
-    <string name="streaming_home_no_content_title">Belum ada konten rumah</string>
+
     <string name="streaming_home_no_content_hint">Coba segarkan setelah layanan Anda selesai disinkronkan.</string>
     <string name="streaming_home_guard_break_active">Istirahat aktif: %1$s tersisa</string>
     <string name="streaming_home_guard_exposure">Hari ini: %1$d / %2$d mnt</string>
     <string name="streaming_not_selected">Tidak dipilih</string>
-    <string name="streaming_service_subsonic">Subsonic</string>
-    <string name="streaming_service_subsonic_desc">Hubungkan server Navidrome dan server Subsonic yang kompatibel</string>
-    <string name="streaming_service_jellyfin">Jellyfin</string>
-    <string name="streaming_service_jellyfin_desc">Streaming dari perpustakaan Jellyfin pribadi Anda</string>
+
     <!-- Backup &amp; Restore -->
     <string name="settings_backup_restore">Pencadangan &amp; Pemulihan</string>
     <string name="settings_auto_backup">Pencadangan otomatis</string>
@@ -1640,8 +1592,8 @@
     <string name="settings_broadcast_status_enabled_desc">Kirim informasi pemutaran ke Tasker, KWGT, dan aplikasi otomatisasi</string>
     <string name="settings_bluetooth_lyrics_enabled">Lirik Notifikasi</string>
     <string name="settings_bluetooth_lyrics_enabled_desc">Kirim baris lirik tersinkron sebagai metadata trek ke perangkat Bluetooth, perangkat wearable, dan pendengar notifikasi</string>
-    <string name="exp_go_mode">Go Mode</string>
-    <string name="exp_go_mode_desc">Beralih ke T2Rhythm Go streaming mode</string>
+
+
     <!-- Home Screen Search Strings -->
     <string name="settings_home_section_order">Urutan Bagian</string>
     <string name="settings_home_section_order_desc">Susun ulang bagian beranda</string>
@@ -1868,14 +1820,10 @@
     <string name="musicviewmodel_failed_to_play_next">Gagal memutar berikutnya: Pemain tidak diinisialisasi</string>
     <string name="streaminghomesectionorderbottomsheet_streaming_section_order_and">Urutan bagian streaming dan visibilitas diatur ulang ke default</string>
     <string name="streaminghomesectionorderbottomsheet_streaming_section_order_and_1">Urutan bagian streaming dan visibilitas disimpan</string>
-    <string name="gosettingsscreen_configure_current_provider">Konfigurasikan Penyedia Saat Ini</string>
-    <string name="gosettingsscreen_network">Jaringan</string>
-    <string name="gosettingsscreen_enable_streaming_over_mobile">Aktifkan streaming melalui data seluler</string>
-    <string name="gosettingsscreen_connection_is_healthy">Koneksi sehat</string>
-    <string name="streaminghomescreen_leave_go_mode">Leave Go Mode</string>
+
     <string name="streamingsettingsscreen_streaming_restricted">Streaming Dibatasi</string>
-    <string name="streamingmusicviewmodel_failed_to_play_next">Gagal memutar berikutnya: Tidak dapat menyelesaikan URL</string>
-    <string name="streamingmusicviewmodel_failed_to_add_to">Gagal menambahkan ke antrian: Tidak dapat menyelesaikan URL</string>
+
+
     <string name="rhythmmusicwidget_album_art_placeholder">Penampung Seni Album</string>
     <string name="rhythmwidgetpreview_rhythm_glance_widget_previews">Pratinjau Widget T2Rhythm Glance</string>
     <string name="rhythmwidgetpreview_str_11_compact_widget">Widget Ringkas 1×1</string>
@@ -2465,7 +2413,7 @@
     <string name="edit_album_title">Sunting Album</string>
     <string name="edit_album_desc">Edit tag dan karya seni untuk semua lagu di album ini.</string>
     <string name="edit_album_saving">Memperbarui metadata album…</string>
-    <string name="streaming_service_setup_auto_detect">Deteksi otomatis</string>
+
     <string name="nearby_server_discovery_title">Server Terdekat</string>
     <string name="nearby_server_discovery_desc">Pilih server yang ditemukan di jaringan lokal Anda</string>
     <string name="nearby_server_discovery_scanning">Memindai server terdekat…</string>
@@ -2653,8 +2601,8 @@
     <string name="delimiter_custom_hint">Masukkan pemisah (misalnya feat., //, x)</string>
     <string name="delimiter_quick_suggestions">Tambah Cepat</string>
     <string name="settings_expressive_player">Pemutar Expressive</string>
-    <string name="streaming_status_ready_to_connect">Siap untuk terhubung</string>
-    <string name="streaming_service_setup_lan_hairpin_tip">Tip: Jika koneksi ke nama domain gagal pada Wi-Fi lokal tetapi berhasil pada data seluler, router Anda mungkin tidak mendukung NAT loopback (Hairpin NAT). Coba gunakan alamat IP lokal server Anda (misalnya 192.168.x.x) atau konfigurasikan DNS lokal.</string>
+
+
     <string name="settings_tab_liked">Disukai</string>
     <string name="settings_tab_album_artists">Artis Album</string>
     <string name="settings_tap_artwork_lyrics">Ketuk Sampul untuk Lirik</string>
@@ -2681,7 +2629,7 @@
     <string name="explorer_no_storage_desc">Hubungkan perangkat penyimpanan atau periksa izin untuk menjelajahi file musik Anda</string>
     <string name="explorer_empty_folder">Folder kosong</string>
     <string name="explorer_empty_folder_desc">Folder ini tidak berisi file audio</string>
-    <string name="onboardingscreen_rhythm_go">T2Rhythm GO</string>
+
     <string name="onboardingscreen_mode_local_desc">Putar file audio yang tersimpan di perangkat Anda</string>
     <string name="onboardingscreen_mode_streaming_desc">Streaming dari server Jellyfin atau Subsonic</string>
     <string name="onboarding_scanning_for_provider">Memindai %1$s…</string>
@@ -2927,13 +2875,7 @@
     <string name="player_theme_large_desc">Tombol lebih besar untuk meningkatkan aksesibilitas dan area sentuh</string>
     <string name="player_theme_minimal_name">Minimal</string>
     <string name="player_theme_minimal_desc">Desain bersih dan sederhana dengan efek visual minimal</string>
-    <string name="gosettingsscreen_service_format">Layanan: %1$s</string>
-    <string name="gosettingsscreen_account_format">Akun: %1$s</string>
-    <string name="gosettingsscreen_not_connected">Tidak terhubung</string>
-    <string name="gosettingsscreen_server_format">Server: %1$s</string>
-    <string name="gosettingsscreen_not_set">Belum diatur</string>
-    <string name="streamingservicesetup_establishing_connection">Membangun koneksi dengan penyedia…</string>
-    <string name="streaming_placeholder_track_format">Trek %1$d</string>
+
     <string name="notification_streaming_auth_channel_desc">Status autentikasi dan koneksi</string>
     <string name="tile_play_music">Putar Musik</string>
     <string name="tile_playing_format">Sedang diputar: %1$s</string>
@@ -3030,8 +2972,5 @@
     <string name="streaming_downloading">Mengunduh…</string>
     <string name="streaming_remove_download">Hapus Unduhan</string>
     <string name="streaming_downloaded">Diunduh</string>
-    <string name="rhythm_go_offline_toast">T2Rhythm Go sedang offline</string>
-    <string name="rhythm_go_online_toast">T2Rhythm Go kembali online</string>
-    <string name="streaming_downloaded_albums">Album yang Diunduh</string>
-    <string name="streaming_syncing_downloads_subtitle">Tersedia saat sinkronisasi</string>
+
 </resources>

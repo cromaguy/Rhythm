@@ -1133,7 +1133,12 @@ class AppSettings private constructor(context: Context) {
     val showScrollToTop: StateFlow<Boolean> = _showScrollToTop.asStateFlow()
     
     // App Mode Settings (Local vs Streaming)
-    private val _appMode = MutableStateFlow(prefs.getString(KEY_APP_MODE, "LOCAL") ?: "LOCAL")
+    // Go mode was removed. Normalize old installations and imported settings.
+    private val _appMode = MutableStateFlow("LOCAL").also {
+        if (prefs.getString(KEY_APP_MODE, "LOCAL") != "LOCAL") {
+            prefs.edit { putString(KEY_APP_MODE, "LOCAL") }
+        }
+    }
     val appMode: StateFlow<String> = _appMode.asStateFlow()
     
     private val _streamingService = MutableStateFlow(prefs.getString(KEY_STREAMING_SERVICE, "SUBSONIC") ?: "SUBSONIC")
@@ -2924,9 +2929,10 @@ private val _autoCheckForUpdates = MutableStateFlow(prefs.getBoolean(KEY_AUTO_CH
     }
     
     // App Mode setter methods
+    @Suppress("UNUSED_PARAMETER") // Compatibility with older settings importers.
     fun setAppMode(mode: String) {
-        prefs.edit { putString(KEY_APP_MODE, mode) }
-        _appMode.value = mode
+        prefs.edit { putString(KEY_APP_MODE, "LOCAL") }
+        _appMode.value = "LOCAL"
     }
     
     fun setStreamingService(service: String) {

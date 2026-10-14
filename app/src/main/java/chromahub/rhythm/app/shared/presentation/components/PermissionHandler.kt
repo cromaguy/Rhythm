@@ -68,7 +68,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import chromahub.rhythm.app.features.local.presentation.viewmodel.MusicViewModel
 import chromahub.rhythm.app.shared.presentation.viewmodel.AppUpdaterViewModel
 import chromahub.rhythm.app.shared.presentation.viewmodel.rememberAppUpdaterViewModel
-import chromahub.rhythm.app.features.streaming.presentation.viewmodel.StreamingMusicViewModel
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.rememberCoroutineScope
 
@@ -84,7 +83,7 @@ fun PermissionHandler(
     onSetIsInitializingApp: (Boolean) -> Unit, // Callback to update state
     musicViewModel: MusicViewModel = viewModel(),
     updaterViewModel: AppUpdaterViewModel = rememberAppUpdaterViewModel(),
-    streamingViewModel: StreamingMusicViewModel = viewModel(),
+
     showMediaScanLoader: Boolean,
     onShowMediaScanLoaderChange: (Boolean) -> Unit
 ) {
@@ -115,14 +114,14 @@ fun PermissionHandler(
             listOf(Manifest.permission.READ_EXTERNAL_STORAGE)
         }
     }
-    
+
     // Notification permissions for Android 13+
     val notificationPermissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         listOf(Manifest.permission.POST_NOTIFICATIONS)
     } else {
         emptyList()
     }
-    
+
     // Bluetooth permissions based on Android version
     val bluetoothPermissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         // Android 12+ requires BLUETOOTH_CONNECT and BLUETOOTH_SCAN
@@ -137,14 +136,14 @@ fun PermissionHandler(
             Manifest.permission.BLUETOOTH_ADMIN
         )
     }
-    
+
     // Only request essential permissions that are actually needed
     val essentialPermissions = storagePermissions + bluetoothPermissions + notificationPermissions
-    
+
     // Check if onboarding state is valid - if onboarding is marked complete but permissions are not granted,
     // reset the onboarding state to force a fresh start (except in streaming mode where storage permission isn't required)
     LaunchedEffect(Unit) {
-        if (onboardingCompleted && appSettings.appMode.value != "STREAMING") {
+        run {
             val hasStoragePermissions = storagePermissions.all { permission ->
                 ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
             }
@@ -197,14 +196,14 @@ fun PermissionHandler(
         tourWasReset = false // Clear reset flag before completing so the remember lambda sees false
         appSettings.setOnboardingCompleted(true)
         currentOnboardingStep = OnboardingStep.COMPLETE
-        if (!initialMediaScanCompleted && !musicViewModel.isLibraryRefreshing.value && appSettings.appMode.value != "STREAMING") {
+        run {
             onShowMediaScanLoaderChange(true)
             musicViewModel.refreshLibrary(showMediaScanLoader = false)
         }
     }
-    
+
     val permissionsState = rememberMultiplePermissionsState(essentialPermissions)
-    
+
     val lifecycleOwner = LocalLifecycleOwner.current
 
     // Centralized function to evaluate permission status and update onboarding step
@@ -236,7 +235,7 @@ fun PermissionHandler(
             val shouldShowRationaleForAny = deniedStoragePermissions.any { permission ->
                 permissionsState.permissions.find { it.permission == permission }?.status?.shouldShowRationale == true
             }
-            
+
             val allDeniedPermanently = deniedStoragePermissions.isNotEmpty() && deniedStoragePermissions.all { permission ->
                 val permissionState = permissionsState.permissions.find { it.permission == permission }
                 permissionState?.status?.shouldShowRationale == false && permissionRequestLaunched
@@ -345,19 +344,17 @@ fun PermissionHandler(
                 currentStep = currentOnboardingStep,
                 musicViewModel = musicViewModel,
                 updaterViewModel = updaterViewModel,
-                streamingViewModel = streamingViewModel,
+
                 onNextStep = {
                     when (currentOnboardingStep) {
                         OnboardingStep.WELCOME -> currentOnboardingStep = OnboardingStep.APP_MODE_CHOICE
                         OnboardingStep.APP_MODE_CHOICE -> {
-                            currentOnboardingStep = if (appSettings.appMode.value == "STREAMING") {
-                                OnboardingStep.STREAMING_SERVICE_CHOICE
-                            } else {
+                            currentOnboardingStep = run {
                                 OnboardingStep.PERMISSIONS
                             }
                         }
-                        OnboardingStep.STREAMING_SERVICE_CHOICE -> currentOnboardingStep = OnboardingStep.STREAMING_SETUP
-                        OnboardingStep.STREAMING_SETUP -> currentOnboardingStep = OnboardingStep.FULL_TOUR_PROMPT
+
+
                         OnboardingStep.PERMISSIONS -> {
                             // Handle based on current permission state
                             when (permissionScreenState) {
@@ -399,9 +396,7 @@ fun PermissionHandler(
                         OnboardingStep.THEMING -> currentOnboardingStep = OnboardingStep.PLAYER_THEME_CHOICE
                         OnboardingStep.PLAYER_THEME_CHOICE -> currentOnboardingStep = OnboardingStep.GESTURES
                         OnboardingStep.GESTURES -> {
-                            currentOnboardingStep = if (appSettings.appMode.value == "STREAMING") {
-                                OnboardingStep.WIDGETS
-                            } else {
+                            currentOnboardingStep = run {
                                 OnboardingStep.LIBRARY_SETUP
                             }
                         }
@@ -409,9 +404,7 @@ fun PermissionHandler(
                         OnboardingStep.WIDGETS -> currentOnboardingStep = OnboardingStep.INTEGRATIONS
                         OnboardingStep.INTEGRATIONS -> currentOnboardingStep = OnboardingStep.UPDATER
                         OnboardingStep.UPDATER -> {
-                            currentOnboardingStep = if (appSettings.appMode.value == "STREAMING") {
-                                OnboardingStep.RHYTHM_STATS
-                            } else {
+                            currentOnboardingStep = run {
                                 OnboardingStep.BACKUP_RESTORE
                             }
                         }
@@ -428,8 +421,8 @@ fun PermissionHandler(
                     when (currentOnboardingStep) {
                         OnboardingStep.APP_MODE_CHOICE -> currentOnboardingStep = OnboardingStep.WELCOME
                         OnboardingStep.PERMISSIONS -> currentOnboardingStep = OnboardingStep.APP_MODE_CHOICE
-                        OnboardingStep.STREAMING_SERVICE_CHOICE -> currentOnboardingStep = OnboardingStep.APP_MODE_CHOICE
-                        OnboardingStep.STREAMING_SETUP -> currentOnboardingStep = OnboardingStep.STREAMING_SERVICE_CHOICE
+
+
                         OnboardingStep.MEDIA_SCAN -> {
                             currentOnboardingStep = OnboardingStep.PERMISSIONS
                             scope.launch {
@@ -438,9 +431,7 @@ fun PermissionHandler(
                             }
                         }
                         OnboardingStep.FULL_TOUR_PROMPT -> {
-                            currentOnboardingStep = if (appSettings.appMode.value == "STREAMING") {
-                                OnboardingStep.STREAMING_SETUP
-                            } else {
+                            currentOnboardingStep = run {
                                 OnboardingStep.MEDIA_SCAN
                             }
                         }
@@ -451,9 +442,7 @@ fun PermissionHandler(
                         OnboardingStep.GESTURES -> currentOnboardingStep = OnboardingStep.PLAYER_THEME_CHOICE
                         OnboardingStep.LIBRARY_SETUP -> currentOnboardingStep = OnboardingStep.GESTURES
                         OnboardingStep.WIDGETS -> {
-                            currentOnboardingStep = if (appSettings.appMode.value == "STREAMING") {
-                                OnboardingStep.GESTURES
-                            } else {
+                            currentOnboardingStep = run {
                                 OnboardingStep.LIBRARY_SETUP
                             }
                         }
@@ -462,9 +451,7 @@ fun PermissionHandler(
                         OnboardingStep.BACKUP_RESTORE -> currentOnboardingStep = OnboardingStep.UPDATER
                         OnboardingStep.NOTIFICATIONS -> currentOnboardingStep = OnboardingStep.UPDATER
                         OnboardingStep.RHYTHM_STATS -> {
-                            currentOnboardingStep = if (appSettings.appMode.value == "STREAMING") {
-                                OnboardingStep.UPDATER
-                            } else {
+                            currentOnboardingStep = run {
                                 OnboardingStep.BACKUP_RESTORE
                             }
                         }

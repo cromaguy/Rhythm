@@ -77,11 +77,6 @@ import chromahub.rhythm.app.shared.presentation.components.dialogs.CreatePlaylis
 import chromahub.rhythm.app.features.local.presentation.viewmodel.MusicViewModel
 import chromahub.rhythm.app.shared.data.model.findAlbumForSong
 import chromahub.rhythm.app.shared.presentation.components.common.CollapsibleHeaderScreen
-import chromahub.rhythm.app.features.streaming.domain.model.StreamingAlbum
-import chromahub.rhythm.app.features.streaming.domain.model.StreamingArtist
-import chromahub.rhythm.app.features.streaming.domain.model.StreamingPlaylist
-import chromahub.rhythm.app.features.streaming.domain.model.StreamingSong
-import chromahub.rhythm.app.features.streaming.presentation.viewmodel.StreamingMusicViewModel
 import chromahub.rhythm.app.shared.data.model.Album
 import chromahub.rhythm.app.shared.data.model.AppSettings
 import chromahub.rhythm.app.shared.data.model.Artist
@@ -111,15 +106,13 @@ import chromahub.rhythm.app.util.windowScreenHeightDp
 @Composable
 fun UniversalSearchScreen(
     localViewModel: MusicViewModel = viewModel(),
-    streamingViewModel: StreamingMusicViewModel = viewModel(),
+
     onLocalSongClick: (Song) -> Unit = {},
     onLocalAlbumClick: (Album) -> Unit = {},
     onLocalArtistClick: (Artist) -> Unit = {},
     onLocalPlaylistClick: (Playlist) -> Unit = {},
-    onStreamingSongClick: (StreamingSong) -> Unit = {},
-    onStreamingAlbumClick: (StreamingAlbum) -> Unit = {},
-    onStreamingArtistClick: (StreamingArtist) -> Unit = {},
-    onStreamingPlaylistClick: (StreamingPlaylist) -> Unit = {},
+
+
     onBack: () -> Unit = {}
 ) {
     val context = LocalContext.current
@@ -165,9 +158,6 @@ fun UniversalSearchScreen(
     var filterArtists by remember { mutableStateOf(true) }
     var filterPlaylists by remember { mutableStateOf(true) }
 
-    var showSwitchDialog by remember { mutableStateOf(false) }
-    var pendingAction: (() -> Unit)? by remember { mutableStateOf(null) }
-    var targetModeForPendingAction by remember { mutableStateOf("") }
 
     var showAllSongsPage by remember { mutableStateOf(false) }
     var showSongOptionsSheet by remember { mutableStateOf(false) }
@@ -178,7 +168,7 @@ fun UniversalSearchScreen(
     var showSongInfoSheet by remember { mutableStateOf(false) }
     var showSongInfoInEditMode by remember { mutableStateOf(false) }
     var selectedSongForInfo by remember { mutableStateOf<Song?>(null) }
-    var isSongInfoStreaming by remember { mutableStateOf(false) }
+
     var showCreatePlaylistDialog by remember { mutableStateOf(false) }
 
     var pendingMetadataEditCompleteCallback by remember { mutableStateOf<((Boolean) -> Unit)?>(null) }
@@ -214,35 +204,16 @@ fun UniversalSearchScreen(
     val searchHistory by localViewModel.searchHistory.collectAsState()
     val favoriteSongs by localViewModel.favoriteSongs.collectAsState()
 
-    val streamingQuery by streamingViewModel.searchQuery.collectAsState()
-    val streamingResults by streamingViewModel.searchResults.collectAsState()
-    val isStreamingLoading by streamingViewModel.isLoading.collectAsState()
-    val streamingLikedSongs by streamingViewModel.likedSongs.collectAsState()
 
     val isGenreDetectionComplete by localViewModel.isGenreDetectionComplete.collectAsState()
-    val streamingBrowseCategories by streamingViewModel.browseCategories.collectAsState()
 
-    val genres = remember(localSongs, streamingBrowseCategories, streamingResults.songs) {
-        val localGenres = localSongs
-            .flatMap { song -> GenreUtils.splitGenres(song.genre) }
-        val streamingGenres = streamingBrowseCategories.map { it.name } +
-            streamingResults.songs.flatMap { song -> GenreUtils.splitGenres(song.genre) }
-        (localGenres + streamingGenres)
-            .distinctBy { it.lowercase() }
-            .sortedBy { it.lowercase() }
+
+    val genres = remember(localSongs) {
+        localSongs.flatMap { GenreUtils.splitGenres(it.genre) }
+            .distinctBy { it.lowercase() }.sortedBy { it.lowercase() }
     }
-
-    val genreSongCounts = remember(genres, localSongs, streamingResults.songs) {
-        genres.associateWith { genre ->
-            localSongs.count { song -> GenreUtils.matchesGenre(song.genre, genre) } +
-                streamingResults.songs.count { song -> GenreUtils.matchesGenre(song.genre, genre) }
-        }
-    }
-
-    LaunchedEffect(query) {
-        if (query.isNotBlank() && streamingQuery != query) {
-            streamingViewModel.search(query)
-        }
+    val genreSongCounts = remember(genres, localSongs) {
+        genres.associateWith { genre -> localSongs.count { GenreUtils.matchesGenre(it.genre, genre) } }
     }
 
     val matchedLocalSongs = remember(query, localSongs, filterSongs) {
@@ -277,25 +248,10 @@ fun UniversalSearchScreen(
         else localPlaylists.filter { it.name.contains(query, true) }
     }
 
-    val matchedStreamingSongs = if (filterSongs) streamingResults.songs else emptyList()
-    val matchedStreamingAlbums = if (filterAlbums) streamingResults.albums else emptyList()
-    val matchedStreamingArtists = if (filterArtists) streamingResults.artists else emptyList()
-    val matchedStreamingPlaylists = if (filterPlaylists) streamingResults.playlists else emptyList()
 
-    val hasResults = matchedLocalSongs.isNotEmpty() || matchedStreamingSongs.isNotEmpty() ||
-            matchedLocalAlbums.isNotEmpty() || matchedStreamingAlbums.isNotEmpty() ||
-            matchedLocalArtists.isNotEmpty() || matchedStreamingArtists.isNotEmpty() ||
-            matchedLocalPlaylists.isNotEmpty() || matchedStreamingPlaylists.isNotEmpty()
-
-    val handleAction = { itemMode: String, action: () -> Unit ->
-        if (itemMode == appMode) {
-            action()
-        } else {
-            targetModeForPendingAction = itemMode
-            pendingAction = action
-            showSwitchDialog = true
-        }
-    }
+    val hasResults = matchedLocalSongs.isNotEmpty() || matchedLocalAlbums.isNotEmpty() ||
+        matchedLocalArtists.isNotEmpty() || matchedLocalPlaylists.isNotEmpty()
+    val handleAction = { _: String, action: () -> Unit -> action() }
 
     val handleBack = {
         if (showAllSongsPage) {
@@ -310,22 +266,6 @@ fun UniversalSearchScreen(
     }
 
     BackHandler { handleBack() }
-
-    if (showSwitchDialog) {
-        SwitchModeDialog(
-            targetMode = targetModeForPendingAction,
-            onDismissRequest = {
-                showSwitchDialog = false
-                pendingAction = null
-            },
-            onConfirm = {
-                appSettings.setAppMode(targetModeForPendingAction)
-                pendingAction?.invoke()
-                showSwitchDialog = false
-                pendingAction = null
-            }
-        )
-    }
 
     val statusBarsTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     val navigationBarsBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
@@ -643,7 +583,7 @@ fun UniversalSearchScreen(
                     }
                 }
             } else {
-                if (!hasResults && !isStreamingLoading) {
+                if (!hasResults && !false) {
                     LazyColumn(
                         modifier = Modifier
                             .fillMaxSize()
@@ -688,13 +628,7 @@ fun UniversalSearchScreen(
                             ),
                             verticalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
-                            if (isStreamingLoading && !hasResults) {
-                                item(key = "loading_left") {
-                                    Box(modifier = Modifier.fillMaxWidth().padding(vertical = 48.dp), contentAlignment = Alignment.Center) {
-                                        M3CircularLoader(modifier = Modifier.size(48.dp), strokeWidth = 4f)
-                                    }
-                                }
-                            } else {
+                            run {
                                 val allSongs = buildList {
                                     matchedLocalSongs.take(3).forEach { song ->
                                         add(SongSearchItem("LOCAL", song.title, "${song.artist} • ${song.album}", song.artworkUri, song) {
@@ -702,12 +636,7 @@ fun UniversalSearchScreen(
                                             handleAction("LOCAL") { onLocalSongClick(song) }
                                         })
                                     }
-                                    matchedStreamingSongs.take(3).forEach { song ->
-                                        add(SongSearchItem("STREAMING", song.title, "${song.artist} • ${song.album}", song.artworkUri, song) {
-                                            if (query.isNotBlank()) localViewModel.addSearchQuery(query)
-                                            handleAction("STREAMING") { onStreamingSongClick(song) }
-                                        })
-                                    }
+
                                 }
 
                                 if (allSongs.isNotEmpty()) {
@@ -746,7 +675,7 @@ fun UniversalSearchScreen(
                                                 }
                                             }
 
-                                            val totalSongs = matchedLocalSongs.size + matchedStreamingSongs.size
+                                            val totalSongs = matchedLocalSongs.size
                                             if (totalSongs > allSongs.size) {
                                                 Spacer(modifier = Modifier.height(12.dp))
                                                 Card(
@@ -803,21 +732,16 @@ fun UniversalSearchScreen(
                                             handleAction("LOCAL") { onLocalPlaylistClick(playlist) }
                                         })
                                     }
-                                    matchedStreamingPlaylists.take(5).forEach { playlist ->
-                                        add(Triple("STREAMING", playlist.name, "Streaming Playlist") to {
-                                            if (query.isNotBlank()) localViewModel.addSearchQuery(query)
-                                            handleAction("STREAMING") { onStreamingPlaylistClick(playlist) }
-                                        })
-                                    }
+
                                 }
                                 if (allPlaylists.isNotEmpty()) {
                                     item(key = "playlists_group") {
                                         val playlistItems = allPlaylists.map { (info, action) ->
                                             val (mode, title, subtitle) = info
                                             Material3SettingsItem(
-                                                icon = if (mode == "STREAMING") MaterialSymbolIcon("cloud", filled = true) else RhythmIcons.Playlist,
-                                                scope = if (mode == "STREAMING") SettingScope.STREAMING else SettingScope.LOCAL,
-                                                iconBackgroundTint = if (mode == "STREAMING") MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer,
+                                                icon = RhythmIcons.Playlist,
+                                                scope = SettingScope.LOCAL,
+                                                iconBackgroundTint = MaterialTheme.colorScheme.secondaryContainer,
                                                 title = { Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                                                 description = { Text(subtitle) },
                                                 onClick = {
@@ -852,12 +776,7 @@ fun UniversalSearchScreen(
                                         handleAction("LOCAL") { onLocalAlbumClick(album) }
                                     })
                                 }
-                                matchedStreamingAlbums.take(6).forEach { album ->
-                                    add(SearchGridItem("STREAMING", album.title, album.artist, album.artworkUri) {
-                                        if (query.isNotBlank()) localViewModel.addSearchQuery(query)
-                                        handleAction("STREAMING") { onStreamingAlbumClick(album) }
-                                    })
-                                }
+
                             }
                             if (allAlbums.isNotEmpty()) {
                                 item(key = "albums_header") {
@@ -886,12 +805,7 @@ fun UniversalSearchScreen(
                                         handleAction("LOCAL") { onLocalArtistClick(artist) }
                                     })
                                 }
-                                matchedStreamingArtists.take(6).forEach { artist ->
-                                    add(SearchGridItem("STREAMING", artist.name, "Streaming Artist", artist.artworkUri) {
-                                        if (query.isNotBlank()) localViewModel.addSearchQuery(query)
-                                        handleAction("STREAMING") { onStreamingArtistClick(artist) }
-                                    })
-                                }
+
                             }
                             if (allArtists.isNotEmpty()) {
                                 item(key = "artists_header") {
@@ -913,16 +827,7 @@ fun UniversalSearchScreen(
                                 }
                             }
 
-                            if (isStreamingLoading) {
-                                item(key = "streaming_loading_right") {
-                                    Box(modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp).animateItem(), contentAlignment = Alignment.Center) {
-                                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                                            M3CircularLoader(modifier = Modifier.size(20.dp), strokeWidth = 2.5f)
-                                            Text(stringResource(R.string.universalsearchscreen_loading_streaming_results), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                        }
-                                    }
-                                }
-                            }
+
                         }
                     }
                 } else {
@@ -936,13 +841,7 @@ fun UniversalSearchScreen(
                         ),
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        if (isStreamingLoading && !hasResults) {
-                            item(key = "loading") {
-                                Box(modifier = Modifier.fillMaxWidth().padding(vertical = 48.dp).animateItem(), contentAlignment = Alignment.Center) {
-                                    M3CircularLoader(modifier = Modifier.size(48.dp), strokeWidth = 4f)
-                                }
-                            }
-                        } else {
+                        run {
                             val allSongs = buildList {
                                 matchedLocalSongs.take(3).forEach { song ->
                                     add(SongSearchItem("LOCAL", song.title, "${song.artist} • ${song.album}", song.artworkUri, song) {
@@ -950,12 +849,7 @@ fun UniversalSearchScreen(
                                         handleAction("LOCAL") { onLocalSongClick(song) }
                                     })
                                 }
-                                matchedStreamingSongs.take(3).forEach { song ->
-                                    add(SongSearchItem("STREAMING", song.title, "${song.artist} • ${song.album}", song.artworkUri, song) {
-                                        if (query.isNotBlank()) localViewModel.addSearchQuery(query)
-                                        handleAction("STREAMING") { onStreamingSongClick(song) }
-                                    })
-                                }
+
                             }
 
                             if (allSongs.isNotEmpty()) {
@@ -994,7 +888,7 @@ fun UniversalSearchScreen(
                                             }
                                         }
 
-                                        val totalSongs = matchedLocalSongs.size + matchedStreamingSongs.size
+                                        val totalSongs = matchedLocalSongs.size
                                         if (totalSongs > allSongs.size) {
                                             Spacer(modifier = Modifier.height(12.dp))
                                             Card(
@@ -1051,12 +945,7 @@ fun UniversalSearchScreen(
                                         handleAction("LOCAL") { onLocalAlbumClick(album) }
                                     })
                                 }
-                                matchedStreamingAlbums.take(6).forEach { album ->
-                                    add(SearchGridItem("STREAMING", album.title, album.artist, album.artworkUri) {
-                                        if (query.isNotBlank()) localViewModel.addSearchQuery(query)
-                                        handleAction("STREAMING") { onStreamingAlbumClick(album) }
-                                    })
-                                }
+
                             }
                             if (allAlbums.isNotEmpty()) {
                                 item(key = "albums_header") {
@@ -1085,12 +974,7 @@ fun UniversalSearchScreen(
                                         handleAction("LOCAL") { onLocalArtistClick(artist) }
                                     })
                                 }
-                                matchedStreamingArtists.take(6).forEach { artist ->
-                                    add(SearchGridItem("STREAMING", artist.name, "Streaming Artist", artist.artworkUri) {
-                                        if (query.isNotBlank()) localViewModel.addSearchQuery(query)
-                                        handleAction("STREAMING") { onStreamingArtistClick(artist) }
-                                    })
-                                }
+
                             }
                             if (allArtists.isNotEmpty()) {
                                 item(key = "artists_header") {
@@ -1119,21 +1003,16 @@ fun UniversalSearchScreen(
                                         handleAction("LOCAL") { onLocalPlaylistClick(playlist) }
                                     })
                                 }
-                                matchedStreamingPlaylists.take(5).forEach { playlist ->
-                                    add(Triple("STREAMING", playlist.name, "Streaming Playlist") to {
-                                        if (query.isNotBlank()) localViewModel.addSearchQuery(query)
-                                        handleAction("STREAMING") { onStreamingPlaylistClick(playlist) }
-                                    })
-                                }
+
                             }
                             if (allPlaylists.isNotEmpty()) {
                                 item(key = "playlists_group") {
                                     val playlistItems = allPlaylists.map { (info, action) ->
                                         val (mode, title, subtitle) = info
                                         Material3SettingsItem(
-                                            icon = if (mode == "STREAMING") MaterialSymbolIcon("cloud", filled = true) else RhythmIcons.Playlist,
-                                            scope = if (mode == "STREAMING") SettingScope.STREAMING else SettingScope.LOCAL,
-                                            iconBackgroundTint = if (mode == "STREAMING") MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer,
+                                            icon = RhythmIcons.Playlist,
+                                            scope = SettingScope.LOCAL,
+                                            iconBackgroundTint = MaterialTheme.colorScheme.secondaryContainer,
                                             title = { Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                                             description = { Text(subtitle) },
                                             onClick = {
@@ -1148,16 +1027,7 @@ fun UniversalSearchScreen(
                                 }
                             }
 
-                            if (isStreamingLoading) {
-                                item(key = "streaming_loading") {
-                                    Box(modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp).animateItem(), contentAlignment = Alignment.Center) {
-                                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                                            M3CircularLoader(modifier = Modifier.size(20.dp), strokeWidth = 2.5f)
-                                            Text(stringResource(R.string.universalsearchscreen_loading_streaming_results), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                        }
-                                    }
-                                }
-                            }
+
                         }
                     }
                 }
@@ -1436,105 +1306,88 @@ fun UniversalSearchScreen(
         ) {
             UniversalAllSongsPage(
                 localSongs = matchedLocalSongs,
-                streamingSongs = matchedStreamingSongs,
+
                 onBack = { showAllSongsPage = false },
                 onOptionsClick = { songObj ->
                     selectedSongForOptions = songObj
                     showSongOptionsSheet = true
                 },
                 onLocalSongClick = { song -> handleAction("LOCAL") { onLocalSongClick(song) } },
-                onStreamingSongClick = { song -> handleAction("STREAMING") { onStreamingSongClick(song) } },
+
                 haptics = haptics
             )
         }
 
         if (showSongOptionsSheet && selectedSongForOptions != null) {
             val songObj = selectedSongForOptions!!
-            val localSong = songObj as? Song
-            val streamingSong = songObj as? StreamingSong
+            val localSong = songObj as Song
+
             val isLocal = localSong != null
             val targetSong = remember(songObj) {
-                localSong ?: streamingSong!!.toLocalSong()
+                localSong
             }
-            val isFavorite = if (localSong != null) {
+            val isFavorite = run {
                 favoriteSongs.contains(localSong.id)
-            } else {
-                streamingLikedSongs.any { it.id == streamingSong?.id }
             }
 
             SongOverflowBottomSheet(
                 song = targetSong,
                 onDismiss = { showSongOptionsSheet = false },
                 onPlay = {
-                    handleAction(if (isLocal) "LOCAL" else "STREAMING") {
-                        if (localSong != null) {
+                    handleAction("LOCAL") {
+                        run {
                             onLocalSongClick(localSong)
-                        } else if (streamingSong != null) {
-                            onStreamingSongClick(streamingSong)
                         }
                     }
                     showSongOptionsSheet = false
                 },
                 onPlayNext = {
-                    handleAction(if (isLocal) "LOCAL" else "STREAMING") {
-                        if (localSong != null) {
+                    handleAction("LOCAL") {
+                        run {
                             localViewModel.playNext(localSong)
-                        } else if (streamingSong != null) {
-                            streamingViewModel.playNext(streamingSong, localViewModel)
                         }
                     }
                     showSongOptionsSheet = false
                 },
                 onAddToQueue = {
-                    handleAction(if (isLocal) "LOCAL" else "STREAMING") {
-                        if (localSong != null) {
+                    handleAction("LOCAL") {
+                        run {
                             localViewModel.addSongToQueue(localSong)
-                        } else if (streamingSong != null) {
-                            streamingViewModel.addSongToQueue(streamingSong, localViewModel)
                         }
                     }
                     showSongOptionsSheet = false
                 },
                 onAddToPlaylist = {
-                    selectedSongForPlaylist = localSong ?: streamingSong?.toLocalSong()
+                    selectedSongForPlaylist = localSong
                     showAddToPlaylistSheet = true
                     showSongOptionsSheet = false
                 },
                 onToggleFavorite = {
-                    if (localSong != null) {
+                    run {
                         localViewModel.toggleFavorite(localSong)
-                    } else if (streamingSong != null) {
-                        val isCurrentlyLiked = streamingLikedSongs.any { it.id == streamingSong.id }
-                        if (isCurrentlyLiked) {
-                            streamingViewModel.unlikeSong(streamingSong)
-                            Toast.makeText(context, R.string.universalsearchscreen_removed_from_streaming_favorites, Toast.LENGTH_SHORT).show()
-                        } else {
-                            streamingViewModel.likeSong(streamingSong)
-                            Toast.makeText(context, R.string.universalsearchscreen_added_to_streaming_favorites, Toast.LENGTH_SHORT).show()
-                        }
                     }
                     showSongOptionsSheet = false
                 },
                 isFavorite = isFavorite,
                 onShowSongInfo = {
                     selectedSongForInfo = targetSong
-                    isSongInfoStreaming = !isLocal
+
                     showSongInfoInEditMode = false
                     showSongInfoSheet = true
                     showSongOptionsSheet = false
                 },
-                onEditSong = if (localSong != null) {
+                onEditSong = run {
                     {
                         selectedSongForInfo = targetSong
-                        isSongInfoStreaming = false
+
                         showSongInfoInEditMode = true
                         showSongInfoSheet = true
                         showSongOptionsSheet = false
                     }
-                } else null,
+                },
                 onGoToAlbum = {
                     showSongOptionsSheet = false
-                    if (localSong != null) {
+                    run {
                         val allLocalAlbums = localViewModel.albums.value.ifEmpty { localViewModel.filteredAlbums.value }
                         val album = allLocalAlbums.findAlbumForSong(localSong)
                             ?: localSong.album.trim().takeIf { it.isNotBlank() }?.let { albumTitle ->
@@ -1548,26 +1401,11 @@ fun UniversalSearchScreen(
                         if (album != null) {
                             handleAction("LOCAL") { onLocalAlbumClick(album) }
                         } else Toast.makeText(context, R.string.universalsearchscreen_album_not_found, Toast.LENGTH_SHORT).show()
-                    } else if (streamingSong != null) {
-                        if (streamingSong.albumId != null) {
-                            val streamingAlbum = StreamingAlbum(
-                                id = streamingSong.albumId,
-                                title = streamingSong.album,
-                                artist = streamingSong.artist,
-                                artworkUri = streamingSong.artworkUri,
-                                songCount = 0,
-                                year = null,
-                                sourceType = streamingSong.sourceType
-                            )
-                            handleAction("STREAMING") { onStreamingAlbumClick(streamingAlbum) }
-                        } else {
-                            Toast.makeText(context, R.string.universalsearchscreen_album_not_found, Toast.LENGTH_SHORT).show()
-                        }
                     }
                 },
                 onGoToArtist = {
                     showSongOptionsSheet = false
-                    if (localSong != null) {
+                    run {
                         val separatorEnabled = appSettings.artistSeparatorEnabled.value
                         val delimiters = appSettings.artistSeparatorDelimiters.value.ifBlank { AppSettings.DEFAULT_ARTIST_SEPARATOR_DELIMITERS }
                         val songArtistNames = chromahub.rhythm.app.util.ArtistSeparator.splitArtistNames(
@@ -1585,19 +1423,9 @@ fun UniversalSearchScreen(
                         if (artist != null) {
                             handleAction("LOCAL") { onLocalArtistClick(artist) }
                         } else Toast.makeText(context, R.string.universalsearchscreen_artist_not_found, Toast.LENGTH_SHORT).show()
-                    } else if (streamingSong != null) {
-                        val streamingArtist = StreamingArtist(
-                            id = streamingSong.albumArtist ?: streamingSong.artist,
-                            name = streamingSong.artist,
-                            artworkUri = streamingSong.artworkUri,
-                            songCount = 0,
-                            albumCount = 0,
-                            sourceType = streamingSong.sourceType
-                        )
-                        handleAction("STREAMING") { onStreamingArtistClick(streamingArtist) }
                     }
                 },
-                onAddToBlacklist = if (localSong != null) {
+                onAddToBlacklist = run {
                     {
                         handleAction("LOCAL") {
                             appSettings.addToBlacklist(localSong.id)
@@ -1605,16 +1433,16 @@ fun UniversalSearchScreen(
                         }
                         showSongOptionsSheet = false
                     }
-                } else null,
-                onDeleteSong = if (localSong != null) {
+                },
+                onDeleteSong = run {
                     {
                         handleAction("LOCAL") {
                             localViewModel.deleteSong(localSong)
                         }
                         showSongOptionsSheet = false
                     }
-                } else null,
-                isStreaming = !isLocal
+                },
+
             )
         }
 
@@ -1645,7 +1473,7 @@ fun UniversalSearchScreen(
                 },
                 startInEditMode = showSongInfoInEditMode,
                 appSettings = appSettings,
-                isStreamingMode = isSongInfoStreaming,
+
                 onEditSong = { title, artist, album, genre, year, trackNumber, artworkUri, removeArtwork, albumArtist, composer, discNumber, onComplete ->
                     pendingMetadataEditCompleteCallback = onComplete
                     try {
@@ -1722,22 +1550,6 @@ fun UniversalSearchScreen(
     }
 }
 
-private fun StreamingSong.toLocalSong(): Song {
-    return Song(
-        id = this.id,
-        title = this.title,
-        artist = this.artist,
-        album = this.album,
-        albumId = this.albumId ?: "",
-        duration = this.duration,
-        uri = (this.streamingUrl ?: this.previewUrl ?: "").toUri(),
-        artworkUri = this.artworkUri?.let { (it).toUri() },
-        trackNumber = 0,
-        year = 0,
-        genre = null,
-        albumArtist = this.albumArtist
-    )
-}
 
 data class SearchGridItem(
     val mode: String,
@@ -1840,10 +1652,7 @@ fun UniversalSearchSongItem(
                 Spacer(modifier = Modifier.height(4.dp))
 
                 Surface(
-                    color = if (mode == "STREAMING")
-                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.16f)
-                    else
-                        MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.16f),
+                    color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.16f),
                     shape = RoundedCornerShape(999.dp)
                 ) {
                     Row(
@@ -1852,21 +1661,15 @@ fun UniversalSearchSongItem(
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         Icon(
-                            imageVector = if (mode == "STREAMING") MaterialSymbolIcon("cloud", filled = true) else RhythmIcons.Folder,
+                            imageVector = RhythmIcons.Folder,
                             contentDescription = null,
                             modifier = Modifier.size(12.dp),
-                            tint = if (mode == "STREAMING")
-                                MaterialTheme.colorScheme.primary
-                            else
-                                MaterialTheme.colorScheme.secondary
+                            tint = MaterialTheme.colorScheme.secondary
                         )
                         Text(
-                            text = if (mode == "STREAMING") "Streaming" else "Local",
+                            text = context.getString(chromahub.rhythm.app.R.string.rhythmnavigation_local),
                             style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold),
-                            color = if (mode == "STREAMING")
-                                MaterialTheme.colorScheme.primary
-                            else
-                                MaterialTheme.colorScheme.secondary
+                            color = MaterialTheme.colorScheme.secondary
                         )
                     }
                 }
@@ -1991,10 +1794,7 @@ private fun SearchGridCard(
             Spacer(modifier = Modifier.height(6.dp))
 
             Surface(
-                color = if (item.mode == "STREAMING")
-                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.16f)
-                else
-                    MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.16f),
+                color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.16f),
                 shape = RoundedCornerShape(999.dp),
                 modifier = Modifier.align(Alignment.Start)
             ) {
@@ -2004,21 +1804,15 @@ private fun SearchGridCard(
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Icon(
-                        imageVector = if (item.mode == "STREAMING") MaterialSymbolIcon("cloud", filled = true) else RhythmIcons.Folder,
+                        imageVector = RhythmIcons.Folder,
                         contentDescription = null,
                         modifier = Modifier.size(12.dp),
-                        tint = if (item.mode == "STREAMING")
-                            MaterialTheme.colorScheme.primary
-                        else
-                            MaterialTheme.colorScheme.secondary
+                        tint = MaterialTheme.colorScheme.secondary
                     )
                     Text(
-                        text = if (item.mode == "STREAMING") "Streaming" else "Local",
+                        text = context.getString(chromahub.rhythm.app.R.string.rhythmnavigation_local),
                         style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold),
-                        color = if (item.mode == "STREAMING")
-                            MaterialTheme.colorScheme.primary
-                        else
-                            MaterialTheme.colorScheme.secondary
+                        color = MaterialTheme.colorScheme.secondary
                     )
                 }
             }
@@ -2031,17 +1825,17 @@ private fun SearchGridCard(
 @Composable
 fun UniversalAllSongsPage(
     localSongs: List<Song>,
-    streamingSongs: List<StreamingSong>,
+
     onBack: () -> Unit,
     onOptionsClick: (Any) -> Unit,
     onLocalSongClick: (Song) -> Unit,
-    onStreamingSongClick: (StreamingSong) -> Unit,
+
     haptics: androidx.compose.ui.hapticfeedback.HapticFeedback
 ) {
     val context = LocalContext.current
     val allSongs = buildList {
         localSongs.forEach { add(it to "LOCAL") }
-        streamingSongs.forEach { add(it to "STREAMING") }
+
     }
 
     val miniPlayerBottomPadding = LocalMiniPlayerPadding.current.calculateBottomPadding()
@@ -2073,10 +1867,10 @@ fun UniversalAllSongsPage(
                 key = { index, _ -> "song_$index" }
             ) { index, item ->
                 val isLocal = item.second == "LOCAL"
-                val title = if (isLocal) (item.first as Song).title else (item.first as StreamingSong).title
-                val artist = if (isLocal) (item.first as Song).artist else (item.first as StreamingSong).artist
-                val album = if (isLocal) (item.first as Song).album else (item.first as StreamingSong).album
-                val artworkUri = if (isLocal) (item.first as Song).artworkUri else (item.first as StreamingSong).artworkUri
+                val title = (item.first as Song).title
+                val artist = (item.first as Song).artist
+                val album = (item.first as Song).album
+                val artworkUri = (item.first as Song).artworkUri
 
                 UniversalSearchSongItem(
                     title = title,
@@ -2084,8 +1878,7 @@ fun UniversalAllSongsPage(
                     artworkUri = artworkUri,
                     mode = item.second,
                     onClick = {
-                        if (isLocal) onLocalSongClick(item.first as Song)
-                        else onStreamingSongClick(item.first as StreamingSong)
+                        onLocalSongClick(item.first as Song)
                     },
                     onMoreClick = {
                         onOptionsClick(item.first)

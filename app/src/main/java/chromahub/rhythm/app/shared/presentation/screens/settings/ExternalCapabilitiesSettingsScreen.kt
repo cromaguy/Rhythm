@@ -373,13 +373,13 @@ fun ExternalCapabilitiesSettingsScreen(
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Text(
-                            text = "Software Engine Bypassed",
+                            text = context.getString(chromahub.rhythm.app.R.string.ui_software_engine_bypassed),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
-                            text = "External software decoding overrides and float PCM pipeline are currently disabled. Rhythm is operating directly using standard platform media codecs.",
+                            text = context.getString(chromahub.rhythm.app.R.string.ui_external_software_decoding_overrides_and_float_pcm_pipeline_are_),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

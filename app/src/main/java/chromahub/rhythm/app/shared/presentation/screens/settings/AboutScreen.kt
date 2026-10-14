@@ -258,6 +258,12 @@ fun AboutScreen(
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = TextAlign.Center
                         )
+                        Text(
+                            text = stringResource(R.string.about_t2rhythm_summary),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center
+                        )
                     }
                 }
             }
@@ -511,8 +517,8 @@ fun AboutScreen(
                         item = SettingItem(
                             icon = RhythmIcons.BugReport,
                             title = context.getString(R.string.settings_about_report_bug),
-                            description = "github.com/cromaguy/Rhythm/issues",
-                            onClick = { openUrl("https://github.com/cromaguy/Rhythm/issues") }
+                            description = "github.com/tak2-08/T2Rhythm/issues",
+                            onClick = { openUrl("https://github.com/tak2-08/T2Rhythm/issues") }
                         )
                     ),
                     toMaterial3SettingsItem(
@@ -640,7 +646,7 @@ fun DeveloperCard(
                     ExpressiveGroupButton(
                         onClick = {
                             HapticUtils.performHapticFeedback(context, haptics, HapticType.LIGHT)
-                            openUrl("https://rhythmweb.vercel.app/")
+                            openUrl("https://github.com/tak2-08/T2Rhythm")
                         },
                         isStart = true,
                         modifier = Modifier.weight(1f)

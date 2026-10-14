@@ -2923,7 +2923,7 @@ fun MaterialPlayerScreen(
                                             onLongClick = onChipLongClick,
                                             label = {
                                                 Text(
-                                                    "Add to",
+                                                    context.getString(chromahub.rhythm.app.R.string.ui_add_to),
                                                     style = MaterialTheme.typography.labelLarge.copy(
                                                         fontSize = chipFontSize
                                                     )
@@ -2987,7 +2987,7 @@ fun MaterialPlayerScreen(
                                                     onLongClick = onChipLongClick,
                                                     label = {
                                                         Text(
-                                                            "Like",
+                                                            context.getString(chromahub.rhythm.app.R.string.action_like),
                                                             style = MaterialTheme.typography.labelLarge.copy(
                                                                 fontSize = chipFontSize
                                                             )
@@ -3282,7 +3282,7 @@ fun MaterialPlayerScreen(
                                                     onLongClick = onChipLongClick,
                                                     label = {
                                                         Text(
-                                                            "Album",
+                                                            context.getString(chromahub.rhythm.app.R.string.metadata_album),
                                                             style = MaterialTheme.typography.labelLarge.copy(
                                                                 fontSize = chipFontSize
                                                             )
@@ -3316,7 +3316,7 @@ fun MaterialPlayerScreen(
                                                     onLongClick = onChipLongClick,
                                                     label = {
                                                         Text(
-                                                            "Artist",
+                                                            context.getString(chromahub.rhythm.app.R.string.player_chip_artist),
                                                             style = MaterialTheme.typography.labelLarge.copy(
                                                                 fontSize = chipFontSize
                                                             )
@@ -3348,7 +3348,7 @@ fun MaterialPlayerScreen(
                                                     onLongClick = onChipLongClick,
                                                     label = {
                                                         Text(
-                                                            "Share",
+                                                            context.getString(chromahub.rhythm.app.R.string.action_share),
                                                             style = MaterialTheme.typography.labelLarge.copy(
                                                                 fontSize = chipFontSize
                                                             )
@@ -3384,7 +3384,7 @@ fun MaterialPlayerScreen(
                                             onLongClick = onChipLongClick,
                                             label = {
                                                 Text(
-                                                    "Edit",
+                                                    context.getString(chromahub.rhythm.app.R.string.bottomsheet_timer_edit),
                                                     style = MaterialTheme.typography.labelLarge.copy(
                                                         fontSize = chipFontSize
                                                     )

@@ -205,8 +205,8 @@
     <string name="dialog_delete_playlist_message">คุณแน่ใจหรือไม่ว่าต้องการลบ \"%1$s\"? การดำเนินการนี้ไม่สามารถยกเลิกได้</string>
     <string name="dialog_delete">ลบ</string>
     <string name="dialog_cancel">ยกเลิก</string>
-    <string name="streaming_settings_switch_provider_confirm_title">เปลี่ยนผู้ให้บริการสตรีมมิ่ง?</string>
-    <string name="streaming_settings_switch_provider_confirm_desc">ผู้ให้บริการปัจจุบัน: %1$s\nสลับไปที่: %2$s? การดำเนินการนี้จะยกเลิกการเชื่อมต่อผู้ให้บริการที่ใช้งานอยู่ในปัจจุบัน</string>
+
+
     <string name="action_switch">สวิตช์</string>
     <!-- Playlist Detail Screen -->
     <string name="playlist_rename_title">เปลี่ยนชื่อเพลย์ลิสต์</string>
@@ -1411,69 +1411,21 @@
     <string name="settings_interval_once_a_day">วันละครั้ง</string>
     <string name="settings_interval_once_a_week">สัปดาห์ละครั้ง</string>
     <!-- Experimental Features -->
-    <string name="streaming_integration_title">T2Rhythm Go</string>
-    <string name="streaming_integration_services">บริการบูรณาการ</string>
-    <string name="streaming_integration_services_empty">ยังไม่มีการเชื่อมต่อบริการ</string>
-    <string name="streaming_settings_title">การตั้งค่า</string>
-    <string name="streaming_settings_group_services">บริการ</string>
-    <string name="streaming_settings_group_actions">การกระทำ</string>
-    <string name="streaming_settings_preferred_service">บริการที่ต้องการ</string>
-    <string name="streaming_settings_quality">คุณภาพการสตรีม</string>
-    <string name="streaming_settings_service_sheet_desc">เลือกบริการที่เชื่อมต่อ T2Rhythm Go ที่ควรจัดลำดับความสำคัญตามค่าเริ่มต้น</string>
-    <string name="streaming_settings_quality_sheet_desc">เลือกคุณภาพเสียงที่คุณต้องการสำหรับการเล่นแบบสตรีมมิ่ง</string>
-    <string name="streaming_quality_low">ต่ำ</string>
-    <string name="streaming_quality_normal">ปกติ</string>
-    <string name="streaming_quality_high">สูง</string>
-    <string name="streaming_quality_lossless">ไร้การสูญเสีย</string>
-    <string name="streaming_quality_low_desc">โหมดประหยัดข้อมูลที่มีคุณภาพลดลง (~96 kbps)</string>
-    <string name="streaming_quality_normal_desc">คุณภาพและการใช้ข้อมูลที่สมดุล (~ 160 kbps)</string>
-    <string name="streaming_quality_high_desc">เสียงคุณภาพสูง (~320 kbps)</string>
-    <string name="streaming_quality_lossless_desc">คุณภาพดีที่สุดที่รองรับ (FLAC/ALAC)</string>
-    <string name="streaming_settings_group_wellbeing">T2Rhythm ข้อมูลเชิงลึก</string>
-    <string name="streaming_open_full_settings">เปิดการตั้งค่าแบบเต็ม</string>
-    <string name="streaming_open_full_settings_desc">เปิดการตั้งค่าทั่วทั้งแอปที่แชร์ระหว่างโหมดต่างๆ</string>
-    <string name="streaming_switch_to_local_mode">สลับไปที่โหมดท้องถิ่น</string>
-    <string name="streaming_switch_to_local_mode_desc">กลับสู่การนำทางเพลงท้องถิ่น</string>
-    <string name="streaming_status_title">สถานะการสตรีม</string>
-    <string name="streaming_status_selected_service">เลือกแล้ว: %1$s</string>
-    <string name="streaming_status_connected">เชื่อมต่อบัญชีแล้ว</string>
-    <string name="streaming_status_not_connected">การรับรองความถูกต้องที่รอดำเนินการ</string>
-    <string name="streaming_status_badge_connected">เชื่อมต่อแล้ว</string>
-    <string name="streaming_status_badge_pending">รอดำเนินการ</string>
-    <string name="streaming_status_badge_refreshing">สดชื่น</string>
-    <string name="streaming_status_connect_hint">จัดการบริการที่เลือกด้านล่างเพื่อเชื่อมต่อบัญชีของคุณ</string>
-    <string name="streaming_selected">เลือกแล้ว</string>
-    <string name="streaming_connect">เชื่อมต่อ</string>
-    <string name="streaming_manage">จัดการ</string>
-    <string name="streaming_service_setup_server_url">URL เซิร์ฟเวอร์</string>
-    <string name="streaming_service_setup_server_url_hint">https://your-server.example.com</string>
-    <string name="streaming_service_setup_server_url_supporting">จำเป็นสำหรับผู้ให้บริการที่ต้องการที่อยู่เซิร์ฟเวอร์</string>
-    <string name="streaming_service_setup_username">ชื่อผู้ใช้หรืออีเมล</string>
-    <string name="streaming_service_setup_username_hint">ป้อนชื่อผู้ใช้บัญชีของคุณ</string>
-    <string name="streaming_service_setup_password">รหัสผ่าน</string>
-    <string name="streaming_service_setup_password_hint">ป้อนรหัสผ่านบัญชีของคุณ</string>
-    <string name="streaming_service_setup_remember_password">จำรหัสผ่านบนอุปกรณ์นี้</string>
-    <string name="streaming_service_setup_remember_password_desc">จัดเก็บข้อมูลรับรองไว้ในเครื่องเพื่อให้ T2Rhythm สามารถเชื่อมต่อใหม่ได้โดยอัตโนมัติในภายหลัง</string>
-    <string name="streaming_service_setup_connecting">กำลังเชื่อมต่อ…</string>
-    <string name="streaming_service_setup_disconnecting">กำลังตัดการเชื่อมต่อ…</string>
-    <string name="streaming_service_setup_action_hint">กรอกข้อมูลในช่องที่ต้องกรอกเพื่อเชื่อมต่อบริการนี้</string>
+
     <string name="streaming_service_setup_reconnect">เชื่อมต่อใหม่</string>
-    <string name="streaming_service_setup_disconnect">ตัดการเชื่อมต่อ</string>
-    <string name="streaming_service_setup_connected_as">เชื่อมต่อเป็น %1$s</string>
+
+
     <string name="streaming_home_selected_service_unavailable">ไม่ได้เชื่อมต่อบริการที่เลือก</string>
     <string name="streaming_home_connect_selected_service">เชื่อมต่อ %1$s เพื่อโหลดหน้าแรกและการค้นหา</string>
-    <string name="streaming_home_widget_new_releases_subtitle">อัลบั้มที่เพิ่มล่าสุดจาก %1$s</string>
-    <string name="streaming_home_widget_empty_hint">การดำเนินการนี้อาจใช้เวลาสักครู่หลังจากที่คุณเชื่อมต่อหรือรีเฟรช</string>
+
+
     <string name="streaming_library_syncing">กำลังโหลดฟีดสตรีมมิ่งของคุณ…</string>
-    <string name="streaming_home_no_content_title">ยังไม่มีเนื้อหาเกี่ยวกับบ้าน</string>
+
     <string name="streaming_home_no_content_hint">ลองรีเฟรชหลังจากที่บริการของคุณซิงค์เสร็จแล้ว</string>
     <string name="streaming_home_guard_break_active">ใช้งานเบรก: เหลือ %1$s</string>
     <string name="streaming_home_guard_exposure">วันนี้: %1$d / %2$d นาที</string>
     <string name="streaming_not_selected">ไม่ได้เลือก</string>
-    <string name="streaming_service_subsonic">Subsonic</string>
-    <string name="streaming_service_subsonic_desc">เชื่อมต่อ Navidrome และเซิร์ฟเวอร์ Subsonic ที่เข้ากันได้</string>
-    <string name="streaming_service_jellyfin">Jellyfin</string>
-    <string name="streaming_service_jellyfin_desc">สตรีมจากไลบรารี Jellyfin ส่วนตัวของคุณ</string>
+
     <!-- Backup &amp; Restore -->
     <string name="settings_backup_restore">สำรองและกู้คืน</string>
     <string name="settings_auto_backup">สำรองข้อมูลอัตโนมัติ</string>
@@ -1640,8 +1592,8 @@
     <string name="settings_broadcast_status_enabled_desc">สถานะการเล่นแบบออกอากาศ</string>
     <string name="settings_bluetooth_lyrics_enabled">โหมดเนื้อเพลงบลูทูธ</string>
     <string name="settings_bluetooth_lyrics_enabled_desc">ออกอากาศเนื้อเพลงปัจจุบันผ่านข้อมูลเมตาของ Bluetooth</string>
-    <string name="exp_go_mode">Go Mode</string>
-    <string name="exp_go_mode_desc">สลับไปที่ T2Rhythm Go streaming mode</string>
+
+
     <!-- Home Screen Search Strings -->
     <string name="settings_home_section_order">ลำดับมาตรา</string>
     <string name="settings_home_section_order_desc">จัดลำดับส่วนบ้านใหม่</string>
@@ -1868,14 +1820,10 @@
     <string name="musicviewmodel_failed_to_play_next">ไม่สามารถเล่นถัดไป: ผู้เล่นไม่ได้เตรียมใช้งาน</string>
     <string name="streaminghomesectionorderbottomsheet_streaming_section_order_and">ลำดับส่วนการสตรีมและการมองเห็นจะรีเซ็ตเป็นค่าเริ่มต้น</string>
     <string name="streaminghomesectionorderbottomsheet_streaming_section_order_and_1">บันทึกลำดับส่วนการสตรีมและการมองเห็นแล้ว</string>
-    <string name="gosettingsscreen_configure_current_provider">กำหนดค่าผู้ให้บริการปัจจุบัน</string>
-    <string name="gosettingsscreen_network">เครือข่าย</string>
-    <string name="gosettingsscreen_enable_streaming_over_mobile">เปิดใช้งานการสตรีมผ่านข้อมูลมือถือ</string>
-    <string name="gosettingsscreen_connection_is_healthy">การเชื่อมต่อมีประสิทธิภาพดี</string>
-    <string name="streaminghomescreen_leave_go_mode">Leave Go Mode</string>
+
     <string name="streamingsettingsscreen_streaming_restricted">จำกัดการสตรีม</string>
-    <string name="streamingmusicviewmodel_failed_to_play_next">ไม่สามารถเล่นถัดไป: ไม่สามารถแก้ไข URL</string>
-    <string name="streamingmusicviewmodel_failed_to_add_to">ไม่สามารถเพิ่มลงในคิว: ไม่สามารถแก้ไข URL ได้</string>
+
+
     <string name="rhythmmusicwidget_album_art_placeholder">ตัวยึดตำแหน่งปกอัลบั้ม</string>
     <string name="rhythmwidgetpreview_rhythm_glance_widget_previews">T2Rhythm Glance ตัวอย่างวิดเจ็ต</string>
     <string name="rhythmwidgetpreview_str_11_compact_widget">วิดเจ็ตขนาดกะทัดรัด 1×1</string>
@@ -2465,7 +2413,7 @@
     <string name="edit_album_title">แก้ไขอัลบั้ม</string>
     <string name="edit_album_desc">แก้ไขแท็กและอาร์ตเวิร์คสำหรับเพลงทั้งหมดในอัลบั้มนี้</string>
     <string name="edit_album_saving">กำลังอัปเดตข้อมูลเมตาของอัลบั้ม…</string>
-    <string name="streaming_service_setup_auto_detect">ตรวจจับอัตโนมัติ</string>
+
     <string name="nearby_server_discovery_title">เซิร์ฟเวอร์ใกล้เคียง</string>
     <string name="nearby_server_discovery_desc">เลือกเซิร์ฟเวอร์ที่ค้นพบบนเครือข่ายท้องถิ่นของคุณ</string>
     <string name="nearby_server_discovery_scanning">กำลังสแกนหาเซิร์ฟเวอร์ใกล้เคียง…</string>

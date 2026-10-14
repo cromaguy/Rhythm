@@ -323,7 +323,7 @@ class RhythmLyricsWidget : GlanceAppWidget() {
                                 )
                             } else {
                                 Text(
-                                    text = "♪ Instrumental",
+                                    text = androidx.glance.LocalContext.current.getString(chromahub.rhythm.app.R.string.ui_instrumental),
                                     style = TextStyle(
                                         fontSize = 13.sp,
                                         fontWeight = FontWeight.Bold,

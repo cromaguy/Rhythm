@@ -447,7 +447,7 @@ private fun MultiSelectionHeader(
                     Spacer(modifier = Modifier.height(4.dp))
                     
                     Text(
-                        text = stringResource(R.string.streaming_selected),
+                        text = stringResource(R.string.cd_selected),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,

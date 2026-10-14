@@ -229,8 +229,8 @@
     <string name="dialog_delete_playlist_message">Ви впевнені, що хочете видалити \"%1$s\"? Цю дію не можна скасувати.</string>
     <string name="dialog_delete">Видалити</string>
     <string name="dialog_cancel">Скасувати</string>
-    <string name="streaming_settings_switch_provider_confirm_title">Змінити постачальника потокового передавання?</string>
-    <string name="streaming_settings_switch_provider_confirm_desc">Поточний постачальник: %1$s\nПерейти на: %2$s? Це призведе до відключення поточного активного постачальника.</string>
+
+
     <string name="action_switch">Перемикач</string>
     <!-- Playlist Detail Screen -->
     <string name="playlist_rename_title">Перейменувати список відтворення</string>
@@ -1456,69 +1456,21 @@
     <string name="settings_interval_once_a_day">Раз на день</string>
     <string name="settings_interval_once_a_week">Раз на тиждень</string>
     <!-- Experimental Features -->
-    <string name="streaming_integration_title">T2Rhythm Go</string>
-    <string name="streaming_integration_services">Служби інтеграції</string>
-    <string name="streaming_integration_services_empty">Ще немає підключених служб</string>
-    <string name="streaming_settings_title">Налаштування</string>
-    <string name="streaming_settings_group_services">Послуги</string>
-    <string name="streaming_settings_group_actions">Дії</string>
-    <string name="streaming_settings_preferred_service">Бажана послуга</string>
-    <string name="streaming_settings_quality">Якість потокового передавання</string>
-    <string name="streaming_settings_service_sheet_desc">Виберіть, яка підключена служба T2Rhythm Go повинна мати пріоритет за замовчуванням.</string>
-    <string name="streaming_settings_quality_sheet_desc">Виберіть бажану якість звуку для потокового відтворення.</string>
-    <string name="streaming_quality_low">Низький</string>
-    <string name="streaming_quality_normal">Нормальний</string>
-    <string name="streaming_quality_high">Високий</string>
-    <string name="streaming_quality_lossless">Без втрат</string>
-    <string name="streaming_quality_low_desc">Режим заощадження даних зі зниженою якістю (~96 Кбіт/с).</string>
-    <string name="streaming_quality_normal_desc">Збалансована якість і використання даних (~160 Кбіт/с).</string>
-    <string name="streaming_quality_high_desc">Аудіо високої якості (~320 кбіт/с).</string>
-    <string name="streaming_quality_lossless_desc">Найкраща якість, якщо підтримується (FLAC/ALAC).</string>
-    <string name="streaming_settings_group_wellbeing">T2Rhythm Статистика</string>
-    <string name="streaming_open_full_settings">Відкрийте повні налаштування</string>
-    <string name="streaming_open_full_settings_desc">Відкрити параметри програми, спільні для різних режимів</string>
-    <string name="streaming_switch_to_local_mode">Перейти в локальний режим</string>
-    <string name="streaming_switch_to_local_mode_desc">Повернутися до навігації локальною музикою</string>
-    <string name="streaming_status_title">Статус потокового передавання</string>
-    <string name="streaming_status_selected_service">Вибрано: %1$s</string>
-    <string name="streaming_status_connected">Обліковий запис підключено</string>
-    <string name="streaming_status_not_connected">Автентифікація очікує</string>
-    <string name="streaming_status_badge_connected">Підключено</string>
-    <string name="streaming_status_badge_pending">Очікує на розгляд</string>
-    <string name="streaming_status_badge_refreshing">Освіжає</string>
-    <string name="streaming_status_connect_hint">Керуйте вибраною послугою нижче, щоб підключити свій обліковий запис.</string>
-    <string name="streaming_selected">Вибрано</string>
-    <string name="streaming_connect">Connect</string>
-    <string name="streaming_manage">Керувати</string>
-    <string name="streaming_service_setup_server_url">URL-адреса сервера</string>
-    <string name="streaming_service_setup_server_url_hint">https://your-server.example.com</string>
-    <string name="streaming_service_setup_server_url_supporting">Необхідно для постачальників, яким потрібна адреса сервера.</string>
-    <string name="streaming_service_setup_username">Ім’я користувача або електронна пошта</string>
-    <string name="streaming_service_setup_username_hint">Введіть ім’я користувача облікового запису</string>
-    <string name="streaming_service_setup_password">Пароль</string>
-    <string name="streaming_service_setup_password_hint">Введіть пароль свого облікового запису</string>
-    <string name="streaming_service_setup_remember_password">Запам’ятати пароль на цьому пристрої</string>
-    <string name="streaming_service_setup_remember_password_desc">Зберігайте облікові дані локально, щоб T2Rhythm міг автоматично підключитися пізніше.</string>
-    <string name="streaming_service_setup_connecting">Підключення…</string>
-    <string name="streaming_service_setup_disconnecting">Відключення…</string>
-    <string name="streaming_service_setup_action_hint">Заповніть необхідні поля для підключення цієї послуги.</string>
+
     <string name="streaming_service_setup_reconnect">Повторне підключення</string>
-    <string name="streaming_service_setup_disconnect">Відключити</string>
-    <string name="streaming_service_setup_connected_as">Підключено як %1$s</string>
+
+
     <string name="streaming_home_selected_service_unavailable">Вибрана служба не підключена</string>
     <string name="streaming_home_connect_selected_service">Підключіть %1$s, щоб завантажити головну сторінку та пошук.</string>
-    <string name="streaming_home_widget_new_releases_subtitle">Нещодавно додані альбоми від %1$s</string>
-    <string name="streaming_home_widget_empty_hint">Це може зайняти деякий час після підключення або оновлення.</string>
+
+
     <string name="streaming_library_syncing">Завантаження потокового каналу…</string>
-    <string name="streaming_home_no_content_title">Домашнього вмісту ще немає</string>
+
     <string name="streaming_home_no_content_hint">Спробуйте оновити після завершення синхронізації служби.</string>
     <string name="streaming_home_guard_break_active">Розрив активний: залишилося %1$s</string>
     <string name="streaming_home_guard_exposure">Сьогодні: %1$d / %2$d хв</string>
     <string name="streaming_not_selected">Не вибрано</string>
-    <string name="streaming_service_subsonic">Subsonic</string>
-    <string name="streaming_service_subsonic_desc">Підключіть Navidrome і сумісні сервери Subsonic</string>
-    <string name="streaming_service_jellyfin">Jellyfin</string>
-    <string name="streaming_service_jellyfin_desc">Транслюйте з вашої особистої бібліотеки Jellyfin</string>
+
     <!-- Backup &amp; Restore -->
     <string name="settings_backup_restore">Резервне копіювання та відновлення</string>
     <string name="settings_auto_backup">Автоматичне резервне копіювання</string>
@@ -1685,8 +1637,8 @@
     <string name="settings_broadcast_status_enabled_desc">Статус відтворення трансляції</string>
     <string name="settings_bluetooth_lyrics_enabled">Режим лірики Bluetooth</string>
     <string name="settings_bluetooth_lyrics_enabled_desc">Трансляція поточної лінії лірики через метадані Bluetooth</string>
-    <string name="exp_go_mode">Go Mode</string>
-    <string name="exp_go_mode_desc">Перейти на T2Rhythm Go streaming mode</string>
+
+
     <!-- Home Screen Search Strings -->
     <string name="settings_home_section_order">Порядок розділу</string>
     <string name="settings_home_section_order_desc">Змінити порядок розділів домашньої сторінки</string>
@@ -1913,14 +1865,10 @@
     <string name="musicviewmodel_failed_to_play_next">Не вдалося відтворити далі: гравець не ініціалізовано</string>
     <string name="streaminghomesectionorderbottomsheet_streaming_section_order_and">Порядок розділів потокового передавання та видимість скинуто до стандартних</string>
     <string name="streaminghomesectionorderbottomsheet_streaming_section_order_and_1">Порядок розділів потокового передавання та видимість збережено</string>
-    <string name="gosettingsscreen_configure_current_provider">Налаштувати поточного постачальника</string>
-    <string name="gosettingsscreen_network">Мережа</string>
-    <string name="gosettingsscreen_enable_streaming_over_mobile">Увімкнути трансляцію через мобільні дані</string>
-    <string name="gosettingsscreen_connection_is_healthy">З’єднання справне</string>
-    <string name="streaminghomescreen_leave_go_mode">Leave Go Mode</string>
+
     <string name="streamingsettingsscreen_streaming_restricted">Потокове передавання обмежено</string>
-    <string name="streamingmusicviewmodel_failed_to_play_next">Не вдалося відтворити далі: не вдається розпізнати URL-адресу</string>
-    <string name="streamingmusicviewmodel_failed_to_add_to">Не вдалося додати до черги: не вдалося вирішити URL-адресу</string>
+
+
     <string name="rhythmmusicwidget_album_art_placeholder">Обкладинка альбому</string>
     <string name="rhythmwidgetpreview_rhythm_glance_widget_previews">T2Rhythm Glance Попередній перегляд віджетів</string>
     <string name="rhythmwidgetpreview_str_11_compact_widget">Компактний віджет 1×1</string>
@@ -2528,7 +2476,7 @@
     <string name="edit_album_title">Редагувати альбом</string>
     <string name="edit_album_desc">Редагувати теги та обкладинку для всіх пісень у цьому альбомі.</string>
     <string name="edit_album_saving">Оновлення метаданих альбому…</string>
-    <string name="streaming_service_setup_auto_detect">Автоматичне визначення</string>
+
     <string name="nearby_server_discovery_title">Сервери поблизу</string>
     <string name="nearby_server_discovery_desc">Виберіть сервер, виявлений у вашій локальній мережі</string>
     <string name="nearby_server_discovery_scanning">Сканування найближчих серверів…</string>

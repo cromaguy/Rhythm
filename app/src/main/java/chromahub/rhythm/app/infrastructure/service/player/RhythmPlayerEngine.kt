@@ -32,13 +32,11 @@ import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.datasource.DataSpec
 import androidx.media3.datasource.okhttp.OkHttpDataSource
-import chromahub.rhythm.app.features.streaming.data.provider.UserTrustManager
 import java.util.concurrent.TimeUnit
 import android.os.Build
 import androidx.media3.common.TrackSelectionParameters
 import chromahub.rhythm.app.shared.data.model.AppSettings
 import android.net.Uri
-import chromahub.rhythm.app.features.streaming.di.StreamingMusicModule
 import kotlinx.coroutines.runBlocking
 import androidx.media3.datasource.cache.CacheDataSource
 import chromahub.rhythm.app.infrastructure.audio.RhythmBassBoostProcessor
@@ -508,7 +506,7 @@ class RhythmPlayerEngine(
             .setUsage(C.USAGE_MEDIA)
             .build()
 
-        val okHttpClient = UserTrustManager.buildUserTrustingHttpClientBuilder()
+        val okHttpClient = okhttp3.OkHttpClient.Builder()
             .connectTimeout(15, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
             .build()
@@ -525,20 +523,7 @@ class RhythmPlayerEngine(
             baseDataSourceFactory,
             object : ResolvingDataSource.Resolver {
                 override fun resolveDataSpec(dataSpec: DataSpec): DataSpec {
-                    if (dataSpec.uri.scheme == "streaming") {
-                        val trackId = dataSpec.uri.lastPathSegment
-                        if (!trackId.isNullOrBlank()) {
-                            val repository = StreamingMusicModule.provideStreamingMusicRepository(context)
-                            // Run blocking is safe here as ExoPlayer calls resolveDataSpec on a background thread
-                            val freshUrl = runBlocking { repository.getStreamingUrl(trackId) }
-                            if (!freshUrl.isNullOrBlank()) {
-                                return dataSpec.buildUpon()
-                                    .setUri((freshUrl).toUri())
-                                    .setKey("streaming_$trackId")
-                                    .build()
-                            }
-                        }
-                    }
+
                     return dataSpec
                 }
             }

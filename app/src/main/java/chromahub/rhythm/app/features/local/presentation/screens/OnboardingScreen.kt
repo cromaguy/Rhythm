@@ -89,7 +89,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.TextButton
- 
+
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
@@ -98,7 +98,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.text.input.PasswordVisualTransformation
- 
+
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -168,9 +168,6 @@ import chromahub.rhythm.app.shared.presentation.viewmodel.AppUpdaterViewModel
 import chromahub.rhythm.app.shared.presentation.viewmodel.rememberAppUpdaterViewModel
 import chromahub.rhythm.app.shared.presentation.viewmodel.AppVersion
 import chromahub.rhythm.app.features.local.presentation.viewmodel.MusicViewModel
-import chromahub.rhythm.app.features.streaming.presentation.viewmodel.StreamingMusicViewModel
-import chromahub.rhythm.app.features.streaming.presentation.components.bottomsheets.NearbyServerDiscoverySheet
-import chromahub.rhythm.app.features.streaming.presentation.components.bottomsheets.NearbyServerScanner
 import chromahub.rhythm.app.shared.presentation.components.common.RhythmWavyProgressLoader
 import chromahub.rhythm.app.shared.presentation.screens.settings.TunerAnimatedSwitch
 import chromahub.rhythm.app.ui.theme.ColorSchemeOption
@@ -247,11 +244,11 @@ fun OnboardingScreen(
     appSettings: AppSettings,
     musicViewModel: MusicViewModel,
     updaterViewModel: AppUpdaterViewModel = rememberAppUpdaterViewModel(),
-    streamingViewModel: StreamingMusicViewModel = viewModel(),
+
     onFinish: () -> Unit = {}
 ) {
     val context = LocalContext.current
-    val scope = rememberCoroutineScope()
+
     val haptic = LocalHapticFeedback.current
     val windowSizeClass = calculateWindowSizeClass(context as Activity)
 
@@ -269,19 +266,12 @@ fun OnboardingScreen(
     val cardPadding = if (isTablet) 32.dp else 20.dp
 
     val appMode by appSettings.appMode.collectAsState()
-    val sessions by streamingViewModel.serviceSessions.collectAsState()
-    val streamingService by appSettings.streamingService.collectAsState()
-    val isStreamingServiceConnected = remember(sessions, streamingService) {
-        sessions[streamingService]?.isConnected == true
-    }
-    
+
+
     val visibleSteps = remember(appMode) {
         val list = mutableListOf<OnboardingStep>()
         list.add(OnboardingStep.APP_MODE_CHOICE)
-        if (appMode == "STREAMING") {
-            list.add(OnboardingStep.STREAMING_SERVICE_CHOICE)
-            list.add(OnboardingStep.STREAMING_SETUP)
-        } else {
+        run {
             list.add(OnboardingStep.PERMISSIONS)
             list.add(OnboardingStep.MEDIA_SCAN)
         }
@@ -291,13 +281,13 @@ fun OnboardingScreen(
         list.add(OnboardingStep.THEMING)
         list.add(OnboardingStep.PLAYER_THEME_CHOICE)
         list.add(OnboardingStep.GESTURES)
-        if (appMode != "STREAMING") {
+        run {
             list.add(OnboardingStep.LIBRARY_SETUP)
         }
         list.add(OnboardingStep.WIDGETS)
         list.add(OnboardingStep.INTEGRATIONS)
         list.add(OnboardingStep.UPDATER)
-        if (appMode != "STREAMING") {
+        run {
             list.add(OnboardingStep.BACKUP_RESTORE)
         }
         list.add(OnboardingStep.RHYTHM_STATS)
@@ -399,7 +389,7 @@ fun OnboardingScreen(
                 HorizontalPager(
                     state = pagerState,
                     userScrollEnabled = when {
-                        currentStep != OnboardingStep.PERMISSIONS && currentStep != OnboardingStep.GESTURES && currentStep != OnboardingStep.STREAMING_SETUP -> true
+
                         permissionScreenState == PermissionScreenState.PermissionsGranted -> true
                         else -> true // Allow scrolling to let user review info before granting
                     },
@@ -464,7 +454,7 @@ fun OnboardingScreen(
                                 },
                                 enabled = when (currentStep) {
                                     OnboardingStep.PERMISSIONS -> !isParentLoading && permissionScreenState != PermissionScreenState.Loading
-                                    OnboardingStep.STREAMING_SETUP -> isStreamingServiceConnected
+
                                     else -> true
                                 },
                                 isLoading = currentStep == OnboardingStep.PERMISSIONS && isParentLoading,
@@ -507,24 +497,8 @@ fun OnboardingScreen(
                                         nextButton = tabletNextButton
                                     )
                                 }
-                                OnboardingStep.STREAMING_SERVICE_CHOICE -> {
-                                    EnhancedStreamingServiceChoiceContent(
-                                        appSettings = appSettings,
-                                        isTablet = isTablet,
-                                        backButton = tabletBackButton,
-                                        nextButton = tabletNextButton
-                                    )
-                                }
-                                OnboardingStep.STREAMING_SETUP -> {
-                                    EnhancedStreamingSetupContent(
-                                        appSettings = appSettings,
-                                        streamingViewModel = streamingViewModel,
-                                        onSkip = onNextStep,
-                                        isTablet = isTablet,
-                                        backButton = tabletBackButton,
-                                        nextButton = tabletNextButton
-                                    )
-                                }
+
+
                                 OnboardingStep.PERMISSIONS -> {
                                     EnhancedPermissionContent(
                                         permissionScreenState = permissionScreenState,
@@ -792,7 +766,7 @@ fun OnboardingScreen(
                         },
                         enabled = when (currentStep) {
                             OnboardingStep.PERMISSIONS -> !isParentLoading && permissionScreenState != PermissionScreenState.Loading
-                            OnboardingStep.STREAMING_SETUP -> isStreamingServiceConnected
+
                             else -> true
                         },
                         isLoading = currentStep == OnboardingStep.PERMISSIONS && isParentLoading,
@@ -873,6 +847,8 @@ fun OnboardingScreen(
 @Composable
 private fun OnboardingTopBackButton(onBackClick: () -> Unit) {
     val scope = rememberCoroutineScope()
+
+
     val buttonScale = remember { Animatable(1f) }
 
     IconButton(
@@ -1318,7 +1294,7 @@ private fun WelcomeFeatureChip(
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                
+
                 modifier = Modifier.size(16.dp)
             )
             Spacer(modifier = Modifier.width(6.dp))
@@ -1551,7 +1527,7 @@ fun EnhancedPermissionContent(
                                 Icon(
                                     imageVector = RhythmIcons.BugReport,
                                     contentDescription = null,
-                                    
+
                                     modifier = Modifier.size(20.dp)
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
@@ -1650,7 +1626,7 @@ fun EnhancedPermissionContent(
                             Icon(
                                 imageVector = RhythmIcons.BugReport,
                                 contentDescription = null,
-                                
+
                                 modifier = Modifier.size(20.dp)
                             )
                             Spacer(modifier = Modifier.width(8.dp))
@@ -1875,9 +1851,11 @@ fun EnhancedBackupRestoreContent(
     backButton: @Composable (() -> Unit)? = null,
     nextButton: @Composable () -> Unit
 ) {
+    val scope = rememberCoroutineScope()
+
     val context = LocalContext.current
     val hapticFeedback = LocalHapticFeedback.current
-    val scope = rememberCoroutineScope()
+
     val musicViewModel: MusicViewModel = viewModel()
     val scrollState = rememberScrollState()
 
@@ -2024,6 +2002,7 @@ fun EnhancedBackupRestoreContent(
     }
 
     fun restoreFromClipboard() {
+
         scope.launch {
             try {
                 isRestoringFromClipboard = true
@@ -2781,7 +2760,7 @@ fun EnhancedAudioPlaybackContent(
                                     imageVector = MaterialSymbolIcon("lightbulb", filled = true),
                                 tint = MaterialTheme.colorScheme.primary,
                                     contentDescription = null,
-                                    
+
                                     modifier = Modifier.size(24.dp)
                                 )
                                 Spacer(modifier = Modifier.width(12.dp))
@@ -2898,7 +2877,7 @@ fun EnhancedAudioPlaybackContent(
                                     imageVector = MaterialSymbolIcon("lightbulb", filled = true),
                                 tint = MaterialTheme.colorScheme.primary,
                                     contentDescription = null,
-                                    
+
                                     modifier = Modifier.size(24.dp)
                                 )
                                 Spacer(modifier = Modifier.width(12.dp))
@@ -3798,11 +3777,13 @@ fun EnhancedThemingContent(
     backButton: @Composable (() -> Unit)? = null,
     nextButton: @Composable () -> Unit
 ) {
+    val scope = rememberCoroutineScope()
+
     val context = LocalContext.current
     val haptic = LocalHapticFeedback.current
     val useSystemTheme by themeViewModel.useSystemTheme.collectAsState()
     val darkMode by themeViewModel.darkMode.collectAsState()
-    val scope = rememberCoroutineScope()
+
     val scrollState = rememberScrollState()
 
     if (isTablet) {
@@ -4110,7 +4091,7 @@ fun EnhancedThemeOption(
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
-                    
+
                     modifier = Modifier.size(20.dp)
                 )
             }
@@ -4183,7 +4164,7 @@ fun OnboardingDropdownOption(
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
-                    
+
                     modifier = Modifier.size(20.dp)
                 )
             }
@@ -4274,8 +4255,8 @@ fun OnboardingDropdownOption(
                                 if (selectedOption == option) {
                                     Icon(
                                         imageVector = RhythmIcons.Check,
-                                        contentDescription = stringResource(R.string.streaming_selected),
-                                        
+                                        contentDescription = stringResource(R.string.cd_selected),
+
                                         modifier = Modifier.size(20.dp)
                                     )
                                 }
@@ -4854,13 +4835,15 @@ fun EnhancedUpdaterContent(
     backButton: @Composable (() -> Unit)? = null,
     nextButton: @Composable () -> Unit
 ) {
+    val scope = rememberCoroutineScope()
+
     val context = LocalContext.current
     val autoCheckForUpdates by appSettings.autoCheckForUpdates.collectAsState()
     val updateNotificationsEnabled by appSettings.updateNotificationsEnabled.collectAsState()
     val updateChannel by appSettings.updateChannel.collectAsState()
     val updateCheckIntervalHours by appSettings.updateCheckIntervalHours.collectAsState()
     val updatesEnabled by appSettings.updatesEnabled.collectAsState()
-    val scope = rememberCoroutineScope()
+
 
     // Collect updater states
     val isCheckingForUpdates by updaterViewModel.isCheckingForUpdates.collectAsState()
@@ -5490,7 +5473,7 @@ fun EnhancedUpdateOption(
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
-                    
+
                     modifier = Modifier.size(20.dp)
                 )
             }
@@ -5562,8 +5545,8 @@ fun EnhancedUpdateChannelOption(
                 if (isSelected) {
                     Icon(
                         imageVector = RhythmIcons.Check,
-                        contentDescription = stringResource(R.string.streaming_selected),
-                        
+                        contentDescription = stringResource(R.string.cd_selected),
+
                         modifier = Modifier.size(16.dp)
                     )
                 }
@@ -5612,7 +5595,7 @@ fun SettingsDropdownItem(
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
-                    
+
                     modifier = Modifier.size(20.dp)
                 )
             }
@@ -5870,7 +5853,7 @@ fun EnhancedMediaScanContent(
 ) {
     val context = LocalContext.current
     val haptic = LocalHapticFeedback.current
-    val scope = rememberCoroutineScope()
+
     val scrollState = rememberScrollState()
 
     // Get current media scan mode preference
@@ -6240,9 +6223,11 @@ fun MediaScanModeOption(
     isSelected: Boolean,
     onSelect: () -> Unit
 ) {
+    val scope = rememberCoroutineScope()
+
     val context = LocalContext.current
     val haptic = LocalHapticFeedback.current
-    val scope = rememberCoroutineScope()
+
 
     // Animated scale for press effect
     val cardScale = remember { Animatable(1f) }
@@ -6358,8 +6343,8 @@ fun MediaScanModeOption(
             if (isSelected) {
                 Icon(
                     imageVector = RhythmIcons.CheckCircle,
-                    contentDescription = stringResource(R.string.streaming_selected),
-                    
+                    contentDescription = stringResource(R.string.cd_selected),
+
                     modifier = Modifier.size(24.dp)
                 )
             }
@@ -6445,7 +6430,7 @@ fun EnhancedSetupFinishedContent(
                                 imageVector = MaterialSymbolIcon("lightbulb", filled = true),
                                 tint = MaterialTheme.colorScheme.primary,
                                 contentDescription = null,
-                                
+
                                 modifier = Modifier.size(24.dp)
                             )
                             Spacer(modifier = Modifier.width(12.dp))
@@ -6661,7 +6646,7 @@ fun EnhancedSetupFinishedContent(
                             imageVector = MaterialSymbolIcon("lightbulb", filled = true),
                                 tint = MaterialTheme.colorScheme.primary,
                             contentDescription = null,
-                            
+
                             modifier = Modifier.size(24.dp)
                         )
                         Spacer(modifier = Modifier.width(12.dp))
@@ -7029,7 +7014,7 @@ fun EnhancedPlayerThemeChoiceContent(
 ) {
     val context = LocalContext.current
     val haptic = LocalHapticFeedback.current
-    val scope = rememberCoroutineScope()
+
     val scrollState = rememberScrollState()
 
     var selectedViewIndex by remember { mutableIntStateOf(0) } // 0 = Player, 1 = Mini Player
@@ -7356,7 +7341,7 @@ private fun GestureSettingsCards(
             color = MaterialTheme.colorScheme.primary,
             modifier = Modifier.padding(start = 16.dp, bottom = 4.dp)
         )
-        
+
         Material3SettingsGroup(
             items = listOf(
                 onboardingToggleItem(
@@ -7379,7 +7364,7 @@ private fun GestureSettingsCards(
             color = MaterialTheme.colorScheme.primary,
             modifier = Modifier.padding(start = 16.dp, bottom = 4.dp)
         )
-        
+
         Material3SettingsGroup(
             items = listOf(
                 onboardingToggleItem(
@@ -7435,7 +7420,7 @@ private fun GestureSettingsCards(
 @Composable
 private fun GestureTipsCard() {
     val context = LocalContext.current
-    
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(18.dp),
@@ -7449,7 +7434,7 @@ private fun GestureTipsCard() {
                     imageVector = MaterialSymbolIcon("lightbulb", filled = true),
                                 tint = MaterialTheme.colorScheme.primary,
                     contentDescription = null,
-                    
+
                     modifier = Modifier.size(24.dp)
                 )
                 Spacer(modifier = Modifier.width(12.dp))
@@ -7771,7 +7756,7 @@ private fun WidgetSettingsCard(
 @Composable
 private fun WidgetTipsCard() {
     val context = LocalContext.current
-    
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(18.dp),
@@ -9082,7 +9067,7 @@ private fun IntegrationsSettingsCards(
 @Composable
 private fun IntegrationsInfoCard() {
     val context = LocalContext.current
-    
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(18.dp),
@@ -9096,7 +9081,7 @@ private fun IntegrationsInfoCard() {
                     imageVector = RhythmIcons.Info,
                     tint = MaterialTheme.colorScheme.primary,
                     contentDescription = null,
-                    
+
                     modifier = Modifier.size(24.dp)
                 )
                 Spacer(modifier = Modifier.width(12.dp))
@@ -9313,7 +9298,7 @@ private fun StatsFeaturesAndInfoCard() {
                 icon = RhythmIcons.MusicNote,
                 text = context.getString(R.string.onboarding_stats_feature_2)
             )
-            
+
             Spacer(modifier = Modifier.height(12.dp))
         }
     }
@@ -9362,72 +9347,6 @@ fun OnboardingTipItem(
     }
 }
 
-@Composable
-private fun AppModeChoiceHeader(
-    isStreaming: Boolean,
-    isTablet: Boolean,
-    modifier: Modifier = Modifier
-) {
-    val logoSize = if (isTablet) 80.dp else 100.dp
-    val fontSize = if (isTablet) 36.sp else 42.sp
-    val spacing = 6.dp
-
-    val animProgress by animateFloatAsState(
-        targetValue = if (isStreaming) 1f else 0f,
-        animationSpec = tween(durationMillis = 280, easing = FastOutSlowInEasing),
-        label = "streamingHeaderProgress"
-    )
-
-    Layout(
-        content = {
-            Image(
-                painter = painterResource(id = R.drawable.rhythm_splash_logo),
-                contentDescription = stringResource(R.string.updates_rhythm_logo_cd),
-                modifier = Modifier.size(logoSize)
-            )
-            Text(
-                text = stringResource(R.string.splashscreen_go),
-                style = MaterialTheme.typography.displayMedium.copy(
-                    fontSize = fontSize,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 1.sp
-                ),
-                color = MaterialTheme.colorScheme.primary
-            )
-        },
-        modifier = modifier
-    ) { measurables, constraints ->
-        val logoPlaceable = measurables[0].measure(constraints.copy(minWidth = 0, minHeight = 0))
-        val goPlaceable = measurables[1].measure(constraints.copy(minWidth = 0, minHeight = 0))
-
-        val spacingPx = spacing.roundToPx()
-        val totalHeight = maxOf(logoPlaceable.height, goPlaceable.height)
-        val containerWidth = constraints.maxWidth
-
-        layout(containerWidth, totalHeight) {
-            val shiftAmountPx = if (isTablet) 0f else (goPlaceable.width + spacingPx) / 2f
-            val baseLogoX = if (isTablet) 0 else (containerWidth - logoPlaceable.width) / 2
-            val baseGoX = baseLogoX + logoPlaceable.width + spacingPx
-
-            val logoY = (totalHeight - logoPlaceable.height) / 2
-            val goY = (totalHeight - goPlaceable.height) / 2
-
-            logoPlaceable.placeWithLayer(baseLogoX, logoY) {
-                translationX = -shiftAmountPx * animProgress
-            }
-
-            if (animProgress > 0.001f) {
-                goPlaceable.placeWithLayer(baseGoX, goY) {
-                    translationX = -shiftAmountPx * animProgress
-                    alpha = animProgress
-                    scaleX = 0.8f + 0.2f * animProgress
-                    scaleY = 0.8f + 0.2f * animProgress
-                    transformOrigin = TransformOrigin(0f, 0.5f)
-                }
-            }
-        }
-    }
-}
 
 @Composable
 fun EnhancedAppModeChoiceContent(
@@ -9436,18 +9355,10 @@ fun EnhancedAppModeChoiceContent(
     backButton: @Composable (() -> Unit)? = null,
     nextButton: @Composable () -> Unit
 ) {
-    val scope = rememberCoroutineScope()
+
     val appMode by appSettings.appMode.collectAsState()
     val scrollState = rememberScrollState()
 
-    var selectedMode by remember { mutableStateOf(appMode) }
-
-    val onSelectMode: (String) -> Unit = { mode ->
-        selectedMode = mode
-        scope.launch {
-            appSettings.setAppMode(mode)
-        }
-    }
 
     if (isTablet) {
         Row(
@@ -9465,7 +9376,7 @@ fun EnhancedAppModeChoiceContent(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 AppModeChoiceHeader(
-                    isStreaming = selectedMode == "STREAMING",
+
                     isTablet = true,
                     modifier = Modifier.padding(bottom = 12.dp)
                 )
@@ -9506,8 +9417,8 @@ fun EnhancedAppModeChoiceContent(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 AppModeSelectionList(
-                    selectedMode = selectedMode,
-                    onModeSelected = onSelectMode
+
+
                 )
             }
         }
@@ -9520,7 +9431,7 @@ fun EnhancedAppModeChoiceContent(
                 .verticalScroll(scrollState)
         ) {
             AppModeChoiceHeader(
-                isStreaming = selectedMode == "STREAMING",
+
                 isTablet = false,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -9545,8 +9456,8 @@ fun EnhancedAppModeChoiceContent(
             )
 
             AppModeSelectionList(
-                selectedMode = selectedMode,
-                onModeSelected = onSelectMode
+
+
             )
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -9556,76 +9467,6 @@ fun EnhancedAppModeChoiceContent(
     }
 }
 
-@Composable
-private fun AppModeSelectionList(
-    selectedMode: String,
-    onModeSelected: (String) -> Unit
-) {
-    val context = LocalContext.current
-    val haptic = LocalHapticFeedback.current
-
-    Material3SettingsGroup(
-        items = listOf(
-            Material3SettingsItem(
-                title = {
-                    Text(
-                        text = stringResource(R.string.common_rhythm),
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
-                    )
-                },
-                description = {
-                    Text(
-                        text = stringResource(R.string.onboardingscreen_mode_local_desc),
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                },
-                trailingContent = {
-                    RadioButton(
-                        selected = selectedMode == "LOCAL",
-                        onClick = null,
-                        colors = RadioButtonDefaults.colors(
-                            selectedColor = MaterialTheme.colorScheme.primary,
-                            unselectedColor = MaterialTheme.colorScheme.outline
-                        )
-                    )
-                },
-                onClick = {
-                    HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
-                    onModeSelected("LOCAL")
-                }
-            ),
-            Material3SettingsItem(
-                title = {
-                    Text(
-                        text = stringResource(R.string.onboardingscreen_rhythm_go),
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
-                    )
-                },
-                description = {
-                    Text(
-                        text = stringResource(R.string.onboardingscreen_mode_streaming_desc),
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                },
-                trailingContent = {
-                    RadioButton(
-                        selected = selectedMode == "STREAMING",
-                        onClick = null,
-                        colors = RadioButtonDefaults.colors(
-                            selectedColor = MaterialTheme.colorScheme.primary,
-                            unselectedColor = MaterialTheme.colorScheme.outline
-                        )
-                    )
-                },
-                onClick = {
-                    HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
-                    onModeSelected("STREAMING")
-                }
-            )
-        ),
-        containerColor = MaterialTheme.colorScheme.surface
-    )
-}
 
 @Composable
 private fun AppModeChoiceTipsCard() {
@@ -9666,863 +9507,6 @@ private fun AppModeChoiceTipsCard() {
     }
 }
 
-@Composable
-fun EnhancedStreamingServiceChoiceContent(
-    appSettings: AppSettings,
-    isTablet: Boolean = false,
-    backButton: @Composable (() -> Unit)? = null,
-    nextButton: @Composable () -> Unit
-) {
-    val context = LocalContext.current
-    val scope = rememberCoroutineScope()
-    val streamingService by appSettings.streamingService.collectAsState()
-    val scrollState = rememberScrollState()
-
-    var selectedProvider by rememberSaveable {
-        mutableStateOf(streamingService.ifBlank { "SUBSONIC" })
-    }
-
-    LaunchedEffect(streamingService) {
-        if (streamingService.isNotBlank()) {
-            selectedProvider = streamingService
-        }
-    }
-
-    val onSelectProvider: (String) -> Unit = { id ->
-        selectedProvider = id
-        scope.launch {
-            appSettings.setStreamingService(id)
-        }
-    }
-
-    if (isTablet) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .verticalScroll(scrollState)
-                .padding(vertical = 32.dp),
-            horizontalArrangement = Arrangement.spacedBy(32.dp),
-            verticalAlignment = Alignment.Top
-        ) {
-            // Left Column: Icon, Title, Description, Tips Card, Navigation Buttons
-            Column(
-                horizontalAlignment = Alignment.Start,
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                AnimatedVisibility(visible = true, enter = scaleIn() + fadeIn()) {
-                    OnboardingStepHeaderIcon(
-                        imageVector = MaterialSymbolIcon("dns", filled = true),
-                        tint = MaterialTheme.colorScheme.primary,
-                        iconSize = 72.dp
-                    )
-                }
-
-                Text(
-                    text = stringResource(R.string.onboardingscreen_choose_streaming_provider),
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.padding(bottom = 12.dp)
-                )
-
-                Text(
-                    text = stringResource(R.string.onboardingscreen_choose_streaming_provider_desc),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(bottom = 24.dp)
-                )
-
-                StreamingServiceChoiceTipsCard()
-
-                Spacer(modifier = Modifier.weight(1f))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    backButton?.invoke()
-                    nextButton()
-                }
-            }
-
-            // Right Column: Service Selection List
-            Column(
-                horizontalAlignment = Alignment.Start,
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                StreamingProviderSelectionList(
-                    selectedProvider = selectedProvider,
-                    onProviderSelected = onSelectProvider
-                )
-            }
-        }
-    } else {
-        // Mobile Layout
-        Column(
-            horizontalAlignment = Alignment.Start,
-            modifier = Modifier
-                .fillMaxWidth()
-                .verticalScroll(scrollState)
-        ) {
-            AnimatedVisibility(visible = true, enter = scaleIn() + fadeIn()) {
-                OnboardingStepHeaderIcon(
-                    imageVector = MaterialSymbolIcon("dns", filled = true),
-                    tint = MaterialTheme.colorScheme.primary,
-                    iconSize = 56.dp
-                )
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Text(
-                text = stringResource(R.string.onboardingscreen_choose_streaming_provider),
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.padding(bottom = 12.dp)
-            )
-
-            Text(
-                text = stringResource(R.string.onboardingscreen_choose_streaming_provider_desc),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(bottom = 24.dp)
-            )
-
-            StreamingProviderSelectionList(
-                selectedProvider = selectedProvider,
-                onProviderSelected = onSelectProvider
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            StreamingServiceChoiceTipsCard()
-        }
-    }
-}
-
-@Composable
-private fun StreamingProviderSelectionList(
-    selectedProvider: String,
-    onProviderSelected: (String) -> Unit
-) {
-    val context = LocalContext.current
-    val haptic = LocalHapticFeedback.current
-
-    Material3SettingsGroup(
-        items = listOf(
-            Material3SettingsItem(
-                leadingContent = {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_subsonic),
-                        contentDescription = null,
-                        tint = if (selectedProvider == "SUBSONIC") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(28.dp)
-                    )
-                },
-                title = {
-                    Text(
-                        text = stringResource(R.string.onboardingscreen_subsonic_navidrome),
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
-                    )
-                },
-                description = {
-                    Text(
-                        text = stringResource(R.string.streaming_service_subsonic_desc),
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                },
-                trailingContent = {
-                    RadioButton(
-                        selected = selectedProvider == "SUBSONIC",
-                        onClick = null,
-                        colors = RadioButtonDefaults.colors(
-                            selectedColor = MaterialTheme.colorScheme.primary,
-                            unselectedColor = MaterialTheme.colorScheme.outline
-                        )
-                    )
-                },
-                onClick = {
-                    HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
-                    onProviderSelected("SUBSONIC")
-                }
-            ),
-            Material3SettingsItem(
-                leadingContent = {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_jellyfin),
-                        contentDescription = null,
-                        tint = if (selectedProvider == "JELLYFIN") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(28.dp)
-                    )
-                },
-                title = {
-                    Text(
-                        text = stringResource(R.string.streaming_service_jellyfin),
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
-                    )
-                },
-                description = {
-                    Text(
-                        text = stringResource(R.string.streaming_service_jellyfin_desc),
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                },
-                trailingContent = {
-                    RadioButton(
-                        selected = selectedProvider == "JELLYFIN",
-                        onClick = null,
-                        colors = RadioButtonDefaults.colors(
-                            selectedColor = MaterialTheme.colorScheme.primary,
-                            unselectedColor = MaterialTheme.colorScheme.outline
-                        )
-                    )
-                },
-                onClick = {
-                    HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
-                    onProviderSelected("JELLYFIN")
-                }
-            )
-        ),
-        containerColor = MaterialTheme.colorScheme.surface
-    )
-}
-
-@Composable
-private fun StreamingServiceChoiceTipsCard() {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(18.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.84f)
-        )
-    ) {
-        Column(modifier = Modifier.padding(20.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = RhythmIcons.Info,
-                    tint = MaterialTheme.colorScheme.primary,
-                    contentDescription = null,
-                    modifier = Modifier.size(24.dp)
-                )
-                Spacer(modifier = Modifier.width(12.dp))
-                Text(
-                    text = stringResource(R.string.onboardingscreen_service_choice_tips),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-            }
-            Spacer(modifier = Modifier.height(12.dp))
-
-            OnboardingTipItem(
-                icon = MaterialSymbolIcon("dns"),
-                text = stringResource(R.string.onboardingscreen_service_subsonic_tip)
-            )
-            OnboardingTipItem(
-                icon = MaterialSymbolIcon("video_settings"),
-                text = stringResource(R.string.onboardingscreen_service_jellyfin_tip)
-            )
-        }
-    }
-}
-
-@Composable
-fun EnhancedStreamingSetupContent(
-    appSettings: AppSettings,
-    streamingViewModel: StreamingMusicViewModel,
-    onSkip: (() -> Unit)? = null,
-    isTablet: Boolean = false,
-    backButton: @Composable (() -> Unit)? = null,
-    nextButton: @Composable () -> Unit
-) {
-    val context = LocalContext.current
-    val scope = rememberCoroutineScope()
-    
-    val sessions by streamingViewModel.serviceSessions.collectAsState()
-    val isLoading by streamingViewModel.isLoading.collectAsState()
-    val error by streamingViewModel.error.collectAsState()
-    val rememberStreamingPasswords by appSettings.rememberStreamingPasswords.collectAsState()
-    val currentStreamingService by appSettings.streamingService.collectAsState()
-    val selectedProvider = currentStreamingService.ifBlank { "SUBSONIC" }
-    
-    val currentSession = sessions[selectedProvider] ?: streamingViewModel.getServiceSession(selectedProvider)
-    val requiresServerUrl = remember(selectedProvider) { selectedProvider == "SUBSONIC" || selectedProvider == "JELLYFIN" }
-
-    var serverUrl by rememberSaveable(selectedProvider) { mutableStateOf(currentSession.serverUrl) }
-    var username by rememberSaveable(selectedProvider) { mutableStateOf(currentSession.username) }
-    var password by rememberSaveable(selectedProvider) { mutableStateOf("") }
-    var showDiscoverySheet by remember { mutableStateOf(false) }
-
-    val scanner = remember(selectedProvider) { NearbyServerScanner(context, selectedProvider, scope) }
-    var isAutoScanning by rememberSaveable(selectedProvider) { mutableStateOf(serverUrl.isBlank()) }
-
-    DisposableEffect(scanner) {
-        onDispose {
-            scanner.stopScan()
-        }
-    }
-
-    LaunchedEffect(selectedProvider) {
-        if (serverUrl.isBlank()) {
-            isAutoScanning = true
-            scanner.startScan()
-            delay(3500)
-            isAutoScanning = false
-            if (scanner.discoveredServers.isNotEmpty() && serverUrl.isBlank()) {
-                showDiscoverySheet = true
-            }
-        }
-    }
-
-    val isConnected = currentSession.isConnected
-    val canSubmit = username.isNotBlank() && password.isNotBlank() && (!requiresServerUrl || serverUrl.isNotBlank())
-    val scrollState = rememberScrollState()
-
-    val providerDisplayName = if (selectedProvider == "JELLYFIN") {
-        stringResource(R.string.streaming_service_jellyfin)
-    } else {
-        stringResource(R.string.onboardingscreen_subsonic_navidrome)
-    }
-    val providerDescription = if (selectedProvider == "JELLYFIN") {
-        stringResource(R.string.streaming_service_jellyfin_desc)
-    } else {
-        stringResource(R.string.streaming_service_subsonic_desc)
-    }
-    val providerIconRes = if (selectedProvider == "JELLYFIN") {
-        R.drawable.ic_jellyfin
-    } else {
-        R.drawable.ic_subsonic
-    }
-
-    if (isTablet) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .verticalScroll(scrollState)
-                .padding(vertical = 32.dp),
-            horizontalArrangement = Arrangement.spacedBy(32.dp),
-            verticalAlignment = Alignment.Top
-        ) {
-            // Left Column
-            Column(
-                horizontalAlignment = Alignment.Start,
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                Box(
-                    modifier = Modifier.fillMaxWidth(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    AnimatedContent(
-                        targetState = isAutoScanning,
-                        label = "setup_header_icon_tablet"
-                    ) { scanning ->
-                        if (scanning) {
-                            RhythmWavyProgressLoader(
-                                progress = null,
-                                modifier = Modifier.size(72.dp),
-                                indicatorColor = MaterialTheme.colorScheme.primary,
-                                trackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
-                                centerContent = {
-                                    Icon(
-                                        painter = painterResource(id = providerIconRes),
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(36.dp)
-                                    )
-                                }
-                            )
-                        } else {
-                            Icon(
-                                painter = painterResource(id = providerIconRes),
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(72.dp)
-                            )
-                        }
-                    }
-                }
-
-                Text(
-                    text = if (isAutoScanning) {
-                        stringResource(R.string.onboarding_scanning_for_provider, providerDisplayName)
-                    } else {
-                        stringResource(R.string.onboardingscreen_configure_provider, providerDisplayName)
-                    },
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.padding(bottom = 12.dp)
-                )
-
-                Text(
-                    text = if (isAutoScanning) {
-                        stringResource(R.string.onboarding_scanning_for_provider_desc)
-                    } else {
-                        providerDescription
-                    },
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(bottom = 32.dp)
-                )
-
-                StreamingSetupTipsCard()
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    backButton?.invoke()
-                    nextButton()
-                }
-            }
-
-            // Right Column
-            Column(
-                horizontalAlignment = Alignment.Start,
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                StreamingSetupSelectionAndForm(
-                    selectedProvider = selectedProvider,
-                    requiresServerUrl = requiresServerUrl,
-                    serverUrl = serverUrl,
-                    onServerUrlChange = { serverUrl = it },
-                    username = username,
-                    onUsernameChange = { username = it },
-                    password = password,
-                    onPasswordChange = { password = it },
-                    isConnected = isConnected,
-                    isLoading = isLoading,
-                    error = error,
-                    canSubmit = canSubmit,
-                    selectedProviderName = providerDisplayName,
-                    rememberStreamingPasswords = rememberStreamingPasswords,
-                    onRememberPasswordChange = { enabled ->
-                        scope.launch { appSettings.setRememberStreamingPasswords(enabled) }
-                    },
-                    onDiscoverClick = {
-                        scanner.rescan()
-                        showDiscoverySheet = true
-                    },
-                    onConnect = {
-                        appSettings.setStreamingService(selectedProvider)
-                        streamingViewModel.connectService(
-                            serviceId = selectedProvider,
-                            serverUrl = serverUrl,
-                            username = username,
-                            password = password
-                        )
-                    },
-                    onDisconnect = {
-                        streamingViewModel.disconnectService(selectedProvider)
-                    },
-                    onSkip = onSkip
-                )
-            }
-        }
-    } else {
-        // Mobile Column
-        Column(
-            horizontalAlignment = Alignment.Start,
-            modifier = Modifier
-                .fillMaxWidth()
-                .verticalScroll(scrollState)
-        ) {
-            Box(
-                modifier = Modifier.fillMaxWidth(),
-                contentAlignment = Alignment.Center
-            ) {
-                AnimatedContent(
-                    targetState = isAutoScanning,
-                    label = "setup_header_icon_mobile"
-                ) { scanning ->
-                    if (scanning) {
-                        RhythmWavyProgressLoader(
-                            progress = null,
-                            modifier = Modifier.size(56.dp),
-                            indicatorColor = MaterialTheme.colorScheme.primary,
-                            trackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
-                            centerContent = {
-                                Icon(
-                                    painter = painterResource(id = providerIconRes),
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(28.dp)
-                                )
-                            }
-                        )
-                    } else {
-                        Icon(
-                            painter = painterResource(id = providerIconRes),
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(56.dp)
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Text(
-                text = if (isAutoScanning) {
-                    stringResource(R.string.onboarding_scanning_for_provider, providerDisplayName)
-                } else {
-                    stringResource(R.string.onboardingscreen_configure_provider, providerDisplayName)
-                },
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.padding(bottom = 12.dp)
-            )
-
-            Text(
-                text = if (isAutoScanning) {
-                    stringResource(R.string.onboarding_scanning_for_provider_desc)
-                } else {
-                    providerDescription
-                },
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(bottom = 24.dp)
-            )
-
-            StreamingSetupSelectionAndForm(
-                selectedProvider = selectedProvider,
-                requiresServerUrl = requiresServerUrl,
-                serverUrl = serverUrl,
-                onServerUrlChange = { serverUrl = it },
-                username = username,
-                onUsernameChange = { username = it },
-                password = password,
-                onPasswordChange = { password = it },
-                isConnected = isConnected,
-                isLoading = isLoading,
-                error = error,
-                canSubmit = canSubmit,
-                selectedProviderName = providerDisplayName,
-                rememberStreamingPasswords = rememberStreamingPasswords,
-                onRememberPasswordChange = { enabled ->
-                    scope.launch { appSettings.setRememberStreamingPasswords(enabled) }
-                },
-                onDiscoverClick = {
-                    scanner.rescan()
-                    showDiscoverySheet = true
-                },
-                onConnect = {
-                    appSettings.setStreamingService(selectedProvider)
-                    streamingViewModel.connectService(
-                        serviceId = selectedProvider,
-                        serverUrl = serverUrl,
-                        username = username,
-                        password = password
-                    )
-                },
-                onDisconnect = {
-                    streamingViewModel.disconnectService(selectedProvider)
-                },
-                onSkip = onSkip
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            StreamingSetupTipsCard()
-        }
-    }
-
-    if (showDiscoverySheet) {
-        NearbyServerDiscoverySheet(
-            serviceId = selectedProvider,
-            scanner = scanner,
-            onDismiss = { showDiscoverySheet = false },
-            onServerSelected = { detectedUrl ->
-                serverUrl = detectedUrl
-                showDiscoverySheet = false
-            }
-        )
-    }
-}
-
-@Composable
-private fun StreamingSetupTipsCard() {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(18.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.84f)
-        )
-    ) {
-        Column(modifier = Modifier.padding(20.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = RhythmIcons.Info,
-                    tint = MaterialTheme.colorScheme.primary,
-                    contentDescription = null,
-                    modifier = Modifier.size(24.dp)
-                )
-                Spacer(modifier = Modifier.width(12.dp))
-                Text(
-                    text = stringResource(R.string.onboardingscreen_streaming_setup_tips),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-            }
-            Spacer(modifier = Modifier.height(12.dp))
-
-            OnboardingTipItem(
-                icon = MaterialSymbolIcon("wifi_find"),
-                text = stringResource(R.string.onboardingscreen_setup_auto_scan_tip)
-            )
-            OnboardingTipItem(
-                icon = MaterialSymbolIcon("verified_user"),
-                text = stringResource(R.string.onboardingscreen_connection_test_ensures_server)
-            )
-        }
-    }
-}
-
-@Composable
-private fun StreamingSetupSelectionAndForm(
-    selectedProvider: String,
-    requiresServerUrl: Boolean,
-    serverUrl: String,
-    onServerUrlChange: (String) -> Unit,
-    username: String,
-    onUsernameChange: (String) -> Unit,
-    password: String,
-    onPasswordChange: (String) -> Unit,
-    isConnected: Boolean,
-    isLoading: Boolean,
-    error: String?,
-    canSubmit: Boolean,
-    selectedProviderName: String,
-    rememberStreamingPasswords: Boolean,
-    onRememberPasswordChange: (Boolean) -> Unit,
-    onDiscoverClick: () -> Unit,
-    onConnect: () -> Unit,
-    onDisconnect: () -> Unit,
-    onSkip: (() -> Unit)? = null
-) {
-    val scope = rememberCoroutineScope()
-
-    // Connection Form
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        ),
-        shape = RoundedCornerShape(24.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
-        ) {
-            if (requiresServerUrl) {
-                OutlinedTextField(
-                    value = serverUrl,
-                    onValueChange = onServerUrlChange,
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text(stringResource(R.string.streaming_service_setup_server_url)) },
-                    placeholder = { Text(stringResource(R.string.onboardingscreen_httpsyourservercom)) },
-                    trailingIcon = {
-                        IconButton(onClick = onDiscoverClick, enabled = !isLoading && !isConnected) {
-                            Icon(
-                                imageVector = MaterialSymbolIcon("radar"),
-                                contentDescription = stringResource(R.string.streaming_service_setup_auto_detect)
-                            )
-                        }
-                    },
-                    supportingText = { Text(stringResource(R.string.onboardingscreen_remember_to_include_http)) },
-                    singleLine = true,
-                    enabled = !isLoading && !isConnected
-                )
-            }
-
-            OutlinedTextField(
-                value = username,
-                onValueChange = onUsernameChange,
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text(stringResource(R.string.onboardingscreen_username)) },
-                placeholder = { Text(stringResource(R.string.onboardingscreen_enter_server_username)) },
-                singleLine = true,
-                enabled = !isLoading && !isConnected
-            )
-
-            OutlinedTextField(
-                value = password,
-                onValueChange = onPasswordChange,
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text(stringResource(R.string.streaming_service_setup_password)) },
-                placeholder = { Text(stringResource(R.string.onboardingscreen_enter_server_password)) },
-                visualTransformation = PasswordVisualTransformation(),
-                singleLine = true,
-                enabled = !isLoading && !isConnected
-            )
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = stringResource(id = R.string.streaming_service_setup_remember_password),
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        text = stringResource(id = R.string.streaming_service_setup_remember_password_desc),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-
-                TunerAnimatedSwitch(
-                    checked = rememberStreamingPasswords,
-                    onCheckedChange = onRememberPasswordChange,
-                    enabled = !isLoading && !isConnected
-                )
-            }
-
-            if (isConnected) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(
-                            MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.4f),
-                            RoundedCornerShape(12.dp)
-                        )
-                        .padding(16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = MaterialSymbolIcon("check_circle", filled = true),
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.tertiary,
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Column {
-                        Text(
-                            text = stringResource(R.string.onboardingscreen_successfully_connected),
-                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.onTertiaryContainer
-                        )
-                        Text(
-                            text = stringResource(R.string.onboarding_connected_to_format, selectedProviderName, username),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.8f)
-                        )
-                    }
-                }
-            } else if (error != null) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(
-                            MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.4f),
-                            RoundedCornerShape(12.dp)
-                        )
-                        .padding(16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalAlignment = Alignment.Top
-                ) {
-                    Icon(
-                        imageVector = MaterialSymbolIcon("warning", filled = true),
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = error,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onErrorContainer
-                        )
-                        val isDomainUrl = remember(serverUrl) {
-                            val clean = serverUrl.trim().lowercase()
-                                .removePrefix("http://")
-                                .removePrefix("https://")
-                                .substringBefore(":")
-                                .substringBefore("/")
-                            clean.isNotEmpty() && !clean.matches(Regex("^(\\d{1,3}\\.){3}\\d{1,3}$")) && clean != "localhost"
-                        }
-                        if (isDomainUrl) {
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                text = stringResource(id = R.string.streaming_service_setup_lan_hairpin_tip),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.85f)
-                            )
-                        }
-                    }
-                }
-            }
-
-            // Connect/Disconnect Button
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                if (isConnected) {
-                    OutlinedButton(
-                        onClick = onDisconnect,
-                        modifier = Modifier.weight(1f),
-                        enabled = !isLoading
-                    ) {
-                        Text(stringResource(R.string.streaming_service_setup_disconnect))
-                    }
-                } else {
-                    Button(
-                        onClick = onConnect,
-                        modifier = Modifier.fillMaxWidth(),
-                        enabled = !isLoading && canSubmit,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary,
-                            contentColor = MaterialTheme.colorScheme.onPrimary
-                        )
-                    ) {
-                        if (isLoading) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(18.dp),
-                                strokeWidth = 2.dp,
-                                color = MaterialTheme.colorScheme.onPrimary
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(stringResource(R.string.onboardingscreen_connecting))
-                        } else {
-                            Text(stringResource(R.string.onboardingscreen_connect_verify))
-                        }
-                    }
-                }
-            }
-
-            if (!isConnected && onSkip != null) {
-                TextButton(
-                    onClick = onSkip,
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = !isLoading
-                ) {
-                    Text(
-                        text = stringResource(R.string.onboarding_streaming_setup_later),
-                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
-            }
-        }
-    }
-}
 
 @Composable
 private fun Material3SettingsGroup(
@@ -10558,12 +9542,12 @@ private fun RotatingBackgroundCookies(color: Color) {
                 animationSpec = tween(durationMillis = 500, easing = androidx.compose.animation.core.FastOutSlowInEasing)
             )
         }
-        
+
         upperY.animateTo(
             targetValue = 0f,
             animationSpec = tween(durationMillis = 600, easing = androidx.compose.animation.core.LinearEasing)
         )
-        
+
         // 2. Collision impact
         launch {
             lowerY.animateTo(
@@ -10578,7 +9562,7 @@ private fun RotatingBackgroundCookies(color: Color) {
                 )
             )
         }
-        
+
         launch {
             upperY.animateTo(
                 targetValue = -60f,
@@ -10740,4 +9724,30 @@ private fun OutlinedTextField(
         shape = shape,
         colors = colors
     )
+}
+
+@Composable
+private fun AppModeChoiceHeader(isTablet: Boolean, modifier: Modifier = Modifier) {
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Icon(imageVector = RhythmIcons.MusicNote, contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(if (isTablet) 80.dp else 64.dp))
+        Text(stringResource(R.string.app_name), style = MaterialTheme.typography.displayMedium,
+            fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+        Text(stringResource(R.string.onboarding_welcome_subtitle), style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+@Composable
+private fun AppModeSelectionList() {
+    Material3SettingsGroup(items = listOf(
+        Material3SettingsItem(
+            title = { Text(stringResource(R.string.intro_korean_catalog)) },
+            description = { Text(stringResource(R.string.intro_korean_catalog_desc)) }
+        ),
+        Material3SettingsItem(
+            title = { Text(stringResource(R.string.intro_on_device_library)) },
+            description = { Text(stringResource(R.string.intro_on_device_library_desc)) }
+        )
+    ), containerColor = MaterialTheme.colorScheme.surface)
 }
