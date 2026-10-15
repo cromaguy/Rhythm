@@ -18,6 +18,7 @@ import kotlin.coroutines.coroutineContext
 
 class AudioAnalysisWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
+        if (!AnalysisBudget(applicationContext).allowed()) return@withContext Result.retry()
         val ledger = ListeningLedger.get(applicationContext)
         val songs = LocalMusicModule.provideMusicRepository(applicationContext).loadSongs()
         val start = System.currentTimeMillis()
@@ -36,6 +37,7 @@ class AudioAnalysisWorker(context: Context, params: WorkerParameters) : Coroutin
                     ledger.saveFeature(song.uri.toString(), signature, analyze(applicationContext, song)); done++; true
                 }
             }
+            catch (_: AnalysisDeferred) { return@withContext Result.retry() }
             catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
             catch (_: Exception) { ledger.state(failureKey, (System.currentTimeMillis() + 7 * 24 * 3600_000L).toString()) }
             setProgress(workDataOf("analyzed" to done, "title" to song.title))
@@ -47,11 +49,13 @@ class AudioAnalysisWorker(context: Context, params: WorkerParameters) : Coroutin
     }
     companion object {
         fun enqueue(context: Context, continuation: Boolean = false) {
-            WorkManager.getInstance(context).enqueueUniqueWork("audio_feature_analysis", if (continuation) ExistingWorkPolicy.APPEND else ExistingWorkPolicy.KEEP,
-                OneTimeWorkRequestBuilder<AudioAnalysisWorker>().setConstraints(Constraints.Builder()
+            WorkManager.getInstance(context).enqueueUniqueWork("audio_feature_analysis", if (continuation) ExistingWorkPolicy.APPEND_OR_REPLACE else ExistingWorkPolicy.KEEP,
+                OneTimeWorkRequestBuilder<AudioAnalysisWorker>()
+                    .setConstraints(Constraints.Builder()
                     .setRequiresCharging(true).setRequiresDeviceIdle(true).setRequiresBatteryNotLow(true).setRequiresStorageNotLow(true).build()).build())
         }
-        suspend fun analyze(context: Context, song: Song): AudioFeatures = withContext(Dispatchers.IO) {
+        suspend fun analyze(context: Context, song: Song): AudioFeatures = withContext(AnalysisBudget.dispatcher) {
+            val budget = AnalysisBudget(context); budget.checkpoint()
             val extractor = MediaExtractor(); var codec: MediaCodec? = null
             try {
                 extractor.setDataSource(context, song.uri, null)
@@ -76,6 +80,7 @@ class AudioAnalysisWorker(context: Context, params: WorkerParameters) : Coroutin
                             var mono = 0.0
                             repeat(channels) { mono += if (encoding == AudioFormat.ENCODING_PCM_FLOAT) buffer.float.toDouble() else buffer.short / 32768.0 }
                             signal.add(mono / channels)
+                            if (buffer.position() % (bytesPerFrame * 1024) == 0) budget.checkpoint()
                         }
                         extractor.advance()
                     }
@@ -92,7 +97,7 @@ class AudioAnalysisWorker(context: Context, params: WorkerParameters) : Coroutin
                 val info = MediaCodec.BufferInfo(); var inputEnded = false; var outputEnded = false
                 val started = System.currentTimeMillis()
                 while (!outputEnded) {
-                    coroutineContext.ensureActive(); check(System.currentTimeMillis() - started < 30 * 60_000) { "Decode timeout" }
+                    coroutineContext.ensureActive(); budget.checkpoint(); check(System.currentTimeMillis() - started < 30 * 60_000) { "Decode timeout" }
                     if (!inputEnded) {
                         val index = decoder.dequeueInputBuffer(10_000)
                         if (index >= 0) {
@@ -117,6 +122,7 @@ class AudioAnalysisWorker(context: Context, params: WorkerParameters) : Coroutin
                                 var mono = 0.0
                                 repeat(channels) { mono += if (encoding == AudioFormat.ENCODING_PCM_FLOAT) buffer.float.toDouble() else buffer.short / 32768.0 }
                                 signal!!.add(mono / channels)
+                                if (buffer.position() % (bytesPerFrame * 1024) == 0) budget.checkpoint()
                             }
                             outputEnded = info.flags and MediaCodec.BUFFER_FLAG_END_OF_STREAM != 0
                         } finally { decoder.releaseOutputBuffer(index, false) }

@@ -948,6 +948,8 @@ fun AlbumDetailScreen(
                                     verticalAlignment = Alignment.CenterVertically,
                                     modifier = Modifier.padding(end = 12.dp)
                                 ) {
+                                    chromahub.rhythm.app.features.local.presentation.metadata.EntityLikeButton(chromahub.rhythm.app.features.local.data.experience.TasteKind.ALBUM,
+                                        chromahub.rhythm.app.features.local.data.experience.TasteMemory.albumKey(albumName, album?.artist ?: ""), albumName)
                                     Box {
                                         HeaderActionGroup(
                                             actions = listOf(

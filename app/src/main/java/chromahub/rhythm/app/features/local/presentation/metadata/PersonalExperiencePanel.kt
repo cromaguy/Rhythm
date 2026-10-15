@@ -30,6 +30,7 @@ fun PersonalExperiencePanel() {
     var insight by remember { mutableStateOf<ListeningInsights?>(null) }
     var chooseMonth by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf<String?>(null) }
+    var tasteReviews by remember { mutableStateOf(TasteMemory.get(context).reviewsEnabled) }
     var ruleUpdates by remember { mutableStateOf(ExperienceRulesWorker.enabled(context)) }
     var collectionRatings by remember { mutableStateOf(emptyMap<String, Double>()) }
     LaunchedEffect(revision) { collectionRatings = withContext(Dispatchers.IO) { RecommendationLearning.get(context).model().collections } }
@@ -38,15 +39,11 @@ fun PersonalExperiencePanel() {
     LaunchedEffect(revision) { personalOptions = withContext(Dispatchers.IO) { PersonalCollections.options(context) }; autoplay = PersonalCollections.autoplay(context) }
     var profileVersion by remember { mutableStateOf(ExperienceProfile.read(context).version) }
     LaunchedEffect(month, revision) {
-        withContext(Dispatchers.IO) {
-            ledger.recover()
-            val selected = YearMonth.parse(month); val zone = ZoneId.systemDefault()
-            val start = selected.atDay(1).atStartOfDay(zone).toInstant().toEpochMilli()
-            val end = selected.plusMonths(1).atDay(1).atStartOfDay(zone).toInstant().toEpochMilli() - 1
-            val result = ListeningInsightAnalysis.analyze(ledger.records(start, end) + ledger.records(start, end, "action"))
-            val allMonths = ledger.months()
-            withContext(Dispatchers.Main) { insight = result; months = allMonths }
+        val result = withContext(Dispatchers.IO) {
+            ListeningInsightCache.request(context, month)
+            ListeningInsightCache.read(context, month) to ledger.months()
         }
+        insight = result.first; months = result.second
     }
     val importRules = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) scope.launch {
@@ -88,6 +85,7 @@ fun PersonalExperiencePanel() {
                 }
                 if (data.totalPlays == 0) Text(stringResource(R.string.personal_history_empty), style = MaterialTheme.typography.bodySmall)
             }
+            Text(stringResource(R.string.personal_insight_background), style = MaterialTheme.typography.bodySmall)
             HorizontalDivider()
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text(stringResource(R.string.personal_autoplay), Modifier.weight(1f))
@@ -118,6 +116,12 @@ fun PersonalExperiencePanel() {
                     }
                 }
             }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text(stringResource(R.string.taste_reviews_enabled), Modifier.weight(1f))
+                Switch(tasteReviews, onCheckedChange = { value -> tasteReviews = value; scope.launch(Dispatchers.IO) { TasteMemory.get(context).reviewsEnabled(value) } })
+            }
+            Text(stringResource(R.string.taste_reviews_description), style = MaterialTheme.typography.bodySmall)
+            MobilityContextSettings()
             ListeningContextPanel()
             HorizontalDivider()
             Text(stringResource(R.string.personal_audio_hint), style = MaterialTheme.typography.bodySmall)
@@ -129,6 +133,7 @@ fun PersonalExperiencePanel() {
                 Text(stringResource(R.string.personal_rules_updates), Modifier.weight(1f))
                 Switch(checked = ruleUpdates, onCheckedChange = { ruleUpdates = it; ExperienceRulesWorker.configure(context, it) })
             }
+            SoftUpdatePanel()
             TextButton(onClick = { importRules.launch(arrayOf("application/json", "text/plain")) }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.personal_rules_import)) }
             Text(stringResource(R.string.personal_native_updates_hint), style = MaterialTheme.typography.bodySmall)
             message?.let { Text(it, style = MaterialTheme.typography.bodySmall) }

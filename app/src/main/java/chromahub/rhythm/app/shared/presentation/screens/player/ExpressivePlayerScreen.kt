@@ -60,6 +60,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -308,6 +309,10 @@ fun ExpressivePlayerScreen(
     onSleepTimer: () -> Unit = {},
     onAddToPlaylist: () -> Unit = {},
     onShareFile: () -> Unit = {},
+    onLikeSong: () -> Unit = { if (!isFavorite) onToggleFavorite() },
+    onArtworkInspect: () -> Unit = {},
+    pendingTasteReview: Boolean = false,
+    onReviewInfo: () -> Unit = {},
     onEditBottomButtons: () -> Unit = {}
 ) {
     val artworkScale by animateFloatAsState(
@@ -1118,6 +1123,21 @@ fun ExpressivePlayerScreen(
         }
     }
 
+    var coverFeedbackToken by remember(song?.uri) { mutableIntStateOf(0) }
+    var coverFeedbackDirection by remember { mutableIntStateOf(0) }
+    val coverSeekSeconds = chromahub.rhythm.app.shared.presentation.components.player.CoverGestures.seconds(context)
+    val latestLike by rememberUpdatedState(onLikeSong)
+    val latestSeek by rememberUpdatedState(onSeek)
+    val latestProgress by rememberUpdatedState(progress)
+    val latestInspect by rememberUpdatedState(onArtworkInspect)
+    val handleCoverDoubleTap: (Float, Float) -> Unit = { x, width ->
+        val direction = chromahub.rhythm.app.shared.presentation.components.player.CoverGestures.zone(x, width)
+        latestInspect()
+        if (direction == 0) latestLike()
+        else if ((song?.duration ?: 0L) > 0L) latestSeek(chromahub.rhythm.app.shared.presentation.components.player.CoverGestures.seek(latestProgress(), song!!.duration, direction, coverSeekSeconds))
+        coverFeedbackDirection = direction; coverFeedbackToken++
+        HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
+    }
     val infiniteZoomTransition = rememberInfiniteTransition(label = "ambientInfiniteZoomTransition")
     val ambientInfiniteScale by infiniteZoomTransition.animateFloat(
         initialValue = 1.00f,
@@ -1133,6 +1153,18 @@ fun ExpressivePlayerScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(outerBoxBgColor)
+            .pointerInput(song?.uri, isBackdropEnabled, lyricsVisible, coverSeekSeconds) {
+                if (isBackdropEnabled && !lyricsVisible) detectTapGestures(
+                    onDoubleTap = { position ->
+                        val width = size.width * (if (isLandscapeTablet) .44f else 1f)
+                        val height = size.height * (if (isLandscapeTablet) .8f else .48f)
+                        if (position.x <= width && position.y <= height) handleCoverDoubleTap(position.x, width)
+                    },
+                    onTap = { position ->
+                        if (position.x <= size.width * (if (isLandscapeTablet) .44f else 1f) &&
+                            position.y <= size.height * (if (isLandscapeTablet) .8f else .48f)) latestInspect()
+                    })
+            }
             .nestedScroll(lyricsNestedScrollConnection)
             .pointerInput(autoHideLyricsControls, lyricsVisible) {
                 if (autoHideLyricsControls && lyricsVisible) {
@@ -1181,6 +1213,11 @@ fun ExpressivePlayerScreen(
             }
         }
 
+        // Bounds-only semantics target. Pointer handling is on the common parent above the
+        // swipe-enabled column; a sibling behind that column cannot receive these taps.
+        if (isBackdropEnabled && !lyricsVisible) Box(Modifier
+            .fillMaxWidth(if (isLandscapeTablet) .44f else 1f)
+            .fillMaxHeight(if (isLandscapeTablet) .8f else .48f).testTag("cover_gesture_surface"))
         Column(
             modifier = Modifier.fillMaxSize().statusBarsPadding().then(swipeMinimizeModifier)
         ) {
@@ -1220,15 +1257,11 @@ fun ExpressivePlayerScreen(
                                     shape = artworkClipShape
                                     clip = true
                                 }
-                                .pointerInput(showLyrics, lyricsVisible, gestureArtworkDoubleTap, gestureArtworkSingleTap) {
+                                .pointerInput(song?.uri, coverSeekSeconds, showLyrics, lyricsVisible, gestureArtworkSingleTap) {
                                     detectTapGestures(
-                                        onDoubleTap = if (gestureArtworkDoubleTap) {
-                                            {
-                                                HapticUtils.performHapticFeedback(context, haptic, HapticType.HEAVY)
-                                                onPlayPause()
-                                            }
-                                        } else null,
+                                        onDoubleTap = { position -> handleCoverDoubleTap(position.x, size.width.toFloat()) },
                                         onTap = {
+                                            latestInspect()
                                             qualityBadgeRevealToken++
                                             if (gestureArtworkSingleTap && showLyrics) {
                                                 HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
@@ -2420,6 +2453,11 @@ fun ExpressivePlayerScreen(
                     }
                 }
 
+                chromahub.rhythm.app.shared.presentation.components.player.CoverGestureFeedback(coverFeedbackToken, coverFeedbackDirection, coverSeekSeconds,
+                    Modifier.align(Alignment.TopStart).fillMaxWidth(if (isLandscapeTablet) .44f else 1f).fillMaxHeight(if (isLandscapeTablet) .65f else .4f))
+                if (pendingTasteReview) TextButton(onClick = onReviewInfo, modifier = Modifier.align(Alignment.TopStart).padding(start = 12.dp, top = 4.dp)) {
+                    Text(stringResource(R.string.taste_review_short), color = onSurfaceColor)
+                }
                 IconButton(
                     onClick = { HapticUtils.performHapticFeedback(context, haptic, HapticType.MEDIUM); onMoreClick() },
                     modifier = Modifier.align(Alignment.TopEnd).padding(top = 4.dp, end = 12.dp).size(48.dp)

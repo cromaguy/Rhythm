@@ -10,8 +10,8 @@ import kotlin.math.*
 
 /** Fixed, versioned feature space allows old recommendation decisions to be replayed and evaluated. */
 object AdaptiveRecommendation {
-    const val SCHEMA = 3
-    val featureNames = listOf("artist", "genre", "novelty", "repeat", "audio", "hour", "transition", "routine", "place", "output", "weekday", "completion", "recentTaste", "weather", "brightness", "volume", "ambient")
+    const val SCHEMA = 4
+    val featureNames = listOf("artist", "genre", "novelty", "repeat", "audio", "hour", "transition", "routine", "place", "output", "weekday", "completion", "recentTaste", "weather", "brightness", "volume", "ambient", "motion", "daylight", "entity")
     fun probability(weights: List<Double>, features: List<Double>): Double {
         require(weights.size == features.size && weights.size in 13..featureNames.size)
         val dot = weights.zip(features).sumOf { (w, x) -> w.coerceIn(-3.0, 3.0) * x.coerceIn(0.0, 1.0) }.coerceIn(-20.0, 20.0)
@@ -91,6 +91,8 @@ data class RecommendationEvent(val id: String, val at: Long, val type: String, v
     val features: List<Double> = emptyList(), val reward: Double? = null, val prediction: Double? = null, val algorithm: String = "contextual-sgd-v3", val situation: ListeningSituation? = null, val rank: Int? = null,
     val title: String? = null, val artist: String? = null, val genre: String? = null, val candidateKeys: List<String> = emptyList())
 @Keep
+data class RecommendationIntents(val explicit: Map<String, Double?> = emptyMap(), val collections: Map<String, Double?> = emptyMap())
+@Keep
 data class RecommendationModel(val weights: List<Double> = List(AdaptiveRecommendation.featureNames.size) { 0.0 }, val samples: Long = 0,
     val squaredError: Double = 0.0, val baselineError: Double = 0.0, val positive: Long = 0, val negative: Long = 0, val explicit: Map<String, Double> = emptyMap(), val collections: Map<String, Double> = emptyMap())
 
@@ -99,6 +101,10 @@ class RecommendationLearning private constructor(private val context: Context) {
     private val root = File(context.filesDir, "music_metadata/recommendations").apply { mkdirs() }
     private val gson = Gson()
     private var signature = ""
+    private var loadedSnapshot = false
+    private var currentIntents = RecommendationIntents()
+    private val snapshotFile get() = File(root, "trained-model.json")
+    private val intentsFile get() = File(root, "current-intents.json")
     private var cached = RecommendationModel()
     private var collectionEvents = emptyMap<String, RecommendationEvent>()
     private val offers = linkedMapOf<String, RecommendationScore>()
@@ -110,6 +116,16 @@ class RecommendationLearning private constructor(private val context: Context) {
         scores.forEach { offers[it.key] = it }
         val keys = scores.map { it.key }.toSet(); candidates.filter { it.key in keys }.forEach { descriptions[it.key] = it }
         while (offers.size > 1000) { val oldest = offers.keys.first(); offers.remove(oldest); descriptions.remove(oldest) }
+    }
+    @Synchronized fun captureFeatures(keys: List<String>): Map<String, List<Double>> = keys.mapNotNull { key ->
+        offers[key]?.features?.takeIf { it.size == AdaptiveRecommendation.featureNames.size }?.let { key to it }
+    }.toMap()
+    @Synchronized fun restoreOffers(snapshot: MixSnapshot) {
+        offer(snapshot.features.orEmpty().mapNotNull { (key, features) ->
+            features.takeIf { it.size in 13..AdaptiveRecommendation.featureNames.size && it.all { value -> value.isFinite() && value in 0.0..1.0 } }?.let {
+                RecommendationScore(key, 0.0, emptyList(), it + List(AdaptiveRecommendation.featureNames.size - it.size) { 0.0 })
+            }
+        })
     }
     @Synchronized fun presented(keys: List<String>) {
         val now = System.currentTimeMillis(); val identity = keys.joinToString("|")
@@ -130,6 +146,8 @@ class RecommendationLearning private constructor(private val context: Context) {
     @Synchronized private fun decision(key: String, type: String) {
         offers[key]?.let { score ->
             val probability = AdaptiveRecommendation.probability(model().weights, score.features)
+            selected.entries.removeAll { System.currentTimeMillis() - it.value.first > 6 * 3600_000L }
+            if (selected.size >= 64) selected.minByOrNull { it.value.first }?.key?.let(selected::remove)
             selected[key] = System.currentTimeMillis() to score.copy(score = probability)
             append(RecommendationEvent(java.util.UUID.randomUUID().toString(), System.currentTimeMillis(), type, key, features = score.features, prediction = model().let { AdaptiveRecommendation.probability(it.weights, score.features) }, situation = ListeningContext.get(context).snapshot())) }
     }
@@ -152,47 +170,77 @@ class RecommendationLearning private constructor(private val context: Context) {
         append(RecommendationEvent(java.util.UUID.randomUUID().toString(), System.currentTimeMillis(), "collection_explicit", id,
             features = features, reward = reward, prediction = features.takeIf { it.isNotEmpty() }?.let { AdaptiveRecommendation.probability(model().weights, it) }, situation = ListeningContext.get(context).snapshot(), candidateKeys = keys.ifEmpty { previous?.candidateKeys.orEmpty() }))
     }
+    /** UI/playback reads a materialized model. Journal replay never runs in this path. */
     @Synchronized fun model(): RecommendationModel {
-        val files = root.listFiles { f -> f.extension == "jsonl" }.orEmpty().sortedBy { it.name }
-        val current = files.joinToString { "${it.name}:${it.length()}:${it.lastModified()}" }
-        if (current == signature) return cached
-        // Playlist feedback is reversible: only the latest active choice participates in rebuilding.
-        val collectionChoices = linkedMapOf<String, RecommendationEvent>()
-        files.forEach { file -> file.useLines { lines -> lines.forEach { line ->
-            val e = runCatching { gson.fromJson(line, RecommendationEvent::class.java) }.getOrNull()
-            if (e?.type == "collection_explicit" && !e.id.isNullOrBlank() && !e.key.isNullOrBlank() && e.schema in 1..AdaptiveRecommendation.SCHEMA &&
-                (collectionChoices[e.key]?.at ?: Long.MIN_VALUE) <= e.at) collectionChoices[e.key] = e
-        } } }
-        collectionEvents = collectionChoices.toMap()
-        var result = RecommendationModel(); val ids = hashSetOf<String>(); val feedback = mutableMapOf<String, Double>()
-        files.forEach { file -> file.useLines { lines -> lines.forEach { line ->
-            val e = runCatching { gson.fromJson(line, RecommendationEvent::class.java) }.getOrNull() ?: return@forEach
-            if (e.id.isNullOrBlank() || e.key.isNullOrBlank() || e.schema !in 1..AdaptiveRecommendation.SCHEMA || !ids.add(e.id)) return@forEach
-            val rawFeatures = e.features.orEmpty()
-            val features = if (e.schema < AdaptiveRecommendation.SCHEMA && rawFeatures.size in 13..AdaptiveRecommendation.featureNames.size) rawFeatures + List(AdaptiveRecommendation.featureNames.size - rawFeatures.size) { 0.0 } else rawFeatures
-            if (e.type == "explicit") { if (e.reward == null) feedback.remove(e.key) else if (e.reward.isFinite() && e.reward in 0.0..1.0) feedback[e.key] = e.reward }
-            if (e.type in setOf("selected", "play_started") && features.size == AdaptiveRecommendation.featureNames.size && System.currentTimeMillis() - e.at in 0..6 * 3600_000L) {
-                selected[e.key] = e.at to RecommendationScore(e.key, e.prediction ?: .5, emptyList(), features)
+        if (!loadedSnapshot) {
+            loadedSnapshot = true
+            runCatching {
+                val f = File(root, "collection-events.json")
+                if (f.length() in 1..1_000_000) collectionEvents = gson.fromJson(f.readText(), Array<RecommendationEvent>::class.java).takeLast(512).associateBy { it.key }
             }
-            if (e.type == "outcome") selected.remove(e.key)
-            if (e.type == "collection_explicit" && collectionChoices[e.key]?.id != e.id) return@forEach
-            val reward = e.reward ?: return@forEach
-            if (e.type !in setOf("explicit", "outcome", "collection_explicit") || features.size != AdaptiveRecommendation.featureNames.size || !features.all { it.isFinite() && it in 0.0..1.0 } || !reward.isFinite() || reward !in 0.0..1.0) return@forEach
-            val prediction = e.prediction?.takeIf { it.isFinite() && it in 0.0..1.0 } ?: AdaptiveRecommendation.probability(result.weights, features)
-            result = result.copy(weights = AdaptiveRecommendation.learn(result.weights, features, reward, result.samples), samples = result.samples + 1,
-                squaredError = result.squaredError + (prediction - reward).pow(2), baselineError = result.baselineError + (.5 - reward).pow(2),
-                positive = result.positive + if (reward >= .5) 1 else 0, negative = result.negative + if (reward < .5) 1 else 0)
-        } } }
-        cached = result.copy(explicit = feedback.toMap(), collections = collectionChoices.mapNotNull { (key, event) -> event.reward?.takeIf { it.isFinite() && it in 0.0..1.0 }?.let { key to it } }.toMap()); signature = current
+            runCatching {
+                val f = File(root, "pending-decisions.json")
+                if (f.length() in 1..1_000_000) {
+                    val restored: Map<String, Pair<Long, RecommendationScore>> = gson.fromJson(f.readText(), object : com.google.gson.reflect.TypeToken<Map<String, Pair<Long, RecommendationScore>>>() {}.type)
+                    selected.putAll(restored.filterValues { System.currentTimeMillis() - it.first in 0..6 * 3600_000L }.entries.toList().takeLast(48).associate { it.toPair() })
+                }
+            }
+            cached = runCatching { if (snapshotFile.length() in 1..4_000_000) gson.fromJson(snapshotFile.readText(), RecommendationModel::class.java) else null }.getOrNull() ?: RecommendationModel()
+            cached = cached.copy(weights = cached.weights.take(AdaptiveRecommendation.featureNames.size) + List((AdaptiveRecommendation.featureNames.size - cached.weights.size).coerceAtLeast(0)) { 0.0 })
+            runCatching { if (intentsFile.length() in 1..4_000_000) gson.fromJson(intentsFile.readText(), RecommendationIntents::class.java) else null }.getOrNull()?.let {
+                currentIntents = it
+                val explicit = cached.explicit.toMutableMap(); val collections = cached.collections.toMutableMap()
+                it.explicit.orEmpty().forEach { (key, value) -> if (value == null) explicit.remove(key) else explicit[key] = value }
+                it.collections.orEmpty().forEach { (key, value) -> if (value == null) collections.remove(key) else collections[key] = value }
+                cached = cached.copy(explicit = explicit, collections = collections)
+            }
+        }
         return cached
+    }
+    /** Heavy replay has no object monitor: UI and playback never wait behind training. */
+    internal suspend fun rebuild(): RecommendationModel {
+        val job = kotlinx.coroutines.currentCoroutineContext()[kotlinx.coroutines.Job]
+        val budget = AnalysisBudget(context, { job?.isActive != false }, 90_000)
+        TasteMemory.get(context).recover(budget)
+        ListeningLedger.get(context).backfillAffinities(budget)
+        ContextPreferenceIndex(context).use { it.rebuild(ListeningLedger.get(context), budget) }
+        val result = RecommendationTrainingIndex(context).train(root, budget)
+        ListeningInsightCache.refresh(context, budget)
+        synchronized(this) {
+            model()
+            val explicit = result.explicit.toMutableMap(); val collections = result.collections.toMutableMap()
+            currentIntents.explicit.forEach { (key, value) -> if (value == null) explicit.remove(key) else explicit[key] = value }
+            currentIntents.collections.forEach { (key, value) -> if (value == null) collections.remove(key) else collections[key] = value }
+            cached = result.copy(explicit = explicit, collections = collections)
+            PersonalArchive.atomicWrite(snapshotFile, gson.toJson(cached).toByteArray())
+            return cached
+        }
     }
     private fun append(event: RecommendationEvent) = appendBatch(listOf(event))
     private fun appendBatch(events: List<RecommendationEvent>) {
+        model()
+        events.forEach { event ->
+            when (event.type) {
+                "explicit" -> {
+                    currentIntents = currentIntents.copy(explicit = currentIntents.explicit + (event.key to event.reward))
+                    cached = cached.copy(explicit = if (event.reward == null) cached.explicit - event.key else cached.explicit + (event.key to event.reward))
+                }
+                "collection_explicit" -> {
+                    currentIntents = currentIntents.copy(collections = currentIntents.collections + (event.key to event.reward))
+                    collectionEvents = (collectionEvents + (event.key to event)).entries.toList().takeLast(512).associate { it.key to it.value }
+                    cached = cached.copy(collections = if (event.reward == null) cached.collections - event.key else cached.collections + (event.key to event.reward))
+                }
+            }
+        }
+        if (events.any { it.type in setOf("explicit", "collection_explicit") })
+            PersonalArchive.atomicWrite(intentsFile, gson.toJson(currentIntents).toByteArray())
         val file = File(root, "${java.time.LocalDate.now()}.jsonl")
         // Isolate an interrupted final record before appending.
         if (file.length() > 0) java.io.RandomAccessFile(file, "r").use { it.seek(file.length() - 1); if (it.read() != 10) java.io.FileOutputStream(file, true).use { out -> out.write(10); out.fd.sync() } }
         java.io.FileOutputStream(file, true).use { it.write(events.joinToString("\n", postfix = "\n") { gson.toJson(it) }.toByteArray()); it.fd.sync() }
-        signature = ""; ListeningLedger.get(context).invalidate(); PersonalArchive.enqueue(context)
+        if (events.any { it.type == "collection_explicit" }) PersonalArchive.atomicWrite(File(root, "collection-events.json"), gson.toJson(collectionEvents.values).toByteArray())
+        if (events.any { it.type in setOf("selected", "play_started", "outcome") }) PersonalArchive.atomicWrite(File(root, "pending-decisions.json"), gson.toJson(selected.entries.toList().takeLast(48).associate { it.toPair() }).toByteArray())
+        signature = ""; ListeningLedger.get(context).invalidate(); PersonalArchive.enqueue(context); RecommendationTrainingWorker.enqueue(context)
     }
     companion object {
         @Volatile private var instance: RecommendationLearning? = null

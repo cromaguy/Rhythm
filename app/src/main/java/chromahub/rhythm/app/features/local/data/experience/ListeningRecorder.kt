@@ -48,7 +48,7 @@ class ListeningRecorder(private val context: Context, private val songOf: (Media
             val before = situation
             val changed = before != null && (ListeningContext.outputGroup(before) != ListeningContext.outputGroup(next) ||
                 before.hour != next.hour || before.weekday != next.weekday || ListeningContext.region(before) != ListeningContext.region(next) ||
-                before.weather?.at != next.weather?.at || before.systemVolume != next.systemVolume || before.brightnessSetting != next.brightnessSetting || before.ambientSound?.at != next.ambientSound?.at || (next.precise && (before.latitude != next.latitude || before.longitude != next.longitude)))
+                before.motion?.kind != next.motion?.kind || before.daylight?.isDay != next.daylight?.isDay || before.weather?.at != next.weather?.at || before.systemVolume != next.systemVolume || before.brightnessSetting != next.brightnessSetting || before.ambientSound?.at != next.ambientSound?.at || (next.precise && (before.latitude != next.latitude || before.longitude != next.longitude)))
             if (changed && segmentId != null) { finish("context_change"); if (player?.isPlaying == true) start() }
             else checkpoint("checkpoint")
         } }
@@ -74,6 +74,7 @@ class ListeningRecorder(private val context: Context, private val songOf: (Media
         }
         startElapsed = SystemClock.elapsedRealtime(); startPosition = p.currentPosition.coerceAtLeast(0)
         speed = p.playbackParameters.speed
+        MobilityContext.get(context).playback(true)
         situation = ListeningContext.get(context).snapshot().copy(playerVolume = p.volume)
         lastSegmentMs = 0L
     }
@@ -113,6 +114,7 @@ class ListeningRecorder(private val context: Context, private val songOf: (Media
             libraryAddedAt = s.dateAdded, repeatMode = p.repeatMode, shuffled = p.shuffleModeEnabled, volume = p.volume))
     }
     override fun onIsPlayingChanged(isPlaying: Boolean) {
+        MobilityContext.get(context).playback(isPlaying)
         if (isPlaying) { start(); action("resume") } else { val reason = if (player?.playbackState == Player.STATE_BUFFERING && player?.playWhenReady == true) "buffer" else "pause"; finish(reason); action(reason) }
     }
     override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
@@ -155,5 +157,5 @@ class ListeningRecorder(private val context: Context, private val songOf: (Media
     override fun onRepeatModeChanged(repeatMode: Int) { action("repeat_mode_change") }
     override fun onShuffleModeEnabledChanged(shuffleModeEnabled: Boolean) { action("shuffle_change") }
     override fun onVolumeChanged(volume: Float) { finish("volume_change"); action("volume_change"); if (player?.isPlaying == true) start() }
-    fun close() { finish("service_stop"); summarize("service_stop"); player?.removeListener(this); timerScope.cancel(); records.close() }
+    fun close() { MobilityContext.get(context).playback(false); finish("service_stop"); summarize("service_stop"); player?.removeListener(this); timerScope.cancel(); records.close() }
 }

@@ -228,16 +228,6 @@ fun GesturesSettingsScreen(onBackClick: () -> Unit) {
                         }
                     ),
                     SettingItem(
-                        icon = MaterialSymbolIcon("touch_app", filled = true),
-                        title = context.getString(R.string.settings_double_tap_artwork),
-                        description = context.getString(R.string.settings_double_tap_artwork_desc),
-                        toggleState = gestureArtworkDoubleTap,
-                        onToggleChange = {
-                            HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
-                            appSettings.setGestureArtworkDoubleTap(it)
-                        }
-                    ),
-                    SettingItem(
                         icon = MaterialSymbolIcon("music_note", filled = true),
                         title = context.getString(R.string.settings_tap_artwork_lyrics),
                         description = context.getString(R.string.settings_tap_artwork_lyrics_desc),
@@ -256,6 +246,10 @@ fun GesturesSettingsScreen(onBackClick: () -> Unit) {
                     },
                     containerColor = MaterialTheme.colorScheme.surfaceContainer
                 )
+            }
+
+            item(key = "cover_gesture_customization") {
+                chromahub.rhythm.app.features.local.presentation.metadata.CoverGestureSettings()
             }
 
             // Mini Player Gestures

@@ -8,7 +8,7 @@ import chromahub.rhythm.app.shared.data.model.Song
 import com.google.gson.Gson
 import java.io.File
 
-enum class PersonalCollection { DAYLIST, DAILY_MIX, REDISCOVERY, SIMILAR, FAVORITES, FEWER_REPEATS }
+@Keep enum class PersonalCollection { DAYLIST, DAILY_MIX, REDISCOVERY, SIMILAR, FAVORITES, FEWER_REPEATS }
 @Keep data class PersonalOptions(val snoozed: Map<String, Long> = emptyMap(), val hidden: Set<String> = emptySet(), val autoplay: Boolean = false, val labels: Map<String, String> = emptyMap())
 
 object PersonalCollections {
@@ -35,7 +35,7 @@ object PersonalCollections {
 
     /** Existing playlists and their ordering are never mutated by generating a collection. */
     fun generate(context: Context, songs: List<Song>, favorites: List<String>, currentId: String?, mode: PersonalCollection,
-                 count: Int = 30, genre: String? = null): List<Song> {
+                 count: Int = 30, genre: String? = null, seed: Long = System.currentTimeMillis() / 86_400_000L): List<Song> {
         val now = System.currentTimeMillis(); val ledger = ListeningLedger.get(context)
         val options = options(context); val history = ledger.affinities().associateBy { it.songKey }
         val eligible = songs.filterNot { excluded(options, it.uri.toString(), now) }.filter { song -> when(mode) {
@@ -44,7 +44,7 @@ object PersonalCollections {
             PersonalCollection.DAILY_MIX -> genre == null || AdaptiveRecommendation.normalizeGenre(song.genre) == AdaptiveRecommendation.normalizeGenre(genre)
             else -> true
         } }
-        val ranked = PersonalTasteRepository.recommend(context, eligible, favorites, if (mode == PersonalCollection.FAVORITES) null else currentId, minOf(500, eligible.size))
+        val ranked = PersonalTasteRepository.recommend(context, eligible, favorites, if (mode == PersonalCollection.FAVORITES) null else currentId, minOf(if (mode == PersonalCollection.SIMILAR) 128 else 500, eligible.size), seed)
         val selected = when (mode) {
             PersonalCollection.DAYLIST -> ranked
             PersonalCollection.DAILY_MIX -> {

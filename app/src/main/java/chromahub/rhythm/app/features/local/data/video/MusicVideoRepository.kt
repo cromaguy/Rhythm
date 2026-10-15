@@ -24,7 +24,7 @@ import java.nio.ByteBuffer
 
 @Keep
 data class MusicVideo(val songKey: String, val source: String, val videoId: String? = null, val fileName: String? = null,
-    val title: String = "", val offsetMs: Long = 0, val addedAt: Long = System.currentTimeMillis(), val bytes: Long = 0, val videoOnly: Boolean = true)
+    val title: String = "", val offsetMs: Long = 0, val addedAt: Long = System.currentTimeMillis(), val bytes: Long = 0, val videoOnly: Boolean = true, val width: Int? = null, val height: Int? = null)
 @Keep
 data class VideoCandidate(val id: String, val title: String, val artist: String)
 
@@ -54,10 +54,16 @@ class MusicVideoRepository(private val context: Context) {
     fun get(key: String): MusicVideo? = runCatching { gson.fromJson(record(key).readText(), MusicVideo::class.java) }.getOrNull()?.takeIf {
         it.songKey == key && (it.source == "youtube" && MusicVideoLinks.validId(it.videoId) || it.source == "local" && it.fileName?.let { name -> File(name).name == name && File(root, name).isFile } == true)
     }
-    fun save(video: MusicVideo) { require(video.offsetMs in -600_000..600_000); require(video.source == "local" || MusicVideoLinks.validId(video.videoId)); PersonalArchive.atomicWrite(record(video.songKey), gson.toJson(video).toByteArray()); PersonalArchive.enqueue(context) }
+    fun save(video: MusicVideo) = synchronized(downloadInstallLock) { require(video.offsetMs in -600_000..600_000); require(video.source == "local" || MusicVideoLinks.validId(video.videoId)); PersonalArchive.atomicWrite(record(video.songKey), gson.toJson(video).toByteArray()); PersonalArchive.enqueue(context) }
     fun link(key: String, url: String, title: String): MusicVideo = MusicVideo(key, "youtube", MusicVideoLinks.youtubeId(url) ?: error("Invalid YouTube link"), title = title).also(::save)
     fun uri(video: MusicVideo): Uri? = video.fileName?.takeIf { File(it).name == it }?.let { Uri.fromFile(File(root, it)) }
-    fun remove(key: String) { PersonalArchive.atomicWrite(record(key), gson.toJson(MusicVideo(key, "removed")).toByteArray()); PersonalArchive.enqueue(context) } // Shared video assets are preserved for recovery.
+    fun remove(key: String) = synchronized(downloadInstallLock) { PersonalArchive.atomicWrite(record(key), gson.toJson(MusicVideo(key, "removed")).toByteArray()); PersonalArchive.enqueue(context) } // Shared video assets are preserved for recovery.
+    fun installDownload(key: String, expectedId: String, imported: MusicVideo): Boolean = synchronized(downloadInstallLock) {
+        val current = get(key)
+        if (current?.source != "youtube" || current.videoId != expectedId) return@synchronized false
+        save(imported.copy(offsetMs = current.offsetMs)); true
+    }
+    companion object { internal val downloadInstallLock = Any() }
     suspend fun search(song: Song): List<VideoCandidate> = withContext(Dispatchers.IO) {
         val body = com.google.gson.JsonObject().apply {
             addProperty("query", "${song.artist} ${song.title} official music video")
@@ -87,7 +93,7 @@ class MusicVideoRepository(private val context: Context) {
     }
     /** Stream-copy the video track; VP8/VP9 become real WebM, other supported codecs remain MP4.
      * No re-encoding or duplicated audio track, and no YouTube downloading. */
-    suspend fun import(key: String, uri: Uri, title: String): MusicVideo = withContext(Dispatchers.IO) {
+    suspend fun import(key: String, uri: Uri, title: String, persist: Boolean = true): MusicVideo = withContext(Dispatchers.IO) {
         val extractor = MediaExtractor(); var temporary: File? = null
         try {
             extractor.setDataSource(context, uri, null)
@@ -147,7 +153,7 @@ class MusicVideoRepository(private val context: Context) {
                 }
                 val actual = MediaExtractor()
                 val onlyVideo = try { actual.setDataSource(target.path); actual.trackCount == 1 } finally { actual.release() }
-                MusicVideo(key, "local", fileName = name, title = title, bytes = target.length(), videoOnly = onlyVideo).also(::save)
+                MusicVideo(key, "local", fileName = name, title = title, bytes = target.length(), videoOnly = onlyVideo).also { if (persist) save(it) }
             } finally { original?.delete() }
         } finally { extractor.release(); temporary?.delete() }
     }

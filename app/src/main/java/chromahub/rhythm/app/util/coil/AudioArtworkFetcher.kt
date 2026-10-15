@@ -24,6 +24,12 @@ import chromahub.rhythm.app.util.MediaUtils
 import okio.buffer
 import okio.source
 import java.io.ByteArrayInputStream
+import java.io.File
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
+import chromahub.rhythm.app.features.local.data.metadata.readBytesBounded
 
 import android.content.ContentUris
 import androidx.core.net.toUri
@@ -41,7 +47,44 @@ class AudioArtworkFetcher(
     private val options: Options
 ) : Fetcher {
 
-    override suspend fun fetch(): FetchResult? {
+    override suspend fun fetch(): FetchResult? = withContext(Dispatchers.IO) { extraction.withPermit {
+        val directory = File(context.cacheDir, "embedded-artwork-v2").apply { mkdirs() }
+        val filePath = uri.getQueryParameter("songFile")?.let(::File) ?: uri.path?.takeIf { uri.scheme == "file" }?.let(::File)
+        val signature = if (filePath != null) "${filePath.lastModified()}:${filePath.length()}" else runCatching {
+            context.contentResolver.query(uri, arrayOf(MediaStore.Audio.Media.DATE_MODIFIED, MediaStore.Audio.Media.SIZE), null, null, null)?.use { c ->
+                if (c.moveToFirst()) "${c.getLong(0)}:${c.getLong(1)}" else "unknown"
+            }
+        }.getOrNull().orEmpty()
+        val key = kr.co.metadata.crawler.CatalogFileStore.hash("$uri:$signature:${System.currentTimeMillis() / (2 * 3600_000L)}")
+        val encoded = File(directory, "$key.bin")
+        if (encoded.isFile && encoded.length() > 0) {
+            encoded.setLastModified(System.currentTimeMillis())
+            return@withPermit fileResult(encoded)
+        }
+        fetchUncached(encoded).also {
+            // An encoded cache avoids reopening audio metadata on every thumbnail-size change.
+            val files = directory.listFiles { f -> f.extension == "bin" }.orEmpty()
+            var bytes = files.sumOf { f -> f.length() }
+            if (bytes > 32L * 1024 * 1024) for (old in files.sortedBy { f -> f.lastModified() }) {
+                if (old == encoded) continue
+                val length = old.length(); if (old.delete()) bytes -= length
+                if (bytes <= 32L * 1024 * 1024) break
+            }
+        }
+    } }
+
+    private fun fileResult(file: File) = SourceResult(ImageSource(android.util.AtomicFile(file).openRead().source().buffer(), context), null, DataSource.DISK)
+    private fun result(bytes: ByteArray, target: File): SourceResult {
+        require(bytes.size <= 32 * 1024 * 1024)
+        if (bytes.size <= 8 * 1024 * 1024) {
+            val atomic = android.util.AtomicFile(target); val output = atomic.startWrite()
+            try { output.write(bytes); atomic.finishWrite(output) } catch (error: Exception) { atomic.failWrite(output); throw error }
+            return fileResult(target)
+        }
+        return SourceResult(ImageSource(ByteArrayInputStream(bytes).source().buffer(), context), null, DataSource.DISK)
+    }
+
+    private fun fetchUncached(encoded: File): FetchResult? {
         if (uri.authority == RhythmAlbumArtProvider.PROVIDER_AUTHORITY) {
             val pathSegments = uri.pathSegments
             val type = pathSegments.firstOrNull() ?: ""
@@ -59,13 +102,7 @@ class AudioArtworkFetcher(
 
             val bytes = MediaUtils.extractRawEmbeddedArtworkBytes(context, songUri, songFilePath)
             if (bytes != null && bytes.isNotEmpty()) {
-                val bufferedSource = ByteArrayInputStream(bytes).source().buffer()
-                val imageSource = ImageSource(source = bufferedSource, context = context)
-                return SourceResult(
-                    source = imageSource,
-                    mimeType = null,
-                    dataSource = DataSource.DISK
-                )
+                return result(bytes, encoded)
             }
 
             // Fallback to MediaStore album art if no embedded art is found
@@ -78,15 +115,9 @@ class AudioArtworkFetcher(
                     )
                     try {
                         context.contentResolver.openInputStream(mediaStoreAlbumArtUri)?.use { input ->
-                            val albumBytes = input.readBytes()
+                            val albumBytes = input.readBytesBounded(20 * 1024 * 1024)
                             if (albumBytes.isNotEmpty()) {
-                                val bufferedSource = ByteArrayInputStream(albumBytes).source().buffer()
-                                val imageSource = ImageSource(source = bufferedSource, context = context)
-                                return SourceResult(
-                                    source = imageSource,
-                                    mimeType = null,
-                                    dataSource = DataSource.DISK
-                                )
+                                return result(albumBytes, encoded)
                             }
                         }
                     } catch (_: Exception) {
@@ -98,13 +129,7 @@ class AudioArtworkFetcher(
         }
 
         val bytes = MediaUtils.extractRawEmbeddedArtworkBytes(context, uri) ?: return null
-        val bufferedSource = ByteArrayInputStream(bytes).source().buffer()
-        val imageSource = ImageSource(source = bufferedSource, context = context)
-        return SourceResult(
-            source = imageSource,
-            mimeType = null,
-            dataSource = DataSource.DISK
-        )
+        return result(bytes, encoded)
     }
 
     class Factory(private val context: Context) : Fetcher.Factory<Uri> {
@@ -117,6 +142,7 @@ class AudioArtworkFetcher(
     }
 
     companion object {
+        private val extraction = Semaphore(1)
         private val AUDIO_EXTENSIONS = setOf(
             "mp3", "flac", "m4a", "aac", "ogg", "opus", "wav", "dsf", "dff", "ape", "wv", "aiff", "wma"
         )

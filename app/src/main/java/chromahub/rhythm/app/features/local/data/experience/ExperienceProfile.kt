@@ -16,6 +16,7 @@ data class ExperienceProfile(val version: Int = 1, val artistWeight: Double = 0.
             require(json.length <= 64_000)
             val root = JsonParser.parseString(json).asJsonObject
             require(root.get("schemaVersion").asInt == 1)
+            require((root.get("minimumAppVersionCode")?.asLong ?: 0L) <= chromahub.rhythm.app.BuildConfig.VERSION_CODE) { "APK update required for this experience" }
             fun weight(name: String, default: Double): Double = root.getAsJsonObject("recommendation")?.get(name)?.asDouble?.also { require(it.isFinite() && it in 0.0..1.0) } ?: default
             val version = root.get("version").asInt.also { require(it >= 1) }
             val sections = root.getAsJsonArray("homeSections")?.map { it.asString }.orEmpty()
@@ -28,6 +29,8 @@ data class ExperienceProfile(val version: Int = 1, val artistWeight: Double = 0.
         fun read(context: Context): ExperienceProfile = runCatching { decode(File(context.filesDir, "experience.json").readText()) }.getOrDefault(ExperienceProfile())
         fun apply(context: Context, json: String): ExperienceProfile {
             val profile = decode(json)
+            val current = File(context.filesDir, "experience.json")
+            if (current.isFile) PersonalArchive.atomicWrite(File(context.filesDir, "experience.previous.json"), current.readBytes())
             PersonalArchive.atomicWrite(File(context.filesDir, "experience.json"), json.toByteArray())
             if (profile.homeSections.isNotEmpty()) chromahub.rhythm.app.shared.data.model.AppSettings.getInstance(context).setHomeSectionOrder(profile.homeSections)
             PersonalArchive.enqueue(context)
@@ -37,8 +40,10 @@ data class ExperienceProfile(val version: Int = 1, val artistWeight: Double = 0.
     }
 }
 
+@Keep
 data class RecommendationCandidate(val key: String, val artist: String, val genre: String?, val addedAt: Long,
-    val favorite: Boolean = false, val current: Boolean = false, val acousticSimilarity: Double = 0.0, val title: String = "")
+    val favorite: Boolean = false, val current: Boolean = false, val acousticSimilarity: Double = 0.0, val title: String = "", val entityAffinity: Double = 0.0)
+@Keep
 data class RecommendationScore(val key: String, val score: Double, val reasons: List<String>, val features: List<Double> = emptyList())
 data class RecommendationContext(val hourlyGenres: Map<String, Double> = emptyMap(), val genreTransitions: Map<String, Double> = emptyMap(),
     val skipRates: Map<String, Double> = emptyMap(), val replayDue: Map<String, Double> = emptyMap(),
@@ -46,7 +51,8 @@ data class RecommendationContext(val hourlyGenres: Map<String, Double> = emptyMa
     val weekdayGenres: Map<String, Double> = emptyMap(), val completionRates: Map<String, Double> = emptyMap(),
     val recentGenres: Map<String, Double> = emptyMap(), val learnedWeights: List<Double> = List(AdaptiveRecommendation.featureNames.size) { 0.0 },
     val learnedSamples: Long = 0, val explicitFeedback: Map<String, Double> = emptyMap(), val weatherGenres: Map<String, Double> = emptyMap(), val brightnessGenres: Map<String, Double> = emptyMap(),
-    val volumeGenres: Map<String, Double> = emptyMap(), val ambientGenres: Map<String, Double> = emptyMap())
+    val volumeGenres: Map<String, Double> = emptyMap(), val ambientGenres: Map<String, Double> = emptyMap(),
+    val motionGenres: Map<String, Double> = emptyMap(), val daylightGenres: Map<String, Double> = emptyMap())
 
 /** Deterministic, explainable ranking over lifetime history; never uploads listening data. */
 object PersonalRecommendation {
@@ -66,7 +72,7 @@ object PersonalRecommendation {
             val repeat = if (h == null) 0.0 else kotlin.math.ln(1 + h.plays.toDouble()) / 5.0
             val recentPenalty = if (h != null && now - h.lastAt < 2 * 3600_000) .4 else 0.0
             val hour = context.hourlyGenres[c.genre.orEmpty()] ?: context.hourlyGenres[AdaptiveRecommendation.normalizeGenre(c.genre)] ?: 0.0
-            val transition = context.genreTransitions[c.genre.orEmpty()] ?: 0.0
+            val transition = context.genreTransitions[c.genre.orEmpty()] ?: context.genreTransitions[AdaptiveRecommendation.normalizeGenre(c.genre)] ?: 0.0
             val skip = context.skipRates[c.key] ?: 0.0
             val due = context.replayDue[c.key] ?: 0.0
             val newlyAdded = if (h == null && c.addedAt > 0) (1 - (now - c.addedAt).coerceAtLeast(0).toDouble() / (30 * 24 * 3600_000L)).coerceIn(0.0, 1.0) else 0.0
@@ -78,13 +84,13 @@ object PersonalRecommendation {
             val recent = context.recentGenres[normalizedGenre] ?: 0.0
             val weather = context.weatherGenres[normalizedGenre] ?: 0.0
             val brightness = context.brightnessGenres[normalizedGenre] ?: 0.0; val volume = context.volumeGenres[normalizedGenre] ?: 0.0; val ambient = context.ambientGenres[normalizedGenre] ?: 0.0
-            val features = listOf(a, g, novelty, repeat.coerceIn(0.0, 1.0), c.acousticSimilarity.coerceIn(0.0, 1.0), hour, transition, due, place, output, day, completion, recent, weather, brightness, volume, ambient).map { it.coerceIn(0.0, 1.0) }
-            val learned = AdaptiveRecommendation.probability(context.learnedWeights, features) - .5
+            val features = listOf(a, g, novelty, repeat.coerceIn(0.0, 1.0), c.acousticSimilarity.coerceIn(0.0, 1.0), hour, transition, due, place, output, day, completion, recent, weather, brightness, volume, ambient, context.motionGenres[normalizedGenre] ?: 0.0, context.daylightGenres[normalizedGenre] ?: 0.0, c.entityAffinity).map { it.coerceIn(0.0, 1.0) }
+            val learned = AdaptiveRecommendation.probability(context.learnedWeights.take(features.size) + List((features.size - context.learnedWeights.size).coerceAtLeast(0)) { 0.0 }, features) - .5
             val confidence = context.learnedSamples.toDouble() / (context.learnedSamples + 30)
             val score = a * profile.artistWeight + g * profile.genreWeight + novelty * profile.noveltyWeight +
                 repeat.coerceAtMost(1.0) * profile.repeatWeight + c.acousticSimilarity * profile.audioWeight + (if (c.favorite) .1 else 0.0) - recentPenalty +
                 profile.genreWeight * .25 * (hour + transition) + profile.repeatWeight * .25 * due + profile.noveltyWeight * .2 * newlyAdded - .35 * skip + profile.contextWeight * (place + output + day + recent + weather + brightness + volume + ambient) / 8 +
-                profile.learningWeight * confidence * learned + .1 * (completion - .5) + .15 * (context.explicitFeedback[c.key] ?: .5)
+                profile.learningWeight * confidence * learned + .08 * c.entityAffinity + profile.contextWeight * ((context.motionGenres[normalizedGenre] ?: 0.0) + (context.daylightGenres[normalizedGenre] ?: 0.0)) / 4 + .1 * (completion - .5) + .15 * (context.explicitFeedback[c.key] ?: .5)
             RecommendationScore(c.key, score, buildList {
                 if (a > .4) add("artist"); if (g > .4) add("genre"); if (c.acousticSimilarity > .8) add("audio")
                 if (h == null) add("unplayed") else if (novelty > .7) add("rediscovery")

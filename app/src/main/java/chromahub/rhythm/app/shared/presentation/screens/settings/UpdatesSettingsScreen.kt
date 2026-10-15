@@ -408,6 +408,7 @@ fun UpdatesSettingsScreen(onBackClick: () -> Unit) {
             contentPadding = PaddingValues(bottom = 24.dp + LocalMiniPlayerPadding.current.calculateBottomPadding()),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            item(key = "experience_update") { chromahub.rhythm.app.features.local.presentation.metadata.SoftUpdatePanel() }
             // 1. Live Update Status display (No card bg, onboarding-like placements and wavy loaders)
             item { Text(stringResource(R.string.update_verified_hint), modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp), style = MaterialTheme.typography.bodySmall) }
         item {

@@ -6758,6 +6758,23 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
     
+    private val tasteActions = kotlinx.coroutines.channels.Channel<() -> Unit>(kotlinx.coroutines.channels.Channel.UNLIMITED)
+    private val tasteWriter = viewModelScope.launch(Dispatchers.IO) {
+        for (action in tasteActions) try { action() } catch (error: Exception) {
+            Log.w(TAG, "Taste history write failed", error)
+            chromahub.rhythm.app.features.local.data.experience.ListeningLedger.get(getApplication()).storageIssue("write_failed")
+        }
+    }
+    /** Idempotent like shares the original playlist/widget/service update path. */
+    fun likeSong(song: Song) {
+        if (song.id !in _favoriteSongs.value) toggleFavorite(song)
+        else tasteActions.trySend {
+            val memory = chromahub.rhythm.app.features.local.data.experience.TasteMemory.get(getApplication())
+            memory.inspect(chromahub.rhythm.app.features.local.data.experience.TasteKind.SONG, song.uri.toString(), song.title, true)
+            memory.set(chromahub.rhythm.app.features.local.data.experience.TasteKind.SONG, song.uri.toString(), song.title, true)
+        }
+    }
+
     fun toggleFavorite() {
         _currentSong.value?.let { song ->
             toggleFavorite(song)
@@ -6811,7 +6828,12 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
         
         _favoriteSongs.value = currentFavorites
         saveFavoriteSongs()
-        
+        val likedNow = songId in currentFavorites
+        tasteActions.trySend {
+            chromahub.rhythm.app.features.local.data.experience.TasteMemory.get(getApplication()).set(
+                chromahub.rhythm.app.features.local.data.experience.TasteKind.SONG, song.uri.toString(), song.title, likedNow)
+        }
+
         // Notify MediaPlaybackService about favorite state change
         notifyMediaServiceFavoriteChange()
         

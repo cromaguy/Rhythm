@@ -393,6 +393,12 @@ class AppUpdaterViewModel(
             _latestVersion.value = null // Clear any previous version data
 
             try {
+                // Apply compatible experience data before considering the native package update.
+                if (chromahub.rhythm.app.features.local.data.experience.ExperienceRulesWorker.enabled(getApplication())) {
+                    try { chromahub.rhythm.app.features.local.data.experience.ExperienceRulesWorker.checkNow(getApplication()) }
+                    catch (cancel: kotlinx.coroutines.CancellationException) { throw cancel }
+                    catch (error: Exception) { Log.w(tag, "Experience update unavailable; checking APK normally", error) }
+                }
                 var candidate: AppVersion? = null
 
                 if (currentChannel == "nightly") {

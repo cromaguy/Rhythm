@@ -58,7 +58,7 @@ data class ListeningRecord(
 )
 
 /** Indexed on-device source of truth. Raw journals are retained forever and can rebuild the DB. */
-class ListeningLedger private constructor(private val context: Context) : SQLiteOpenHelper(context, "listening_ledger.db", null, 1) {
+class ListeningLedger private constructor(private val context: Context) : SQLiteOpenHelper(context, "listening_ledger.db", null, 2) {
     private val gson = Gson()
     private val lock = Any()
     private val revision = MutableStateFlow(0L)
@@ -74,8 +74,16 @@ class ListeningLedger private constructor(private val context: Context) : SQLite
         db.execSQL("CREATE INDEX records_play ON records(play_id)")
         db.execSQL("CREATE TABLE features (song_key TEXT PRIMARY KEY, signature TEXT NOT NULL, payload TEXT NOT NULL)")
         db.execSQL("CREATE TABLE state (key TEXT PRIMARY KEY, value TEXT NOT NULL)")
+        affinityTables(db)
+        db.execSQL("INSERT INTO state(key,value) VALUES ('affinity_index_ready','1')")
     }
-    override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) = Unit
+    private fun affinityTables(db: SQLiteDatabase) {
+        db.execSQL("CREATE TABLE IF NOT EXISTS affinity_records (id TEXT PRIMARY KEY, listened INTEGER NOT NULL, recorded INTEGER NOT NULL)")
+        db.execSQL("CREATE TABLE IF NOT EXISTS affinity_plays (play_id TEXT NOT NULL,song_key TEXT NOT NULL,PRIMARY KEY(play_id,song_key))")
+        db.execSQL("CREATE TABLE IF NOT EXISTS song_affinity (song_key TEXT PRIMARY KEY,artist TEXT NOT NULL,genre TEXT,listened INTEGER NOT NULL,plays INTEGER NOT NULL,last_at INTEGER NOT NULL)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS song_affinity_rank ON song_affinity(listened DESC)")
+    }
+    override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) { affinityTables(db) }
     fun record(record: ListeningRecord) = synchronized(lock) {
         require(record.startedAt >= 0 && record.endedAt >= record.startedAt && record.listenedMs >= 0)
         val json = gson.toJson(record)
@@ -96,8 +104,13 @@ class ListeningLedger private constructor(private val context: Context) : SQLite
         finally { writableDatabase.endTransaction() }
         revision.update { it + 1 }
         PersonalArchive.enqueue(context)
+        RecommendationTrainingWorker.enqueue(context)
     }
     private fun upsert(record: ListeningRecord, json: String) {
+        val newer = readableDatabase.rawQuery("SELECT recorded,listened FROM records WHERE id=?", arrayOf(record.id)).use {
+            it.moveToFirst() && (it.getLong(0) > record.recordedAt || (it.getLong(0) == record.recordedAt && it.getLong(1) > record.listenedMs))
+        }
+        if (newer) return
         val values = ContentValues().apply {
             put("id", record.id); put("play_id", record.playId); put("kind", record.kind)
             put("song_key", record.songKey); put("song_id", record.songId); put("started", record.startedAt)
@@ -106,7 +119,50 @@ class ListeningLedger private constructor(private val context: Context) : SQLite
             put("recorded", record.recordedAt); put("payload", json)
         }
         check(writableDatabase.insertWithOnConflict("records", null, values, SQLiteDatabase.CONFLICT_REPLACE) != -1L)
+        if (record.kind == "segment") indexAffinity(record.id, record.playId, record.songKey, record.artist, record.genre, record.listenedMs, record.endedAt, record.recordedAt)
     }
+    private fun indexAffinity(id: String, playId: String, key: String, artist: String, genre: String?, listened: Long, ended: Long, recorded: Long) {
+        val previous = readableDatabase.rawQuery("SELECT listened,recorded FROM affinity_records WHERE id=?", arrayOf(id)).use { if (it.moveToFirst()) it.getLong(0) to it.getLong(1) else null }
+        if (previous != null && previous.second > recorded) return
+        val delta = listened - (previous?.first ?: 0L)
+        val addedPlay = writableDatabase.insertWithOnConflict("affinity_plays", null, ContentValues().apply { put("play_id", playId); put("song_key", key) }, SQLiteDatabase.CONFLICT_IGNORE) != -1L
+        writableDatabase.execSQL("INSERT OR IGNORE INTO song_affinity(song_key,artist,genre,listened,plays,last_at) VALUES (?,?,?,0,0,0)", arrayOf(key, artist, genre))
+        writableDatabase.execSQL("UPDATE song_affinity SET listened=MAX(0,listened+?),plays=plays+?,artist=CASE WHEN ?>=last_at THEN ? ELSE artist END,genre=CASE WHEN ?>=last_at THEN ? ELSE genre END,last_at=MAX(last_at,?) WHERE song_key=?",
+            arrayOf<Any?>(delta, if (addedPlay) 1 else 0, ended, artist, ended, genre, ended, key))
+        writableDatabase.insertWithOnConflict("affinity_records", null, ContentValues().apply { put("id", id); put("listened", listened); put("recorded", recorded) }, SQLiteDatabase.CONFLICT_REPLACE)
+    }
+    /** Resumable legacy migration: short transactions never hold the playback writer during cooling. */
+    internal fun backfillAffinities(budget: AnalysisBudget) {
+        if (state("affinity_index_ready") == "1") return
+        var cursor = state("affinity_backfill_cursor")?.toLongOrNull() ?: 0L
+        while (true) {
+            budget.blockingCheckpoint()
+            var rows = 0
+            synchronized(lock) {
+                writableDatabase.beginTransaction()
+                try {
+                    readableDatabase.rawQuery("SELECT rowid,id,play_id,song_key,artist,genre,listened,ended,recorded FROM records WHERE kind='segment' AND rowid>? ORDER BY rowid LIMIT 64", arrayOf(cursor.toString())).use { c ->
+                        while (c.moveToNext()) {
+                            indexAffinity(c.getString(1), c.getString(2), c.getString(3), c.getString(4), if (c.isNull(5)) null else c.getString(5), c.getLong(6), c.getLong(7), c.getLong(8))
+                            cursor = c.getLong(0); rows++
+                        }
+                    }
+                    state("affinity_backfill_cursor", cursor.toString())
+                    if (rows == 0) state("affinity_index_ready", "1")
+                    writableDatabase.setTransactionSuccessful()
+                } finally { writableDatabase.endTransaction() }
+            }
+            if (rows == 0) break
+        }
+    }
+    internal fun trainingRows(after: Long): List<Pair<Long, ListeningRecord>> = buildList {
+        readableDatabase.rawQuery("SELECT rowid,payload FROM records WHERE rowid>? AND kind IN ('segment','play') ORDER BY rowid LIMIT 32", arrayOf(after.toString())).use { c ->
+            while (c.moveToNext()) runCatching { gson.fromJson(c.getString(1), ListeningRecord::class.java) }.getOrNull()?.let { add(c.getLong(0) to it) }
+        }
+    }
+    internal fun previousGenre(record: ListeningRecord): String? = readableDatabase.rawQuery(
+        "SELECT genre FROM records WHERE kind='play' AND started<? AND ended>=? ORDER BY started DESC LIMIT 1",
+        arrayOf(record.startedAt.toString(), (record.startedAt - 30 * 60_000L).toString())).use { if (it.moveToFirst()) it.getString(0) else null }
     fun records(start: Long? = null, end: Long = Long.MAX_VALUE, kind: String = "segment", limit: Int = Int.MAX_VALUE): List<ListeningRecord> {
         val result = mutableListOf<ListeningRecord>()
         readableDatabase.rawQuery("SELECT payload FROM records WHERE kind = ? AND ended >= ? AND started <= ? ORDER BY started DESC LIMIT ?", arrayOf(kind, (start ?: 0).toString(), end.toString(), limit.coerceAtLeast(1).toString())).use { cursor ->
@@ -117,7 +173,7 @@ class ListeningLedger private constructor(private val context: Context) : SQLite
     data class Affinity(val songKey: String, val artist: String, val genre: String?, val listenedMs: Long, val plays: Int, val lastAt: Long)
     fun affinities(): List<Affinity> {
         val result = mutableListOf<Affinity>()
-        readableDatabase.rawQuery("SELECT song_key, artist, genre, SUM(listened), COUNT(DISTINCT play_id), MAX(ended) FROM records WHERE kind = 'segment' GROUP BY song_key ORDER BY SUM(listened) DESC", null).use { c ->
+        readableDatabase.rawQuery("SELECT song_key,artist,genre,listened,plays,last_at FROM song_affinity ORDER BY listened DESC LIMIT 20000", null).use { c ->
             while (c.moveToNext()) result += Affinity(c.getString(0), c.getString(1), c.getString(2), c.getLong(3), c.getInt(4), c.getLong(5))
         }
         return result
@@ -174,7 +230,13 @@ class ListeningLedger private constructor(private val context: Context) : SQLite
         }
     }
     fun clearRecords() = synchronized(lock) {
+        state("history_generation", java.util.UUID.randomUUID().toString())
+        ContextPreferenceIndex(context).use { it.reset() }
+        File(context.cacheDir, "listening-insights").deleteRecursively()
         writableDatabase.delete("records", null, null)
+        writableDatabase.delete("affinity_records", null, null)
+        writableDatabase.delete("affinity_plays", null, null)
+        writableDatabase.delete("song_affinity", null, null)
         File(context.filesDir, "listening_history").listFiles()?.forEach { it.delete() }
         revision.update { it + 1 }
     }

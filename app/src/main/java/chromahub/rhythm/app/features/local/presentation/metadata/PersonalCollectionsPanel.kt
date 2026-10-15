@@ -24,8 +24,19 @@ import kotlinx.coroutines.*
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PersonalCollectionsPanel(songs: List<Song>, favorites: List<String>, currentId: String?, musicViewModel: MusicViewModel, onMoveSection: () -> Unit = {}) {
+    PersonalCollectionsContent(songs, favorites, currentId,
+        onPlayQueue = { queue, index -> musicViewModel.playQueue(queue, enableShuffle = false, startIndex = index) },
+        onCreatePlaylist = { title, queue -> musicViewModel.createPlaylist(title, queue) }, onMoveSection = onMoveSection)
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun PersonalCollectionsContent(songs: List<Song>, favorites: List<String>, currentId: String?,
+    onPlayQueue: (List<Song>, Int) -> Unit, onCreatePlaylist: (String, List<Song>) -> Unit, onMoveSection: () -> Unit = {}) {
     val configuration = androidx.compose.ui.platform.LocalConfiguration.current
     val context = LocalContext.current; val scope = rememberCoroutineScope()
+    var message by remember { mutableStateOf<String?>(null) }
+    val operationError = CoroutineExceptionHandler { _, _ -> message = context.getString(R.string.adaptive_operation_failed) }
     var hour by remember { mutableStateOf(System.currentTimeMillis() / 3600_000L) }
     LaunchedEffect(Unit) { while (true) { delay(60_000); hour = System.currentTimeMillis() / 3600_000L } }
     var proposal by remember { mutableStateOf(emptyList<Song>()) }
@@ -34,52 +45,78 @@ fun PersonalCollectionsPanel(songs: List<Song>, favorites: List<String>, current
     var reaction by remember { mutableStateOf<Double?>(null) }
     var ratingBusy by remember { mutableStateOf(false) }
     var expanded by remember { mutableStateOf(false) }
-    fun identity(mode: PersonalCollection, genre: String? = null) = "collection:${mode.name}:${genre.orEmpty()}"
-    LaunchedEffect(songs, favorites, currentId, hour) {
+    var snapshot by remember { mutableStateOf<MixSnapshot?>(null) }
+    var refresh by remember { mutableLongStateOf(0L) }
+    var drawer by remember { mutableStateOf(false) }
+    var shelf by remember { mutableStateOf(emptyList<MixSnapshot>()) }
+    val catalog = remember(songs) { songs.associateBy { it.uri.toString() } }
+    LaunchedEffect(songs, hour, refresh) {
         proposalBusy = true
         try {
             val value = withContext(Dispatchers.IO) {
-                val learning = RecommendationLearning.get(context); val model = learning.model()
-                val modes = listOf(PersonalCollection.DAYLIST, PersonalCollection.DAILY_MIX, PersonalCollection.SIMILAR, PersonalCollection.REDISCOVERY)
-                val mode = modes.maxBy { (model.collections[identity(it)] ?: .5) + if (it == PersonalCollection.DAYLIST) .05 else 0.0 }
-                val picks = PersonalCollections.generate(context, songs, favorites, currentId, mode, 15)
-                learning.presented(picks.map { it.uri.toString() })
-                Triple(mode, picks, model.collections[identity(mode)])
+                val existing = if (refresh == 0L) RecommendationShelf.current(context) else null
+                val current = existing?.takeIf { it.createdAt / 3600_000L == hour && it.songKeys.any(catalog::containsKey) } ?: run {
+                    val mode = proposalMode
+                    val seed = System.currentTimeMillis() xor System.nanoTime()
+                    val picks = PersonalCollections.generate(context, songs, favorites, currentId, mode, 20, seed = seed)
+                    RecommendationShelf.create(context, mode, null, picks.map { it.uri.toString() }, seed)
+                }
+                current?.let { RecommendationLearning.get(context).restoreOffers(it) }
+                current to current?.let { RecommendationLearning.get(context).model().collections[it.feedbackKey] }
             }
-            proposalMode = value.first; proposal = value.second; reaction = value.third
-        } finally { proposalBusy = false }
+            snapshot = value.first; proposalMode = value.first?.mode ?: proposalMode
+            proposal = value.first?.songKeys.orEmpty().mapNotNull(catalog::get); reaction = value.second
+            withContext(Dispatchers.IO) { RecommendationLearning.get(context).presented(proposal.map { it.uri.toString() }) }
+        } catch (cancel: CancellationException) { throw cancel }
+        catch (_: Exception) { message = context.getString(R.string.adaptive_operation_failed) }
+        finally { proposalBusy = false }
     }
     fun rate(value: Double?) {
-        val id = identity(proposalMode); val keys = proposal.map { it.uri.toString() }; ratingBusy = true
-        scope.launch { try {
-            withContext(Dispatchers.IO) { RecommendationLearning.get(context).collectionFeedback(id, keys, value) }
-            reaction = value
+        val target = snapshot ?: return
+        ratingBusy = true
+        scope.launch(operationError) { try {
+            withContext(Dispatchers.IO) { RecommendationLearning.get(context).collectionFeedback(target.feedbackKey, target.songKeys, value) }
+            if (snapshot?.id == target.id) reaction = value
         } finally { ratingBusy = false } }
     }
     var selected by remember { mutableStateOf<PersonalCollection?>(null) }
+    var sheetSnapshot by remember { mutableStateOf<MixSnapshot?>(null) }
+    var sheetRefresh by remember { mutableLongStateOf(0L) }
     var collection by remember { mutableStateOf(emptyList<Song>()) }
     var busy by remember { mutableStateOf(false) }; var genre by remember { mutableStateOf<String?>(null) }
-    var genresOpen by remember { mutableStateOf(false) }; var message by remember { mutableStateOf<String?>(null) }
+    var genresOpen by remember { mutableStateOf(false) }
     fun label(mode: PersonalCollection): String = context.getString(when(mode) {
         PersonalCollection.DAYLIST -> R.string.personal_daylist; PersonalCollection.DAILY_MIX -> R.string.personal_daily_mix
         PersonalCollection.REDISCOVERY -> R.string.personal_rediscovery; PersonalCollection.SIMILAR -> R.string.personal_similar
         PersonalCollection.FAVORITES -> R.string.personal_liked_mix; PersonalCollection.FEWER_REPEATS -> R.string.personal_fewer_repeats
     })
-    LaunchedEffect(selected, genre, songs, favorites, currentId, hour) {
+    LaunchedEffect(selected, genre, sheetRefresh) {
         val mode = selected ?: return@LaunchedEffect
         busy = true; message = null
         try {
-            collection = withContext(Dispatchers.IO) { PersonalCollections.generate(context, songs, favorites, currentId, mode, genre = genre) }
+            val item = withContext(Dispatchers.IO) {
+                sheetSnapshot?.takeIf { it.mode == mode && it.genre == genre } ?: run {
+                    val seed = System.currentTimeMillis() xor System.nanoTime()
+                    val picks = PersonalCollections.generate(context, songs, favorites, currentId, mode, genre = genre, seed = seed)
+                    RecommendationShelf.create(context, mode, genre, picks.map { it.uri.toString() }, seed)
+                }
+            }
+            item?.let { RecommendationLearning.get(context).restoreOffers(it) }
+            sheetSnapshot = item; collection = item?.songKeys.orEmpty().mapNotNull(catalog::get)
             withContext(Dispatchers.IO) { RecommendationLearning.get(context).presented(collection.map { it.uri.toString() }) }
-        } finally { busy = false }
+        } catch (cancel: CancellationException) { throw cancel }
+        catch (_: Exception) { message = context.getString(R.string.adaptive_operation_failed) }
+        finally { busy = false }
     }
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
             Text(stringResource(R.string.personal_collections_title), style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
-            IconButton(onClick = onMoveSection) { Icon(MaterialSymbolIcon("swap_vert"), stringResource(R.string.personal_move_section)) }
+            IconButton(enabled = !proposalBusy && !ratingBusy, onClick = { refresh++ }) { Icon(MaterialSymbolIcon("refresh"), stringResource(R.string.personal_refresh_mix), Modifier.size(24.dp)) }
+            IconButton(onClick = { drawer = true; scope.launch(operationError) { shelf = withContext(Dispatchers.IO) { RecommendationShelf.recent(context) } } }) { Icon(MaterialSymbolIcon("shelves"), stringResource(R.string.personal_mix_shelf), Modifier.size(24.dp)) }
+            IconButton(onClick = onMoveSection) { Icon(MaterialSymbolIcon("swap_vert"), stringResource(R.string.personal_move_section), Modifier.size(24.dp)) }
         }
         Text(stringResource(R.string.personal_collections_hint), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Card(onClick = { selected = proposalMode; genre = null }, shape = RoundedCornerShape(24.dp),
+        Card(onClick = { sheetSnapshot = snapshot; selected = proposalMode; genre = snapshot?.genre }, shape = RoundedCornerShape(24.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)) {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
@@ -109,22 +146,23 @@ fun PersonalCollectionsPanel(songs: List<Song>, favorites: List<String>, current
                         leadingIcon = { Icon(MaterialSymbolIcon("thumb_down", filled = reaction == 0.0), null, Modifier.size(18.dp)) })
                     Spacer(Modifier.weight(1f))
                     FilledTonalIconButton(enabled = !proposalBusy && proposal.isNotEmpty(), onClick = {
-                        val picks = proposal.toList(); scope.launch { withContext(Dispatchers.IO) { RecommendationLearning.get(context).selected(picks.first().uri.toString()) }; musicViewModel.playQueue(picks, enableShuffle = false) }
-                    }) { Icon(MaterialSymbolIcon("play_arrow"), stringResource(R.string.action_play)) }
+                        val picks = proposal.toList(); scope.launch(operationError) { withContext(Dispatchers.IO) { RecommendationLearning.get(context).selected(picks.first().uri.toString()) }; onPlayQueue(picks, 0) }
+                    }) { Icon(MaterialSymbolIcon("play_arrow"), stringResource(R.string.action_play), Modifier.size(24.dp)) }
                 }
                 Text(stringResource(R.string.personal_feedback_short), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 if (!proposalBusy && proposal.isEmpty()) Text(stringResource(R.string.personal_collection_empty), style = MaterialTheme.typography.bodySmall)
             }
         }
-        TextButton(onClick = { expanded = !expanded }) { Text(stringResource(R.string.personal_more_mixes)); Icon(MaterialSymbolIcon(if (expanded) "expand_less" else "expand_more"), null) }
+        message?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error) }
+        TextButton(onClick = { expanded = !expanded }) { Text(stringResource(R.string.personal_more_mixes)); Spacer(Modifier.width(8.dp)); Icon(MaterialSymbolIcon(if (expanded) "expand_less" else "expand_more"), null, Modifier.size(18.dp)) }
         if (expanded)         PersonalCollection.entries.chunked(2).forEach { row ->
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 row.forEach { mode ->
-                    Card(onClick = { selected = mode; genre = null }, shape = RoundedCornerShape(20.dp), modifier = Modifier.weight(1f),
+                    Card(onClick = { sheetSnapshot = null; selected = mode; genre = null }, shape = RoundedCornerShape(20.dp), modifier = Modifier.weight(1f),
                         colors = CardDefaults.cardColors(containerColor = if (mode == PersonalCollection.DAYLIST) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainer)) {
                         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                             Icon(MaterialSymbolIcon(when(mode) { PersonalCollection.DAYLIST -> "schedule"; PersonalCollection.DAILY_MIX -> "album";
-                                PersonalCollection.REDISCOVERY -> "history"; PersonalCollection.SIMILAR -> "graphic_eq"; PersonalCollection.FAVORITES -> "favorite"; else -> "shuffle" }), null)
+                                PersonalCollection.REDISCOVERY -> "history"; PersonalCollection.SIMILAR -> "graphic_eq"; PersonalCollection.FAVORITES -> "favorite"; else -> "shuffle" }), null, Modifier.size(24.dp))
                             Text(label(mode), style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
                         }
                     }
@@ -141,21 +179,24 @@ fun PersonalCollectionsPanel(songs: List<Song>, favorites: List<String>, current
                 Box {
                     OutlinedButton(onClick = { genresOpen = true }) { Text(genre ?: stringResource(R.string.personal_all_genres)) }
                     DropdownMenu(expanded = genresOpen, onDismissRequest = { genresOpen = false }) {
-                        DropdownMenuItem(text = { Text(stringResource(R.string.personal_all_genres)) }, onClick = { genre = null; genresOpen = false })
+                        DropdownMenuItem(text = { Text(stringResource(R.string.personal_all_genres)) }, onClick = { sheetSnapshot = null; genre = null; genresOpen = false })
                         songs.mapNotNull { it.genre?.trim()?.takeIf(String::isNotBlank) }.distinct().sorted().forEach { value ->
-                            DropdownMenuItem(text = { Text(value) }, onClick = { genre = value; genresOpen = false })
+                            DropdownMenuItem(text = { Text(value) }, onClick = { sheetSnapshot = null; genre = value; genresOpen = false })
                         }
                     }
                 }
             }
-            val currentCollectionId = identity(selected!!, genre)
+            val currentCollectionId = sheetSnapshot?.feedbackKey.orEmpty()
+            TextButton(enabled = !busy && !ratingBusy, onClick = { sheetSnapshot = null; sheetRefresh++ }) {
+                Icon(MaterialSymbolIcon("refresh"), null, Modifier.size(18.dp)); Spacer(Modifier.width(8.dp)); Text(stringResource(R.string.personal_refresh_mix))
+            }
             var sheetReaction by remember(currentCollectionId) { mutableStateOf<Double?>(null) }
             LaunchedEffect(currentCollectionId) { sheetReaction = withContext(Dispatchers.IO) { RecommendationLearning.get(context).model().collections[currentCollectionId] } }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 listOf(1.0 to R.string.personal_like, 0.0 to R.string.personal_dislike).forEach { (value, label) ->
                     FilterChip(selected = sheetReaction == value, enabled = !busy && collection.isNotEmpty() && !ratingBusy, onClick = {
                         val next = if (sheetReaction == value) null else value; val keys = collection.map { it.uri.toString() }; ratingBusy = true
-                        scope.launch { try { withContext(Dispatchers.IO) { RecommendationLearning.get(context).collectionFeedback(currentCollectionId, keys, next) }; sheetReaction = next; if (currentCollectionId == identity(proposalMode)) reaction = next } finally { ratingBusy = false } }
+                        scope.launch(operationError) { try { withContext(Dispatchers.IO) { RecommendationLearning.get(context).collectionFeedback(currentCollectionId, keys, next) }; if (sheetSnapshot?.feedbackKey == currentCollectionId) sheetReaction = next; if (snapshot?.feedbackKey == currentCollectionId) reaction = next } finally { ratingBusy = false } }
                     }, label = { Text(stringResource(label)) })
                 }
             }
@@ -163,13 +204,15 @@ fun PersonalCollectionsPanel(songs: List<Song>, favorites: List<String>, current
             if (busy) LinearProgressIndicator(Modifier.fillMaxWidth())
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(enabled = !busy && collection.isNotEmpty(), onClick = {
-                    val queue = collection.toList(); scope.launch { withContext(Dispatchers.IO) { queue.firstOrNull()?.let { RecommendationLearning.get(context).selected(it.uri.toString()) } }; musicViewModel.playQueue(queue, enableShuffle = false) }; selected = null
+                    val queue = collection.toList(); scope.launch(operationError) { withContext(Dispatchers.IO) { queue.firstOrNull()?.let { RecommendationLearning.get(context).selected(it.uri.toString()) } }; onPlayQueue(queue, 0) }; selected = null
                 }, modifier = Modifier.weight(1f)) { Text(stringResource(R.string.action_play)) }
-                OutlinedButton(enabled = !busy && collection.isNotEmpty(), onClick = { musicViewModel.createPlaylist(label(selected!!), collection); message = context.getString(R.string.personal_collection_saved) }, modifier = Modifier.weight(1f)) { Text(stringResource(R.string.personal_save_playlist)) }
+                OutlinedButton(enabled = !busy && collection.isNotEmpty(), onClick = { onCreatePlaylist(label(selected!!), collection); message = context.getString(R.string.personal_collection_saved) }, modifier = Modifier.weight(1f)) { Text(stringResource(R.string.personal_save_playlist)) }
             }
-            TextButton(enabled = !busy && collection.size > 1, onClick = { scope.launch {
+            TextButton(enabled = !busy && collection.size > 1, onClick = { scope.launch(operationError) {
                 busy = true
-                try { collection = withContext(Dispatchers.IO) { val ledger = ListeningLedger.get(context); PersonalCollections.reorder(collection, collection.mapNotNull { song -> ledger.feature(song.uri.toString())?.let { song.uri.toString() to it } }.toMap()) } }
+                try { collection = withContext(Dispatchers.IO) { val ledger = ListeningLedger.get(context); PersonalCollections.reorder(collection, collection.mapNotNull { song -> ledger.feature(song.uri.toString())?.let { song.uri.toString() to it } }.toMap()).also { ordered ->
+                    sheetSnapshot = RecommendationShelf.create(context, selected!!, genre, ordered.map { it.uri.toString() }, System.nanoTime())
+                } } }
                 finally { busy = false }
             } }) { Text(stringResource(R.string.personal_smart_reorder)) }
             message?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
@@ -179,10 +222,24 @@ fun PersonalCollectionsPanel(songs: List<Song>, favorites: List<String>, current
                     ListItem(headlineContent = { Text(song.title, maxLines = 1, overflow = TextOverflow.Ellipsis) }, supportingContent = { Text(song.artist, maxLines = 1) },
                         leadingContent = { chromahub.rhythm.app.util.M3ImageUtils.M3MediaImage(data = song.artworkUri, contentDescription = null, modifier = Modifier.size(44.dp), shape = RoundedCornerShape(8.dp), type = chromahub.rhythm.app.shared.presentation.components.common.M3PlaceholderType.TRACK, name = song.title) }, modifier = Modifier.clickable {
                             val queue = collection.toList(); val index = queue.indexOf(song)
-                            scope.launch { withContext(Dispatchers.IO) { RecommendationLearning.get(context).selected(song.uri.toString()) }; musicViewModel.playQueue(queue, enableShuffle = false, startIndex = index) }; selected = null
+                            scope.launch(operationError) { withContext(Dispatchers.IO) { RecommendationLearning.get(context).selected(song.uri.toString()) }; onPlayQueue(queue, index) }; selected = null
                         })
                 }
             }
         }
     }
+    if (drawer) ModalBottomSheet(onDismissRequest = { drawer = false }, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
+        Text(context.getString(R.string.personal_mix_shelf), Modifier.padding(horizontal = 24.dp), style = MaterialTheme.typography.headlineSmall)
+        Text(context.getString(R.string.personal_mix_shelf_hint), Modifier.padding(horizontal = 24.dp, vertical = 8.dp), style = MaterialTheme.typography.bodySmall)
+        LazyColumn(Modifier.fillMaxWidth().heightIn(max = 500.dp).navigationBarsPadding()) {
+            items(shelf, key = { it.id }) { item ->
+                ListItem(headlineContent = { Text(label(item.mode)) }, supportingContent = {
+                    Text(java.time.Instant.ofEpochMilli(item.createdAt).atZone(java.time.ZoneId.systemDefault()).format(java.time.format.DateTimeFormatter.ofPattern("MM/dd HH:mm")) + " · " + item.songKeys.size)
+                }, leadingContent = { Icon(MaterialSymbolIcon("queue_music"), null, Modifier.size(24.dp)) }, modifier = Modifier.clickable {
+                    sheetSnapshot = item; selected = item.mode; genre = item.genre; sheetRefresh++; drawer = false
+                })
+            }
+        }
+    }
+
 }

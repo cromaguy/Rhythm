@@ -906,6 +906,8 @@ fun ArtistDetailScreen(
                                     verticalAlignment = Alignment.CenterVertically,
                                     modifier = Modifier.padding(end = 12.dp)
                                 ) {
+                                    chromahub.rhythm.app.features.local.presentation.metadata.EntityLikeButton(chromahub.rhythm.app.features.local.data.experience.TasteKind.ARTIST,
+                                        chromahub.rhythm.app.features.local.data.experience.TasteMemory.artistKey(artistName), artistName)
                                     Box {
                                         HeaderActionGroup(
                                             actions = listOf(

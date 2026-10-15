@@ -25,7 +25,7 @@ data class ListeningSituation(val place: String? = null, val latitude: Double? =
     val altitudeM: Double? = null, val speedMps: Float? = null, val bearingDegrees: Float? = null,
     val locationProvider: String? = null, val systemVolume: Int = 0, val systemVolumeMax: Int = 0, val charging: Boolean = false, val batteryPercent: Int? = null,
     val weather: WeatherSnapshot? = null, val brightnessSetting: Int? = null, val automaticBrightness: Boolean? = null,
-    val playerVolume: Float? = null, val ambientSound: AmbientSound? = null)
+    val playerVolume: Float? = null, val ambientSound: AmbientSound? = null, val motion: MotionSnapshot? = null, val daylight: DaylightSnapshot? = null)
 @Keep
 data class OutputSnapshot(val type: Int, val name: String, val sampleRates: List<Int>, val channelCounts: List<Int>, val encodings: List<Int>)
 
@@ -40,11 +40,12 @@ class ListeningContext private constructor(private val context: Context) : Locat
     fun configure(enabled: Boolean = this.enabled, precise: Boolean = this.precise, place: String = this.place) {
         prefs.edit(commit = true) { putBoolean("location", enabled); putBoolean("precise", precise); putString("place", place.trim().take(80)) }
         if (!enabled) latest = null
-        stop(); if (enabled) refresh()
+        stop(); refresh()
         ListeningLedger.get(context).invalidate()
     }
     fun permitted() = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
     fun refresh() {
+        MobilityContext.get(context).visible(true)
         if (!enabled || !permitted()) return
         try {
             val fine = precise && ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
@@ -53,7 +54,7 @@ class ListeningContext private constructor(private val context: Context) : Locat
             locations.requestLocationUpdates(provider, 60_000L, 100f, this, Looper.getMainLooper())
         } catch (_: SecurityException) { latest = null } catch (_: IllegalArgumentException) { latest = null }
     }
-    fun stop() { runCatching { locations.removeUpdates(this) } }
+    fun stop() { MobilityContext.get(context).visible(false); runCatching { locations.removeUpdates(this) } }
     override fun onLocationChanged(location: Location) { latest = Location(location) }
     override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) = Unit
     override fun onProviderEnabled(provider: String) = Unit
@@ -89,7 +90,8 @@ class ListeningContext private constructor(private val context: Context) : Locat
             brightnessSetting = runCatching { android.provider.Settings.System.getInt(context.contentResolver, android.provider.Settings.System.SCREEN_BRIGHTNESS) }.getOrNull()?.coerceIn(0, 255),
             automaticBrightness = runCatching { android.provider.Settings.System.getInt(context.contentResolver, android.provider.Settings.System.SCREEN_BRIGHTNESS_MODE) == android.provider.Settings.System.SCREEN_BRIGHTNESS_MODE_AUTOMATIC }.getOrNull(),
             playerVolume = chromahub.rhythm.app.shared.data.model.AppSettings.getInstance(context).appVolume.value,
-            ambientSound = ListeningSound.get(context).snapshot(now))
+            ambientSound = ListeningSound.get(context).snapshot(now), motion = MobilityContext.get(context).snapshot(fix, now),
+            daylight = ContextSignals.daylight(now, fix?.latitude, fix?.longitude, ListeningWeather.get(context).snapshot(fix?.latitude, fix?.longitude, now)?.isDay))
     }
     companion object {
         @Volatile private var instance: ListeningContext? = null

@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -127,7 +128,11 @@ class PlayerRegressionTest {
 
     @Test fun videoFailureOffersRetryAndWorkingManagementOutsideTheBackdrop() {
         val song = song(); val controls = MusicVideoControls()
-        controls.video.value = MusicVideoRepository(context).link(song.uri.toString(), "https://youtu.be/abcdefghijk", song.title)
+        val local = File(context.filesDir, "music_metadata/videos/status-${System.nanoTime()}.webm")
+        local.parentFile!!.mkdirs(); files.add(local)
+        InstrumentationRegistry.getInstrumentation().context.assets.open("video-test.webm").use { input -> local.outputStream().use(input::copyTo) }
+        val video = MusicVideo(song.uri.toString(), "local", fileName = local.name, title = song.title)
+        MusicVideoRepository(context).save(video); controls.video.value = video
         files.add(File(context.filesDir, "music_metadata/videos/records/${kr.co.metadata.crawler.CatalogFileStore.hash(song.uri.toString())}.json"))
         controls.active.value = true
         controls.error.value = context.getString(R.string.mv_embed_disabled)
@@ -167,17 +172,40 @@ class PlayerRegressionTest {
         compose.onNodeWithText(context.getString(R.string.mv_watch)).assertIsDisplayed()
     }
 
-    private fun render(song: Song, controls: MusicVideoControls) {
+    @Test fun coverDoubleTapLikesIdempotentlyAndTheNormalButtonCanStillUnlike() {
+        val song = song(); val controls = MusicVideoControls(); val liked = mutableStateOf(false)
+        var seek = .5f
+        settings.setAutoFetchArtwork(false); settings.setPlayerAmbientBackdropEnabled(true)
+        settings.setPlayerMergeControlsToBottom(true)
+        settings.setExpressiveBottomButtonsMerge(listOf("FAVORITE", "LYRICS", "SHUFFLE", "REPEAT"))
+        settings.setExpressiveHiddenBottomButtonsMerge(emptySet())
+        render(song, controls, liked) { seek = it }
+        compose.mainClock.autoAdvance = false
+        compose.onNodeWithTag("cover_gesture_surface").performTouchInput { doubleClick(center) }
+        compose.mainClock.advanceTimeBy(200)
+        compose.waitUntil(5000) { liked.value }
+        compose.onNodeWithContentDescription(context.getString(R.string.cover_liked)).assertIsDisplayed()
+        screenshot("durable-cover-like.png")
+        compose.mainClock.autoAdvance = true
+        compose.onNodeWithTag("cover_gesture_surface").performTouchInput { doubleClick(center) }
+        compose.runOnIdle { assertTrue(liked.value) }
+        compose.onNodeWithContentDescription(context.getString(R.string.expressiveplayerscreen_favorite)).performClick()
+        compose.runOnIdle { assertFalse(liked.value) }
+        compose.onNodeWithTag("cover_gesture_surface").performTouchInput { doubleClick(androidx.compose.ui.geometry.Offset(width * .06f, height * .25f)) }
+        compose.runOnIdle { assertTrue(seek < .5f) }
+    }
+
+    private fun render(song: Song, controls: MusicVideoControls, liked: MutableState<Boolean> = mutableStateOf(false), onSeek: (Float) -> Unit = {}) {
         compose.setContent {
             MaterialTheme {
                 Box(Modifier.fillMaxSize()) {
                     MusicVideoSession(song, controls)
-                    ExpressivePlayerScreen(song = song, videoControls = controls, isPlaying = false, isFavorite = false,
-                        progress = { 0f }, currentTimeStr = "0:00", totalTimeStr = "0:24", queuePosition = 1, queueTotal = 1,
+                    ExpressivePlayerScreen(song = song, videoControls = controls, isPlaying = false, isFavorite = liked.value,
+                        progress = { .5f }, currentTimeStr = "0:00", totalTimeStr = "0:24", queuePosition = 1, queueTotal = 1,
                         isShuffleEnabled = false, repeatMode = 0, showLyricsView = false, showLyrics = true, lyrics = null,
                         isLoadingLyrics = false, onlineOnlyLyrics = false, onLyricsSeek = null, onRetryLyrics = {},
                         onShowLyricsEditor = {}, onPickLyricsFile = {}, isMediaLoading = false, isSeeking = false,
-                        onPlayPause = {}, onSeek = {}, onSkipPrevious = {}, onSkipNext = {}, onToggleFavorite = {},
+                        onPlayPause = {}, onSeek = onSeek, onSkipPrevious = {}, onSkipNext = {}, onToggleFavorite = { liked.value = !liked.value }, onLikeSong = { liked.value = true },
                         onToggleShuffle = {}, onToggleRepeat = {}, onToggleLyrics = {}, onSongInfoClick = {},
                         onShowAlbumBottomSheet = {}, onShowArtist = {}, onMoreClick = { controls.managing.value = true },
                         onDeviceClick = {}, onQueueClick = {}, onBack = {}, location = null, appSettings = settings)

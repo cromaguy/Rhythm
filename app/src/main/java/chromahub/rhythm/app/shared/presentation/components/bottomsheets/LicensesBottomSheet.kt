@@ -59,6 +59,8 @@ fun LicensesBottomSheet(
     val haptic = LocalHapticFeedback.current
 
     val licenseItems = listOf(
+        licenseItem(name = "NewPipe Extractor", description = context.getString(R.string.licenses_newpipe), license = "GPL-3.0-or-later",
+            url = "https://github.com/TeamNewPipe/NewPipeExtractor", icon = RhythmIcons.Connectivity.OpenInNew, context = context, haptic = haptic),
         licenseItem(
             name = "Better Lyrics",
             description = context.getString(R.string.licenses_desc_better_lyrics),

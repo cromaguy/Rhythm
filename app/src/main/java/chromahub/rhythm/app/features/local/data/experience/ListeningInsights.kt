@@ -5,9 +5,11 @@ import java.time.Instant
 import java.time.YearMonth
 import java.time.ZoneId
 
+@androidx.annotation.Keep
 data class SongHabit(val songKey: String, val title: String, val artist: String, val plays: Int,
     val listenedMs: Long, val medianGapMs: Long?, val maxConsecutiveRepeats: Int, val completed: Int,
     val earlySkips: Int, val firstListenDelayMs: Long?, val averageCompletionRatio: Double? = null)
+@androidx.annotation.Keep
 data class ListeningInsights(val monthly: Map<String, Long>, val hourly: List<Long>, val genres: Map<String, Long>,
     val artists: Map<String, Long>, val transitions: Map<Pair<String, String>, Int>, val habits: List<SongHabit>, val totalPlays: Int, val places: Map<String, Long> = emptyMap(), val outputs: Map<String, Long> = emptyMap())
 

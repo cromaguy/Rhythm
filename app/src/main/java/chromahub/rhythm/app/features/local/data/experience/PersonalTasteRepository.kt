@@ -9,35 +9,20 @@ import kotlinx.coroutines.withContext
 object PersonalTasteRepository {
     @Volatile private var reasons: Map<String, List<String>> = emptyMap()
     fun reasons(key: String): List<String> = reasons[key].orEmpty()
-    fun recommend(context: Context, songs: List<Song>, favoriteIds: List<String>, currentId: String?, count: Int): List<Song> {
+    @Synchronized fun recommend(context: Context, songs: List<Song>, favoriteIds: List<String>, currentId: String?, count: Int, seed: Long = System.currentTimeMillis() / 86_400_000L): List<Song> {
         val ledger = ListeningLedger.get(context)
         val history = ledger.affinities().map { h ->
             if (h.songKey.startsWith("legacy:")) songs.firstOrNull { it.id == h.songKey.removePrefix("legacy:") }?.let { h.copy(songKey = it.uri.toString()) } ?: h else h
         }
         val profile = ExperienceProfile.read(context)
         val now = System.currentTimeMillis()
-        val recent = ledger.records(now - 90 * 24 * 3600_000L, limit = 20_000) + ledger.records(now - 90 * 24 * 3600_000L, kind = "action", limit = 20_000)
-        val patterns = ListeningInsightAnalysis.analyze(recent)
-        val hour = java.time.Instant.ofEpochMilli(now).atZone(java.time.ZoneId.systemDefault()).hour
-        val hourly = recent.filter { it.kind == "segment" && java.time.Instant.ofEpochMilli(it.startedAt).atZone(java.time.ZoneId.of(it.timezone)).hour == hour }
-            .groupBy { it.genre }.mapValues { it.value.sumOf { row -> row.listenedMs }.toDouble() }
-        val maximum = hourly.values.maxOrNull()?.coerceAtLeast(1.0) ?: 1.0
-        val previousGenre = songs.firstOrNull { it.id == currentId }?.genre ?: recent.filter { it.kind == "segment" }.maxByOrNull { it.endedAt }?.genre
-        val transitions = patterns.transitions.filterKeys { it.first == previousGenre }.mapKeys { it.key.second }.mapValues { it.value.toDouble() }
-        val transitionMax = transitions.values.maxOrNull()?.coerceAtLeast(1.0) ?: 1.0
-        val behavior = RecommendationContext(hourly.filterKeys { it != null }.mapKeys { it.key!! }.mapValues { it.value / maximum },
-            transitions.mapValues { it.value / transitionMax }, patterns.habits.associate { it.songKey to it.earlySkips.toDouble() / it.plays.coerceAtLeast(1) },
-            patterns.habits.mapNotNull { habit -> habit.medianGapMs?.takeIf { it > 0 }?.let { gap ->
-                val last = history.firstOrNull { it.songKey == habit.songKey }?.lastAt ?: now
-                habit.songKey to ((now - last).toDouble() / gap).coerceIn(0.0, 1.0)
-            } }.toMap())
+        val current = songs.firstOrNull { it.id == currentId }
         val situation = ListeningContext.get(context).snapshot(now)
-        val contextual = AdaptiveRecommendation.contextPreference(recent, situation, now)
         val learning = RecommendationLearning.get(context)
         val model = learning.model()
-        val combined = behavior.copy(hourlyGenres = contextual.hourlyGenres, placeGenres = contextual.placeGenres, outputGenres = contextual.outputGenres,
-            weekdayGenres = contextual.weekdayGenres, recentGenres = contextual.recentGenres, completionRates = contextual.completionRates, weatherGenres = contextual.weatherGenres, brightnessGenres = contextual.brightnessGenres, volumeGenres = contextual.volumeGenres, ambientGenres = contextual.ambientGenres,
-            learnedWeights = model.weights, learnedSamples = model.samples, explicitFeedback = model.explicit)
+        // A screen refresh reads compact indexed summaries; it never replays the listening journal.
+        val combined = ContextPreferenceIndex(context).use { it.preferences(situation, current?.genre) }
+            .copy(learnedWeights = model.weights, learnedSamples = model.samples, explicitFeedback = model.explicit)
         val anchors = (listOfNotNull(songs.firstOrNull { it.id == currentId }?.uri?.toString()) + history.take(3).map { it.songKey }).distinct().mapNotNull { ledger.feature(it) }
         val tasteVector = AudioVectors.taste(history.take(50).mapNotNull { h ->
             ledger.feature(h.songKey)?.let { feature ->
@@ -47,16 +32,47 @@ object PersonalTasteRepository {
             }
         })
         val exclusions = PersonalCollections.options(context)
-        val candidates = songs.filterNot { PersonalCollections.excluded(exclusions, it.uri.toString(), now) }.map { song ->
-            val acoustic = if (profile.audioWeight > 0 && anchors.isNotEmpty()) ledger.feature(song.uri.toString())?.let { f -> maxOf(anchors.maxOf { SignalAnalysis.similarity(f, it) }, tasteVector?.let { AudioVectors.cosine(AudioVectors.describe(f), it) } ?: 0.0) } ?: 0.0 else 0.0
-            RecommendationCandidate(song.uri.toString(), song.artist, song.genre, song.dateAdded, song.id in favoriteIds, song.id == currentId, acoustic, title = song.title)
+        // Keep large libraries responsive. Rotate the exploration window rather than decoding every song.
+        val pool = linkedMapOf<String, Song>()
+        fun add(song: Song?) { if (song != null && pool.size < 2000 && !PersonalCollections.excluded(exclusions, song.uri.toString(), now)) pool[song.uri.toString()] = song }
+        val favorites = favoriteIds.toHashSet()
+        songs.asSequence().filter { it.id in favorites }.take(300).forEach(::add)
+        val catalog = songs.associateBy { it.uri.toString() }
+        history.take(500).forEach { add(catalog[it.songKey]) }
+        if (songs.isNotEmpty()) {
+            val random = kotlin.random.Random(seed)
+            for (i in 0 until minOf(songs.size * 2L, 6000L).toInt()) { add(songs[random.nextInt(songs.size)]); if (pool.size >= 2000) break }
+            if (songs.size <= 2000) songs.forEach(::add)
+        }
+        val memory = TasteMemory.get(context)
+        val likedArtists = memory.weights(TasteKind.ARTIST, now)
+        val likedAlbums = memory.weights(TasteKind.ALBUM, now)
+        val likedSongs = memory.weights(TasteKind.SONG, now)
+        val candidates = pool.values.map { song ->
+            RecommendationCandidate(song.uri.toString(), song.artist, song.genre, song.dateAdded,
+                song.id in favorites, song.id == currentId, title = song.title,
+                entityAffinity = .35 * (likedArtists[TasteMemory.artistKey(song.artist)] ?: 0.0) +
+                    .35 * (likedAlbums[TasteMemory.albumKey(song.album, song.albumArtist ?: song.artist)] ?: 0.0) +
+                    .3 * (likedSongs[song.uri.toString()] ?: 0.0))
+        }
+        val preliminary = PersonalRecommendation.rank(candidates, history, profile, now, combined)
+        val acousticKeys = preliminary.take(128).map { it.key }.toHashSet()
+        val enriched = candidates.map { candidate ->
+            if (candidate.key !in acousticKeys || anchors.isEmpty() || profile.audioWeight <= 0) candidate else {
+                val acoustic = ledger.feature(candidate.key)?.let { f -> maxOf(anchors.maxOf { SignalAnalysis.similarity(f, it) },
+                    tasteVector?.let { AudioVectors.cosine(AudioVectors.describe(f), it) } ?: 0.0) } ?: 0.0
+                candidate.copy(acousticSimilarity = acoustic)
+            }
         }
         val byKey = songs.associateBy { it.uri.toString() }
         // Limit adjacent artist repetition while retaining the original ranking within each group.
-        val scores = PersonalRecommendation.rank(candidates, history, profile, now, combined)
-        val mix = AdaptiveRecommendation.diversify(scores, candidates, count, profile.exploration)
+        val scores = PersonalRecommendation.rank(enriched, history, profile, now, combined).map {
+            val jitter = ((it.key.hashCode().toLong() xor seed) * 0x5DEECE66DL and 0xffffL) / 65535.0
+            it.copy(score = it.score + .06 * jitter)
+        }.sortedByDescending { it.score }
+        val mix = AdaptiveRecommendation.diversify(scores, enriched, count, profile.exploration)
         reasons = mix.associate { it.key to it.reasons }
-        learning.offer(mix, candidates)
+        learning.offer(mix, enriched)
         return mix.mapNotNull { byKey[it.key] }
     }
 }
