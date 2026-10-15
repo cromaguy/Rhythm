@@ -72,6 +72,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.zIndex
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -503,7 +504,7 @@ fun ExpressivePlayerScreen(
 
     val artworkValidation = rememberArtworkValidation(debouncedSong.value?.artworkUri, context)
     val hasValidArtwork = artworkValidation == true
-    val isBackdropEnabled = playerAmbientBackdropEnabled
+    val isBackdropEnabled = playerAmbientBackdropEnabled || musicVideoActive
     val showCanvasArtBg = isBackdropEnabled && hasValidArtwork && !lyricsVisible
     val showDarkBg = isBackdropEnabled
     val showBg = true
@@ -645,13 +646,13 @@ fun ExpressivePlayerScreen(
     val line2TranslationY = with(LocalDensity.current) { 32.dp.toPx() * (1f - line2Fraction) }
     val line3Alpha = line3Fraction
     val line3TranslationY = with(LocalDensity.current) { 44.dp.toPx() * (1f - line3Fraction) }
-    val showAlbumArt = !(showDarkBg && hasValidArtwork)
+    val showAlbumArt = !musicVideoActive && !(showDarkBg && hasValidArtwork)
     val line4Alpha = line4Fraction
     val line4TranslationY = with(LocalDensity.current) { 40.dp.toPx() * (1f - line4Fraction) }
     val line6Alpha = line6Fraction
     val line6TranslationY = with(LocalDensity.current) { 48.dp.toPx() * (1f - line6Fraction) }
 
-    val artworkClipShape = if (musicVideoActive) RoundedCornerShape(16.dp) else playerArtworkShape
+    val artworkClipShape = playerArtworkShape
 
     val needsDarkSurfaces = showDarkBg
     val darkScheme = remember { darkColorScheme() }
@@ -689,11 +690,12 @@ fun ExpressivePlayerScreen(
     }
     val artColor = artworkColor.value ?: defaultSongColor
     // Ambient contrast handling: maintain visibility against backdrop
-    val ambientTextColor = if ((artColor?.luminance() ?: 0f) > 0.65f) Color.Black else Color.White
+    val ambientTextColor = if (musicVideoActive) Color.White else if ((artColor?.luminance() ?: 0f) > 0.65f) Color.Black else Color.White
 
     val isPlayerActive = if (swipeToDismissEnabled) true else expansionFraction > 0.5f
     val isStatusLight = when {
         useAccentBackground -> accentBg.luminance() > 0.5f
+        musicVideoActive -> false
         isBackdropEnabled -> (artColor?.luminance() ?: 0f) > 0.65f
         else -> !isDarkTheme
     }
@@ -1152,6 +1154,33 @@ fun ExpressivePlayerScreen(
             unifiedBackground(Modifier.fillMaxSize().graphicsLayer { scaleX = bgZoom; scaleY = bgZoom })
         }
 
+        // A single, stable renderer replaces the backdrop, outside artwork crossfades and shapes.
+        // The title/controls keep their existing layout; video never becomes a floating square.
+        if (musicVideoActive && song != null) {
+            val horizontal = isLandscapeTablet || isTabletImmersiveLyrics
+            Box((if (horizontal) Modifier.fillMaxWidth(0.5f).fillMaxHeight()
+                else Modifier.fillMaxWidth().fillMaxHeight(0.64f))
+                .testTag("player_video_backdrop").clipToBounds()
+                .graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen)
+                .drawWithContent {
+                    drawContent()
+                    val fade = if (horizontal) Brush.horizontalGradient(
+                        0f to Color.Black, .7f to Color.Black, 1f to Color.Transparent)
+                    else Brush.verticalGradient(0f to Color.Black, .72f to Color.Black, 1f to Color.Transparent)
+                    drawRect(fade, blendMode = BlendMode.DstIn)
+                }) {
+                chromahub.rhythm.app.shared.presentation.components.player.MusicVideoArtwork(song,
+                    isPlaying = isPlaying && !lyricsVisible,
+                    positionMs = { (progress() * song.duration).toLong() },
+                    modifier = Modifier.fillMaxSize().alpha(if (lyricsVisible) 0f else 1f), controls = currentVideoControls)
+                Box(Modifier.fillMaxSize().background(if (horizontal) Brush.horizontalGradient(
+                    0f to Color.Black.copy(alpha = .08f), .7f to Color.Black.copy(alpha = .2f), 1f to Color.Black.copy(alpha = .6f))
+                    else Brush.verticalGradient(0f to Color.Black.copy(alpha = .12f), .28f to Color.Black.copy(alpha = .16f),
+                        .45f to Color.Black.copy(alpha = .55f), .68f to Color.Black.copy(alpha = .6f),
+                        1f to Color.Black.copy(alpha = .76f))))
+            }
+        }
+
         Column(
             modifier = Modifier.fillMaxSize().statusBarsPadding().then(swipeMinimizeModifier)
         ) {
@@ -1230,10 +1259,6 @@ fun ExpressivePlayerScreen(
                                     }
                                 }
                         ) {
-                            if (song != null && !showLyricsView) {
-                                chromahub.rhythm.app.shared.presentation.components.player.MusicVideoArtwork(song, isPlaying,
-                                    positionMs = { (progress() * song.duration).toLong() }, modifier = Modifier.fillMaxSize().zIndex(5f), controls = currentVideoControls)
-                            }
                             val currentSongArt = debouncedSong.value?.artworkUri
 
                             AnimatedContent(
@@ -1326,7 +1351,7 @@ fun ExpressivePlayerScreen(
                 // Use fully qualified AnimatedVisibility to avoid ColumnScope receiver capture
                 val artworkContent = @Composable { modifier: Modifier ->
                     androidx.compose.animation.AnimatedVisibility(
-                        visible = showAlbumArt || musicVideoActive || lyricsVisible,
+                        visible = showAlbumArt || lyricsVisible,
                         enter = fadeIn() + slideInVertically { it / 2 },
                         exit = fadeOut() + slideOutVertically { it / 2 },
                         modifier = modifier
@@ -1461,6 +1486,7 @@ fun ExpressivePlayerScreen(
 
                             if (song != null && !showLyricsView) {
                                 chromahub.rhythm.app.shared.presentation.components.player.MusicVideoToggle(currentVideoControls, foreground = onSurfaceColor)
+                                chromahub.rhythm.app.shared.presentation.components.player.MusicVideoStatus(currentVideoControls)
                                 Spacer(Modifier.height(12.dp))
                             }
 
@@ -2398,7 +2424,8 @@ fun ExpressivePlayerScreen(
                     onClick = { HapticUtils.performHapticFeedback(context, haptic, HapticType.MEDIUM); onMoreClick() },
                     modifier = Modifier.align(Alignment.TopEnd).padding(top = 4.dp, end = 12.dp).size(48.dp)
                         .testTag("player_overflow"),
-                    colors = IconButtonDefaults.iconButtonColors(contentColor = onSurfaceColor)
+                    colors = IconButtonDefaults.iconButtonColors(contentColor = onSurfaceColor,
+                        containerColor = if (musicVideoActive) Color.Black.copy(alpha = .55f) else Color.Transparent)
                 ) {
                     Icon(RhythmIcons.More, contentDescription = stringResource(R.string.expressiveplayerscreen_more), modifier = Modifier.size(24.dp))
                 }

@@ -52,4 +52,12 @@
     <string name="mv_seconds">초</string>
     <string name="context_place_groups">%1$d개 장소 그룹의 청취 기록</string>
     <string name="mv_original_smaller">변환 결과보다 작은 호환 원본을 보관했습니다. 재생은 무음으로 유지합니다.</string>
+    <string name="mv_loading">영상 불러오는 중…</string>
+    <string name="mv_retry">다시 시도</string>
+    <string name="mv_load_timeout">영상 로딩이 지연되고 있습니다. 인터넷 연결을 확인하고 다시 시도해 주세요.</string>
+    <string name="mv_network_error">YouTube에 연결하지 못했습니다. 인터넷 연결과 Android 시스템 WebView를 확인해 주세요.</string>
+    <string name="mv_identity_error">YouTube가 플레이어를 확인하지 못했습니다(153). Android 시스템 WebView를 업데이트한 후 다시 시도해 주세요.</string>
+    <string name="mv_unavailable">삭제되었거나 비공개인 영상입니다. 다른 링크를 선택해 주세요.</string>
+    <string name="mv_embed_disabled">게시자가 앱 내 재생을 허용하지 않은 영상입니다. 다른 영상을 선택하거나 YouTube에서 열어 주세요.</string>
+    <string name="mv_autoplay_blocked">YouTube가 자동 재생을 제한했습니다. 다시 시도하거나 로컬 영상을 선택해 주세요.</string>
 </resources>

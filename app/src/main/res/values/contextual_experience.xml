@@ -52,4 +52,12 @@
     <string name="mv_seconds">seconds</string>
     <string name="context_place_groups">Listening across %1$d place groups</string>
     <string name="mv_original_smaller">A compatible original was smaller than the remuxed video and was retained. Playback stays muted.</string>
+    <string name="mv_loading">Loading video…</string>
+    <string name="mv_retry">Retry</string>
+    <string name="mv_load_timeout">The video is taking too long to load. Check your connection and try again.</string>
+    <string name="mv_network_error">Cannot connect to YouTube. Check your connection and Android System WebView, then try again.</string>
+    <string name="mv_identity_error">YouTube could not identify this player (153). Update Android System WebView and try again.</string>
+    <string name="mv_unavailable">This video is unavailable or private. Choose another link.</string>
+    <string name="mv_embed_disabled">The uploader does not allow embedded playback. Choose another video or open it on YouTube.</string>
+    <string name="mv_autoplay_blocked">YouTube blocked automatic playback. Try again or choose a local video.</string>
 </resources>

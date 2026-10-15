@@ -4,6 +4,7 @@ package chromahub.rhythm.app.shared.presentation.components.player
 import android.graphics.Bitmap
 import android.net.Uri
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
@@ -86,8 +87,66 @@ class PlayerRegressionTest {
         settings.setAutoFetchArtwork(false); settings.setPlayerAmbientBackdropEnabled(true)
         render(song, controls)
         compose.waitUntil(120000) { controls.hasVideo }
+        val selectorBefore = compose.onNodeWithText(context.getString(R.string.personal_video)).getUnclippedBoundsInRoot()
+        screenshot("full-cover-audio.png")
         compose.onNodeWithText(context.getString(R.string.personal_video)).performClick()
+        // Wait for composition before examining loading; immediately after the click it can
+        // still hold the previous audio-only value while the video is being mounted.
+        compose.onNodeWithTag("music_video_surface").assertExists()
+        compose.waitUntil(120000) { !controls.loading.value }
+        compose.waitForIdle()
+        assertNull(controls.error.value)
+        compose.onAllNodesWithTag("music_video_surface").assertCountEquals(1)
         compose.onNodeWithTag("music_video_surface").assertIsDisplayed()
+        val backdrop = compose.onNodeWithTag("player_video_backdrop").getUnclippedBoundsInRoot()
+        val screen = compose.onRoot().getUnclippedBoundsInRoot()
+        assertEquals(screen.left.value, backdrop.left.value, 1f)
+        assertEquals(screen.top.value, backdrop.top.value, 1f)
+        assertEquals(screen.right.value, backdrop.right.value, 1f)
+        assertTrue("Video must cover the whole artwork backdrop", (backdrop.bottom.value - backdrop.top.value) >= (screen.bottom.value - screen.top.value) * .6f)
+        val selectorAfter = compose.onNodeWithText(context.getString(R.string.personal_video)).getUnclippedBoundsInRoot()
+        assertEquals("Selecting video must not add a square or move controls", selectorBefore.top.value, selectorAfter.top.value, 2f)
+        compose.runOnIdle {
+            val activity = androidx.test.runner.lifecycle.ActivityLifecycleMonitorRegistry.getInstance()
+                .getActivitiesInStage(androidx.test.runner.lifecycle.Stage.RESUMED).first()
+            fun textures(view: android.view.View): List<android.view.TextureView> = when (view) {
+                is android.view.TextureView -> listOf(view)
+                is android.view.ViewGroup -> (0 until view.childCount).flatMap { textures(view.getChildAt(it)) }
+                else -> emptyList()
+            }
+            val texture = textures(activity.window.decorView).single()
+            val clipped = texture.parent.parent as android.widget.FrameLayout
+            assertTrue(clipped.clipChildren)
+            assertTrue(texture.width >= clipped.width && texture.height >= clipped.height)
+            assertTrue("Crop must fill without black bars", texture.width > clipped.width || texture.height > clipped.height)
+        }
+        screenshot("full-cover-video.png")
+        compose.onNodeWithText(context.getString(R.string.personal_audio)).performClick()
+        compose.onNodeWithTag("music_video_surface").assertDoesNotExist()
+    }
+
+    @Test fun videoFailureOffersRetryAndWorkingManagementOutsideTheBackdrop() {
+        val song = song(); val controls = MusicVideoControls()
+        controls.video.value = MusicVideoRepository(context).link(song.uri.toString(), "https://youtu.be/abcdefghijk", song.title)
+        files.add(File(context.filesDir, "music_metadata/videos/records/${kr.co.metadata.crawler.CatalogFileStore.hash(song.uri.toString())}.json"))
+        controls.active.value = true
+        controls.error.value = context.getString(R.string.mv_embed_disabled)
+        compose.setContent { MaterialTheme { Column {
+            MusicVideoSession(song, controls)
+            MusicVideoStatus(controls)
+        } } }
+        compose.onNodeWithTag("music_video_error").assertIsDisplayed()
+        compose.onNodeWithText(context.getString(R.string.mv_retry)).performClick()
+        assertEquals(1, controls.retry.intValue)
+        compose.onNodeWithText(context.getString(R.string.mv_manage)).performClick()
+        compose.onNodeWithText(context.getString(R.string.mv_watch)).assertIsDisplayed()
+    }
+
+    private fun screenshot(name: String) {
+        val file = File(context.getExternalFilesDir(null), name)
+        InstrumentationRegistry.getInstrumentation().uiAutomation.takeScreenshot().let { bitmap ->
+            file.outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }; bitmap.recycle()
+        }
     }
 
     @Test fun fiveSelectedActionsLeaveOneFixedOverflowAtTopRight() {

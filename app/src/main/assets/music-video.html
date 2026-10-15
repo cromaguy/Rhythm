@@ -1,0 +1,50 @@
+<!doctype html>
+<html><head>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<style>
+html,body { margin:0; width:100%; height:100%; overflow:hidden; background:#000; }
+#cover { position:absolute; inset:0; overflow:hidden; }
+#mv { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); border:0; }
+</style></head><body><div id="cover"><div id="mv"></div></div>
+<script>
+'use strict';
+var player, ready=false, shouldPlay=__PLAYING__, desiredTime=__START_SECONDS__;
+function report(name,value) { if(window.T2Video) T2Video.event(name,String(value||'')); }
+// Music videos normally use 16:9. Resize the official iframe, never stretch its pixels.
+function sizeCover() {
+  var element=document.getElementById('mv');
+  var width=window.innerWidth, height=window.innerHeight;
+  var scale=Math.max(width/16,height/9);
+  element.style.width=(scale*16)+'px'; element.style.height=(scale*9)+'px';
+}
+function sync() {
+  if(!ready) return;
+  player.setVolume(0); player.mute();
+  var duration=player.getDuration();
+  var target=Math.max(0,duration>0?Math.min(desiredTime,Math.max(0,duration-.25)):desiredTime);
+  if(Math.abs(player.getCurrentTime()-target)>1.5) player.seekTo(target,true);
+  if(shouldPlay && desiredTime>=0 && !(duration>0 && desiredTime>=duration)) player.playVideo();
+  else player.pauseVideo();
+}
+function setPlayback(play,time) { shouldPlay=play; desiredTime=time; sync(); }
+function onYouTubeIframeAPIReady() {
+  player=new YT.Player('mv',{
+    videoId:'__VIDEO_ID__', host:'https://www.youtube.com',
+    playerVars:{playsinline:1,controls:1,mute:1,autoplay:0,start:Math.floor(desiredTime),
+      origin:'__APP_ORIGIN__',widget_referrer:'__APP_ORIGIN__/'},
+    events:{onReady:function(){ ready=true; sizeCover(); sync(); report('ready'); },
+      onError:function(e){report('error',e.data);},
+      onAutoplayBlocked:function(){report('blocked');},
+      onStateChange:function(e){if(e.data===1 || e.data===2 || e.data===5) report('ready');}}
+  });
+  sizeCover();
+}
+window.addEventListener('resize',sizeCover);
+sizeCover();
+// Register the callback before requesting the API, including with a warm HTTP cache.
+var script=document.createElement('script');
+script.src='https://www.youtube.com/iframe_api';
+script.onerror=function(){report('network');};
+document.head.appendChild(script);
+</script></body></html>

@@ -135,14 +135,16 @@ class PersonalMediaTest {
                 recorder = ListeningRecorder(context) { song }; recorder.attach(player)
             }
             assertTrue(ready.await(20, java.util.concurrent.TimeUnit.SECONDS))
-            instrumentation.runOnMainSync { player.play() }
-            Thread.sleep(200)
-            instrumentation.runOnMainSync { player.seekTo(1950) }
+            // Seek while paused, then play the final 50ms. Sleeping after play races the
+            // emulator scheduler and can legitimately play most of this 2s fixture.
+            instrumentation.runOnMainSync { player.seekTo(1950); player.play() }
             assertTrue(ended.await(20, java.util.concurrent.TimeUnit.SECONDS))
             instrumentation.runOnMainSync { recorder.close(); player.release() }
             var summary: ListeningRecord? = null
             repeat(100) { if (summary == null) { Thread.sleep(50); summary = ListeningLedger.get(context).records(kind = "play", limit = 50).firstOrNull { it.songKey == key } } }
-            assertNotNull(summary); assertTrue(summary!!.playCompletionRatio!! < .3); assertFalse(summary!!.completed)
+            assertNotNull(summary)
+            assertTrue("Only the audible tail counts: ${summary!!.playCompletionRatio}", summary!!.playCompletionRatio!! < .3)
+            assertFalse(summary!!.completed)
         } finally {
             instrumentation.runOnMainSync { runCatching { player.release() } }
             file.delete()
