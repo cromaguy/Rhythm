@@ -7,11 +7,8 @@
 
 package chromahub.rhythm.app.shared.presentation.components.player
 
-import androidx.compose.material3.LinearWavyProgressIndicator
-import androidx.compose.material3.IconButton
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
@@ -19,52 +16,71 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import chromahub.rhythm.app.R
 import chromahub.rhythm.app.shared.data.model.AppSettings
 import chromahub.rhythm.app.shared.data.model.Song
-import chromahub.rhythm.app.shared.presentation.components.common.AutoScrollingTextOnDemand
-import chromahub.rhythm.app.shared.presentation.components.common.ExpressiveShapeTarget
-import chromahub.rhythm.app.shared.presentation.components.common.ShimmerBox
-import chromahub.rhythm.app.shared.presentation.components.common.rememberExpressiveShapeFor
 import chromahub.rhythm.app.shared.presentation.components.icons.Icon
 import chromahub.rhythm.app.shared.presentation.components.icons.RhythmIcons
-import chromahub.rhythm.app.util.HapticUtils
 import chromahub.rhythm.app.util.HapticType
-import chromahub.rhythm.app.util.M3ImageUtils
-import kotlinx.coroutines.delay
-import kotlin.math.abs
-import chromahub.rhythm.app.util.windowScreenWidthDp
+import chromahub.rhythm.app.util.HapticUtils
 import chromahub.rhythm.app.util.windowScreenHeightDp
+import chromahub.rhythm.app.util.windowScreenWidthDp
+import kotlin.math.abs
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
+/**
+ * Material 3 Expressive MiniPlayer:
+ * - Fluid pill shape with integrated spring progress backdrop.
+ * - Directional elastic spring morph transitions for album artwork and text.
+ * - Settings suggestions carousel-like swipe physics: continuous 1:1 drag,
+ *   smooth fling exit, and organic incoming spring enter from opposite side.
+ * - Autonomous song change spring pulse for hands-free track changes.
+ * - Decisive current play/pause rotation that smoothly decelerates to rest on pause.
+ */
 @Composable
 fun ExpressiveMiniPlayer(
     song: Song?,
@@ -81,129 +97,123 @@ fun ExpressiveMiniPlayer(
 ) {
     val context = LocalContext.current
     val haptic = LocalHapticFeedback.current
+    val density = LocalDensity.current
     val appSettings = remember { AppSettings.getInstance(context) }
+    val coroutineScope = rememberCoroutineScope()
 
     val miniPlayerSwipeGestures by appSettings.miniPlayerSwipeGestures.collectAsState()
     val miniPlayerSwipeTracks by appSettings.miniPlayerSwipeTracks.collectAsState()
     val miniPlayerSwipeDismiss by appSettings.miniPlayerSwipeDismiss.collectAsState()
     val miniPlayerCornerRadius by appSettings.miniPlayerCornerRadius.collectAsState()
+    val miniPlayerShowArtwork by appSettings.miniPlayerShowArtwork.collectAsState()
 
     val isTablet = windowScreenWidthDp() >= 600
-    val isCompactHeight = windowScreenHeightDp() < 500
-    val isLargeHeight = windowScreenHeightDp() >= 700
     val alwaysShowTabletLayout by appSettings.miniPlayerAlwaysShowTablet.collectAsState()
     val isLandscapeTablet = isTablet && windowScreenWidthDp() > windowScreenHeightDp()
     val useTabletLayout = isTablet || (alwaysShowTabletLayout && !isTablet)
 
-    val miniPlayerShowArtwork by appSettings.miniPlayerShowArtwork.collectAsState()
+    val motionConfig = MiniPlayerMotion.resolveConfig("EXPRESSIVE")
 
-    
-    val animatedProgress by animateFloatAsState(
-        targetValue = progress(),
-        animationSpec = spring(stiffness = Spring.StiffnessLow),
-        label = "progress"
-    )
-
-    
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
-    val scale by animateFloatAsState(
-        targetValue = if (isPressed) 0.98f else 1f,
-        animationSpec = tween(durationMillis = 100),
-        label = "scale"
+    val pressScale by animateFloatAsState(
+        targetValue = if (isPressed) motionConfig.pressScale else 1f,
+        animationSpec = motionConfig.fastSpatialSpring,
+        label = "miniPlayerPressScale"
     )
 
-    var songChangeBounceTrigger by remember { mutableStateOf(false) }
-    val songBounceScale by animateFloatAsState(
-        targetValue = if (songChangeBounceTrigger) 1.02f else 1f,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessLow
-        ),
-        label = "songBounceScale"
-    )
+    val screenWidthPx = with(density) { windowScreenWidthDp().dp.toPx() }
+    val carouselOffsetX = remember { Animatable(0f) }
+    val carouselOffsetY = remember { Animatable(0f) }
+    var isCarouselFlinging by remember { mutableStateOf(false) }
+    var isDismissingPlayer by remember { mutableStateOf(false) }
+    var isUserInteracting by remember { mutableStateOf(false) }
 
-    var initialAppearanceBounceTrigger by remember { mutableStateOf(false) }
-    val initialAppearanceBounceScale by animateFloatAsState(
-        targetValue = if (initialAppearanceBounceTrigger) 1.05f else 1f,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessLow
-        ),
-        label = "initialAppearanceBounceScale"
-    )
+    val swipeHorizontalThreshold = with(density) { 75.dp.toPx() }
+    val swipeUpThreshold = with(density) { 70.dp.toPx() }
+    val swipeDownThreshold = with(density) { 75.dp.toPx() }
 
-    
-    LaunchedEffect(song) {
+    val autoBounceScale = remember { Animatable(1f) }
+    var previousSongId by remember { mutableStateOf(song?.id) }
+
+    var trackDirection by remember { mutableStateOf(TrackChangeDirection.NONE) }
+
+    LaunchedEffect(Unit) {
         if (song != null) {
-            initialAppearanceBounceTrigger = true
-            delay(150)
-            initialAppearanceBounceTrigger = false
-
-            delay(50)
-            songChangeBounceTrigger = true
-            delay(100)
-            songChangeBounceTrigger = false
+            autoBounceScale.snapTo(0.93f)
+            autoBounceScale.animateTo(
+                targetValue = 1f,
+                animationSpec = spring(
+                    dampingRatio = MiniPlayerMotionTokens.ExpressiveFastSpatialDamping,
+                    stiffness = MiniPlayerMotionTokens.ExpressiveSpatialStiffness
+                )
+            )
         }
     }
 
-    
-    var offsetY by remember { mutableFloatStateOf(0f) }
-    var offsetX by remember { mutableFloatStateOf(0f) }
-    val swipeUpThreshold = 100f
-    val swipeDownThreshold = 100f
-    val swipeHorizontalThreshold = 120f
-
-    var lastHapticOffset by remember { mutableFloatStateOf(0f) }
-    var lastHapticOffsetX by remember { mutableFloatStateOf(0f) }
-    var isDismissingPlayer by remember { mutableStateOf(false) }
-
-    
-    val translationOffsetY by animateFloatAsState(
-        targetValue = when {
-            isDismissingPlayer -> 500f
-            offsetY > 0 -> offsetY.coerceAtMost(250f)
-            else -> 0f
-        },
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioNoBouncy,
-            stiffness = Spring.StiffnessMedium
-        ),
-        label = "translationOffsetY"
-    )
-    val translationOffsetX by animateFloatAsState(
-        targetValue = offsetX.coerceIn(-300f, 300f),
-        animationSpec = spring(dampingRatio = 0.8f, stiffness = Spring.StiffnessMedium),
-        label = "translationOffsetX"
-    )
-    val alphaValue by animateFloatAsState(
-        targetValue = when {
-            isDismissingPlayer -> 0f
-            offsetY > 0 -> (1f - (offsetY / 250f)).coerceIn(0f, 1f)
-            else -> 1f
-        },
-        animationSpec = tween(150),
-        label = "alphaValue"
-    )
-
-    val dragScale by animateFloatAsState(
-        targetValue = if (offsetY > 0) (1f - (offsetY / 1000f)).coerceAtLeast(0.9f) else 1f,
-        animationSpec = spring(stiffness = Spring.StiffnessHigh),
-        label = "dragScale"
-    )
-
-    LaunchedEffect(isDismissingPlayer) {
-        if (isDismissingPlayer) {
-            if (isPlaying) onPlayPause()
-            delay(250)
-            onDismiss()
-            isDismissingPlayer = false
-            offsetY = 0f
+    LaunchedEffect(song?.id) {
+        if (song != null && previousSongId != null && song.id != previousSongId) {
+            if (!isUserInteracting && !isCarouselFlinging) {
+                if (trackDirection == TrackChangeDirection.NONE) {
+                    trackDirection = TrackChangeDirection.FORWARD
+                }
+                coroutineScope.launch {
+                    autoBounceScale.animateTo(
+                        targetValue = 1.045f,
+                        animationSpec = spring(
+                            dampingRatio = 0.5f,
+                            stiffness = 500f
+                        )
+                    )
+                    autoBounceScale.animateTo(
+                        targetValue = 1f,
+                        animationSpec = spring(
+                            dampingRatio = 0.55f,
+                            stiffness = 380f
+                        )
+                    )
+                }
+                delay(350)
+                trackDirection = TrackChangeDirection.NONE
+            }
         }
+        previousSongId = song?.id
     }
 
     val canSwipeTracks = miniPlayerSwipeGestures && miniPlayerSwipeTracks
     val canSwipeVertical = miniPlayerSwipeGestures && miniPlayerSwipeDismiss && verticalDragEnabled
+
+    fun handleSkipNext() {
+        trackDirection = TrackChangeDirection.FORWARD
+        onSkipNext()
+    }
+
+    fun handleSkipPrevious() {
+        trackDirection = TrackChangeDirection.BACKWARD
+        onSkipPrevious()
+    }
+
+    fun handleDismiss() {
+        coroutineScope.launch {
+            if (isPlaying) onPlayPause()
+            delay(200)
+            onDismiss()
+            isDismissingPlayer = false
+            carouselOffsetY.snapTo(0f)
+            carouselOffsetX.snapTo(0f)
+            isUserInteracting = false
+        }
+    }
+
+    var lastHapticOffset by remember { mutableFloatStateOf(0f) }
+    var lastHapticOffsetX by remember { mutableFloatStateOf(0f) }
+
+    val carouselDragScale = (1f - (abs(carouselOffsetX.value) / (screenWidthPx * 4f))).coerceIn(0.92f, 1f)
+    val cardAlpha = when {
+        isDismissingPlayer -> 0f
+        carouselOffsetY.value > 0 -> (1f - (carouselOffsetY.value / 250f)).coerceIn(0f, 1f)
+        else -> (1f - (abs(carouselOffsetX.value) / (screenWidthPx * 1.5f))).coerceIn(0.55f, 1f)
+    }
 
     val surfaceModifier = (if (useTabletLayout) {
         if (isLandscapeTablet) {
@@ -225,75 +235,151 @@ fun ExpressiveMiniPlayer(
             .height(84.dp)
             .padding(horizontal = 14.dp, vertical = 6.dp)
     })
-        .scale(scale * songBounceScale * initialAppearanceBounceScale * dragScale)
+        .scale(pressScale * autoBounceScale.value * carouselDragScale)
         .graphicsLayer {
-            translationY = translationOffsetY
-            translationX = translationOffsetX
-            alpha = alphaValue
+            translationX = carouselOffsetX.value
+            translationY = when {
+                isDismissingPlayer -> 500f
+                carouselOffsetY.value > 0 -> carouselOffsetY.value.coerceAtMost(250f)
+                else -> 0f
+            }
+            alpha = cardAlpha
         }
         .pointerInput(canSwipeTracks, canSwipeVertical) {
             if (canSwipeTracks && canSwipeVertical) {
                 detectDragGestures(
                     onDragStart = {
+                        isUserInteracting = true
                         lastHapticOffset = 0f
                         lastHapticOffsetX = 0f
                         HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
                     },
                     onDragEnd = {
-                        val absX = abs(offsetX)
-                        val absY = abs(offsetY)
+                        val absX = abs(carouselOffsetX.value)
+                        val absY = abs(carouselOffsetY.value)
 
-                        if (absX > absY) {
-                            if (offsetX < -swipeHorizontalThreshold) {
+                        if (absX > absY && canSwipeTracks) {
+                            if (carouselOffsetX.value < -swipeHorizontalThreshold) {
                                 HapticUtils.performHapticFeedback(context, haptic, HapticType.HEAVY)
-                                onSkipNext()
-                            } else if (offsetX > swipeHorizontalThreshold) {
+                                coroutineScope.launch {
+                                    isCarouselFlinging = true
+                                    carouselOffsetX.animateTo(
+                                        targetValue = -screenWidthPx,
+                                        animationSpec = tween(
+                                            durationMillis = 180,
+                                            easing = MiniPlayerMotionTokens.EasingEmphasizedDecelerate
+                                        )
+                                    )
+                                    handleSkipNext()
+                                    carouselOffsetX.snapTo(screenWidthPx)
+                                    carouselOffsetX.animateTo(
+                                        targetValue = 0f,
+                                        animationSpec = spring(
+                                            dampingRatio = MiniPlayerMotionTokens.ExpressiveSpatialDamping,
+                                            stiffness = MiniPlayerMotionTokens.ExpressiveSpatialStiffness
+                                        )
+                                    )
+                                    isCarouselFlinging = false
+                                    isUserInteracting = false
+                                }
+                            } else if (carouselOffsetX.value > swipeHorizontalThreshold) {
                                 HapticUtils.performHapticFeedback(context, haptic, HapticType.HEAVY)
-                                onSkipPrevious()
+                                coroutineScope.launch {
+                                    isCarouselFlinging = true
+                                    carouselOffsetX.animateTo(
+                                        targetValue = screenWidthPx,
+                                        animationSpec = tween(
+                                            durationMillis = 180,
+                                            easing = MiniPlayerMotionTokens.EasingEmphasizedDecelerate
+                                        )
+                                    )
+                                    handleSkipPrevious()
+                                    carouselOffsetX.snapTo(-screenWidthPx)
+                                    carouselOffsetX.animateTo(
+                                        targetValue = 0f,
+                                        animationSpec = spring(
+                                            dampingRatio = MiniPlayerMotionTokens.ExpressiveSpatialDamping,
+                                            stiffness = MiniPlayerMotionTokens.ExpressiveSpatialStiffness
+                                        )
+                                    )
+                                    isCarouselFlinging = false
+                                    isUserInteracting = false
+                                }
                             } else {
                                 HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
+                                coroutineScope.launch {
+                                    carouselOffsetX.animateTo(
+                                        targetValue = 0f,
+                                        animationSpec = spring(
+                                            dampingRatio = MiniPlayerMotionTokens.ExpressiveSpatialDamping,
+                                            stiffness = MiniPlayerMotionTokens.ExpressiveSpatialStiffness
+                                        )
+                                    )
+                                    isUserInteracting = false
+                                }
                             }
-                        } else {
-                            if (offsetY < -swipeUpThreshold) {
+                            coroutineScope.launch {
+                                carouselOffsetY.animateTo(0f, spring(dampingRatio = 0.8f, stiffness = 400f))
+                            }
+                        } else if (canSwipeVertical) {
+                            if (carouselOffsetY.value < -swipeUpThreshold) {
                                 HapticUtils.performHapticFeedback(context, haptic, HapticType.HEAVY)
                                 onPlayerClick()
-                            } else if (offsetY > swipeDownThreshold) {
+                                coroutineScope.launch {
+                                    carouselOffsetY.animateTo(0f, spring(dampingRatio = 0.8f, stiffness = 400f))
+                                    carouselOffsetX.animateTo(0f, spring(dampingRatio = 0.8f, stiffness = 400f))
+                                    isUserInteracting = false
+                                }
+                            } else if (carouselOffsetY.value > swipeDownThreshold) {
                                 HapticUtils.performHapticFeedback(context, haptic, HapticType.HEAVY)
                                 isDismissingPlayer = true
+                                coroutineScope.launch {
+                                    carouselOffsetY.animateTo(500f, tween(150))
+                                    handleDismiss()
+                                }
                             } else {
                                 HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
+                                coroutineScope.launch {
+                                    carouselOffsetY.animateTo(0f, spring(dampingRatio = 0.8f, stiffness = 400f))
+                                    carouselOffsetX.animateTo(0f, spring(dampingRatio = 0.8f, stiffness = 400f))
+                                    isUserInteracting = false
+                                }
                             }
-                        }
-
-                        if (!isDismissingPlayer) {
-                            offsetY = 0f
-                            offsetX = 0f
+                        } else {
+                            coroutineScope.launch {
+                                carouselOffsetX.animateTo(0f, spring(dampingRatio = 0.8f, stiffness = 400f))
+                                carouselOffsetY.animateTo(0f, spring(dampingRatio = 0.8f, stiffness = 400f))
+                                isUserInteracting = false
+                            }
                         }
                     },
                     onDragCancel = {
                         HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
-                        if (!isDismissingPlayer) {
-                            offsetY = 0f
-                            offsetX = 0f
+                        coroutineScope.launch {
+                            carouselOffsetX.animateTo(0f, spring(dampingRatio = 0.8f, stiffness = 400f))
+                            carouselOffsetY.animateTo(0f, spring(dampingRatio = 0.8f, stiffness = 400f))
+                            isUserInteracting = false
                         }
                     },
                     onDrag = { change, dragAmount ->
                         change.consume()
-                        offsetX += dragAmount.x
-                        offsetY += dragAmount.y
+                        coroutineScope.launch {
+                            carouselOffsetX.snapTo(carouselOffsetX.value + dragAmount.x)
+                            carouselOffsetY.snapTo(carouselOffsetY.value + dragAmount.y)
 
-                        if (abs(offsetY) > abs(offsetX)) {
-                            if (offsetY < 0 && abs(offsetY) - abs(lastHapticOffset) > swipeUpThreshold / 3) {
-                                HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
-                                lastHapticOffset = offsetY
-                            } else if (offsetY > 0 && abs(offsetY) - abs(lastHapticOffset) > swipeDownThreshold / 3) {
-                                HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
-                                lastHapticOffset = offsetY
-                            }
-                        } else {
-                            if (abs(offsetX) - abs(lastHapticOffsetX) > swipeHorizontalThreshold / 3) {
-                                HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
-                                lastHapticOffsetX = offsetX
+                            val absX = abs(carouselOffsetX.value)
+                            val absY = abs(carouselOffsetY.value)
+
+                            if (absX > absY) {
+                                if (absX - abs(lastHapticOffsetX) > swipeHorizontalThreshold / 2) {
+                                    HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
+                                    lastHapticOffsetX = carouselOffsetX.value
+                                }
+                            } else {
+                                if (absY - abs(lastHapticOffset) > swipeUpThreshold / 2) {
+                                    HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
+                                    lastHapticOffset = carouselOffsetY.value
+                                }
                             }
                         }
                     }
@@ -301,70 +387,134 @@ fun ExpressiveMiniPlayer(
             } else if (canSwipeTracks) {
                 detectHorizontalDragGestures(
                     onDragStart = {
+                        isUserInteracting = true
                         lastHapticOffsetX = 0f
                         HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
                     },
                     onDragEnd = {
-                        if (offsetX < -swipeHorizontalThreshold) {
+                        if (carouselOffsetX.value < -swipeHorizontalThreshold) {
                             HapticUtils.performHapticFeedback(context, haptic, HapticType.HEAVY)
-                            onSkipNext()
-                        } else if (offsetX > swipeHorizontalThreshold) {
+                            coroutineScope.launch {
+                                isCarouselFlinging = true
+                                carouselOffsetX.animateTo(
+                                    targetValue = -screenWidthPx,
+                                    animationSpec = tween(
+                                        durationMillis = 180,
+                                        easing = MiniPlayerMotionTokens.EasingEmphasizedDecelerate
+                                    )
+                                )
+                                handleSkipNext()
+                                carouselOffsetX.snapTo(screenWidthPx)
+                                carouselOffsetX.animateTo(
+                                    targetValue = 0f,
+                                    animationSpec = spring(
+                                        dampingRatio = MiniPlayerMotionTokens.ExpressiveSpatialDamping,
+                                        stiffness = MiniPlayerMotionTokens.ExpressiveSpatialStiffness
+                                    )
+                                )
+                                isCarouselFlinging = false
+                                isUserInteracting = false
+                            }
+                        } else if (carouselOffsetX.value > swipeHorizontalThreshold) {
                             HapticUtils.performHapticFeedback(context, haptic, HapticType.HEAVY)
-                            onSkipPrevious()
+                            coroutineScope.launch {
+                                isCarouselFlinging = true
+                                carouselOffsetX.animateTo(
+                                    targetValue = screenWidthPx,
+                                    animationSpec = tween(
+                                        durationMillis = 180,
+                                        easing = MiniPlayerMotionTokens.EasingEmphasizedDecelerate
+                                    )
+                                )
+                                handleSkipPrevious()
+                                carouselOffsetX.snapTo(-screenWidthPx)
+                                carouselOffsetX.animateTo(
+                                    targetValue = 0f,
+                                    animationSpec = spring(
+                                        dampingRatio = MiniPlayerMotionTokens.ExpressiveSpatialDamping,
+                                        stiffness = MiniPlayerMotionTokens.ExpressiveSpatialStiffness
+                                    )
+                                )
+                                isCarouselFlinging = false
+                                isUserInteracting = false
+                            }
                         } else {
                             HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
+                            coroutineScope.launch {
+                                carouselOffsetX.animateTo(
+                                    targetValue = 0f,
+                                    animationSpec = spring(
+                                        dampingRatio = MiniPlayerMotionTokens.ExpressiveSpatialDamping,
+                                        stiffness = MiniPlayerMotionTokens.ExpressiveSpatialStiffness
+                                    )
+                                )
+                                isUserInteracting = false
+                            }
                         }
-                        offsetX = 0f
                     },
                     onDragCancel = {
                         HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
-                        offsetX = 0f
+                        coroutineScope.launch {
+                            carouselOffsetX.animateTo(0f, spring(dampingRatio = 0.8f, stiffness = 400f))
+                            isUserInteracting = false
+                        }
                     },
                     onHorizontalDrag = { change, dragAmount ->
                         change.consume()
-                        offsetX += dragAmount
-                        if (abs(offsetX) - abs(lastHapticOffsetX) > swipeHorizontalThreshold / 3) {
-                            HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
-                            lastHapticOffsetX = offsetX
+                        coroutineScope.launch {
+                            carouselOffsetX.snapTo(carouselOffsetX.value + dragAmount)
+                            if (abs(carouselOffsetX.value) - abs(lastHapticOffsetX) > swipeHorizontalThreshold / 2) {
+                                HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
+                                lastHapticOffsetX = carouselOffsetX.value
+                            }
                         }
                     }
                 )
             } else if (canSwipeVertical) {
                 detectVerticalDragGestures(
                     onDragStart = {
+                        isUserInteracting = true
                         lastHapticOffset = 0f
                         HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
                     },
                     onDragEnd = {
-                        if (offsetY < -swipeUpThreshold) {
+                        if (carouselOffsetY.value < -swipeUpThreshold) {
                             HapticUtils.performHapticFeedback(context, haptic, HapticType.HEAVY)
                             onPlayerClick()
-                        } else if (offsetY > swipeDownThreshold) {
+                            coroutineScope.launch {
+                                carouselOffsetY.animateTo(0f, spring(dampingRatio = 0.8f, stiffness = 400f))
+                                isUserInteracting = false
+                            }
+                        } else if (carouselOffsetY.value > swipeDownThreshold) {
                             HapticUtils.performHapticFeedback(context, haptic, HapticType.HEAVY)
                             isDismissingPlayer = true
+                            coroutineScope.launch {
+                                carouselOffsetY.animateTo(500f, tween(150))
+                                handleDismiss()
+                            }
                         } else {
                             HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
-                        }
-
-                        if (!isDismissingPlayer) {
-                            offsetY = 0f
+                            coroutineScope.launch {
+                                carouselOffsetY.animateTo(0f, spring(dampingRatio = 0.8f, stiffness = 400f))
+                                isUserInteracting = false
+                            }
                         }
                     },
                     onDragCancel = {
                         HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
-                        if (!isDismissingPlayer) {
-                            offsetY = 0f
+                        coroutineScope.launch {
+                            carouselOffsetY.animateTo(0f, spring(dampingRatio = 0.8f, stiffness = 400f))
+                            isUserInteracting = false
                         }
                     },
                     onVerticalDrag = { change, dragAmount ->
                         change.consume()
-                        offsetY += dragAmount
-                        if (offsetY < 0 && abs(offsetY) - abs(lastHapticOffset) > swipeUpThreshold / 3) {
-                            HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
-                            lastHapticOffset = offsetY
-                        } else if (offsetY > 0 && abs(offsetY) - abs(lastHapticOffset) > swipeDownThreshold / 3) {
-                            HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
-                            lastHapticOffset = offsetY
+                        coroutineScope.launch {
+                            carouselOffsetY.snapTo(carouselOffsetY.value + dragAmount)
+                            if (abs(carouselOffsetY.value) - abs(lastHapticOffset) > swipeUpThreshold / 2) {
+                                HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
+                                lastHapticOffset = carouselOffsetY.value
+                            }
                         }
                     }
                 )
@@ -374,7 +524,7 @@ fun ExpressiveMiniPlayer(
             interactionSource = interactionSource,
             indication = null,
             onClick = {
-                if (!isDismissingPlayer) {
+                if (!isDismissingPlayer && !isCarouselFlinging) {
                     HapticUtils.performHapticFeedback(context, haptic, HapticType.HEAVY)
                     onPlayerClick()
                 }
@@ -394,279 +544,130 @@ fun ExpressiveMiniPlayer(
             shape = CircleShape,
             color = MaterialTheme.colorScheme.surfaceContainer
         ) {
-            if (useTabletLayout) {
-                // Tablet layout
-                val miniPlayerArtShape = rememberExpressiveShapeFor(
-                    ExpressiveShapeTarget.MINI_PLAYER,
-                    fallbackShape = RoundedCornerShape(miniPlayerCornerRadius.dp)
+            Box(modifier = Modifier.fillMaxSize()) {
+                MiniPlayerIntegratedProgress(
+                    progress = progress,
+                    isExpressive = true,
+                    shape = CircleShape
                 )
-                Box(modifier = Modifier.fillMaxSize()) {
-                    if (animatedProgress > 0f) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxHeight()
-                                .fillMaxWidth(fraction = animatedProgress.coerceIn(0.001f, 1f))
-                                .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f))
-                        )
-                    }
+
+                if (useTabletLayout) {
                     Row(
                         modifier = Modifier
                             .fillMaxSize()
                             .padding(start = 12.dp, end = 16.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        // Album art
                         if (miniPlayerShowArtwork) {
-                            Box(
-                                modifier = Modifier.size(56.dp),
-                                contentAlignment = Alignment.Center
+                            MiniPlayerArtwork(
+                                song = song,
+                                direction = trackDirection,
+                                isExpressive = true,
+                                cornerRadius = miniPlayerCornerRadius,
+                                size = 46.dp
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                        }
+
+                        MiniPlayerContent(
+                            song = song,
+                            direction = trackDirection,
+                            isExpressive = true,
+                            titleFontSize = 14,
+                            artistFontSize = 12,
+                            modifier = Modifier.weight(1f)
+                        )
+
+                        Spacer(modifier = Modifier.width(10.dp))
+
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            IconButton(
+                                onClick = {
+                                    isUserInteracting = true
+                                    HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
+                                    handleSkipPrevious()
+                                    isUserInteracting = false
+                                },
+                                modifier = Modifier.size(36.dp)
                             ) {
-                                Surface(
-                                    modifier = Modifier.size(46.dp),
-                                    shape = miniPlayerArtShape,
-                                    color = MaterialTheme.colorScheme.surfaceVariant
-                                ) {
-                                    Box(modifier = Modifier.fillMaxSize()) {
-                                        if (song != null) {
-                                            ShimmerBox(modifier = Modifier.fillMaxSize())
-                                            M3ImageUtils.TrackImage(
-                                                imageUrl = song.artworkUri,
-                                                trackName = song.title,
-                                                modifier = Modifier.fillMaxSize(),
-                                                applyExpressiveShape = false
-                                            )
-                                        } else {
-                                            Box(
-                                                modifier = Modifier
-                                                    .fillMaxSize()
-                                                    .background(MaterialTheme.colorScheme.secondaryContainer),
-                                                contentAlignment = Alignment.Center
-                                            ) {
-                                                Icon(
-                                                    imageVector = RhythmIcons.Album,
-                                                    contentDescription = null,
-                                                    modifier = Modifier.size(24.dp),
-                                                    tint = MaterialTheme.colorScheme.onSecondaryContainer
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
+                                Icon(
+                                    imageVector = RhythmIcons.SkipPrevious,
+                                    contentDescription = stringResource(R.string.animatedplaybackcontrols_previous),
+                                    tint = MaterialTheme.colorScheme.onSurface,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+
+                            MorphingPlayPauseButton(
+                                isPlaying = isPlaying,
+                                onClick = {
+                                    HapticUtils.performHapticFeedback(context, haptic, HapticType.HEAVY)
+                                    onPlayPause()
+                                },
+                                size = 44.dp,
+                                isMediaLoading = isMediaLoading,
+                                isExpressive = true
+                            )
+
+                            IconButton(
+                                onClick = {
+                                    isUserInteracting = true
+                                    HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
+                                    handleSkipNext()
+                                    isUserInteracting = false
+                                },
+                                modifier = Modifier.size(36.dp)
+                            ) {
+                                Icon(
+                                    imageVector = RhythmIcons.SkipNext,
+                                    contentDescription = stringResource(R.string.onboarding_next),
+                                    tint = MaterialTheme.colorScheme.onSurface,
+                                    modifier = Modifier.size(20.dp)
+                                )
                             }
                         }
-
-                        Spacer(modifier = Modifier.width(12.dp))
-
-                    // Metadata
-                    Column(
-                        modifier = Modifier.weight(1f),
-                        horizontalAlignment = Alignment.Start,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        if (song != null) {
-                            AutoScrollingTextOnDemand(
-                                text = song.title,
-                                style = MaterialTheme.typography.titleMedium.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 14.sp,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                ),
-                                modifier = Modifier.fillMaxWidth(),
-                                gradientEdgeColor = MaterialTheme.colorScheme.surfaceContainer,
-                                enabled = true,
-                                textAlign = TextAlign.Start,
-                                respectGlobalSetting = true
-                            )
-                            Spacer(modifier = Modifier.height(2.dp))
-                            AutoScrollingTextOnDemand(
-                                text = song.artist,
-                                style = MaterialTheme.typography.bodyMedium.copy(
-                                    fontSize = 12.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                ),
-                                modifier = Modifier.fillMaxWidth(),
-                                gradientEdgeColor = MaterialTheme.colorScheme.surfaceContainer,
-                                enabled = true,
-                                textAlign = TextAlign.Start,
-                                respectGlobalSetting = true
-                            )
-                        } else {
-                            Text(
-                                text = context.getString(R.string.miniplayer_no_song),
-                                style = MaterialTheme.typography.titleMedium.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 14.sp
-                                ),
-                                color = MaterialTheme.colorScheme.onSurface,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
                     }
-
-                    Spacer(modifier = Modifier.width(10.dp))
-
-                    // Controls Row
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        // Skip Previous
-                        IconButton(
-                            onClick = {
-                                HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
-                                onSkipPrevious()
-                            },
-                            modifier = Modifier.size(36.dp)
-                        ) {
-                            Icon(
-                                imageVector = RhythmIcons.SkipPrevious,
-                                contentDescription = stringResource(R.string.animatedplaybackcontrols_previous),
-                                tint = MaterialTheme.colorScheme.onSurface,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-
-                        // Play/Pause
-                        MorphingPlayPauseButton(
-                            isPlaying = isPlaying,
-                            onClick = {
-                                HapticUtils.performHapticFeedback(context, haptic, HapticType.HEAVY)
-                                onPlayPause()
-                            },
-                            size = 44.dp,
-                            isMediaLoading = isMediaLoading
-                        )
-
-                        // Skip Next
-                        IconButton(
-                            onClick = {
-                                HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
-                                onSkipNext()
-                            },
-                            modifier = Modifier.size(36.dp)
-                        ) {
-                            Icon(
-                                imageVector = RhythmIcons.SkipNext,
-                                contentDescription = stringResource(R.string.onboarding_next),
-                                tint = MaterialTheme.colorScheme.onSurface,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-                    }
-                }
-            }
-        } else {
-                // Phone layout (Original)
-                Box(modifier = Modifier.fillMaxSize()) {
-                    if (animatedProgress > 0f) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxHeight()
-                                .fillMaxWidth(fraction = animatedProgress.coerceIn(0.001f, 1f))
-                                .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.primaryContainer)
-                        )
-                    }
-
+                } else {
                     Row(
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(end = 12.dp),
+                            .padding(start = 8.dp, end = 12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxHeight()
-                                .aspectRatio(1f)
-                                .padding(6.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            val miniPlayerArtShape = rememberExpressiveShapeFor(
-                                ExpressiveShapeTarget.MINI_PLAYER,
-                                fallbackShape = RoundedCornerShape(miniPlayerCornerRadius.dp)
-                            )
-
-                            Surface(
-                                modifier = Modifier.fillMaxSize(),
-                                shape = miniPlayerArtShape,
-                                color = MaterialTheme.colorScheme.surfaceVariant
+                        if (miniPlayerShowArtwork) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxHeight()
+                                    .aspectRatio(1f)
+                                    .padding(6.dp),
+                                contentAlignment = Alignment.Center
                             ) {
-                                if (song != null) {
-                                    ShimmerBox(modifier = Modifier.fillMaxSize())
-                                    M3ImageUtils.TrackImage(
-                                        imageUrl = song.artworkUri,
-                                        trackName = song.title,
-                                        modifier = Modifier.fillMaxSize(),
-                                        applyExpressiveShape = false
-                                    )
-                                } else {
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .background(MaterialTheme.colorScheme.secondaryContainer),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Icon(
-                                            imageVector = RhythmIcons.Album,
-                                            contentDescription = null,
-                                            modifier = Modifier.size(24.dp),
-                                            tint = MaterialTheme.colorScheme.onSecondaryContainer
-                                        )
-                                    }
-                                }
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.width(12.dp))
-
-                        Column(
-                            modifier = Modifier.weight(1f),
-                            horizontalAlignment = Alignment.Start,
-                            verticalArrangement = Arrangement.Center
-                        ) {
-                            if (song != null) {
-                                AutoScrollingTextOnDemand(
-                                    text = song.title,
-                                    style = MaterialTheme.typography.titleMedium.copy(
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 16.sp,
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    ),
-                                    modifier = Modifier.fillMaxWidth(),
-                                    gradientEdgeColor = MaterialTheme.colorScheme.surfaceContainer,
-                                    enabled = true,
-                                    textAlign = TextAlign.Start,
-                                    respectGlobalSetting = true
-                                )
-                                AutoScrollingTextOnDemand(
-                                    text = song.artist,
-                                    style = MaterialTheme.typography.bodyMedium.copy(
-                                        fontSize = 13.sp,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    ),
-                                    modifier = Modifier.fillMaxWidth(),
-                                    gradientEdgeColor = MaterialTheme.colorScheme.surfaceContainer,
-                                    enabled = true,
-                                    textAlign = TextAlign.Start,
-                                    respectGlobalSetting = true
-                                )
-                            } else {
-                                Text(
-                                    text = context.getString(R.string.miniplayer_no_song),
-                                    style = MaterialTheme.typography.titleMedium.copy(
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 16.sp
-                                    ),
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
+                                MiniPlayerArtwork(
+                                    song = song,
+                                    direction = trackDirection,
+                                    isExpressive = true,
+                                    cornerRadius = miniPlayerCornerRadius,
+                                    size = 56.dp
                                 )
                             }
+                            Spacer(modifier = Modifier.width(10.dp))
+                        } else {
+                            Spacer(modifier = Modifier.width(16.dp))
                         }
 
-                        Spacer(modifier = Modifier.width(12.dp))
+                        MiniPlayerContent(
+                            song = song,
+                            direction = trackDirection,
+                            isExpressive = true,
+                            titleFontSize = 15,
+                            artistFontSize = 13,
+                            modifier = Modifier.weight(1f)
+                        )
+
+                        Spacer(modifier = Modifier.width(10.dp))
 
                         MorphingPlayPauseButton(
                             isPlaying = isPlaying,
@@ -675,31 +676,35 @@ fun ExpressiveMiniPlayer(
                                 onPlayPause()
                             },
                             size = 56.dp,
-                            isMediaLoading = isMediaLoading
+                            isMediaLoading = isMediaLoading,
+                            isExpressive = true
                         )
                     }
                 }
             }
         }
 
-        // Overlay: Swipe Guide Chips (only on phone)
         if (!useTabletLayout) {
+            val curX = carouselOffsetX.value
+            val curY = carouselOffsetY.value
+            val absX = abs(curX)
+            val absY = abs(curY)
+
             Box(
                 modifier = Modifier
                     .matchParentSize()
                     .padding(top = 8.dp),
                 contentAlignment = Alignment.TopCenter
             ) {
-                // Swipe up hint
                 AnimatedVisibility(
-                    visible = offsetY < -20f && abs(offsetY) > abs(offsetX),
+                    visible = curY < -20f && absY > absX,
                     enter = fadeIn() + slideInVertically(),
                     exit = fadeOut() + slideOutVertically()
                 ) {
                     Surface(
                         shape = CircleShape,
                         color = MaterialTheme.colorScheme.primaryContainer.copy(
-                            alpha = (-offsetY / swipeUpThreshold).coerceIn(0f, 0.8f)
+                            alpha = (-curY / swipeUpThreshold).coerceIn(0f, 0.85f)
                         )
                     ) {
                         Text(
@@ -711,16 +716,15 @@ fun ExpressiveMiniPlayer(
                     }
                 }
 
-                // Swipe down hint
                 AnimatedVisibility(
-                    visible = offsetY > 20f && abs(offsetY) > abs(offsetX),
+                    visible = curY > 20f && absY > absX,
                     enter = fadeIn() + slideInVertically(),
                     exit = fadeOut() + slideOutVertically()
                 ) {
                     Surface(
                         shape = CircleShape,
                         color = MaterialTheme.colorScheme.errorContainer.copy(
-                            alpha = (offsetY / swipeDownThreshold).coerceIn(0f, 0.8f)
+                            alpha = (curY / swipeDownThreshold).coerceIn(0f, 0.85f)
                         )
                     ) {
                         Text(
@@ -732,16 +736,15 @@ fun ExpressiveMiniPlayer(
                     }
                 }
 
-                // Swipe left (next)
                 AnimatedVisibility(
-                    visible = offsetX < -20f && abs(offsetX) > abs(offsetY),
+                    visible = curX < -20f && absX > absY,
                     enter = fadeIn() + slideInVertically(),
                     exit = fadeOut() + slideOutVertically()
                 ) {
                     Surface(
                         shape = CircleShape,
                         color = MaterialTheme.colorScheme.tertiaryContainer.copy(
-                            alpha = (-offsetX / swipeHorizontalThreshold).coerceIn(0f, 0.8f)
+                            alpha = (-curX / swipeHorizontalThreshold).coerceIn(0f, 0.85f)
                         )
                     ) {
                         Text(
@@ -753,16 +756,15 @@ fun ExpressiveMiniPlayer(
                     }
                 }
 
-                // Swipe right (previous)
                 AnimatedVisibility(
-                    visible = offsetX > 20f && abs(offsetX) > abs(offsetY),
+                    visible = curX > 20f && absX > absY,
                     enter = fadeIn() + slideInVertically(),
                     exit = fadeOut() + slideOutVertically()
                 ) {
                     Surface(
                         shape = CircleShape,
                         color = MaterialTheme.colorScheme.tertiaryContainer.copy(
-                            alpha = (offsetX / swipeHorizontalThreshold).coerceIn(0f, 0.8f)
+                            alpha = (curX / swipeHorizontalThreshold).coerceIn(0f, 0.85f)
                         )
                     ) {
                         Text(

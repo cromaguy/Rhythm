@@ -130,20 +130,19 @@ fun RhythmPlayerSheet(
         
         val targetOffset = if (isExpanded) expandedOffset else collapsedOffset
         
+        val motionConfig = MiniPlayerMotion.resolveConfig(miniPlayerThemeId)
+
         val animatedOffset by animateFloatAsState(
             targetValue = targetOffset + dragOffset,
-            animationSpec = spring(
-                dampingRatio = Spring.DampingRatioNoBouncy,
-                stiffness = Spring.StiffnessLow
-            ),
+            animationSpec = motionConfig.slowSpatialSpring,
             label = "sheetOffset"
         )
         
         val expansionFraction = ((collapsedOffset - animatedOffset) / collapsedOffset).coerceIn(0f, 1f)
         
         val maxCornerRadius = 32.dp
-        val cornerBlendProgress = ((expansionFraction - 0.82f) / 0.18f).coerceIn(0f, 1f)
-        val smoothBlend = cornerBlendProgress * cornerBlendProgress * cornerBlendProgress
+        val cornerBlendProgress = ((expansionFraction - 0.75f) / 0.25f).coerceIn(0f, 1f)
+        val smoothBlend = cornerBlendProgress * cornerBlendProgress
         val topCornerSize = maxCornerRadius * (1f - smoothBlend)
         val bottomCornerSize = 28.dp * (1f - expansionFraction)
         val sheetShape = RoundedCornerShape(
@@ -193,6 +192,9 @@ fun RhythmPlayerSheet(
 
         val isTablet = windowScreenWidthDp() >= 600
 
+        val miniPlayerAlpha = (1f - (expansionFraction / 0.25f)).coerceIn(0f, 1f)
+        val expandedPlayerAlpha = ((expansionFraction - 0.20f) / 0.80f).coerceIn(0f, 1f)
+
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -214,19 +216,18 @@ fun RhythmPlayerSheet(
             Box(
                 modifier = sheetContainerModifier
             ) {
-                // Collapsed Miniplayer Content
                 val miniPlayerContainerModifier = if (isTablet && expansionFraction < 0.15f) {
                     Modifier
                         .fillMaxWidth()
                         .height(miniPlayerHeight)
-                        .zIndex(if (expansionFraction < 0.5f) 1f else 0f)
-                        .graphicsLayer { alpha = (1f - expansionFraction).coerceIn(0f, 1f) }
+                        .zIndex(if (expansionFraction < 0.25f) 1f else 0f)
+                        .graphicsLayer { alpha = miniPlayerAlpha }
                 } else {
                     Modifier
                         .fillMaxWidth()
                         .height(miniPlayerHeight)
-                        .zIndex(if (expansionFraction < 0.5f) 1f else 0f)
-                        .graphicsLayer { alpha = (1f - expansionFraction).coerceIn(0f, 1f) }
+                        .zIndex(if (expansionFraction < 0.25f) 1f else 0f)
+                        .graphicsLayer { alpha = miniPlayerAlpha }
                         .clip(sheetShape)
                         .clickable(enabled = expansionFraction < 0.15f && dragOffset == 0f) {
                             onExpand()
@@ -251,12 +252,11 @@ fun RhythmPlayerSheet(
                     )
                 }
                 
-                // Expanded Player Content
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .zIndex(if (expansionFraction >= 0.5f) 1f else 0f)
-                        .graphicsLayer { alpha = expansionFraction }
+                        .zIndex(if (expansionFraction >= 0.25f) 1f else 0f)
+                        .graphicsLayer { alpha = expandedPlayerAlpha }
                         .clip(sheetShape)
                 ) {
                     PlayerScreen(
