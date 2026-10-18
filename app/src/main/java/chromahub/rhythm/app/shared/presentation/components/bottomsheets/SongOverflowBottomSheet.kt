@@ -261,24 +261,28 @@ fun SongOverflowBottomSheet(
                 )
             }
             onAddToBlacklist?.let { action ->
-                add(
-                    SongOverflowItem(
-                        title = context.getString(R.string.action_add_to_blacklist),
-                        icon = RhythmIcons.Block,
-                        iconColor = errorIconColor,
-                        onClick = action
+                if (!isStreamingSong) {
+                    add(
+                        SongOverflowItem(
+                            title = context.getString(R.string.action_add_to_blacklist),
+                            icon = RhythmIcons.Block,
+                            iconColor = errorIconColor,
+                            onClick = action
+                        )
                     )
-                )
+                }
             }
             onDeleteSong?.let { action ->
-                add(
-                    SongOverflowItem(
-                        title = context.getString(R.string.action_delete_song),
-                        icon = MaterialSymbolIcon("delete"),
-                        iconColor = errorIconColor,
-                        onClick = action
+                if (!isStreamingSong) {
+                    add(
+                        SongOverflowItem(
+                            title = context.getString(R.string.action_delete_song),
+                            icon = MaterialSymbolIcon("delete"),
+                            iconColor = errorIconColor,
+                            onClick = action
+                        )
                     )
-                )
+                }
             }
             add(
                 SongOverflowItem(

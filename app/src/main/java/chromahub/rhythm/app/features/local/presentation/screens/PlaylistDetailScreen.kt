@@ -252,11 +252,8 @@ fun PlaylistDetailScreen(
     var isReorderMode by remember { mutableStateOf(false) }
     var showSortMenu by remember { mutableStateOf(false) }
     
-    // Song options bottom sheet
     var showSongOptionsSheet by remember { mutableStateOf(false) }
     var selectedSongForOptions by remember { mutableStateOf<Song?>(null) }
-    var selectedSongForPlaylistAdd by remember { mutableStateOf<Song?>(null) }
-    var showPlaylistSelector by remember { mutableStateOf(false) }
     var selectedSongForInfo by remember { mutableStateOf<Song?>(null) }
     var showSongInfo by remember { mutableStateOf(false) }
     var showSongInfoInEditMode by remember { mutableStateOf(false) }
@@ -606,10 +603,6 @@ fun PlaylistDetailScreen(
             onToggleFavorite = {
                 onToggleFavorite(targetSong)
             },
-            onAddToPlaylist = {
-                onAddToPlaylist(targetSong)
-                showSongOptionsSheet = false
-            },
             onGoToAlbum = {
                 onGoToAlbum(targetSong)
                 showSongOptionsSheet = false
@@ -635,6 +628,17 @@ fun PlaylistDetailScreen(
             onRemoveFromPlaylist = if (canEditPlaylist || isStreamingPlaylist) {
                 {
                     onRemoveSong(targetSong, context.getString(R.string.playlist_removed_from_playlist, targetSong.title))
+                    showSongOptionsSheet = false
+                }
+            } else null,
+            onAddToBlacklist = if (!isStreamingPlaylist) {
+                {
+                    appSettings.addToBlacklist(targetSong.id)
+                    Toast.makeText(
+                        context,
+                        context.getString(R.string.song_added_to_blacklist_format, targetSong.title),
+                        Toast.LENGTH_SHORT
+                    ).show()
                     showSongOptionsSheet = false
                 }
             } else null,

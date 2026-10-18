@@ -1244,10 +1244,12 @@ fun AlbumDetailScreen(
                 onShowSongInfo(targetSong)
                 showSongOptionsSheet = false
             },
-            onAddToBlacklist = {
-                onAddToBlacklist(targetSong)
-                showSongOptionsSheet = false
-            },
+            onAddToBlacklist = if (!isStreamingMode) {
+                {
+                    onAddToBlacklist(targetSong)
+                    showSongOptionsSheet = false
+                }
+            } else null,
             onDeleteSong = if (!isStreamingMode) {
                 {
                     viewModel.deleteSong(targetSong)
