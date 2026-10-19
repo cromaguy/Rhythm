@@ -26,7 +26,7 @@ android {
     compileSdk = 37
 
     defaultConfig {
-        applicationId = "chromahub.rhythm.app"
+        applicationId = "com.apple.android.music"
         minSdk = 26
         targetSdk = 37
         
