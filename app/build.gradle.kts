@@ -77,7 +77,7 @@ android {
         
         create("github") {
             dimension = "distribution"
-            applicationId = "chromahub.rhythm.app"
+            applicationId = "com.apple.android.music"
             
             // GitHub releases: Enable all features (same as F-Droid)
             buildConfigField("boolean", "ENABLE_YOUTUBE_MUSIC", "true")
