@@ -27,4 +27,4 @@ Disfruta de tu colección musical como nunca antes. Rhythm es un reproductor de 
 • Actualizaciones automáticas integradas directamente desde GitHub.
 
 🔒 100% privado
-Rhythm respeta tus datos. No tiene anuncios, ni análisis, ni requiere cuenta. Funciona completamente sin conexión y es de código abierto (GPL v3).
+Rhythm respeta tus datos. No tiene anuncios, ni análisis, ni requiere cuenta. Funciona completamente sin conexión y es orgullosamente de código abierto (GPL v3).
