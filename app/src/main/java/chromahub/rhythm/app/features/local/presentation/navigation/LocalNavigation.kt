@@ -1048,8 +1048,10 @@ private fun LocalNavigationContent(
             )
         }
     }
-    val streamingMappedPlaylists = remember(streamingServiceConnected, streamingSavedPlaylists) {
-        if (!streamingServiceConnected) emptyList() else streamingSavedPlaylists.map { it.toLibraryPlaylist(context) }
+    // The playlists cached on the device are shown offline too; they were hidden whenever the
+    // service counted as not connected, so offline the Playlists tab read "No playlists yet".
+    val streamingMappedPlaylists = remember(streamingSavedPlaylists) {
+        streamingSavedPlaylists.map { it.toLibraryPlaylist(context) }
     }
 
     // Route streaming playback through the shared local player (streaming songs map to local songs).
