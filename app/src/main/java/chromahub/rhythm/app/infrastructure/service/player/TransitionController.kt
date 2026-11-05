@@ -12,6 +12,7 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.common.Timeline
 import androidx.media3.common.util.UnstableApi
+import chromahub.rhythm.app.infrastructure.service.player.autoloop.AutoLoopState
 import chromahub.rhythm.app.shared.data.model.AppSettings
 import chromahub.rhythm.app.shared.data.model.TransitionMode
 import chromahub.rhythm.app.shared.data.model.TransitionSettings
@@ -225,6 +226,16 @@ class TransitionController(
         engine.addPlayerSwapListener(swapListener)
 
         scope.launch {
+            AutoLoopState.enabled.collect { enabled ->
+                if (enabled) {
+                    cancelPendingTransition()
+                    engine.setPauseAtEndOfMediaItems(false)
+                } else {
+                    engine.masterPlayer.currentMediaItem?.let { scheduleTransitionFor(it) }
+                }
+            }
+        }
+        scope.launch {
             appSettings.crossfade.collect { enabled ->
                 Log.d(TAG, "Crossfade setting changed: $enabled")
                 if (!isInDestructiveState()) {
@@ -267,6 +278,7 @@ class TransitionController(
      * 6. Polls playback position until the transition point, then fires
      */
     private fun scheduleTransitionFor(currentMediaItem: MediaItem) {
+        if (AutoLoopState.enabled.value) return
         if (currentState == TransitionState.TRANSITIONING) {
             Log.d(TAG, "Cannot schedule immediately while actively transitioning; stashing ${currentMediaItem.mediaId} for post-transition.")
             pendingScheduleMediaItem = currentMediaItem

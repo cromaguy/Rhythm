@@ -45,6 +45,11 @@ import chromahub.rhythm.app.infrastructure.audio.RhythmBassBoostProcessor
 import chromahub.rhythm.app.infrastructure.audio.RhythmSpatializationProcessor
 import chromahub.rhythm.app.infrastructure.audio.RhythmMonoAudioProcessor
 import chromahub.rhythm.app.shared.data.model.TransitionSettings
+import chromahub.rhythm.app.infrastructure.service.player.autoloop.AutoLoopAudioRenderer
+import chromahub.rhythm.app.infrastructure.service.player.autoloop.AutoLoopPreparationMediaSource
+import chromahub.rhythm.app.infrastructure.service.player.autoloop.AutoLoopQueueInstaller
+import chromahub.rhythm.app.infrastructure.service.player.autoloop.AutoLoopState
+import chromahub.rhythm.app.infrastructure.service.player.autoloop.AutoLoopSoftwareRenderer
 import chromahub.rhythm.app.infrastructure.service.player.replaygain.ReplayGainAudioProcessor
 import chromahub.rhythm.app.infrastructure.service.player.replaygain.ReplayGainCache
 import chromahub.rhythm.app.infrastructure.service.player.replaygain.ReplayGainUtil
@@ -96,6 +101,11 @@ class RhythmPlayerEngine(
 
     private lateinit var playerA: ExoPlayer
     private lateinit var playerB: ExoPlayer
+    private val autoLoopInstallers = java.util.WeakHashMap<ExoPlayer, AutoLoopQueueInstaller>()
+
+    fun installAutoLoopQueue(player: ExoPlayer, items: List<MediaItem>, index: Int, positionMs: Long) {
+        requireNotNull(autoLoopInstallers[player]).install(player, items, index, positionMs)
+    }
     
     // Player-specific child audio processors to avoid shared-state concurrency bugs in crossfades
     private var playerABassBoost: RhythmBassBoostProcessor? = null
@@ -355,6 +365,7 @@ class RhythmPlayerEngine(
         // Reactively update track selection parameters when settings change
         scope.launch {
             launch { appSettings.crossfade.collect { updateTrackSelectionParameters() } }
+            launch { AutoLoopState.enabled.collect { updateTrackSelectionParameters() } }
             launch { appSettings.equalizerEnabled.collect { updateTrackSelectionParameters() } }
             launch { appSettings.replayGain.collect { updateTrackSelectionParameters() } }
             launch { appSettings.bassBoostEnabled.collect { updateTrackSelectionParameters() } }
@@ -453,6 +464,22 @@ class RhythmPlayerEngine(
         }
 
         val renderersFactory = object : DefaultRenderersFactory(context) {
+            override fun buildAudioRenderers(
+                context: Context, extensionRendererMode: Int,
+                mediaCodecSelector: MediaCodecSelector, enableDecoderFallback: Boolean,
+                audioSink: AudioSink, eventHandler: android.os.Handler,
+                eventListener: androidx.media3.exoplayer.audio.AudioRendererEventListener,
+                out: java.util.ArrayList<androidx.media3.exoplayer.Renderer>
+            ) {
+                // Put exact loop trimming ahead of extension renderers. Its format marker
+                // rejects ordinary queue entries, so their decoder preference is unchanged.
+                out.add(AutoLoopAudioRenderer(context, mediaCodecSelector, enableDecoderFallback,
+                    eventHandler, eventListener, audioSink))
+                out.add(AutoLoopSoftwareRenderer.create(eventHandler, eventListener, audioSink))
+                super.buildAudioRenderers(context, extensionRendererMode, mediaCodecSelector,
+                    enableDecoderFallback, audioSink, eventHandler, eventListener, out)
+            }
+
             override fun buildAudioSink(
                 context: Context,
                 enableFloatOutput: Boolean,
@@ -580,7 +607,7 @@ class RhythmPlayerEngine(
 
         val player = ExoPlayer.Builder(context, renderersFactory)
             .setLoadControl(loadControl)
-            .setMediaSourceFactory(mediaSourceFactory)
+            .setMediaSourceFactory(AutoLoopPreparationMediaSource.Factory(mediaSourceFactory))
             .setSeekBackIncrementMs(10_000L)
             .setSeekForwardIncrementMs(10_000L)
             .build().apply {
@@ -613,11 +640,12 @@ class RhythmPlayerEngine(
             })
         }
 
+        autoLoopInstallers[player] = AutoLoopQueueInstaller(mediaSourceFactory)
         return player
     }
 
     fun setPauseAtEndOfMediaItems(shouldPause: Boolean) {
-        playerA.pauseAtEndOfMediaItems = shouldPause
+        playerA.pauseAtEndOfMediaItems = shouldPause && !AutoLoopState.enabled.value
     }
 
     /**
@@ -626,10 +654,10 @@ class RhythmPlayerEngine(
      */
     fun setGaplessPlayback(enabled: Boolean) {
         if (::playerA.isInitialized) {
-            playerA.pauseAtEndOfMediaItems = !enabled
+            playerA.pauseAtEndOfMediaItems = !enabled && !AutoLoopState.enabled.value
         }
         if (::playerB.isInitialized) {
-            playerB.pauseAtEndOfMediaItems = !enabled
+            playerB.pauseAtEndOfMediaItems = !enabled && !AutoLoopState.enabled.value
         }
         Log.d(TAG, "Gapless playback ${if (enabled) "enabled" else "disabled"}")
     }
@@ -1031,7 +1059,9 @@ class RhythmPlayerEngine(
 
         val isSkipSilenceEnabled = appSettings.skipSilenceEnabled.value
 
-        val isOffloadSupported = appSettings.isAudioOffloadActive.value &&
+        // Offload bypasses decoded PCM trimming, so Automatic Loop temporarily requires
+        // decoded PCM output. The user's saved offload preference is left intact.
+        val isOffloadSupported = !AutoLoopState.enabled.value && appSettings.isAudioOffloadActive.value &&
             (!isCrossfadeEnabled && !isEqualizerEnabled && !isReplayGainEnabled &&
              !isBassBoostEnabled && !isVirtualizerEnabled && !isMonoAudioEnabled &&
              !isPlaybackRateModified && !isSkipSilenceEnabled)

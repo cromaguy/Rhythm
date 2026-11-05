@@ -4145,7 +4145,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
 
                             // Update duration and start progress updates if playing
                             if (isActuallyPlaying) {
-                                val controllerDuration = controller.duration.takeIf { it > 0 }
+                                val controllerDuration = resolvePlaybackDuration(controller).takeIf { it > 0 }
                                 if (controllerDuration != null) {
                                     _duration.value = controllerDuration
                                 } else {
@@ -4350,7 +4350,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                 
                 if (playbackState == Player.STATE_READY) {
                     // Always prefer controller.duration; only fallback if unset (for UI robustness)
-                    val controllerDuration = controller.duration.takeIf { it > 0 }
+                    val controllerDuration = resolvePlaybackDuration(controller).takeIf { it > 0 }
                     if (controllerDuration != null) {
                         _duration.value = controllerDuration
                         Log.d(TAG, "Duration updated from controller: $controllerDuration")
@@ -4475,7 +4475,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                     
                     // Force a duration update - prefer controller.duration
                     mediaController?.let { controller ->
-                        val controllerDuration = controller.duration.takeIf { it > 0 }
+                        val controllerDuration = resolvePlaybackDuration(controller).takeIf { it > 0 }
                         if (controllerDuration != null) {
                             _duration.value = controllerDuration
                         } else {
@@ -4601,7 +4601,13 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    private fun resolveClipPosition(controller: MediaController, trackPositionMs: Long): Long =
+        chromahub.rhythm.app.infrastructure.service.player.autoloop.AutoLoopState
+            .windowFor(controller.currentMediaItem)?.clipPosition(trackPositionMs) ?: trackPositionMs
+
     private fun resolvePlaybackDuration(controller: MediaController): Long {
+        chromahub.rhythm.app.infrastructure.service.player.autoloop.AutoLoopState
+            .windowFor(controller.currentMediaItem)?.let { return it.trackDurationMs }
         val controllerDuration = controller.duration.takeIf { it > 0 }
         if (controllerDuration != null) {
             return controllerDuration
@@ -6387,7 +6393,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
         Log.d(TAG, "Seek to position: $positionMs ms (autoPlay=$autoPlayIfPaused)")
         _isSeeking.value = true
         mediaController?.let { controller ->
-            controller.seekTo(positionMs)
+            controller.seekTo(resolveClipPosition(controller, positionMs))
             if (autoPlayIfPaused && !controller.isPlaying) {
                 controller.play()
             }
@@ -6407,7 +6413,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
             val positionMs = (progress * playbackDuration).toLong()
             Log.d(TAG, "Seek to progress: $progress (${positionMs}ms)")
             _isSeeking.value = true
-            controller.seekTo(positionMs)
+            controller.seekTo(resolveClipPosition(controller, positionMs))
             updateProgress() // Immediately update progress after seeking
             
             // Reset seeking state after a delay
@@ -8342,7 +8348,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
             return
         }
         val currentItem = controller.getMediaItemAt(currentIndex)
-        val targetPos = if (seekPositionMs >= 0) seekPositionMs else controller.currentPosition
+        val targetPos = if (seekPositionMs >= 0) resolveClipPosition(controller, seekPositionMs) else controller.currentPosition
 
         try {
             val updatedMetadata = currentItem.mediaMetadata.buildUpon()
