@@ -120,7 +120,10 @@ fun UniversalSearchScreen(
     onStreamingAlbumClick: (StreamingAlbum) -> Unit = {},
     onStreamingArtistClick: (StreamingArtist) -> Unit = {},
     onStreamingPlaylistClick: (StreamingPlaylist) -> Unit = {},
-    onBack: () -> Unit = {}
+    onBack: () -> Unit = {},
+    // The query lives above the layout switch (phone <-> landscape rail), so rotating does not empty the box.
+    savedQuery: String = "",
+    onQueryChange: (String) -> Unit = {}
 ) {
     val context = LocalContext.current
     val appSettings = AppSettings.getInstance(context)
@@ -145,7 +148,8 @@ fun UniversalSearchScreen(
     val isLandscapeTablet = isTablet && windowScreenWidthDp() > windowScreenHeightDp()
     val horizontalPadding = if (isTablet) 32.dp else 24.dp
 
-    var query by remember { mutableStateOf("") }
+    var query by remember { mutableStateOf(savedQuery) }
+    LaunchedEffect(query) { onQueryChange(query) }
     val focusRequester = remember { FocusRequester() }
 
     LaunchedEffect(Unit) {
