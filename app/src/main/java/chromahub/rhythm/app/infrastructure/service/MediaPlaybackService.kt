@@ -88,6 +88,7 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
     private lateinit var preloadController: PreloadController
 
     private var controller: MediaController? = null
+    private var autoLoopController: chromahub.rhythm.app.infrastructure.service.player.autoloop.AutoLoopController? = null
     
     // Service-scoped coroutine scope for background operations
     private val serviceScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
@@ -1008,6 +1009,12 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
             }
         }
             
+        autoLoopController = chromahub.rhythm.app.infrastructure.service.player.autoloop.AutoLoopController(
+            applicationContext, serviceScope, { player },
+            { rhythmPlayerEngine.masterPlayer as ExoPlayer },
+            { raw, items, index, position -> rhythmPlayerEngine.installAutoLoopQueue(raw, items, index, position) }
+        ).also { it.start() }
+
         // Add listener to initialize audio effects when session ID is ready and handle errors
         // Store reference for proper cleanup in onDestroy
         playerListener = object : Player.Listener {
@@ -1100,7 +1107,7 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
                     val currentIndex = player.currentMediaItemIndex
                     if (currentIndex != androidx.media3.common.C.INDEX_UNSET) {
                         appSettings.setSavedQueueIndex(currentIndex)
-                        appSettings.setSavedPlaybackPosition(player.currentPosition)
+                        appSettings.setSavedPlaybackPosition(player.currentPosition + (player.currentMediaItem?.clippingConfiguration?.startPositionMs ?: 0L))
                         Log.d(TAG, "Persisted queue index $currentIndex and position ${player.currentPosition} on pause")
                     }
                 }
@@ -2168,6 +2175,7 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
             }
 
             override fun seekToPrevious() {
+                if (autoLoopController?.restartFromPreviousCommand() == true) return
                 if (!skipWithCrossfade(toNext = false)) {
                     super.seekToPrevious()
                 }
@@ -2207,6 +2215,8 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
         positionMs: Long = C.TIME_UNSET,
         isSkipPrevious: Boolean = false
     ): Boolean {
+        // Select directly so the new master track can be analyzed before its first audio.
+        if (chromahub.rhythm.app.infrastructure.service.player.autoloop.AutoLoopState.enabled.value) return false
         try {
             if (!appSettings.crossfade.value || !appSettings.crossfadeOnSkip.value) {
                 return false
@@ -2434,6 +2444,7 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
     }
 
     override fun onDestroy() {
+        autoLoopController?.stop()
         instanceForWidgetAndLyricsOnly = null
         Log.d(TAG, "Service being destroyed")
 
@@ -2442,7 +2453,7 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
             val currentIndex = player.currentMediaItemIndex
             if (currentIndex != androidx.media3.common.C.INDEX_UNSET) {
                 appSettings.setSavedQueueIndex(currentIndex)
-                appSettings.setSavedPlaybackPosition(player.currentPosition)
+                appSettings.setSavedPlaybackPosition(player.currentPosition + (player.currentMediaItem?.clippingConfiguration?.startPositionMs ?: 0L))
                 Log.d(TAG, "Persisted queue index $currentIndex and position ${player.currentPosition} on service destroy")
             }
         }

@@ -807,6 +807,8 @@ private fun PlaybackQuickSettingsCard(
     isAudioOffloadActive: Boolean = false,
     isOffloadEnforced: Boolean = false
 ) {
+    val autoLoopEnabled by chromahub.rhythm.app.infrastructure.service.player.autoloop.AutoLoopState.enabled.collectAsState()
+    val autoLoopMessage by chromahub.rhythm.app.infrastructure.service.player.autoloop.AutoLoopState.message.collectAsState()
     val quickSettingsItems = buildList {
         add(
             Material3SettingsItem(
@@ -941,6 +943,21 @@ private fun PlaybackQuickSettingsCard(
                 }
             )
         )
+
+        add(Material3SettingsItem(
+            icon = RhythmIcons.Repeat,
+            title = { Text(stringResource(R.string.settings_automatic_loop)) },
+            description = {
+                Text(stringResource(autoLoopMessage.resourceId, *autoLoopMessage.formatArgs.toTypedArray()))
+            },
+            trailingContent = {
+                AnimatedAudioSwitch(
+                    checked = autoLoopEnabled,
+                    onCheckedChange = { chromahub.rhythm.app.infrastructure.service.player.autoloop.AutoLoopState.setEnabled(it) }
+                )
+            },
+            onClick = { chromahub.rhythm.app.infrastructure.service.player.autoloop.AutoLoopState.setEnabled(!autoLoopEnabled) }
+        ))
 
         if (crossfadeEnabled && !isOffloadEnforced) {
             add(
