@@ -27,6 +27,7 @@ import chromahub.rhythm.app.core.device.HiFiCapabilityChecker
 import chromahub.rhythm.app.core.device.DeviceCapabilitiesProvider
 import androidx.media3.exoplayer.DecoderReuseEvaluation
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
+import androidx.media3.exoplayer.source.MediaSource
 import androidx.media3.datasource.ResolvingDataSource
 import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.datasource.DefaultHttpDataSource
@@ -607,7 +608,7 @@ class RhythmPlayerEngine(
 
         val player = ExoPlayer.Builder(context, renderersFactory)
             .setLoadControl(loadControl)
-            .setMediaSourceFactory(AutoLoopPreparationMediaSource.Factory(mediaSourceFactory))
+            .setMediaSourceFactory(createPlaybackMediaSourceFactory(mediaSourceFactory))
             .setSeekBackIncrementMs(10_000L)
             .setSeekForwardIncrementMs(10_000L)
             .build().apply {
@@ -643,6 +644,18 @@ class RhythmPlayerEngine(
         autoLoopInstallers[player] = AutoLoopQueueInstaller(mediaSourceFactory)
         return player
     }
+
+    private fun createPlaybackMediaSourceFactory(delegate: MediaSource.Factory): MediaSource.Factory =
+        object : MediaSource.Factory by delegate {
+            override fun createMediaSource(mediaItem: MediaItem): MediaSource {
+                // Check for each new source so toggling does not require rebuilding the player.
+                return if (AutoLoopState.enabled.value) {
+                    AutoLoopPreparationMediaSource.Factory(delegate).createMediaSource(mediaItem)
+                } else {
+                    delegate.createMediaSource(mediaItem)
+                }
+            }
+        }
 
     fun setPauseAtEndOfMediaItems(shouldPause: Boolean) {
         playerA.pauseAtEndOfMediaItems = shouldPause && !AutoLoopState.enabled.value
