@@ -519,6 +519,9 @@ fun LocalNavigation(
     val context = LocalContext.current
     val windowSizeClass = calculateWindowSizeClass(context as android.app.Activity)
     val postureState by rememberDevicePosture()
+    // Kept above the phone/landscape layout switch (LocalNavigationContent is composed in either branch), so a
+    // rotation does not reset the search box.
+    var universalSearchQuery by rememberSaveable { mutableStateOf("") }
     val isTablet = windowSizeClass.widthSizeClass >= WindowWidthSizeClass.Medium || postureState is DevicePosture.Book || postureState is DevicePosture.Separated
 
     val onPlayPause = { viewModel.togglePlayPause() }
@@ -685,6 +688,8 @@ fun LocalNavigation(
             ) {
                 // Main content wrapped in Scaffold (without bottom nav)
                 LocalNavigationContent(
+                    universalSearchQuery = universalSearchQuery,
+                    onUniversalSearchQueryChange = { universalSearchQuery = it },
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(start = tabletContentStartPadding)
@@ -794,6 +799,8 @@ fun LocalNavigation(
         } else {
             // Main content wrapped in Scaffold for phone
             LocalNavigationContent(
+                universalSearchQuery = universalSearchQuery,
+                onUniversalSearchQueryChange = { universalSearchQuery = it },
                 modifier = Modifier.fillMaxSize(),
                 navController = navController,
                 viewModel = viewModel,
@@ -877,6 +884,8 @@ fun LocalNavigation(
 
 @Composable
 private fun LocalNavigationContent(
+    universalSearchQuery: String,
+    onUniversalSearchQueryChange: (String) -> Unit,
     modifier: Modifier = Modifier,
     navController: NavHostController,
     viewModel: MusicViewModel,
@@ -2110,6 +2119,8 @@ private fun LocalNavigationContent(
                         chromahub.rhythm.app.shared.presentation.screens.UniversalSearchScreen(
                             localViewModel = viewModel,
                             streamingViewModel = streamingMusicViewModel,
+                            savedQuery = universalSearchQuery,
+                            onQueryChange = onUniversalSearchQueryChange,
                             onLocalSongClick = { song ->
                                 viewModel.playSongFromSearch(song, songs)
                                 navController.navigate(Screen.Player.route)
