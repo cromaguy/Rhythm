@@ -82,6 +82,12 @@
     <string name="settings_resume_on_device_reconnect_desc">Auto-resume when audio devices reconnect</string>
     <string name="settings_gapless_playback">Gapless Playback</string>
     <string name="settings_gapless_playback_desc">Switch tracks without silence.</string>
+    <string name="settings_automatic_loop">Automatic Loop</string>
+    <string name="settings_automatic_loop_desc">Find and repeat a matching passage in this track</string>
+    <string name="automatic_loop_analyzing">Analyzing track…</string>
+    <string name="automatic_loop_not_found">No reliable loop found</string>
+    <string name="automatic_loop_points">Loop: %1$.1f – %2$.1f s</string>
+    <string name="automatic_loop_analysis_failed">Could not analyze this track</string>
     <string name="settings_crossfade">Track Crossfade</string>
     <string name="settings_crossfade_desc">Smoothly blend outgoing and incoming tracks.</string>
     <string name="settings_crossfade_duration">Fade Duration</string>

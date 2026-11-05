@@ -946,8 +946,10 @@ private fun PlaybackQuickSettingsCard(
 
         add(Material3SettingsItem(
             icon = RhythmIcons.Repeat,
-            title = { Text("Automatic Loop") },
-            description = { Text(autoLoopMessage) },
+            title = { Text(stringResource(R.string.settings_automatic_loop)) },
+            description = {
+                Text(stringResource(autoLoopMessage.resourceId, *autoLoopMessage.formatArgs.toTypedArray()))
+            },
             trailingContent = {
                 AnimatedAudioSwitch(
                     checked = autoLoopEnabled,

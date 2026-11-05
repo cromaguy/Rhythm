@@ -1,6 +1,8 @@
 package chromahub.rhythm.app.infrastructure.service.player.autoloop
 
 import android.content.Context
+import androidx.annotation.StringRes
+import chromahub.rhythm.app.R
 import android.media.AudioFormat
 import android.media.MediaCodec
 import android.media.MediaExtractor
@@ -13,6 +15,12 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlin.math.*
+
+/** Keep the resource and arguments unresolved so the UI uses its current locale. */
+data class AutoLoopMessage(
+    @StringRes val resourceId: Int,
+    val formatArgs: List<Any> = emptyList(),
+)
 
 /** Session-only setting shared by the playback sheet and the in-process playback service. */
 object AutoLoopState {
@@ -28,7 +36,7 @@ object AutoLoopState {
                 item.clippingConfiguration.startPositionMs == 0L &&
                 item.clippingConfiguration.endPositionMs == it.endMs
         }
-    internal val messageState = MutableStateFlow("Find and repeat a matching passage in this track")
+    internal val messageState = MutableStateFlow(AutoLoopMessage(R.string.settings_automatic_loop_desc))
     val message = messageState.asStateFlow()
     fun setEnabled(value: Boolean) {
         if (!value || !enabledState.value) analysisFallbackKey.value = null
@@ -99,7 +107,7 @@ class AutoLoopController(
                         if (shuffle != null) raw.setShuffleOrder(RhythmShuffleOrder(shuffle))
                         if (raw.playbackState == Player.STATE_IDLE || raw.playbackState == Player.STATE_ENDED)
                             raw.prepare()
-                        AutoLoopState.messageState.value = "Analyzing track…"
+                        AutoLoopState.messageState.value = AutoLoopMessage(R.string.automatic_loop_analyzing)
                         analysis = launch {
                             try {
                                 require(uri != null && uri.scheme in listOf("content", "file")) {
@@ -109,14 +117,17 @@ class AutoLoopController(
                                 points = result
                                 if (result == null) AutoLoopState.analysisFallbackKey.value = nextKey
                                 AutoLoopState.messageState.value = if (result == null)
-                                    "No reliable loop found"
-                                else "Loop: %.1f – %.1f s".format(result.first / 1000.0, result.second / 1000.0)
+                                    AutoLoopMessage(R.string.automatic_loop_not_found)
+                                else AutoLoopMessage(
+                                    R.string.automatic_loop_points,
+                                    listOf(result.first / 1000.0, result.second / 1000.0),
+                                )
                             } catch (e: CancellationException) {
                                 throw e
                             } catch (e: Exception) {
                                 android.util.Log.w("AutoLoopController", "Loop analysis failed", e)
                                 AutoLoopState.analysisFallbackKey.value = nextKey
-                                AutoLoopState.messageState.value = "Could not analyze this track"
+                                AutoLoopState.messageState.value = AutoLoopMessage(R.string.automatic_loop_analysis_failed)
                             }
                         }
                     }
