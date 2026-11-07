@@ -176,6 +176,8 @@ class StreamingMusicRepositoryImpl(
 
     private fun loadDownloadedSongsIndex() {
         try {
+            // Leftovers of transfers that died before the rename in downloadSong().
+            downloadDirectory.listFiles { f -> f.name.endsWith(PART_SUFFIX) }?.forEach { it.delete() }
             val indexFile = java.io.File(downloadDirectory, "downloaded_songs.json")
             if (indexFile.exists()) {
                 val json = indexFile.readText()
@@ -220,15 +222,21 @@ class StreamingMusicRepositoryImpl(
         }
     }
 
+    /**
+     * Serialised on [downloadedSongsMap]: "Download all" finishes tracks back to back on IO, and
+     * two unsynchronised writers would race on the map and on the index file.
+     */
     private fun saveDownloadedSongsIndex() {
-        val list = downloadedSongsMap.values.toList()
-        downloadedSongsFlow.value = list
-        try {
-            val indexFile = java.io.File(downloadDirectory, "downloaded_songs.json")
-            val json = gson.toJson(list)
-            indexFile.writeText(json)
-        } catch (e: Exception) {
-            Log.e("StreamingMusicRepo", "Error saving downloaded songs index", e)
+        synchronized(downloadedSongsMap) {
+            val list = downloadedSongsMap.values.toList()
+            downloadedSongsFlow.value = list
+            try {
+                val indexFile = java.io.File(downloadDirectory, "downloaded_songs.json")
+                val json = gson.toJson(list)
+                indexFile.writeText(json)
+            } catch (e: Exception) {
+                Log.e("StreamingMusicRepo", "Error saving downloaded songs index", e)
+            }
         }
     }
 
@@ -1186,17 +1194,31 @@ class StreamingMusicRepositoryImpl(
 
             val ext = extractExtension(response.header("Content-Disposition"), response.header("Content-Type"))
             val file = getDownloadFile(songId, ext)
-            downloadedFile = file
+            // Stream into a .part file and rename once the body is complete: isDownloaded() and
+            // playback treat any non-empty file as a finished download, so a transfer that dies
+            // halfway (process killed, connection dropped) must never leave bytes at the final path.
+            val partFile = java.io.File(file.parentFile, file.name + PART_SUFFIX)
+            downloadedFile = partFile
 
             response.use { resp ->
                 val body = resp.body
                 body.byteStream().use { inputStream ->
-                    file.outputStream().use { outputStream ->
+                    partFile.outputStream().use { outputStream ->
                         inputStream.copyTo(outputStream)
                     }
                 }
             }
-            
+            if (partFile.length() == 0L) {
+                partFile.delete()
+                return@withContext false
+            }
+            if (file.exists()) file.delete()
+            if (!partFile.renameTo(file)) {
+                partFile.copyTo(file, overwrite = true)
+                partFile.delete()
+            }
+            downloadedFile = file
+
             // 4. Download and cache the artwork if present and not a local file
             var localArtworkPath: String? = null
             var artworkUri = finalSong.artworkUri
@@ -1259,8 +1281,10 @@ class StreamingMusicRepositoryImpl(
                 artworkUri = localArtworkPath ?: finalSong.artworkUri
             )
             
-            downloadedSongsMap[songId] = downloadedSong
-            saveDownloadedSongsIndex()
+            synchronized(downloadedSongsMap) {
+                downloadedSongsMap[songId] = downloadedSong
+                saveDownloadedSongsIndex()
+            }
             true
         } catch (e: Exception) {
             Log.e("StreamingMusicRepo", "Error downloading song $songId", e)
@@ -1287,10 +1311,10 @@ class StreamingMusicRepositoryImpl(
             songArtFile.delete()
         }
         
-        val removedSong = downloadedSongsMap.remove(songId)
+        val removedSong = synchronized(downloadedSongsMap) {
+            downloadedSongsMap.remove(songId)?.also { saveDownloadedSongsIndex() }
+        }
         if (removedSong != null) {
-            saveDownloadedSongsIndex()
-
             val safeAlbumKey = (removedSong.albumId ?: "${removedSong.artist}_${removedSong.album}")
                 .replace(":", "_").replace("/", "_").replace("\\", "_").replace(" ", "_").lowercase()
             val anyRemainingInAlbum = downloadedSongsMap.values.any { other ->
@@ -2564,6 +2588,9 @@ class StreamingMusicRepositoryImpl(
     private companion object {
         private const val SEARCH_LIMIT = 100
         private const val MAX_CACHE_SIZE = 4000
+
+        /** A download in progress lives at "<final name>.part" until its body is complete. */
+        private const val PART_SUFFIX = ".part"
 
         /** Compiled once; normalizeKey() runs per artist during catalog mapping. */
         private val WHITESPACE_REGEX = "\\s+".toRegex()

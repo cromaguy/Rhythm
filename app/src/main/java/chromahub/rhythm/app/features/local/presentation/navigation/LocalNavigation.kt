@@ -949,6 +949,7 @@ private fun LocalNavigationContent(
     val streamingDownloadedArtists by streamingMusicViewModel.downloadedArtists.collectAsState()
     val streamingAllSongs by streamingMusicViewModel.allSongs.collectAsState()
     val streamingDownloadingSongIds by streamingMusicViewModel.downloadingSongIds.collectAsState()
+    val streamingBulkDownload by streamingMusicViewModel.bulkDownload.collectAsState()
     val streamingFollowedArtists by streamingMusicViewModel.followedArtists.collectAsState()
     val streamingCurrentSong by streamingMusicViewModel.currentSong.collectAsState()
     val streamingLikedSongIds = remember(streamingLikedSongs) {
@@ -2587,6 +2588,16 @@ private fun LocalNavigationContent(
                     AlbumDetailScreen(
                         albumId = albumId,
                         albumName = localAlbum.title,
+                        onDownloadAll = {
+                            if (albumSongs.isNotEmpty()) {
+                                streamingMusicViewModel.downloadSongs(albumSongs, targetId = albumId, label = localAlbum.title)
+                            }
+                        },
+                        onCancelDownloadAll = { streamingMusicViewModel.cancelBulkDownload() },
+                        downloadedSongCount = albumSongs.count { it.id in streamingDownloadedSongIds },
+                        activeDownloadProgress = streamingBulkDownload
+                            ?.takeIf { it.targetId == albumId }
+                            ?.let { it.finished to it.total },
                         onBack = {
                             val popped = navController.popBackStack()
                             if (!popped) {
@@ -3052,6 +3063,9 @@ private fun LocalNavigationContent(
                     val playlistTracksById = remember(playlistTracks) {
                         playlistTracks.associateBy { it.id }
                     }
+                    val playlistDownloadedCount = remember(playlistTracks, streamingDownloadedSongIds) {
+                        playlistTracks.count { it.id in streamingDownloadedSongIds }
+                    }
                     val localPlaylistSongs = remember(playlistTracks) {
                         playlistTracks.map { it.toDisplaySong() }
                     }
@@ -3069,6 +3083,14 @@ private fun LocalNavigationContent(
                         musicViewModel = viewModel,
                         playlist = localPlaylist,
                         isStreamingPlaylist = true,
+                        onDownloadAll = {
+                            selectedPlaylist?.let { streamingMusicViewModel.downloadPlaylist(it) }
+                        },
+                        onCancelDownloadAll = { streamingMusicViewModel.cancelBulkDownload() },
+                        downloadedSongCount = playlistDownloadedCount,
+                        activeDownloadProgress = streamingBulkDownload
+                            ?.takeIf { it.targetId == playlistId }
+                            ?.let { it.finished to it.total },
                         currentSong = currentSong,
                         isPlaying = isPlaying,
                         onPlayPause = { viewModel.togglePlayPause() },
