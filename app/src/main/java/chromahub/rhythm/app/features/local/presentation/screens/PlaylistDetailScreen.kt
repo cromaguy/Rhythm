@@ -1102,9 +1102,11 @@ fun PlaylistDetailScreen(
                     )
                 }
                 
-                // Button Group for Play All and Shuffle - Sticky (hidden when empty)
+                // Button Group for Play All and Shuffle - Sticky (hidden when empty). Only the
+                // landscape split view has its own buttons, so a portrait tablet or an unfolded
+                // foldable (width >= 600dp, portrait) keeps this row; it used to get no buttons at all.
                 AnimatedVisibility(
-                    visible = playlist.songs.isNotEmpty() && !isTablet,
+                    visible = playlist.songs.isNotEmpty() && !isLandscapeTablet,
                     enter = expandVertically(
                         animationSpec = spring(
                             dampingRatio = Spring.DampingRatioMediumBouncy,
