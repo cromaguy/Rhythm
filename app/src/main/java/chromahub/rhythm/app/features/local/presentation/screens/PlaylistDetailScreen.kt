@@ -61,6 +61,11 @@ import chromahub.rhythm.app.shared.presentation.components.common.RhythmGroupedM
 import chromahub.rhythm.app.shared.presentation.components.common.RhythmMenuItem
 import chromahub.rhythm.app.shared.presentation.components.common.RhythmDetailActionButtonFullWidth
 import chromahub.rhythm.app.shared.presentation.components.common.RhythmButtonType
+import chromahub.rhythm.app.shared.presentation.components.common.OfflineSummaryLine
+import chromahub.rhythm.app.shared.presentation.components.common.QualityChip
+import chromahub.rhythm.app.shared.presentation.components.common.offlineGreen
+import chromahub.rhythm.app.features.streaming.domain.model.AudioQuality
+import chromahub.rhythm.app.features.streaming.domain.model.OfflineSummary
 import chromahub.rhythm.app.shared.presentation.components.common.ExpressiveScrollBar
 import chromahub.rhythm.app.shared.presentation.components.common.playlistDetailFastScrollLabel
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -215,6 +220,7 @@ fun PlaylistDetailScreen(
     onReorderSongs: ((Int, Int) -> Unit)? = null,
     onUpdatePlaylistSongs: ((List<Song>) -> Unit)? = null,
     isStreamingPlaylist: Boolean = false,
+    downloadedSongIds: Set<String> = emptySet(),
     onPlayNext: (Song) -> Unit = {},
     onAddToQueue: (Song) -> Unit = {},
     onAddToPlaylist: (Song) -> Unit = {},
@@ -1576,6 +1582,11 @@ fun PlaylistDetailScreen(
                                         fontWeight = FontWeight.Bold,
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
+                                    val offline = remember(filteredSongs, downloadedSongIds, isStreamingPlaylist) {
+                                        if (isStreamingPlaylist) OfflineSummary.of(filteredSongs, downloadedSongIds, { it.id }, { it.codec })
+                                        else OfflineSummary.NONE
+                                    }
+                                    OfflineSummaryLine(offline, modifier = Modifier.padding(top = 4.dp))
                                     Spacer(modifier = Modifier.height(8.dp))
                                 }
                             }
@@ -1718,6 +1729,8 @@ fun PlaylistDetailScreen(
                                         currentSong = currentSong,
                                         isPlaying = isPlaying,
                                         useHoursFormat = useHoursFormat,
+                                        isDownloaded = isStreamingPlaylist && song.id in downloadedSongIds,
+                                        qualityLabel = if (isStreamingPlaylist) AudioQuality.label(song.codec, song.bitrate, song.sampleRate) else null,
                                         isReorderMode = isReorderMode,
                                         isDragging = isDragging,
                                         index = index,
@@ -2117,6 +2130,11 @@ fun PlaylistDetailScreen(
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
+                            val offline = remember(filteredSongs, downloadedSongIds, isStreamingPlaylist) {
+                                if (isStreamingPlaylist) OfflineSummary.of(filteredSongs, downloadedSongIds, { it.id }, { it.codec })
+                                else OfflineSummary.NONE
+                            }
+                            OfflineSummaryLine(offline, modifier = Modifier.padding(top = 4.dp))
                             Spacer(modifier = Modifier.height(8.dp))
                         }
                     }
@@ -2401,6 +2419,8 @@ fun PlaylistDetailScreen(
                                 currentSong = currentSong,
                                 isPlaying = isPlaying,
                                 useHoursFormat = useHoursFormat,
+                                isDownloaded = isStreamingPlaylist && song.id in downloadedSongIds,
+                                qualityLabel = if (isStreamingPlaylist) AudioQuality.label(song.codec, song.bitrate, song.sampleRate) else null,
                                 isReorderMode = isReorderMode,
                                 isDragging = isDragging,
                                 index = index,
@@ -2766,7 +2786,9 @@ fun PlaylistSongItem(
     isMultiSelectMode: Boolean = false,
     isSelected: Boolean = false,
     onMoreClick: (() -> Unit)? = null,
-    dragHandleModifier: Modifier = Modifier
+    dragHandleModifier: Modifier = Modifier,
+    isDownloaded: Boolean = false,
+    qualityLabel: String? = null
 ) {
     val context = LocalContext.current
     var showRemoveDialog by remember { mutableStateOf(false) }
@@ -2983,14 +3005,30 @@ fun PlaylistSongItem(
                 )
                 
                 Spacer(modifier = Modifier.height(4.dp))
-                
-                Text(
-                    text = song.artist,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = artistColor,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    if (isDownloaded) {
+                        Icon(
+                            imageVector = MaterialSymbolIcon("check_circle", filled = true),
+                            contentDescription = stringResource(R.string.streaming_downloaded),
+                            tint = if (isCurrentSong && !isSelected) MaterialTheme.colorScheme.onPrimary else offlineGreen(),
+                            modifier = Modifier.size(14.dp)
+                        )
+                    }
+                    if (qualityLabel != null) {
+                        QualityChip(label = qualityLabel, highlighted = isCurrentSong && !isSelected)
+                    }
+                    Text(
+                        text = song.artist,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = artistColor,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
                 
                 if (song.album.isNotEmpty() && song.album != song.artist) {
                     Text(

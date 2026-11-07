@@ -205,6 +205,8 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.input.pointer.AwaitPointerEventScope
 import chromahub.rhythm.app.R
+import chromahub.rhythm.app.features.streaming.domain.model.OfflineSummary
+import chromahub.rhythm.app.shared.presentation.components.common.OfflineStatusChip
 import chromahub.rhythm.app.shared.data.model.Album
 import chromahub.rhythm.app.shared.data.model.Artist
 import chromahub.rhythm.app.shared.data.model.Playlist
@@ -1780,7 +1782,8 @@ fun LibraryScreen(
                                         onExportPlaylists = if (isStreamingMode) null else ({ showBulkExportDialog = true }),
                                         appSettings = appSettings,
                                         onRefreshClick = onRefreshClick,
-                                        bottomPadding = baseLibraryBottomPadding
+                                        bottomPadding = baseLibraryBottomPadding,
+                                        downloadedSongIds = if (isStreamingMode) streamingDownloadedSongIds else emptySet()
                                     )
                                     "ALBUMS" -> {
                                         SingleCardAlbumsContent(
@@ -2645,7 +2648,8 @@ fun SingleCardPlaylistsContent(
     onExportPlaylists: (() -> Unit)? = null,
     appSettings: AppSettings,
     onRefreshClick: (() -> Unit)? = null,
-    bottomPadding: androidx.compose.ui.unit.Dp = 0.dp
+    bottomPadding: androidx.compose.ui.unit.Dp = 0.dp,
+    downloadedSongIds: Set<String> = emptySet()
 ) {
     val context = LocalContext.current
     val playlistViewType by appSettings.playlistViewType.collectAsState()
@@ -2787,7 +2791,8 @@ fun SingleCardPlaylistsContent(
                                 playlist = playlist,
                                 onClick = { onPlaylistClick(playlist) },
                                 haptics = haptics,
-                                shape = shape
+                                shape = shape,
+                                downloadedSongIds = downloadedSongIds
                             )
                         }
                     }
@@ -2824,7 +2829,8 @@ fun SingleCardPlaylistsContent(
                                 playlist = playlist,
                                 onClick = { onPlaylistClick(playlist) },
                                 haptics = haptics,
-                                itemShape = groupedLibraryItemShape(index, preparedPlaylists.size)
+                                itemShape = groupedLibraryItemShape(index, preparedPlaylists.size),
+                                downloadedSongIds = downloadedSongIds
                             )
                         }
                     }
@@ -3764,9 +3770,13 @@ fun PlaylistItem(
     onClick: () -> Unit,
     haptics: androidx.compose.ui.hapticfeedback.HapticFeedback,
     itemShape: RoundedCornerShape = RoundedCornerShape(20.dp),
-    horizontalPadding: androidx.compose.ui.unit.Dp = 0.dp
+    horizontalPadding: androidx.compose.ui.unit.Dp = 0.dp,
+    downloadedSongIds: Set<String> = emptySet()
 ) {
     val context = LocalContext.current
+    val offline = remember(playlist.songs, downloadedSongIds) {
+        OfflineSummary.of(playlist.songs, downloadedSongIds, { it.id }, { it.codec })
+    }
     
     val albumArts = remember(playlist.id, playlist.songs.size) {
         playlist.songs
@@ -3879,6 +3889,7 @@ fun PlaylistItem(
                             )
                         }
                     }
+                    OfflineStatusChip(offline)
 
                     if (playlist.songs.isNotEmpty()) {
                         val totalDurationMs = playlist.songs.sumOf { it.duration }
@@ -4490,9 +4501,13 @@ fun PlaylistGridItem(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     haptics: androidx.compose.ui.hapticfeedback.HapticFeedback,
-    shape: Shape = RoundedCornerShape(20.dp)
+    shape: Shape = RoundedCornerShape(20.dp),
+    downloadedSongIds: Set<String> = emptySet()
 ) {
     val context = LocalContext.current
+    val offline = remember(playlist.songs, downloadedSongIds) {
+        OfflineSummary.of(playlist.songs, downloadedSongIds, { it.id }, { it.codec })
+    }
     
     Card(
         onClick = {
@@ -4590,6 +4605,7 @@ fun PlaylistGridItem(
                         )
                     }
                 }
+                OfflineStatusChip(offline, compact = true)
             }
         }
     }
