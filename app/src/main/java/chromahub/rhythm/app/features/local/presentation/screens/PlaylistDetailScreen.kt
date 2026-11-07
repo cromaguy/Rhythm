@@ -56,6 +56,8 @@ import chromahub.rhythm.app.shared.presentation.components.common.RhythmSortMenu
 import chromahub.rhythm.app.shared.presentation.components.common.RhythmSortMenuShape
 import chromahub.rhythm.app.shared.presentation.components.common.RhythmSortOption
 import chromahub.rhythm.app.shared.presentation.components.common.HeaderAction
+import chromahub.rhythm.app.shared.presentation.components.common.DownloadAllActionButton
+import chromahub.rhythm.app.shared.presentation.components.common.DownloadAllActionButtonFullWidth
 import chromahub.rhythm.app.shared.presentation.components.common.RhythmDetailActionButton
 import chromahub.rhythm.app.shared.presentation.components.common.RhythmGroupedMenuContent
 import chromahub.rhythm.app.shared.presentation.components.common.RhythmMenuItem
@@ -215,6 +217,11 @@ fun PlaylistDetailScreen(
     onReorderSongs: ((Int, Int) -> Unit)? = null,
     onUpdatePlaylistSongs: ((List<Song>) -> Unit)? = null,
     isStreamingPlaylist: Boolean = false,
+    // "Download all" for server playlists (Go mode); the button is hidden while onDownloadAll is null.
+    onDownloadAll: (() -> Unit)? = null,
+    onCancelDownloadAll: () -> Unit = {},
+    downloadedSongCount: Int = 0,
+    activeDownloadProgress: Pair<Int, Int>? = null,
     onPlayNext: (Song) -> Unit = {},
     onAddToQueue: (Song) -> Unit = {},
     onAddToPlaylist: (Song) -> Unit = {},
@@ -1152,11 +1159,21 @@ fun PlaylistDetailScreen(
                         },
                         type = if (isPlaylistActive && isShuffleActive) RhythmButtonType.Filled else RhythmButtonType.Tonal,
                         isFirst = false,
-                        isLast = true,
+                        isLast = onDownloadAll == null,
                         icon = RhythmIcons.Shuffle,
                         text = stringResource(R.string.action_shuffle),
                         fontWeight = FontWeight.Medium
                     )
+
+                    if (onDownloadAll != null) {
+                        DownloadAllActionButton(
+                            songCount = playlist.songs.size,
+                            downloadedSongCount = downloadedSongCount,
+                            activeDownloadProgress = activeDownloadProgress,
+                            onDownloadAll = onDownloadAll,
+                            onCancelDownloadAll = onCancelDownloadAll
+                        )
+                    }
                 }
                 }
             }
@@ -1309,6 +1326,16 @@ fun PlaylistDetailScreen(
                                     fontWeight = FontWeight.Normal,
                                     contentDescription = stringResource(R.string.content_desc_shuffle_play)
                                 )
+
+                                if (onDownloadAll != null) {
+                                    DownloadAllActionButtonFullWidth(
+                                        songCount = playlist.songs.size,
+                                        downloadedSongCount = downloadedSongCount,
+                                        activeDownloadProgress = activeDownloadProgress,
+                                        onDownloadAll = onDownloadAll,
+                                        onCancelDownloadAll = onCancelDownloadAll
+                                    )
+                                }
                             }
 
                             // Add Songs button

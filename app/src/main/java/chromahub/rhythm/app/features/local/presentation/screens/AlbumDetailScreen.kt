@@ -85,6 +85,7 @@ import chromahub.rhythm.app.shared.presentation.components.common.RhythmSortMenu
 import chromahub.rhythm.app.shared.presentation.components.common.RhythmSortOption
 import chromahub.rhythm.app.shared.presentation.components.common.HeaderAction
 import chromahub.rhythm.app.shared.presentation.components.common.HeaderActionGroup
+import chromahub.rhythm.app.shared.presentation.components.common.DownloadAllActionButton
 import chromahub.rhythm.app.shared.presentation.components.common.RhythmDetailActionButton
 import chromahub.rhythm.app.shared.presentation.components.common.RhythmButtonType
 import chromahub.rhythm.app.util.ArtistSeparator
@@ -217,6 +218,11 @@ fun AlbumDetailScreen(
         onComplete: (successCount: Int, failCount: Int) -> Unit
     ) -> Unit)? = null,
     isStreamingMode: Boolean = false,
+    // "Download all" for server albums (Go mode); the button is hidden while onDownloadAll is null.
+    onDownloadAll: (() -> Unit)? = null,
+    onCancelDownloadAll: () -> Unit = {},
+    downloadedSongCount: Int = 0,
+    activeDownloadProgress: Pair<Int, Int>? = null,
     viewModel: MusicViewModel = viewModel()
 ) {
     val context = LocalContext.current
@@ -617,11 +623,22 @@ fun AlbumDetailScreen(
                                     height = 50.dp,
                                     type = if (isAlbumActive && isShuffleActive) RhythmButtonType.Filled else RhythmButtonType.Tonal,
                                     isFirst = false,
-                                    isLast = true,
+                                    isLast = onDownloadAll == null,
                                     icon = RhythmIcons.Shuffle,
                                     text = stringResource(R.string.action_shuffle),
                                     fontWeight = FontWeight.Medium
                                 )
+
+                                if (onDownloadAll != null) {
+                                    DownloadAllActionButton(
+                                        songCount = displaySongs.size,
+                                        downloadedSongCount = downloadedSongCount,
+                                        activeDownloadProgress = activeDownloadProgress,
+                                        onDownloadAll = onDownloadAll,
+                                        onCancelDownloadAll = onCancelDownloadAll,
+                                        height = 50.dp
+                                    )
+                                }
                             }
                         }
                     }
@@ -1066,11 +1083,21 @@ fun AlbumDetailScreen(
                                                 height = 52.dp,
                                                 type = if (isAlbumActive && isShuffleActive) RhythmButtonType.Filled else RhythmButtonType.Tonal,
                                                 isFirst = false,
-                                                isLast = true,
+                                                isLast = onDownloadAll == null,
                                                 icon = RhythmIcons.Shuffle,
                                                 text = stringResource(R.string.action_shuffle),
                                                 fontWeight = FontWeight.Medium
                                             )
+
+                                            if (onDownloadAll != null) {
+                                                DownloadAllActionButton(
+                                                    songCount = displaySongs.size,
+                                                    downloadedSongCount = downloadedSongCount,
+                                                    activeDownloadProgress = activeDownloadProgress,
+                                                    onDownloadAll = onDownloadAll,
+                                                    onCancelDownloadAll = onCancelDownloadAll
+                                                )
+                                            }
                                         }
 
                                         FilledTonalButton(
