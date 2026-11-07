@@ -13,12 +13,10 @@ import androidx.media3.common.util.UnstableApi
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.ShortBuffer
+import java.util.ArrayDeque
 
 /**
- * Rhythm Audio Processor - Base class for real-time audio effects.
- * 
- * Processes audio samples in-place using custom DSP algorithms for zero-latency playback.
- * Part of the Rhythm music player's advanced audio processing pipeline.
+ * Base audio processor for real-time DSP effects in Rhythm.
  */
 @OptIn(UnstableApi::class)
 @Suppress("OVERRIDE_DEPRECATION")
@@ -26,18 +24,20 @@ abstract class RhythmAudioProcessor : AudioProcessor {
     
     companion object {
         private const val TAG = "RhythmAudioProcessor"
-        
-        // Simple buffer pool to reduce allocations
-        private val bufferPool = mutableListOf<ShortArray>()
-        private val byteBufferPool = mutableListOf<ByteBuffer>()
         private const val MAX_POOL_SIZE = 4
+        
+        private val bufferPool = ArrayDeque<ShortArray>(MAX_POOL_SIZE)
+        private val byteBufferPool = ArrayDeque<ByteBuffer>(MAX_POOL_SIZE)
         
         fun acquireShortArray(size: Int): ShortArray {
             synchronized(bufferPool) {
-                val buffer = bufferPool.find { it.size >= size }
-                if (buffer != null) {
-                    bufferPool.remove(buffer)
-                    return buffer
+                val it = bufferPool.iterator()
+                while (it.hasNext()) {
+                    val buf = it.next()
+                    if (buf.size >= size) {
+                        it.remove()
+                        return buf
+                    }
                 }
             }
             return ShortArray(size)
@@ -46,18 +46,21 @@ abstract class RhythmAudioProcessor : AudioProcessor {
         fun releaseShortArray(buffer: ShortArray) {
             synchronized(bufferPool) {
                 if (bufferPool.size < MAX_POOL_SIZE) {
-                    bufferPool.add(buffer)
+                    bufferPool.addLast(buffer)
                 }
             }
         }
         
         fun acquireByteBuffer(size: Int): ByteBuffer {
             synchronized(byteBufferPool) {
-                val buffer = byteBufferPool.find { it.capacity() >= size }
-                if (buffer != null) {
-                    byteBufferPool.remove(buffer)
-                    buffer.clear()
-                    return buffer
+                val it = byteBufferPool.iterator()
+                while (it.hasNext()) {
+                    val buf = it.next()
+                    if (buf.capacity() >= size) {
+                        it.remove()
+                        buf.clear()
+                        return buf
+                    }
                 }
             }
             return ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder())
@@ -67,7 +70,7 @@ abstract class RhythmAudioProcessor : AudioProcessor {
             synchronized(byteBufferPool) {
                 if (byteBufferPool.size < MAX_POOL_SIZE) {
                     buffer.clear()
-                    byteBufferPool.add(buffer)
+                    byteBufferPool.addLast(buffer)
                 }
             }
         }
@@ -76,35 +79,22 @@ abstract class RhythmAudioProcessor : AudioProcessor {
     private var inputAudioFormat: AudioProcessor.AudioFormat = AudioProcessor.AudioFormat.NOT_SET
     private var outputAudioFormat: AudioProcessor.AudioFormat = AudioProcessor.AudioFormat.NOT_SET
     private var buffer: ByteBuffer = AudioProcessor.EMPTY_BUFFER
+    private var shortBuffer: ShortBuffer = AudioProcessor.EMPTY_BUFFER.asShortBuffer()
     private var outputBuffer: ByteBuffer = AudioProcessor.EMPTY_BUFFER
     private var inputEnded = false
 
-    // Audio format parameters
     protected var sampleRate: Int = 44100
     protected var channelCount: Int = 2
     protected var encoding: Int = C.ENCODING_PCM_16BIT
     
-    /**
-     * Process audio samples in-place using custom DSP algorithm
-     * @param samples Array of audio samples (16-bit PCM)
-     * @param sampleCount Number of valid samples in the array
-     */
     abstract fun processSamples(samples: ShortArray, sampleCount: Int)
     
-    /**
-     * Check if the processor is enabled
-     */
     abstract fun isEnabled(): Boolean
 
-    /**
-     * Check if the processor should bypass processing (default: not enabled)
-     */
-    open fun isBypassed(): Boolean {
-        return !isEnabled()
-    }
+    open fun isBypassed(): Boolean = !isEnabled()
     
     override fun configure(inputAudioFormat: AudioProcessor.AudioFormat): AudioProcessor.AudioFormat {
-        Log.d(TAG, "configure() - sampleRate=${inputAudioFormat.sampleRate}, channels=${inputAudioFormat.channelCount}, encoding=${inputAudioFormat.encoding}")
+        Log.d(TAG, "configure() -> rate: ${inputAudioFormat.sampleRate}, channels: ${inputAudioFormat.channelCount}")
         
         if (inputAudioFormat.encoding != C.ENCODING_PCM_16BIT) {
             this.inputAudioFormat = AudioProcessor.AudioFormat.NOT_SET
@@ -122,39 +112,36 @@ abstract class RhythmAudioProcessor : AudioProcessor {
     }
     
     override fun isActive(): Boolean {
-        return inputAudioFormat != AudioProcessor.AudioFormat.NOT_SET &&
-            encoding == C.ENCODING_PCM_16BIT
+        return inputAudioFormat != AudioProcessor.AudioFormat.NOT_SET && encoding == C.ENCODING_PCM_16BIT
     }
     
     override fun queueInput(inputBuffer: ByteBuffer) {
-        if (!inputBuffer.hasRemaining()) {
-            return
-        }
+        if (!inputBuffer.hasRemaining()) return
         
         val size = inputBuffer.remaining()
         if (buffer.capacity() < size) {
             if (buffer !== AudioProcessor.EMPTY_BUFFER) releaseByteBuffer(buffer)
             buffer = acquireByteBuffer(size)
+            shortBuffer = buffer.asShortBuffer()
         }
+        
         buffer.clear()
         buffer.put(inputBuffer)
         buffer.flip()
         outputBuffer = buffer
 
-        if (isBypassed()) {
-            return
-        }
+        if (isBypassed()) return
         
         val sampleCount = size / 2
         val samples = acquireShortArray(sampleCount)
         try {
-            buffer.position(0)
-            buffer.asShortBuffer().get(samples, 0, sampleCount)
+            shortBuffer.position(0)
+            shortBuffer.get(samples, 0, sampleCount)
             
             processSamples(samples, sampleCount)
             
-            buffer.position(0)
-            buffer.asShortBuffer().put(samples, 0, sampleCount)
+            shortBuffer.position(0)
+            shortBuffer.put(samples, 0, sampleCount)
         } finally {
             releaseShortArray(samples)
         }
@@ -172,7 +159,6 @@ abstract class RhythmAudioProcessor : AudioProcessor {
     }
     
     override fun queueEndOfStream() {
-        Log.d(TAG, "queueEndOfStream()")
         inputEnded = true
     }
     
@@ -181,15 +167,11 @@ abstract class RhythmAudioProcessor : AudioProcessor {
     }
     
     override fun flush() {
-        Log.d(TAG, "flush()")
         outputBuffer = AudioProcessor.EMPTY_BUFFER
         inputEnded = false
     }
     
     override fun reset() {
-        Log.d(TAG, "reset() called - preserving audio format configuration")
         flush()
-        // Don't clear the audio format - Media3 may not call configure() again
-        // and we want the processor to remain active if it was configured
     }
 }
