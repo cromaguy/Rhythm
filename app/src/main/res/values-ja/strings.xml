@@ -3,7 +3,7 @@
     <string name="app_name">Rhythm</string>
     <!-- Common Labels -->
     <string name="home">ホーム</string>
-    <string name="library">ライブラリー</string>
+    <string name="library">ライブラリ</string>
     <string name="search">検索</string>
     <!-- Media3 notification configuration -->
     <string name="media3_notification_channel_name">Rhythm 再生中</string>
@@ -341,7 +341,7 @@
     <string name="update_whats_new">新機能:</string>
     <string name="update_now">今すぐアップデートする</string>
     <!-- LibraryScreen -->
-    <string name="library_title">ライブラリー</string>
+    <string name="library_title">ライブラリ</string>
     <string name="library_your_playlists">プレイリスト</string>
     <string name="library_your_albums">アルバム</string>
     <string name="library_your_artists">アーティスト</string>
@@ -359,7 +359,7 @@
     <string name="library_unknown_year">年代不明</string>
     <string name="library_start_collection">音楽コレクションの構築を開始する</string>
     <string name="library_sort_artists">アーティストの並べ替え基準</string>
-    <string name="library_storage_locations">保管場所</string>
+    <string name="library_storage_locations">保存場所</string>
     <string name="library_pinned_folders">固定フォルダー</string>
     <string name="library_go_back">戻る</string>
     <string name="library_home">ホーム</string>
@@ -465,9 +465,9 @@
     <string name="onboarding_continue_full_tour">フルツアーを続ける</string>
     <string name="onboarding_finish_now">今すぐセットアップを完了する</string>
     <string name="onboarding_step_progress">%1$d/%2$d</string>
-    <string name="onboarding_media_scan_title">音楽ライブラリをフィルタリングする</string>
-    <string name="onboarding_media_scan_desc">ライブラリに表示されるオーディオ ファイルを制御します。ブラックリスト モードを使用して不要なファイル (着信音、通知) を非表示にし、ホワイトリスト モードを使用して特定の音楽フォルダーのみを表示します。</string>
-    <string name="onboarding_media_scan_current_mode">ブラックリストモードまたはホワイトリストモードを選択します</string>
+    <string name="onboarding_media_scan_title">曲の表示・非表示</string>
+    <string name="onboarding_media_scan_desc">ブラックリストモードではライブラリに表示させる曲を選択できます。着信音・アラーム音・通知音など曲ではないものを非表示にしたい際に適しています。\nホワイトリストモードでは特定のフォルダ内の曲のみ表示します。</string>
+    <string name="onboarding_media_scan_current_mode">モードを選択してください</string>
     <string name="onboarding_media_scan_blacklist">ブラックリストモード：特定の曲とフォルダー（着信音、通知）を非表示にします</string>
     <string name="onboarding_media_scan_whitelist">ホワイトリストモード: 選択したフォルダーの曲のみを表示します</string>
     <string name="onboarding_complete_title">これで準備は完了です。</string>
@@ -482,24 +482,24 @@
     <string name="onboarding_next">次へ</string>
     <string name="onboarding_checking">確認中…</string>
     <string name="onboarding_lets_go">レッツゴー！</string>
-    <string name="onboarding_continue">続き</string>
+    <string name="onboarding_continue">続行</string>
     <string name="onboarding_open_settings">設定を開く</string>
-    <string name="onboarding_grant_access">アクセス権の付与</string>
+    <string name="onboarding_grant_access">権限の許可</string>
     <!-- Onboarding Permission Screen -->
-    <string name="onboarding_permissions_granted_title">権限が付与されました!</string>
+    <string name="onboarding_permissions_granted_title">権限はすべて付与されています</string>
     <string name="onboarding_action_required_settings">必要なアクション: 設定を開く</string>
     <string name="onboarding_permissions_needed">必要な権限</string>
     <string name="onboarding_grant_permissions">権限の付与</string>
-    <string name="onboarding_permissions_granted_desc">必要な権限はすべて付与されています。続行する準備ができました。</string>
-    <string name="onboarding_redirect_settings_desc">必要な権限を付与するには、デバイスのアプリ設定に移動してください。</string>
+    <string name="onboarding_permissions_granted_desc">必要な権限はすべて付与されています。続けるには続行してください。</string>
+    <string name="onboarding_redirect_settings_desc">権限を付与するには端末の設定より Rhythm に権限を付与してください。</string>
     <string name="onboarding_rationale_desc">Rhythm が正しく機能するには、特定の権限が必要です。続行を許可してください。</string>
     <string name="onboarding_permissions_required_desc">Rhythm の機能を最大限に活用するには、特定のデバイス機能にアクセスする許可が必要です。</string>
-    <string name="onboarding_permission_music_title">ミュージックライブラリへのアクセス</string>
-    <string name="onboarding_permission_music_desc">ローカルの音楽ファイルを読み取り、アプリに表示します</string>
-    <string name="onboarding_permission_bluetooth_title">Bluetooth接続</string>
-    <string name="onboarding_permission_bluetooth_desc">Bluetoothスピーカー、ヘッドフォン、オーディオデバイスに接続する</string>
-    <string name="onboarding_permission_notifications_title">お知らせ</string>
-    <string name="onboarding_permission_notifications_desc">通知に再生コントロールと音楽情報を表示する</string>
+    <string name="onboarding_permission_music_title">音楽ファイルへのアクセス</string>
+    <string name="onboarding_permission_music_desc">端末上の音楽ファイルを再生できます</string>
+    <string name="onboarding_permission_bluetooth_title">Bluetooth</string>
+    <string name="onboarding_permission_bluetooth_desc">Bluetooth による音声の出力等が可能です</string>
+    <string name="onboarding_permission_notifications_title">通知</string>
+    <string name="onboarding_permission_notifications_desc">通知センターよりメディアコントロールを利用できます</string>
     <!-- Permission Tips -->
     <string name="onboarding_permission_tips">許可のヒント</string>
     <string name="onboarding_permission_tip_1">最高のエクスペリエンスを得るためにすべての権限を付与します</string>
@@ -544,7 +544,7 @@
     <string name="option_home">ホーム</string>
     <string name="option_library">ライブラリ</string>
     <!-- Onboarding Media Scan -->
-    <string name="onboarding_how_it_works">仕組み</string>
+    <string name="onboarding_how_it_works">ヒント</string>
     <!-- Onboarding Setup Complete -->
     <string name="onboarding_library_configured">ライブラリが構成されました</string>
     <string name="onboarding_library_configured_desc">音楽ライブラリの編成設定が設定されました</string>
@@ -2005,7 +2005,7 @@
     <string name="rhythmguardsettingsscreen_stats_rhythm_guard">ステータスと Rhythm ガード</string>
     <string name="settingsscreen_audio_offload">オーディオオフロード</string>
     <string name="settingsscreen_personalization">パーソナライゼーション</string>
-    <string name="settingsscreen_library_focus">ライブラリーフォーカス</string>
+    <string name="settingsscreen_library_focus">ライブラリフォーカス</string>
     <string name="settingsscreen_audio_equalizer">オーディオイコライザー</string>
     <string name="settingsscreen_library_settings">ライブラリの設定</string>
     <string name="settingssearch_settings_suggestions">設定の提案</string>
@@ -2605,4 +2605,18 @@
     <string name="player_playback_speed">スピード</string>
     <string name="player_current_rate">%1$sx</string>
     <string name="eq_preset_type_builtin">ビルトイン</string>
+    <string name="settings_formats_group_lossless">ロスレス &amp; ハイレゾ</string>
+    <string name="settings_formats_group_surround">サラウンド &amp; HDオーディオ</string>
+    <string name="onboardingscreen_mode_local_desc">端末内のファイルを再生する</string>
+    <string name="onboardingscreen_mode_streaming_desc">Jellyfin もしくは Subsonic サーバーから再生する</string>
+    <string name="audio_routing_default">標準（推奨）</string>
+    <string name="audio_routing_default_desc">Android に搭載されている仕組みで音源を出力します</string>
+    <string name="audio_routing_app">外部DAC による出力（高音質）</string>
+    <string name="audio_routing_app_desc">DAC 側で音源を出力します</string>
+    <string name="audio_routing_system">システム（互換性）</string>
+    <string name="audio_routing_system_desc">Android に搭載されている仕組みで強制的に出力します。</string>
+    <string name="expressiveplayerscreen_artwork_auto_fetched">ジャケット画像が見つかりました</string>
+    <string name="expressiveplayerscreen_embed_in_file">ファイルに埋め込む</string>
+    <string name="expressiveplayerscreen_keep_library_only">ライブラリのみに保存する</string>
+    <string name="onboarding_configure_desc">端末内に保存されているファイル、もしくは、メディアサーバー上のファイルを再生するかを選択できます。</string>
 </resources>
