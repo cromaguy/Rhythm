@@ -2459,7 +2459,7 @@
     <string name="shape_target_player_art">プレーヤーアートワーク</string>
     <string name="shape_target_song_art">ソングアートワーク</string>
     <string name="shape_target_playlist_art">プレイリストアートワーク</string>
-    <string name="shape_target_artist_art">アーティストアートワーク</string>
+    <string name="shape_target_artist_art">アーティスト画像</string>
     <string name="settings_shape_for">%1$s の形状</string>
     <string name="lyric_widget_description">現在再生中のメディアの歌詞を表示するウィジェット</string>
     <string name="edit_album_title">アルバム編集</string>
