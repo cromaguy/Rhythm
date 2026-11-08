@@ -3069,6 +3069,7 @@ private fun LocalNavigationContent(
                         musicViewModel = viewModel,
                         playlist = localPlaylist,
                         isStreamingPlaylist = true,
+                        downloadedSongIds = streamingDownloadedSongIds,
                         currentSong = currentSong,
                         isPlaying = isPlaying,
                         onPlayPause = { viewModel.togglePlayPause() },

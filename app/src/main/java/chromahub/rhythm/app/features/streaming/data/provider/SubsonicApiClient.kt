@@ -1092,7 +1092,8 @@ class SubsonicApiClient internal constructor(
         val genreVal = song.optString("genre", "").takeIf { it.isNotBlank() }
         
         val bitrateVal = song.optInt("bitRate", 0).takeIf { it > 0 }?.let { it * 1000 }
-        val sampleRateVal = song.optInt("sampleRate", 0).takeIf { it > 0 }
+        // OpenSubsonic (Navidrome, Gonic, ...) names these samplingRate and channelCount; keep the old keys as fallback
+        val sampleRateVal = (song.optInt("samplingRate", 0).takeIf { it > 0 } ?: song.optInt("sampleRate", 0)).takeIf { it > 0 }
         val codecVal = song.optString("suffix", "").takeIf { it.isNotBlank() }
 
         return ProviderSong(
@@ -1110,7 +1111,7 @@ class SubsonicApiClient internal constructor(
             genre = genreVal,
             bitrate = bitrateVal,
             sampleRate = sampleRateVal,
-            channels = song.optInt("channels", 0).takeIf { it > 0 },
+            channels = (song.optInt("channelCount", 0).takeIf { it > 0 } ?: song.optInt("channels", 0)).takeIf { it > 0 },
             codec = codecVal
         )
     }
