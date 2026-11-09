@@ -157,7 +157,7 @@
     <string name="notification_updater_available_text">🆕 Una nueva versión de Rhythm ya está aquí.</string>
     <string name="notification_sleep_timer_channel_name">Rhythm Temporizador de apagado</string>
     <string name="notification_sleep_timer_channel_desc">Cuenta regresiva y estado de las acciones del temporizador de apagado</string>
-    <string name="notification_sleep_timer_title">Rhythm Temporizador de apagado</string>
+    <string name="notification_sleep_timer_title">Rhythm Temporizador de apagado activado</string>
     <string name="notification_sleep_timer_pause_in">⏸ Pausa en %1$s</string>
     <string name="notification_sleep_timer_stop_in">⏹ Parando en %1$s</string>
     <!-- Streaming Notifications -->
@@ -604,7 +604,7 @@
     <string name="onboarding_widgets_tips_title">Consejos sobre widgets</string>
     <!-- Onboarding: Integrations Step -->
     <string name="onboarding_integrations_title">Conecte sus servicios</string>
-    <string name="onboarding_integrations_desc">Mejore su experiencia auditiva conectándose a servicios externos. Obtén carátulas de álbumes, letras, explora tus obras y comparte lo que estás escuchando.</string>
+    <string name="onboarding_integrations_desc">Mejore su experiencia auditiva conectándose a servicios externos. Obtén carátulas de álbumes, letras, escrobblea y comparte lo que estás escuchando.</string>
     <string name="onboarding_integrations_apis">API Servicios</string>
     <string name="onboarding_integration_deezer">Deezer</string>
     <string name="onboarding_integration_lrclib">LrcLib</string>
@@ -665,7 +665,7 @@
     <string name="theme_good_to_know">Es bueno saberlo</string>
     <string name="theme_tip_album_art">Los colores de la carátula del álbum se adaptan dinámicamente a tu música</string>
     <string name="theme_tip_material_you">Material Usas colores de fondo de pantalla del sistema (Android 12+)</string>
-    <string name="theme_tip_custom_fonts">Importe fuentes personalizadas para personalizar la tipografía</string>
+    <string name="theme_tip_custom_fonts">Puedes importar fuentes personalizadas para personalizar la tipografía</string>
     <string name="theme_color_source">Fuente de color</string>
     <string name="theme_color_source_desc">Elija cómo se extraen los colores</string>
     <string name="theme_font_source">Fuente de fuente</string>
@@ -2855,4 +2855,21 @@
     <string name="expressiveplayerscreen_artwork_embedded_toast">¡La obra de arte está integrada en el archivo del disco!</string>
     <string name="expressiveplayerscreen_artwork_applied_toast">¡La obra de arte se ha añadido a la biblioteca!</string>
     <string name="expressiveplayerscreen_artwork_applied">¡Arte aplicado!</string>
+    <string name="settings_notifications_system_group">Ajustes del sistema</string>
+    <string name="settings_library_operations_notifications">Ajustes de las biblioteca y respaldos</string>
+    <string name="settings_smart_playlist_recently_added">Recientemente añadida</string>
+    <string name="settings_smart_playlist_recently_added_desc">Últimas canciones añadidas en tu biblioteca</string>
+    <string name="settings_smart_playlist_on_repeat">En bucle</string>
+    <string name="settings_smart_playlist_forgotten_favorites_desc">Canciones favoritas que no has escuchado recientemente</string>
+    <string name="settings_save_top_songs_as_playlist">Guardar en lista de reproducción</string>
+    <string name="playlist_on_repeat">En bucle</string>
+    <string name="playlist_recently_played">Recientemente escuchadas</string>
+    <string name="settings_crossfade_configuration">Configuración</string>
+    <string name="settings_smart_playlist_most_played">Más Escuchado</string>
+    <string name="settings_smart_playlist_most_played_desc">Tus canciones más reproducidas de todos los tiempos</string>
+    <string name="settings_saved_top_songs_playlist">Creada lista de reproducción \'%1$s con %2$d canciones</string>
+    <string name="playlist_forgotten_favorites">Favoritos olvidados</string>
+    <string name="folder_blocked_success">Carpeta bloqueada: %1$s</string>
+    <string name="action_pause">Pausar</string>
+    <string name="action_resume">Reanudar</string>
 </resources>

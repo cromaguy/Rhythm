@@ -2,12 +2,12 @@
 <resources>
     <string name="app_name">Rhythm</string>
     <!-- Common Labels -->
-    <string name="home">Главная страница</string>
+    <string name="home">Главная</string>
     <string name="library">Библиотека</string>
     <string name="search">Поиск</string>
     <!-- Media3 notification configuration -->
-    <string name="media3_notification_channel_name">Rhythm Музыка</string>
-    <string name="media3_notification_channel_description">Элементы управления воспроизведением мультимедиа</string>
+    <string name="media3_notification_channel_name">Rhythm сейчас играет</string>
+    <string name="media3_notification_channel_description">Управление воспроизведением на переднем плане, перемотка и обложка альбома</string>
     <!-- Widget strings -->
     <string name="widget_description_glance">Смотрите и управляйте воспроизведением с домашнего экрана.</string>
     <string name="widget_name_glance">Rhythm Музыка</string>
@@ -25,8 +25,8 @@
     <!-- Settings - Notifications -->
     <string name="settings_notifications">Уведомления</string>
     <string name="settings_notifications_updates_group">Обновления приложений</string>
-    <string name="settings_notifications_rhythm_guard_group">Rhythm Guard</string>
-    <string name="settings_notifications_rhythm_pulse_group">Rhythm Советы</string>
+    <string name="settings_notifications_rhythm_guard_group">Безопасность Rhythm Guard</string>
+    <string name="settings_notifications_rhythm_pulse_group">Итоги прослушивания и советы</string>
     <string name="settings_update_notifications_merged_desc">Получайте оповещения о новых версиях Rhythm</string>
     <string name="settings_rhythm_guard_alert_notifications">Уведомления о безопасности</string>
     <string name="settings_rhythm_guard_alert_notifications_desc">Показывать уведомление когда уровень громкости или звука превышает безопасное значение</string>
@@ -2639,4 +2639,13 @@
     <string name="settings_min_duration_minutes">%1$d мин %2$d сек</string>
     <string name="settings_min_duration_seconds">%1$d секунд</string>
     <string name="settings_min_duration_minutes_only">%1$d минут</string>
+    <string name="folder_blocked_success">Заблокированые папки: %1$s</string>
+    <string name="folder_whitelisted_success">Разрешённые папки: %1$s</string>
+    <string name="error_folder_add_failed">Не удалось найти путь к папке. Пожалуйста, выберите другую папку.</string>
+    <string name="playback_quality_dialog_title">Качество воспроизведения аудио</string>
+    <string name="widget_tip_cookie_corners">Выберите действие для нижних углов виджета «Cookie»: пропуск, перемешивание, повтор, избранное или скрыть их</string>
+    <string name="widget_tip_stats_widget">Настройте период времени и нижний значок для виджета статистики</string>
+    <string name="widget_tip_resize_settings">Нажмите и удерживайте виджет, чтобы изменить его размер или открыть настройки</string>
+    <string name="settings_notifications_library_group">Библиотека и Синхронизация</string>
+    <string name="settings_notifications_system_group">Системное управление</string>
 </resources>
