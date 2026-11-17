@@ -2609,4 +2609,17 @@
     <string name="theme_intensity_vivid">鲜艳</string>
     <string name="theme_intensity_vivid_desc">最为明艳，具有丰富的动态饱和度</string>
     <string name="mainactivity_preparing">准备中……</string>
+    <string name="settings_crossfade_configuration">配置</string>
+    <string name="settings_crossfade_duration_help">调整两首歌曲的过渡时间。</string>
+    <string name="settings_show_liked_in_playlists">在播放列表中选择喜欢的歌曲</string>
+    <string name="settings_show_liked_in_playlists_desc">将喜欢的歌曲显示为播放列表</string>
+    <string name="settings_smart_playlist_recently_added">近期添加</string>
+    <string name="settings_smart_playlist_recently_added_desc">最新添加到您库中的歌曲</string>
+    <string name="settings_smart_playlist_most_played">最多播放</string>
+    <string name="settings_smart_playlist_most_played_desc">所有时间内你最多播放的歌曲</string>
+    <string name="settings_smart_playlist_on_repeat">循环播放</string>
+    <string name="settings_smart_playlist_on_repeat_desc">过去14天内你最常播放的歌曲</string>
+    <string name="settings_smart_playlist_forgotten_favorites">过去爱听</string>
+    <string name="settings_smart_playlist_forgotten_favorites_desc">有段时间没听过的过去你最爱的歌曲</string>
+    <string name="settings_smart_playlist_recently_played">最近播放</string>
 </resources>
