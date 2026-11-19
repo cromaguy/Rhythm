@@ -29,7 +29,7 @@
     <string name="settings_notifications_rhythm_pulse_group">享受音乐小提示</string>
     <string name="settings_update_notifications_merged_desc">获取新版本可安装提醒</string>
     <string name="settings_rhythm_guard_alert_notifications">听力安全警告</string>
-    <string name="settings_rhythm_guard_alert_notifications_desc">当音量或声音暴露超过安全线时立即弹窗警告</string>
+    <string name="settings_rhythm_guard_alert_notifications_desc">当音量或声音暴露超过安全线时显示警告</string>
     <string name="settings_rhythm_guard_timer_notifications">听歌休息助手</string>
     <string name="settings_rhythm_guard_timer_notifications_desc">显示预定休息时间倒计时的通知</string>
     <string name="settings_rhythm_pulse_notifications">特别功能 &amp; 小贴士</string>
@@ -2557,15 +2557,15 @@
     <string name="settings_notifications_system_group">系统控制</string>
     <string name="settings_library_operations_notifications">音乐库操作 &amp; 备份</string>
     <string name="settings_system_notification_channels">系统通知设置</string>
-    <string name="settings_system_notification_channels_desc">配置系统通知、声音、振动和锁屏行为</string>
+    <string name="settings_system_notification_channels_desc">配置系统通知、警告和行为</string>
     <string name="settings_notification_permission_title">需要通知权限</string>
-    <string name="settings_notification_permission_desc">启用通知，这样 Rhythm 就能显示媒体控制和后台任务更新。</string>
+    <string name="settings_notification_permission_desc">为媒体控制和后台任务启用通知。</string>
     <string name="settings_notification_permission_grant">启用通知</string>
     <string name="settings_queue_autofill">自动添加</string>
     <string name="settings_queue_display">队列展示</string>
     <string name="settings_respect_album_on_play">按照专辑和作者播放</string>
     <string name="settings_respect_album_on_play_desc">点击一个专辑 / 艺术家的一首歌曲，将继续播放后边的其他歌曲。</string>
-    <string name="settings_keep_shuffle_on_selection_desc">当从音乐库或播放列表中选择新歌时，保持启用随机播放。</string>
+    <string name="settings_keep_shuffle_on_selection_desc">当从选择新歌时，保持启用随机播放。</string>
     <string name="settings_mono_audio">单声道</string>
     <string name="settings_mono_audio_desc">把环绕声的声道混合起来，以供单边耳机使用。</string>
     <string name="device_mono_audio_title">单边耳机（单声道）</string>
@@ -2573,7 +2573,7 @@
     <string name="settings_show_remaining_time">显示剩余时间</string>
     <string name="settings_show_remaining_time_desc">在播放器页面显示剩余播放时长</string>
     <string name="settings_keep_shuffle_on_selection">选择歌曲时保持开启随机</string>
-    <string name="settings_library_operations_notifications_desc">为媒体索引和播放列表导入 / 导出显示进度通知</string>
+    <string name="settings_library_operations_notifications_desc">为媒体索引和播放列表操作显示进度通知</string>
     <string name="settings_audio_formats">音频格式</string>
     <string name="settings_allowed_formats">允许的格式</string>
     <string name="settings_allowed_formats_open_desc">选择要扫描入库的音频文件类型，这项更改会在下次启动时启动完整重扫描。</string>
@@ -2622,4 +2622,16 @@
     <string name="settings_smart_playlist_forgotten_favorites">过去爱听</string>
     <string name="settings_smart_playlist_forgotten_favorites_desc">有段时间没听过的过去你最爱的歌曲</string>
     <string name="settings_smart_playlist_recently_played">最近播放</string>
+    <string name="settings_smart_playlist_recently_played_desc">顺序排列的近期播放歌曲</string>
+    <string name="settings_smart_playlists">只能播放列表</string>
+    <string name="settings_active_smart_playlists">使用中的播放列表</string>
+    <string name="settings_default_playlists_summary">配置管理自动维护的智能播放列表</string>
+    <string name="settings_save_top_songs_as_playlist">保存为播放列表</string>
+    <string name="settings_saved_top_songs_playlist">创建包含%2$d首歌曲的播放列表“%1$s”</string>
+    <string name="playlist_on_repeat">循环播放</string>
+    <string name="playlist_forgotten_favorites">旧爱</string>
+    <string name="playlist_recently_played">最近播放</string>
+    <string name="folder_blocked_success">屏蔽的文件夹：%1$s</string>
+    <string name="folder_whitelisted_success">白名单文件夹：%1$s</string>
+    <string name="error_folder_add_failed">无法解析文件夹路径。请选择有效的文件夹。</string>
 </resources>
