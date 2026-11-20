@@ -460,7 +460,7 @@
     <string name="onboarding_backed_up_2">Restaure de arquivos ou da área de transferência com um toque</string>
     <string name="onboarding_audio_title">Experiência de áudio e reprodução</string>
     <string name="onboarding_audio_desc">Personalize sua experiência de áudio com feedback tátil, tela padrão, controles de volume, comportamento da fila, configurações do modo aleatório, exibição de letras e configurações do equalizador.</string>
-    <string name="onboarding_lyrics_sources">API: letras online • Incorporado: letras de metadados • Local: arquivos .lrc</string>
+    <string name="onboarding_lyrics_sources">Integrações: letras externas • Incorporado: letras de metadados • Local: arquivos .lrc</string>
     <string name="onboarding_additional_features">Recursos de áudio adicionais</string>
     <string name="onboarding_equalizer_desc">Equalizador: ajuste com precisão as frequências de áudio em Configurações &gt; Equalizador</string>
     <string name="onboarding_sleep_timer_desc">Temporizador: para a reprodução automaticamente após o tempo definido (acesse pela tela \"Tocando agora\")</string>
@@ -605,7 +605,7 @@
     <!-- Onboarding: Integrations Step -->
     <string name="onboarding_integrations_title">Conecte seus serviços</string>
     <string name="onboarding_integrations_desc">Melhore sua experiência de escuta conectando-se a serviços externos. Obtenha capas de álbum, letras, faça scrobble das suas reproduções e compartilhe o que está ouvindo.</string>
-    <string name="onboarding_integrations_apis">Serviços de API</string>
+    <string name="onboarding_integrations_apis">Serviços de integração</string>
     <string name="onboarding_integration_deezer">Deezer</string>
     <string name="onboarding_integration_lrclib">LRCLib</string>
     <string name="onboarding_integration_ytmusic">YouTube Music</string>
@@ -719,7 +719,7 @@
     <string name="backup_all_settings_placeholder">Todas as configurações, playlists, temas e personalização da biblioteca</string>
     <string name="backup_restore_tap_placeholder">Restaure de arquivos ou da área de transferência com um toque</string>
     <string name="backup_local_storage_placeholder">Backups armazenados localmente no seu dispositivo para maior privacidade</string>
-    <string name="external_services_desc">Escolha quais serviços online o Rhythm usa para letras, imagens de artistas e capas de álbum animadas. Desative os que você não precisa para reduzir o uso de dados.</string>
+    <string name="external_services_desc">Escolha quais integrações o Rhythm usa para letras, imagens de artistas e capas de álbum animadas. Desative os que você não precisa para reduzir o uso de dados.</string>
     <string name="lyrics_source_priority_title">Prioridade da fonte das letras</string>
     <string name="queue_action_title">Adicionando uma música</string>
     <string name="queue_action_choose">O que deve acontecer com a fila atual?</string>
@@ -743,7 +743,7 @@
     <string name="theme_quick_presets">Predefinições rápidas</string>
     <!-- Services -->
     <string name="external_services">Serviços externos</string>
-    <string name="api_services">APIs integradas</string>
+    <string name="api_services">Integrações</string>
     <!-- Scrobbling -->
     
     <!-- Discord Rich Presence -->
@@ -1413,7 +1413,7 @@
     <string name="settings_lyrics_cache_clear_failed">Falha ao limpar o cache de letras</string>
     <string name="settings_all_cache_cleared">Todo o cache limpo</string>
     <string name="settings_cache_clear_failed">Falha ao limpar o cache</string>
-    <string name="settings_cache_restart_required">O cache foi limpo. Reinicie o app para atualizar tudo corretamente. As capas de álbum serão restauradas no próximo escaneamento da biblioteca.</string>
+    <string name="settings_cache_restart_required">O cache foi limpo. Reinicie o app para atualizar tudo corretamente. As capas dos álbuns serão recarregadas automaticamente quando necessário.</string>
     <string name="settings_clear_all_cache">Limpar todo o cache</string>
     <string name="settings_clear_all_cache_desc">Remove todos os dados em cache, incluindo entradas de cache de capas incorporadas</string>
     <string name="settings_cache_info_1">O cache armazena capas de álbuns, letras e arquivos temporários</string>
@@ -2009,9 +2009,9 @@
     <string name="homescreencustomizationsettingsscreen_immersive_mode_is_active">O modo imersivo está ativo. Apenas os controles de descoberta compatíveis são exibidos.</string>
     <string name="homescreencustomizationsettingsscreen_album_count">Número de álbuns</string>
     <string name="librarysettingsscreen_autofetch_artwork">Obter capas ausentes de faixas automaticamente</string>
-    <string name="lyricssourcesettingsscreen_online_api_options">Opções de API online</string>
+    <string name="lyricssourcesettingsscreen_online_api_options">Opções de integração</string>
     <string name="lyricssourcesettingsscreen_lyrics_api_priority">Prioridade das APIs de letras</string>
-    <string name="lyricssourcesettingsscreen_choose_which_online_lyrics">Escolha em qual API de letras online pesquisar primeiro</string>
+    <string name="lyricssourcesettingsscreen_choose_which_online_lyrics">Escolha em qual integração de letras pesquisar primeiro</string>
     <string name="lyricssourcesettingsscreen_retry_using_fallbacks">Tentar novamente com as alternativas</string>
     <string name="lyricssourcesettingsscreen_embedded_lyrics_are_stored">• Letras embutidas ficam salvas nos seus arquivos de áudio</string>
     <string name="miniplayercustomizationsettingsscreen_miniplayer_theme">Tema do miniplayer</string>
@@ -2160,9 +2160,9 @@
     <string name="settings_tip_miniplayer_inactive_desc_2">O modo compacto está mais minimalista agora. Ative o progresso para facilitar a visualização rápida.</string>
     <!-- Lyrics Source Dialog -->
     <string name="lyrics_source_embedded_first">Incorporadas primeiro</string>
-    <string name="lyrics_source_embedded_first_desc">Tenta metadados de arquivos de áudio → APIs online → arquivos .lrc</string>
+    <string name="lyrics_source_embedded_first_desc">Tenta metadados de arquivos de áudio → integrações → arquivos .lrc</string>
     <string name="lyrics_source_api_first">API primeiro</string>
-    <string name="lyrics_source_api_first_desc">Tenta serviços online → metadados de áudio → arquivos .lrc</string>
+    <string name="lyrics_source_api_first_desc">Tenta integrações → metadados de áudio → arquivos .lrc</string>
     <!-- Font / Color Customization Dialogs -->
     <string name="theme_font_source_changed_restart">A origem da fonte foi alterada. Reinicie o app para aplicar a nova fonte.</string>
     <string name="color_source_album_art">Baseada na capa</string>
@@ -2216,11 +2216,11 @@
     <string name="lyrics_settings_autohide_controls">Ocultar automaticamente os controles das letras</string>
     <string name="lyrics_settings_autohide_controls_desc">Oculta controles de reprodução após inatividade no modo de letras em tela cheia</string>
     <string name="lyrics_settings_embedded_first">Incorporadas primeiro</string>
-    <string name="lyrics_settings_embedded_first_desc">Prioriza letras incorporadas nos arquivos de áudio e usa APIs online como alternativa</string>
-    <string name="lyrics_settings_online_first">Online primeiro</string>
-    <string name="lyrics_settings_online_first_desc">Prioriza APIs online (Rhythm palavra por palavra, LRCLib) e usa letras incorporadas como alternativa</string>
+    <string name="lyrics_settings_embedded_first_desc">Letras incorporadas nos metadados de áudio</string>
+    <string name="lyrics_settings_online_first">Integrações primeiro</string>
+    <string name="lyrics_settings_online_first_desc">Letras de integrações externas</string>
     <string name="lyrics_settings_local_first">Local primeiro</string>
-    <string name="lyrics_settings_local_first_desc">Prioriza arquivos .lrc locais, depois letras incorporadas e, por fim, APIs online</string>
+    <string name="lyrics_settings_local_first_desc">Arquivos .lrc locais no armazenamento</string>
     <string name="lyrics_settings_lyrically_first">Lyrically primeiro</string>
     <string name="lyrics_settings_lrclib_first">LRCLib primeiro</string>
     <string name="lyrics_settings_fallback_apis_desc">Tenta APIs alternativas se a API preferida não retornar letras</string>
@@ -2244,7 +2244,7 @@
     <string name="lyrics_settings_disable_animations_desc">Desativa transições e animações na visualização de letras</string>
     <string name="lyrics_settings_word_by_word_translation">Sincronização automática de palavras</string>
     <string name="lyrics_settings_word_by_word_translation_desc">Estima a duração das palavras para letras sincronizadas proporcionalmente</string>
-    <string name="lyrics_settings_info_bullets">Fontes de letras:\n• LRCLib — letras sincronizadas linha por linha gratuitamente\n• BetterLyrics — letras no estilo karaokê palavra por palavra\n• Lyrically — sincronização palavra por palavra de alta qualidade\n\nDefina a ordem de preferência das fontes em Prioridade da API de Letras.</string>
+    <string name="lyrics_settings_info_bullets">Fontes de letras:\n• LRCLib — letras sincronizadas linha por linha\n• BetterLyrics — letras sincronizadas palavra por palavra\n• Lyrically — letras sincronizadas palavra por palavra\n\nDefina a ordem de preferência das fontes em Prioridade da API de Letras.</string>
     <!-- AutoEQ Preset Picker additions -->
     <string name="autoeqpresetpickerbottomsheet_search_presets">Pesquisar predefinições…</string>
     <string name="autoeqpresetpickerbottomsheet_disable">Nenhuma / desativar AutoEQ</string>
@@ -2532,7 +2532,7 @@
     <string name="replay_gain_preamp_untagged_desc">Ganho de volume para faixas sem tags ReplayGain.</string>
     <string name="replay_gain_configuration">Configuração</string>
     <!-- Playback Settings Screen Extra -->
-    <string name="settingsscreen_audio_offload_desc">Decodificação de áudio acelerada por hardware para economizar energia do dispositivo</string>
+    <string name="settingsscreen_audio_offload_desc">Decodificação de áudio acelerada por hardware para economizar energia do dispositivo.</string>
     <!-- Backup & Restore Sections picker extra strings -->
     <string name="backup_restore_section_core">Núcleo</string>
     <string name="backup_restore_section_core_desc">Preferências de tema, player, interface, API e do app.</string>
@@ -2665,7 +2665,7 @@
     <string name="onboarding_library_tab_order_desc">Personalize e reordene as abas de navegação da sua biblioteca</string>
     <string name="onboarding_integration_betterlyrics">BetterLyrics</string>
     <string name="onboarding_integration_wikipedia">Wikipédia</string>
-    <string name="onboarding_integration_wikipedia_desc">Busca detalhes e descrição do álbum para a seção \"Sobre\"</string>
+    <string name="onboarding_integration_wikipedia_desc">Metadados de álbuns e descrições de artistas</string>
     <string name="playlist_no_songs_yet_desc">Comece a montar sua playlist adicionando algumas músicas</string>
     <string name="playlist_search_no_matches_desc">Tente uma pesquisa diferente</string>
     <string name="playlist_add_songs_button">Adicionar músicas</string>
@@ -2708,11 +2708,11 @@
     <string name="settings_artist_artwork_source">Fonte das imagem dos artistas</string>
     <string name="settings_artist_artwork_source_desc">Escolha a fonte preferida para as capas dos artistas</string>
     <string name="settings_artist_artwork_source_prefer_local">Prioriza imagem local, depois API</string>
-    <string name="settings_artist_artwork_source_prefer_local_desc">Verifica primeiro a arte da pasta local e, se necessário, utiliza a API online do Deezer</string>
+    <string name="settings_artist_artwork_source_prefer_local_desc">Capas de álbuns de pastas locais com integração ao Deezer</string>
     <string name="settings_artist_artwork_source_local_only">Apenas imagens locais</string>
     <string name="settings_artist_artwork_source_local_only_desc">Usa apenas imagens locais e pastas com imagens salvas no local</string>
-    <string name="settings_artist_artwork_source_api_only">Apenas API online (Deezer)</string>
-    <string name="settings_artist_artwork_source_api_only_desc">Busca capas de artistas exclusivamente pela API online do Deezer</string>
+    <string name="settings_artist_artwork_source_api_only">Apenas integrações (Deezer)</string>
+    <string name="settings_artist_artwork_source_api_only_desc">Busca capas de artistas exclusivamente pela integração com o Deezer</string>
     <string name="settings_artist_artwork_source_disabled">Desativado</string>
     <string name="settings_artist_artwork_source_disabled_desc">Não busca nem carrega capas para os artistas</string>
     <string name="settings_tab_liked">Curtidas</string>
@@ -2790,15 +2790,15 @@
     <string name="about_copy_system_info">Copiar informações do sistema</string>
     <string name="about_copy_system_info_desc">Copia todos os detalhes de versão e hardware para a área de transferência</string>
     <string name="about_copied_format">%1$s copiado!</string>
-    <string name="api_deezer_desc">Imagens de artistas e capas de álbum gratuitas — sem necessidade de configuração</string>
-    <string name="api_lrclib_desc">Letras sincronizadas linha por linha gratuitas (alternativa)</string>
-    <string name="api_betterlyrics_desc">Letras sincronizadas palavra por palavra (modo karaokê)</string>
-    <string name="api_lyrically_desc">Letras sincronizadas palavra por palavra (qualidade máxima)</string>
+    <string name="api_deezer_desc">Imagens de artistas e capas de álbum</string>
+    <string name="api_lrclib_desc">Letras sincronizadas linha por linha</string>
+    <string name="api_betterlyrics_desc">Letras sincronizadas palavra por palavra</string>
+    <string name="api_lyrically_desc">Letras sincronizadas palavra por palavra</string>
     <string name="api_apple_motion_canvas">Canvas animado do Apple Music</string>
     <string name="api_apple_motion_canvas_desc">Capa de álbum animada e dinâmica - %1$s</string>
     <string name="api_apple_canvas_wifi">Apenas no Wi-Fi</string>
     <string name="api_apple_canvas_both">Wi-Fi e dados móveis</string>
-    <string name="api_ytmusic_desc">Alternativa para imagens de artista e capas de álbum</string>
+    <string name="api_ytmusic_desc">Imagens de artista e capas de álbum</string>
     <string name="backup_restore_queued_message">O escaneamento de mídia está em andamento. A restauração foi colocada na fila e será aplicada automaticamente quando o escaneamento terminar.</string>
     <string name="backup_restore_blocked_message">Não é possível criar um backup enquanto um escaneamento de mídia está em andamento. Por favor, aguarde o escaneamento terminar.</string>
     <string name="backup_restore_queued_completed_title">Restauração colocada na fila concluída</string>
@@ -2932,7 +2932,7 @@
     <string name="settings_home_hide_unused_sections_desc">Oculta as seções da tela inicial que você não usa</string>
     <string name="settings_home_widget_counts_desc">Exibe a contagem de itens nos widgets da tela inicial</string>
     <string name="settings_widget_theme_desc">Escolha o estilo do widget da tela inicial</string>
-    <string name="lyrics_api_priority_desc">Prioriza o Lyrically ou o LRCLib para buscar letras online</string>
+    <string name="lyrics_api_priority_desc">Seleciona a prioridade de integração de letras padrão</string>
     <string name="lyrics_api_fallback_desc">Tenta APIs alternativas se a API preferida não retornar as letras</string>
     <string name="api_github_desc">Integração com o GitHub para lançamentos e atualizações</string>
     <string name="api_app_updates_desc">Ativa a verificação de atualizações e informações de lançamento</string>
@@ -2943,7 +2943,7 @@
     <string name="settings_search_api_deezer_desc">Busca imagens de artista e capas de álbum no Deezer</string>
     <string name="settings_search_api_lrclib_desc">Busca letras sincronizadas no LRCLib</string>
     <string name="settings_search_api_lyrically_desc">Busca letras no serviço Lyrically</string>
-    <string name="settings_search_api_ytmusic_desc">Alternativa para imagens de artista e capas de álbum</string>
+    <string name="settings_search_api_ytmusic_desc">Imagens de artista e capas de álbum</string>
     <string name="widget_cookie_description">Um miniplayer em formato de cookie, mostrando a capa do álbum com botões de tocar, anterior e próxima.</string>
     <string name="widget_stats_description">Veja quantos dias seguidos você tem escutado música — além da sua melhor sequência de todos os tempos.</string>
     <string name="widget_cookie_section_title">Widget de cookie do Rhythm</string>
@@ -3152,4 +3152,76 @@
     <string name="eq_device_no_profile">Nenhum perfil AutoEQ vinculado</string>
     <string name="eq_manage_all_devices">Gerenciar Dispositivos</string>
     <string name="eq_reorder">Reordenar</string>
+    <string name="folder_blocked_success">Pasta bloqueada: %1$s</string>
+    <string name="folder_whitelisted_success">Pasta adicionada à Lista de permissões: %1$s</string>
+    <string name="error_folder_add_failed">Não foi possível resolver o caminho da pasta. Por favor, selecione uma pasta válida.</string>
+    <string name="settings_expressive_quality_badge_always_visible">Manter o indicador de qualidade visível</string>
+    <string name="settings_expressive_quality_badge_always_visible_desc">Mostra o indicador de qualidade de áudio permanentemente no Player Expressivo ao invés de escondê-lo automaticamente após 5 segundos</string>
+    <string name="playback_quality_dialog_title">Qualidade da reprodução de áudio</string>
+    <string name="playback_quality_decoded_stream">Stream decodificada</string>
+    <string name="playback_quality_output_pipeline">Pipeline de saída</string>
+    <string name="playback_quality_device">Dispositivo de destino</string>
+    <string name="playback_quality_decoder">Motor de decodificação</string>
+    <string name="playback_quality_sample_rate">Taxa de amostragem</string>
+    <string name="playback_quality_bit_depth">Profundidade de bits</string>
+    <string name="playback_quality_bitrate">Taxa de bits</string>
+    <string name="playback_quality_channels">Canais</string>
+    <string name="playback_quality_transmission">Transmissão</string>
+    <string name="playback_quality_resampling">Status de pipeline</string>
+    <string name="playback_quality_view_full_metadata">Metadados</string>
+    <string name="playback_quality_audio_output">Saída de áudio</string>
+    <string name="settings_category_native_capabilities_title">Recursos nativos</string>
+    <string name="settings_category_native_capabilities_desc">Inspeciona especificações de hardware, arquitetura da CPU, tela e pipeline de áudio do dispositivo</string>
+    <string name="settings_category_external_capabilities_title">Recursos externos</string>
+    <string name="settings_category_external_capabilities_desc">Gerencia o motor de áudio por software, os decodificadores por software e o processamento de saída</string>
+    <string name="settings_category_device_capabilities_title">Recursos nativos</string>
+    <string name="settings_category_device_capabilities_desc">Inspeciona especificações de hardware, arquitetura da CPU, tela e pipeline de áudio do dispositivo</string>
+    <string name="settings_category_audio_capabilities_title">Recursos externos</string>
+    <string name="settings_category_audio_capabilities_desc">Gerencia o motor de áudio por software, os decodificadores por software e o processamento de saída</string>
+    <string name="settings_category_audio_engine_title">Recursos externos</string>
+    <string name="settings_category_audio_engine_desc">Gerencia o motor de áudio por software, os decodificadores por software e o processamento de saída</string>
+    <string name="settings_external_caps_master_title">Recursos externos</string>
+    <string name="settings_external_caps_master_desc">Processamento de áudio por software e decodificadores externos</string>
+    <string name="settings_native_caps_soc">Hardware e SoC</string>
+    <string name="settings_native_caps_platform">Plataforma e build</string>
+    <string name="settings_native_caps_display">Tela e visor</string>
+    <string name="settings_native_caps_pipeline">Pipeline de áudio de hardware</string>
+    <string name="settings_native_caps_endpoints">Endpoints de saída de áudio</string>
+    <string name="settings_native_caps_hw_decoders">Decodificadores de áudio por hardware</string>
+    <string name="settings_external_caps_engine">Configuração do motor de áudio</string>
+    <string name="settings_external_caps_sw_decoders">Decodificadores de áudio por software</string>
+    <string name="settings_external_caps_reset">Redefinir substituições de software</string>
+    <string name="settings_external_caps_reset_desc">Reabilita todos os decodificadores de software e restaura o pipeline do motor padrão</string>
+    <string name="settings_external_caps_reset_toast">Motor de áudio de software redefinido para os padrões</string>
+    <string name="settings_devcaps_playback_readiness">Prontidão para reprodução</string>
+    <string name="settings_devcaps_audio_pipeline">Hardware e pipeline de áudio</string>
+    <string name="settings_devcaps_codecs_decoders">Codecs e decodificadores</string>
+    <string name="settings_devcaps_system_architecture">Arquitetura do sistema</string>
+    <string name="settings_devcaps_copy_report">Copiar relatório de diagnóstico</string>
+    <string name="settings_devcaps_report_copied">Relatório de diagnóstico copiado para a área de transferência</string>
+    <string name="settings_audio_engine_active_decoder">Decodificador ativo</string>
+    <string name="settings_audio_engine_prefer_hw">Preferir decodificadores de hardware</string>
+    <string name="settings_audio_engine_prefer_hw_desc">Prioriza codecs de hardware no chip em vez de emulação por software</string>
+    <string name="settings_audio_engine_float_output">Saída 32-Bit PCM Float</string>
+    <string name="settings_audio_engine_float_output_desc">Entrega áudio dinâmico em ponto flutuante completo para hardwares suportados quando os efeitos de DSP por software e a velocidade/tom variável estiverem inativos</string>
+    <string name="settings_audio_engine_manage_decoders">Decodificadores de áudio</string>
+    <string name="settings_audio_engine_reset">Restaurar decodificadores</string>
+    <string name="settings_audio_engine_reset_desc">Reativa todos os decodificadores de áudio de plataforma e de hardware</string>
+    <string name="settings_audio_engine_reset_toast">Todos os decodificadores restaurados para os padrões do sistema</string>
+    <string name="settings_category_decoder_extensions_title">Extensões de decodificadores</string>
+    <string name="settings_category_decoder_extensions_desc">Gerencie motores de áudio externos, plugins FFmpeg e decodificadores ExoPlayer inativos</string>
+    <string name="settings_decoder_extensions_engines_section">Motores de extensão</string>
+    <string name="settings_decoder_extensions_codecs_section">Recursos de codec extendidos</string>
+    <string name="settings_decoder_extensions_empty_title">Nenhuma extensão encontrada</string>
+    <string name="settings_decoder_extensions_empty_desc">Nenhuma extensão de decodificador ou codec corresponde ao filtro selecionado.</string>
+    <string name="settings_decoder_extensions_not_supported_exoplayer">Não suportado pelo ExoPlayer</string>
+    <string name="settings_decoder_extensions_supported_ffmpeg">Decodificado via extensão FFmpeg</string>
+    <string name="settings_decoder_extensions_supported_midi">Sintetizado via extensão MIDI</string>
+    <string name="settings_decoder_extensions_reset">Restaurar extensões de decodificadores</string>
+    <string name="settings_decoder_extensions_reset_desc">Reativa todas as extensões de decodificadores externos para o estado padrão</string>
+    <string name="settings_decoder_extensions_reset_toast">Extensões de decodificadores restauradas para o padrão</string>
+    <string name="settings_native_caps_no_decoders_title">Nenhum decodificador de hardware encontrado</string>
+    <string name="settings_native_caps_no_decoders_desc">Seu dispositivo utiliza decodificadores de software do sistema Android.</string>
+    <string name="settings_external_caps_no_decoders_title">Nenhum decodificador encontrado</string>
+    <string name="settings_external_caps_no_decoders_desc">Nenhum decodificador de áudio por software corresponde ao filtro selecionado.</string>
 </resources>
