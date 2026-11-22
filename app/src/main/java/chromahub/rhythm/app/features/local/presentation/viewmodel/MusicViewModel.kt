@@ -2174,19 +2174,18 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                 Log.d(TAG, "Ignoring false-positive startup MediaStore observer callback ($timeSinceRegistration ms since registration)")
                 return@registerMediaStoreObserver
             }
-            Log.d(TAG, "MediaStore changed, scheduling incremental scan")
+            Log.d(TAG, "MediaStore changed, scheduling debounce check for refresh")
             mediaStoreRefreshJob?.cancel()
             mediaStoreRefreshJob = viewModelScope.launch {
-                var lastChangeMs = SystemClock.elapsedRealtime()
-                while (true) {
-                    delay(2000)
-                    val elapsedSinceLastChange = SystemClock.elapsedRealtime() - lastChangeMs
-                    if (elapsedSinceLastChange >= 1900) {
-                        break
-                    }
-                    lastChangeMs = SystemClock.elapsedRealtime()
+                delay(2000) // Debounce window
+                val lastScan = appSettings.lastScanTimestamp.value
+                val cachedCount = _songs.value.size
+                if (repository.isLibraryStale(lastScan, cachedCount)) {
+                    Log.d(TAG, "MediaStore changed and library is stale. Performing full refresh.")
+                    performMediaStoreRefresh()
+                } else {
+                    Log.d(TAG, "MediaStore callback received, but library is up-to-date. Skipping refresh.")
                 }
-                performIncrementalScan()
             }
         }
         
