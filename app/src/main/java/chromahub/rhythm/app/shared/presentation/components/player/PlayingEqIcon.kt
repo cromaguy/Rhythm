@@ -25,6 +25,29 @@ import androidx.compose.ui.graphics.Color
 import kotlin.math.PI
 import kotlin.math.sin
 
+object PlayingEqIconDefaults {
+    data class EqLayout(
+        val barW: Float,
+        val gap: Float,
+        val startX: Float,
+        val totalBarsWidth: Float
+    )
+
+    fun calculateEqLayout(
+        width: Float,
+        bars: Int = 3,
+        gapFraction: Float = 0.30f
+    ): EqLayout {
+        if (width <= 0f || bars <= 0) return EqLayout(0f, 0f, 0f, 0f)
+        val totalUnits = bars + (bars - 1) * gapFraction
+        val barW = width / totalUnits
+        val gap = barW * gapFraction
+        val totalBarsWidth = bars * barW + (bars - 1) * gap
+        val startX = ((width - totalBarsWidth) / 2f).coerceAtLeast(0f)
+        return EqLayout(barW, gap, startX, totalBarsWidth)
+    }
+}
+
 @Composable
 fun PlayingEqIcon(
     modifier: Modifier = Modifier,
@@ -75,10 +98,11 @@ fun PlayingEqIcon(
         val w = size.width
         val h = size.height
 
-        // Layout bars
-        val tentativeBarW = w / (bars + (bars - 1) * (1f + gapFraction))
-        val gap = tentativeBarW * gapFraction
-        val barW = tentativeBarW
+        // Layout bars with centered symmetry and mathematically exact unit divisor
+        val layout = PlayingEqIconDefaults.calculateEqLayout(w, bars, gapFraction)
+        val barW = layout.barW
+        val gap = layout.gap
+        val startX = layout.startX
         val corner = CornerRadius(barW / 2f, barW / 2f)
 
         repeat(bars) { i ->
@@ -103,7 +127,7 @@ fun PlayingEqIcon(
             val blendedH = dotH + (barH - dotH) * activity
 
             val top = (h - blendedH) / 2f
-            val left = i * (barW + gap)
+            val left = startX + i * (barW + gap)
 
             drawRoundRect(
                 color = color,
