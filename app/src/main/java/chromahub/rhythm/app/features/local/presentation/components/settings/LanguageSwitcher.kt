@@ -19,6 +19,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -44,38 +45,42 @@ import androidx.compose.ui.res.stringResource
 data class LanguageOption(
     val code: String,
     val displayName: String,
-    val nativeName: String
+    val nativeName: String,
+    val translationPercentage: Int = 100
 )
 
 object LanguageHelper {
     val supportedLanguages = listOf(
-        LanguageOption("en", "English", "English"),
-        LanguageOption("ar", "Arabic", "العربية"),
-        LanguageOption("bn", "Bengali", "বাংলা"),
-        LanguageOption("de", "German", "Deutsch"),
-        LanguageOption("es", "Spanish", "Español"),
-        LanguageOption("et", "Estonian", "Eesti"),
-        LanguageOption("fr", "French", "Français"),
-        LanguageOption("fr-CA", "French (Canada)", "Français (Canada)"),
-        LanguageOption("hi", "Hindi", "हिन्दी"),
-        LanguageOption("id", "Indonesian", "Bahasa Indonesia"),
-        LanguageOption("it", "Italian", "Italiano"),
-        LanguageOption("ja", "Japanese", "日本語"),
-        LanguageOption("ko", "Korean", "한국어"),
-        LanguageOption("nl", "Dutch", "Nederlands"),
-        LanguageOption("pl", "Polish", "Polski"),
-        LanguageOption("pt", "Portuguese", "Português"),
-        LanguageOption("pt-BR", "Portuguese (Brazil)", "Português (Brasil)"),
-        LanguageOption("ru", "Russian", "Русский"),
-        LanguageOption("sv", "Swedish", "Svenska"),
-        LanguageOption("ta", "Tamil", "தமிழ்"),
-        LanguageOption("th", "Thai", "ไทย"),
-        LanguageOption("tr", "Turkish", "Türkçe"),
-        LanguageOption("uk", "Ukrainian", "Українська"),
-        LanguageOption("uz", "Uzbek", "Oʻzbekcha"),
-        LanguageOption("vi", "Vietnamese", "Tiếng Việt"),
-        LanguageOption("zh", "Chinese (Simplified)", "简体中文"),
-        LanguageOption("zh-TW", "Chinese (Traditional)", "繁體中文")
+        LanguageOption("en", "English", "English", 100),
+        LanguageOption("ar", "Arabic", "العربية", 78),
+        LanguageOption("be", "Belarusian", "Беларуская", 1),
+        LanguageOption("bn", "Bengali", "বাংলা", 78),
+        LanguageOption("de", "German", "Deutsch", 79),
+        LanguageOption("el", "Greek", "Ελληνικά", 2),
+        LanguageOption("es", "Spanish", "Español", 87),
+        LanguageOption("et", "Estonian", "Eesti", 7),
+        LanguageOption("fr", "French", "Français", 85),
+        LanguageOption("fr-CA", "French (Canada)", "Français (Canada)", 78),
+        LanguageOption("hi", "Hindi", "हिन्दी", 78),
+        LanguageOption("hy", "Armenian", "Հայերեն", 1),
+        LanguageOption("id", "Indonesian", "Bahasa Indonesia", 95),
+        LanguageOption("it", "Italian", "Italiano", 78),
+        LanguageOption("ja", "Japanese", "日本語", 80),
+        LanguageOption("ko", "Korean", "한국어", 78),
+        LanguageOption("nl", "Dutch", "Nederlands", 78),
+        LanguageOption("pl", "Polish", "Polski", 78),
+        LanguageOption("pt", "Portuguese", "Português", 78),
+        LanguageOption("pt-BR", "Portuguese (Brazil)", "Português (Brasil)", 100),
+        LanguageOption("ru", "Russian", "Русский", 79),
+        LanguageOption("sv", "Swedish", "Svenska", 78),
+        LanguageOption("ta", "Tamil", "தமிழ்", 78),
+        LanguageOption("th", "Thai", "ไทย", 78),
+        LanguageOption("tr", "Turkish", "Türkçe", 78),
+        LanguageOption("uk", "Ukrainian", "Українська", 78),
+        LanguageOption("uz", "Uzbek", "Oʻzbekcha", 0),
+        LanguageOption("vi", "Vietnamese", "Tiếng Việt", 78),
+        LanguageOption("zh", "Chinese (Simplified)", "简体中文", 81),
+        LanguageOption("zh-TW", "Chinese (Traditional)", "繁體中文", 80)
     )
     
     fun getCurrentLanguage(context: Context): String {
@@ -98,7 +103,9 @@ object LanguageHelper {
         
         // Try to match by language code (e.g. fr, pt, zh)
         val languageCode = locale.language
-        val codeMatch = supportedLanguages.firstOrNull { it.code.equals(languageCode, ignoreCase = true) }
+        val codeMatch = supportedLanguages.firstOrNull {
+            it.code.equals(languageCode, ignoreCase = true) || (it.code == "id" && languageCode == "in")
+        }
         if (codeMatch != null) return codeMatch.code
         
         return "en" // default fallback
@@ -206,13 +213,43 @@ fun LanguageSwitcherBottomSheet(
                                 )
                             }
 
-                            if (isSelected) {
-                                Icon(
-                                    imageVector = RhythmIcons.CheckCircle,
-                                    contentDescription = stringResource(R.string.streaming_selected),
-                                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                    modifier = Modifier.size(24.dp)
-                                )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                Surface(
+                                    shape = CircleShape,
+                                    color = if (isSelected) {
+                                        MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.14f)
+                                    } else if (language.translationPercentage >= 95) {
+                                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f)
+                                    } else {
+                                        MaterialTheme.colorScheme.surfaceContainerHighest
+                                    }
+                                ) {
+                                    Text(
+                                        text = "${language.translationPercentage}%",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (isSelected) {
+                                            MaterialTheme.colorScheme.onPrimaryContainer
+                                        } else if (language.translationPercentage >= 95) {
+                                            MaterialTheme.colorScheme.onPrimaryContainer
+                                        } else {
+                                            MaterialTheme.colorScheme.onSurfaceVariant
+                                        },
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                    )
+                                }
+
+                                if (isSelected) {
+                                    Icon(
+                                        imageVector = RhythmIcons.CheckCircle,
+                                        contentDescription = stringResource(R.string.streaming_selected),
+                                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        modifier = Modifier.size(22.dp)
+                                    )
+                                }
                             }
                         }
                     }
