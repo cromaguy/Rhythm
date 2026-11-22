@@ -456,18 +456,32 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
 
 
     private val repeatCommand: CommandButton
-        get() = when (val mode = controller?.repeatMode ?: Player.REPEAT_MODE_OFF) {
-            Player.REPEAT_MODE_OFF -> customCommands[2]
-            Player.REPEAT_MODE_ALL -> customCommands[3]
-            Player.REPEAT_MODE_ONE -> customCommands[4]
-            else -> customCommands[2] // Fallback to REPEAT_MODE_OFF command
+        get() {
+            val mode = if (::player.isInitialized) {
+                player.repeatMode
+            } else {
+                controller?.repeatMode ?: Player.REPEAT_MODE_OFF
+            }
+            return when (mode) {
+                Player.REPEAT_MODE_OFF -> customCommands[2]
+                Player.REPEAT_MODE_ALL -> customCommands[3]
+                Player.REPEAT_MODE_ONE -> customCommands[4]
+                else -> customCommands[2] // Fallback to REPEAT_MODE_OFF command
+            }
         }
 
     private val shuffleCommand: CommandButton
-        get() = if (controller?.shuffleModeEnabled == true) {
-            customCommands[1]
-        } else {
-            customCommands[0]
+        get() {
+            val isShuffle = if (::player.isInitialized) {
+                player.shuffleModeEnabled
+            } else {
+                controller?.shuffleModeEnabled == true
+            }
+            return if (isShuffle) {
+                customCommands[1]
+            } else {
+                customCommands[0]
+            }
         }
 
     private fun getCurrentFavoriteCommand(): CommandButton {
@@ -1011,6 +1025,14 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
         // Add listener to initialize audio effects when session ID is ready and handle errors
         // Store reference for proper cleanup in onDestroy
         playerListener = object : Player.Listener {
+            override fun onRepeatModeChanged(repeatMode: Int) {
+                this@MediaPlaybackService.onRepeatModeChanged(repeatMode)
+            }
+
+            override fun onShuffleModeEnabledChanged(shuffleModeEnabled: Boolean) {
+                this@MediaPlaybackService.onShuffleModeEnabledChanged(shuffleModeEnabled)
+            }
+
             override fun onTimelineChanged(timeline: androidx.media3.common.Timeline, reason: Int) {
                 if (::preloadController.isInitialized) {
                     val mediaItems = mutableListOf<MediaItem>()
@@ -1694,8 +1716,8 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
             mediaSession?.setCustomLayout(ImmutableList.of(currentShuffleCommand, currentRepeatCommand))
             
             // Update state tracking after successful update
-            lastShuffleState = controller?.shuffleModeEnabled ?: false
-            lastRepeatMode = controller?.repeatMode ?: Player.REPEAT_MODE_OFF
+            lastShuffleState = if (::player.isInitialized) player.shuffleModeEnabled else (controller?.shuffleModeEnabled ?: false)
+            lastRepeatMode = if (::player.isInitialized) player.repeatMode else (controller?.repeatMode ?: Player.REPEAT_MODE_OFF)
             lastFavoriteState = isCurrentSongFavorite()
             
             val currentMediaItem = player.currentMediaItem
@@ -1713,8 +1735,16 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
         // This helps prevent unnecessary recreations and flickering
         mediaSession?.let { session ->
             try {
-                val currentShuffleState = controller?.shuffleModeEnabled ?: false
-                val currentRepeatMode = controller?.repeatMode ?: Player.REPEAT_MODE_OFF
+                val currentShuffleState = if (::player.isInitialized) {
+                    player.shuffleModeEnabled
+                } else {
+                    controller?.shuffleModeEnabled ?: false
+                }
+                val currentRepeatMode = if (::player.isInitialized) {
+                    player.repeatMode
+                } else {
+                    controller?.repeatMode ?: Player.REPEAT_MODE_OFF
+                }
                 val currentFavoriteState = isCurrentSongFavorite()
                 
                 // Check if anything actually changed
@@ -2554,8 +2584,8 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
             args: Bundle
         ): ListenableFuture<SessionResult> {
             val serviceController = this@MediaPlaybackService.controller
-            if (serviceController == null) {
-                Log.w(TAG, "Controller not ready for custom command: ${customCommand.customAction}")
+            if (serviceController == null && !::player.isInitialized) {
+                Log.w(TAG, "Neither controller nor player ready for custom command: ${customCommand.customAction}")
                 return Futures.immediateFuture(SessionResult(SessionError.ERROR_SESSION_DISCONNECTED))
             }
             
@@ -2613,27 +2643,77 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
                     }
 
                     SHUFFLE_MODE_ON -> {
-                        serviceController.shuffleModeEnabled = true
+                        serviceController?.shuffleModeEnabled = true
+                        if (::player.isInitialized) {
+                            player.shuffleModeEnabled = true
+                        }
+                        if (appSettings.shuffleModePersistence.value) {
+                            appSettings.setSavedShuffleState(true)
+                        }
+                        serviceScope.launch {
+                            delay(50)
+                            updateCustomLayoutSmart()
+                        }
                         SessionResult(SessionResult.RESULT_SUCCESS)
                     }
 
                     SHUFFLE_MODE_OFF -> {
-                        serviceController.shuffleModeEnabled = false
+                        serviceController?.shuffleModeEnabled = false
+                        if (::player.isInitialized) {
+                            player.shuffleModeEnabled = false
+                        }
+                        if (appSettings.shuffleModePersistence.value) {
+                            appSettings.setSavedShuffleState(false)
+                        }
+                        serviceScope.launch {
+                            delay(50)
+                            updateCustomLayoutSmart()
+                        }
                         SessionResult(SessionResult.RESULT_SUCCESS)
                     }
 
                     REPEAT_MODE_OFF -> {
-                        serviceController.repeatMode = Player.REPEAT_MODE_OFF
+                        serviceController?.repeatMode = Player.REPEAT_MODE_OFF
+                        if (::player.isInitialized) {
+                            player.repeatMode = Player.REPEAT_MODE_OFF
+                        }
+                        if (appSettings.repeatModePersistence.value) {
+                            appSettings.setSavedRepeatMode(Player.REPEAT_MODE_OFF)
+                        }
+                        serviceScope.launch {
+                            delay(50)
+                            updateCustomLayoutSmart()
+                        }
                         SessionResult(SessionResult.RESULT_SUCCESS)
                     }
 
                     REPEAT_MODE_ONE -> {
-                        serviceController.repeatMode = Player.REPEAT_MODE_ONE
+                        serviceController?.repeatMode = Player.REPEAT_MODE_ONE
+                        if (::player.isInitialized) {
+                            player.repeatMode = Player.REPEAT_MODE_ONE
+                        }
+                        if (appSettings.repeatModePersistence.value) {
+                            appSettings.setSavedRepeatMode(Player.REPEAT_MODE_ONE)
+                        }
+                        serviceScope.launch {
+                            delay(50)
+                            updateCustomLayoutSmart()
+                        }
                         SessionResult(SessionResult.RESULT_SUCCESS)
                     }
 
                     REPEAT_MODE_ALL -> {
-                        serviceController.repeatMode = Player.REPEAT_MODE_ALL
+                        serviceController?.repeatMode = Player.REPEAT_MODE_ALL
+                        if (::player.isInitialized) {
+                            player.repeatMode = Player.REPEAT_MODE_ALL
+                        }
+                        if (appSettings.repeatModePersistence.value) {
+                            appSettings.setSavedRepeatMode(Player.REPEAT_MODE_ALL)
+                        }
+                        serviceScope.launch {
+                            delay(50)
+                            updateCustomLayoutSmart()
+                        }
                         SessionResult(SessionResult.RESULT_SUCCESS)
                     }
 
@@ -2731,6 +2811,10 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
         super.onShuffleModeEnabledChanged(shuffleModeEnabled)
         Log.d(TAG, "Shuffle mode changed to: $shuffleModeEnabled")
 
+        if (appSettings.shuffleModePersistence.value) {
+            appSettings.setSavedShuffleState(shuffleModeEnabled)
+        }
+
         // Broadcast explicit shuffle state updates so UI can reconcile queue order immediately.
         val intent = Intent(ACTION_SHUFFLE_STATE_CHANGED).apply {
             setPackage(packageName)
@@ -2739,14 +2823,23 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
         sendBroadcast(intent)
 
         // Use debounced update to prevent rapid UI changes
-        scheduleCustomLayoutUpdate(100)
+        scheduleCustomLayoutUpdate(50)
+        if (::player.isInitialized) {
+            updateWidgetFromMediaItem(player.currentMediaItem)
+        }
     }
 
     override fun onRepeatModeChanged(repeatMode: Int) {
         super<Player.Listener>.onRepeatModeChanged(repeatMode)
         Log.d(TAG, "Repeat mode changed to: $repeatMode")
+        if (appSettings.repeatModePersistence.value) {
+            appSettings.setSavedRepeatMode(repeatMode)
+        }
         // Use debounced update to prevent rapid UI changes
-        scheduleCustomLayoutUpdate(100)
+        scheduleCustomLayoutUpdate(50)
+        if (::player.isInitialized) {
+            updateWidgetFromMediaItem(player.currentMediaItem)
+        }
     }
     
     // Mute state tracking

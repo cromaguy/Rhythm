@@ -4601,6 +4601,9 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
         override fun onRepeatModeChanged(repeatMode: Int) {
             Log.d(TAG, "Repeat mode changed: $repeatMode")
             _repeatMode.value = repeatMode
+            if (appSettings.repeatModePersistence.value) {
+                appSettings.setSavedRepeatMode(repeatMode)
+            }
         }
 
         override fun onTimelineChanged(timeline: androidx.media3.common.Timeline, reason: Int) {
