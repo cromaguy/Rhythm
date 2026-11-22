@@ -55,7 +55,9 @@ import androidx.core.content.ContextCompat
 import chromahub.rhythm.app.R
 import chromahub.rhythm.app.features.local.presentation.viewmodel.MusicViewModel
 import chromahub.rhythm.app.shared.data.model.AppSettings
+import chromahub.rhythm.app.shared.data.model.MediaScanMode
 import chromahub.rhythm.app.shared.data.model.Song
+import chromahub.rhythm.app.util.StoragePathUtils
 import chromahub.rhythm.app.shared.presentation.components.common.ContentLoadingIndicator
 import chromahub.rhythm.app.shared.presentation.components.common.DataProcessingLoader
 import chromahub.rhythm.app.shared.presentation.components.common.ExpressiveShapeTarget
@@ -350,21 +352,8 @@ fun SingleCardExplorerContent(
     
     LaunchedEffect(songs) {
         isPathMapLoading = true
-        songPathMap = withContext(Dispatchers.Default) {
-            val map = mutableMapOf<String, Song>()
-            songs.forEach { song ->
-                try {
-                    val path = song.getSongPath(context)
-                    if (path != null && path.isNotEmpty()) {
-                        val normalizedPath = path.replace("//", "/").trimEnd('/')
-                        map[normalizedPath] = song
-                    }
-                } catch (e: Exception) {
-                    // Skip
-                }
-            }
-            android.util.Log.d("LibraryScreen", "Pre-computed path map with ${map.size} songs out of ${songs.size} total")
-            map
+        songPathMap = withContext(Dispatchers.IO) {
+            buildSongPathMap(songs, context)
         }
         songPathMapVersion++
         isPathMapLoading = false
@@ -372,6 +361,8 @@ fun SingleCardExplorerContent(
 
     var currentItems by remember { mutableStateOf<List<ExplorerItem>>(emptyList()) }
     val pinnedFolders by appSettings.pinnedFolders.collectAsState()
+    val mediaScanMode by appSettings.mediaScanMode.collectAsState()
+    val whitelistedFolders by appSettings.whitelistedFolders.collectAsState()
     val breadcrumbScrollState = rememberLazyListState()
 
     LaunchedEffect(currentItems, currentPath) {
@@ -393,7 +384,7 @@ fun SingleCardExplorerContent(
             debounceJob?.cancel()
             
             if (currentPath == null) {
-                val storageItems = getStorageRoots(context)
+                val storageItems = getStorageRoots(context, mediaScanMode, whitelistedFolders)
                 currentItems = storageItems
                 directoryCache[cacheKey] = storageItems
                 isLoadingDirectory = false
@@ -406,7 +397,7 @@ fun SingleCardExplorerContent(
                 isLoadingDirectory = true
                 try {
                     val items = withContext(Dispatchers.IO) {
-                        getDirectoryContentsOptimized(currentPath, songPathMap, context)
+                        getDirectoryContentsOptimized(currentPath, songPathMap, context, mediaScanMode, whitelistedFolders)
                     }
                     val sortedItems = items.sortedWith(
                         compareBy<ExplorerItem> { it.type != ExplorerItemType.FOLDER }
@@ -423,14 +414,14 @@ fun SingleCardExplorerContent(
         }
     }
 
-    LaunchedEffect(currentPath, songPathMap) {
+    LaunchedEffect(currentPath, songPathMap, mediaScanMode, whitelistedFolders) {
         debounceJob?.cancel()
         val cacheKey = currentPath
         
         if (currentPath == null) {
             isLoadingDirectory = true
             val storageItems = withContext(Dispatchers.IO) {
-                getStorageRoots(context)
+                getStorageRoots(context, mediaScanMode, whitelistedFolders)
             }
             currentItems = storageItems
             directoryCache[cacheKey] = storageItems
@@ -459,7 +450,7 @@ fun SingleCardExplorerContent(
                 debounceJob = launch {
                     try {
                         val items = withContext(Dispatchers.IO) {
-                            getDirectoryContentsOptimized(currentPath, songPathMap, context)
+                            getDirectoryContentsOptimized(currentPath, songPathMap, context, mediaScanMode, whitelistedFolders)
                         }
                         
                         val sortedItems = items.sortedWith(
@@ -1062,7 +1053,11 @@ fun SingleCardExplorerContent(
     }
 }
 
-fun getStorageRoots(context: android.content.Context): List<ExplorerItem> {
+fun getStorageRoots(
+    context: android.content.Context,
+    mediaScanMode: MediaScanMode = MediaScanMode.BLACKLIST,
+    whitelistedFolders: List<String> = emptyList()
+): List<ExplorerItem> {
     val items = mutableListOf<ExplorerItem>()
 
     try {
@@ -1197,6 +1192,13 @@ fun getStorageRoots(context: android.content.Context): List<ExplorerItem> {
         android.util.Log.e("LibraryScreen", "Error getting storage roots", e)
     }
 
+    if (mediaScanMode == MediaScanMode.WHITELIST && whitelistedFolders.isNotEmpty()) {
+        val filtered = items.filter { root ->
+            whitelistedFolders.any { wl -> isFolderRelevantToWhitelist(root.path, wl) }
+        }
+        if (filtered.isNotEmpty()) return filtered
+    }
+
     return items
 }
 
@@ -1286,21 +1288,44 @@ fun getAudioFileCountSongsInDirectory(
     }
 }
 
-fun getDirectoryContentsOptimized(directoryPath: String, songPathMap: Map<String, Song>, context: android.content.Context): List<ExplorerItem> {
+fun isFolderRelevantToWhitelist(folderPath: String, whitelistedFolder: String): Boolean {
+    val normFolder = StoragePathUtils.sanitizeAndNormalizePath(folderPath)
+    val normWl = StoragePathUtils.sanitizeAndNormalizePath(whitelistedFolder)
+    if (normFolder.isEmpty() || normWl.isEmpty()) return false
+
+    if (normFolder.equals(normWl, ignoreCase = true)) return true
+
+    val wlPrefix = if (normWl.endsWith('/')) normWl else "$normWl/"
+    if (normFolder.startsWith(wlPrefix, ignoreCase = true)) return true
+
+    val folderPrefix = if (normFolder.endsWith('/')) normFolder else "$normFolder/"
+    if (normWl.startsWith(folderPrefix, ignoreCase = true)) return true
+
+    return false
+}
+
+fun getDirectoryContentsOptimized(
+    directoryPath: String,
+    songPathMap: Map<String, Song>,
+    context: android.content.Context,
+    mediaScanMode: MediaScanMode = MediaScanMode.BLACKLIST,
+    whitelistedFolders: List<String> = emptyList()
+): List<ExplorerItem> {
     val startTime = System.currentTimeMillis()
     android.util.Log.d("LibraryScreen", "Loading directory: $directoryPath (Android ${Build.VERSION.SDK_INT})")
     
     val items = mutableListOf<ExplorerItem>()
-    val normalizedDirPath = directoryPath.replace("//", "/").trimEnd('/')
+    val normalizedDirPath = directoryPath.replace("\\", "/").replace("//", "/").trimEnd('/')
     val audioExtensions = setOf("mp3", "flac", "m4a", "mp4", "aac", "ogg", "wav", "wma", "aiff", "aif", "opus", "opa", "mkv", "mka", "ac3", "ac4", "eac", "eac3", "dts", "dtshd", "dtsx", "truehd", "alac", "m4b", "oga", "mid", "midi", "adts", "ape", "wv", "tta", "tak", "dsf", "dff", "dsd", "mhm", "mhm1")
     
     val subdirectorySongCounts = mutableMapOf<String, Int>()
     val directoriesWithSongs = mutableSetOf<String>()
     val songsInCurrentDir = mutableListOf<Pair<String, Song>>()
     
-    songPathMap.forEach { (normalizedSongPath, song) ->
+    songPathMap.forEach { (rawSongPath, song) ->
         try {
-            val parentDir = File(normalizedSongPath).parent?.replace("//", "/")?.trimEnd('/') ?: return@forEach
+            val normalizedSongPath = rawSongPath.replace("\\", "/").replace("//", "/").trimEnd('/')
+            val parentDir = File(normalizedSongPath).parent?.replace("\\", "/")?.replace("//", "/")?.trimEnd('/') ?: return@forEach
             
             if (parentDir == normalizedDirPath) {
                 songsInCurrentDir.add(normalizedSongPath to song)
@@ -1346,12 +1371,22 @@ fun getDirectoryContentsOptimized(directoryPath: String, songPathMap: Map<String
                 try {
                     if (file.isDirectory) {
                         if (!file.name.startsWith(".")) {
-                            val folderPath = file.absolutePath.replace("//", "/").trimEnd('/')
+                            val folderPath = file.absolutePath.replace("\\", "/").replace("//", "/").trimEnd('/')
+
+                            if (mediaScanMode == MediaScanMode.WHITELIST && whitelistedFolders.isNotEmpty()) {
+                                val isRelevant = whitelistedFolders.any { wl ->
+                                    isFolderRelevantToWhitelist(folderPath, wl)
+                                }
+                                if (!isRelevant) {
+                                    return@forEach
+                                }
+                            }
+                            
                             var audioCount = subdirectorySongCounts[folderPath] ?: 0
                             
                             if (audioCount == 0) {
                                 try {
-                                    val canonicalPath = file.canonicalPath.replace("//", "/").trimEnd('/')
+                                    val canonicalPath = file.canonicalPath.replace("\\", "/").replace("//", "/").trimEnd('/')
                                     audioCount = subdirectorySongCounts[canonicalPath] ?: 0
                                 } catch (e: Exception) {
                                     // Ignore
@@ -1377,7 +1412,15 @@ fun getDirectoryContentsOptimized(directoryPath: String, songPathMap: Map<String
                     } else if (file.isFile) {
                         val extension = file.extension.lowercase()
                         if (extension in audioExtensions) {
-                            val normalizedPath = file.absolutePath.replace("//", "/")
+                            if (mediaScanMode == MediaScanMode.WHITELIST && whitelistedFolders.isNotEmpty()) {
+                                val isFileWhitelisted = StoragePathUtils.isPathInFolders(file.absolutePath, whitelistedFolders) ||
+                                    file.parent?.let { StoragePathUtils.isPathInFolders(it, whitelistedFolders) } == true
+                                if (!isFileWhitelisted) {
+                                    return@forEach
+                                }
+                            }
+
+                            val normalizedPath = file.absolutePath.replace("\\", "/").replace("//", "/")
                             var song = songPathMap[normalizedPath]
                             
                             if (song == null) {
@@ -1422,9 +1465,17 @@ fun getDirectoryContentsOptimized(directoryPath: String, songPathMap: Map<String
                 }
             }
             
-            val existingFolderPaths = items.filter { it.isDirectory }.map { it.path.replace("//", "/").trimEnd('/') }.toSet()
+            val existingFolderPaths = items.filter { it.isDirectory }.map { it.path.replace("\\", "/").replace("//", "/").trimEnd('/') }.toSet()
             directoriesWithSongs.forEach { subdirPath ->
-                val normalizedSubdirPath = subdirPath.replace("//", "/").trimEnd('/')
+                val normalizedSubdirPath = subdirPath.replace("\\", "/").replace("//", "/").trimEnd('/')
+                if (mediaScanMode == MediaScanMode.WHITELIST && whitelistedFolders.isNotEmpty()) {
+                    val isRelevant = whitelistedFolders.any { wl ->
+                        isFolderRelevantToWhitelist(normalizedSubdirPath, wl)
+                    }
+                    if (!isRelevant) {
+                        return@forEach
+                    }
+                }
                 if (normalizedSubdirPath !in existingFolderPaths) {
                     val subdirName = File(subdirPath).name
                     val songCount = subdirectorySongCounts[subdirPath] ?: 0
@@ -1643,6 +1694,10 @@ fun getDirectoryContentsOptimized_OLD(directoryPath: String, audioExtensions: Se
 
 fun Song.getSongPath(context: android.content.Context): String? {
     if (!path.isNullOrBlank()) return path
+    if (uri.scheme == "file") {
+        val uriPath = uri.path
+        if (!uriPath.isNullOrBlank()) return uriPath
+    }
     return getFilePathFromUri(uri, context)
 }
 
@@ -1670,19 +1725,65 @@ fun findSongsInFolder(
 
 fun buildSongPathMap(songs: List<Song>, context: android.content.Context): Map<String, Song> {
     val pathMap = mutableMapOf<String, Song>()
-    
+    val songsNeedingResolution = mutableListOf<Song>()
+
     songs.forEach { song ->
-        try {
-            val path = song.getSongPath(context)
-            if (path != null && path.isNotEmpty()) {
-                val normalizedPath = path.replace("//", "/").trimEnd('/')
-                pathMap[normalizedPath] = song
-            }
-        } catch (e: Exception) {
-            // Skip
+        val directPath = song.path?.takeIf { it.isNotBlank() }
+            ?: (if (song.uri.scheme == "file") song.uri.path?.takeIf { it.isNotBlank() } else null)
+
+        if (directPath != null) {
+            val normalizedPath = directPath.replace("//", "/").trimEnd('/')
+            pathMap[normalizedPath] = song
+        } else if (song.uri.scheme == "content") {
+            songsNeedingResolution.add(song)
         }
     }
-    
+
+    if (songsNeedingResolution.isNotEmpty()) {
+        try {
+            val projection = arrayOf(MediaStore.Audio.Media._ID, MediaStore.Audio.Media.DATA)
+            val idToSongMap = songsNeedingResolution.associateBy { it.id }
+
+            songsNeedingResolution.chunked(500).forEach { chunk ->
+                val ids = chunk.map { it.id }
+                val selection = "${MediaStore.Audio.Media._ID} IN (${ids.joinToString(",") { "?" }})"
+                context.contentResolver.query(
+                    MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+                    projection,
+                    selection,
+                    ids.toTypedArray(),
+                    null
+                )?.use { cursor ->
+                    val idCol = cursor.getColumnIndex(MediaStore.Audio.Media._ID)
+                    val dataCol = cursor.getColumnIndex(MediaStore.Audio.Media.DATA)
+                    if (idCol >= 0 && dataCol >= 0) {
+                        while (cursor.moveToNext()) {
+                            val id = cursor.getString(idCol)
+                            val data = cursor.getString(dataCol)
+                            if (!data.isNullOrBlank()) {
+                                idToSongMap[id]?.let { song ->
+                                    val normalizedPath = data.replace("//", "/").trimEnd('/')
+                                    pathMap[normalizedPath] = song
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (_: Exception) {
+            // Fallback to individual resolution if batch query fails
+            songsNeedingResolution.forEach { song ->
+                try {
+                    val resolved = song.getSongPath(context)
+                    if (!resolved.isNullOrBlank()) {
+                        val normalizedPath = resolved.replace("//", "/").trimEnd('/')
+                        pathMap[normalizedPath] = song
+                    }
+                } catch (_: Exception) {}
+            }
+        }
+    }
+
     return pathMap
 }
 
