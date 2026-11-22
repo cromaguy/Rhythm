@@ -726,6 +726,11 @@ class MusicRepository(context: Context) {
         }
     })
     
+    // Negative caches (circuit breakers) to avoid repeated remote lookups for assets missing online
+    internal val negativeArtistImageCache = Collections.synchronizedSet(LinkedHashSet<String>())
+    internal val negativeAlbumImageCache = Collections.synchronizedSet(LinkedHashSet<String>())
+    internal val negativeTrackArtworkCache = Collections.synchronizedSet(LinkedHashSet<String>())
+    
     // Rate limiting for API calls
     private val lastApiCalls = mutableMapOf<String, Long>()
     private val apiCallCounts = mutableMapOf<String, Int>()
@@ -2622,6 +2627,19 @@ class MusicRepository(context: Context) {
                         continue
                     }
 
+                    // Circuit breaker: skip network search if artist failed in negative cache
+                    val artistKey = artist.name.lowercase().trim()
+                    if (negativeArtistImageCache.contains(artistKey)) {
+                        Log.d(TAG, "Artist ${artist.name} in negative cache, skipping online lookup")
+                        val cached = artistImageCache[artist.name]
+                        if (cached != null) {
+                            updatedArtists.add(artist.copy(artworkUri = cached))
+                        } else {
+                            updatedArtists.add(artist)
+                        }
+                        continue
+                    }
+
                     // Skip artists with empty or "Unknown" names
                     if (artist.name.isBlank() || artist.name.equals(
                             "Unknown Artist",
@@ -2778,11 +2796,13 @@ class MusicRepository(context: Context) {
                             cacheDir = context.cacheDir
                         )
                     artistImageCache[artist.name] = placeholderUri
+                    negativeArtistImageCache.add(artist.name.lowercase().trim())
                     placeholderArtists.add(artist.id)
                     updatedArtists.add(artist.copy(artworkUri = placeholderUri))
 
                 } catch (e: Exception) {
                     Log.e(TAG, "Error fetching artist image for ${artist.name}", e)
+                    negativeArtistImageCache.add(artist.name.lowercase().trim())
                     try {
                         val placeholderUri =
                             chromahub.rhythm.app.util.ImageUtils.generatePlaceholderImage(
@@ -4603,7 +4623,9 @@ class MusicRepository(context: Context) {
 
         // No lyrics found from any source
         Log.d(TAG, "No lyrics found from any source for: $artist - $title")
-        return@withContext LyricsData("No lyrics found for this song", null, null)
+        val notFoundLyrics = LyricsData("No lyrics found for this song", null, null)
+        lyricsCache[cacheKey] = notFoundLyrics
+        return@withContext notFoundLyrics
     }
 
     private fun canonicalizeForMatch(str: String): String {
@@ -5403,6 +5425,16 @@ class MusicRepository(context: Context) {
 
             // Check cache first
             val cacheKey = "${album.artist}:${album.title}"
+            val normalizedAlbumKey = cacheKey.lowercase().trim()
+            if (negativeAlbumImageCache.contains(normalizedAlbumKey)) {
+                val cached = albumImageCache[cacheKey]
+                if (cached != null) {
+                    updatedAlbums.add(album.copy(artworkUri = cached))
+                } else {
+                    updatedAlbums.add(album)
+                }
+                continue
+            }
             val cachedUri = albumImageCache[cacheKey]
             if (cachedUri != null) {
                 updatedAlbums.add(album.copy(artworkUri = cachedUri))
@@ -5530,6 +5562,7 @@ class MusicRepository(context: Context) {
                             "No valid image found for album: ${album.title}, using generated placeholder"
                         )
                         albumImageCache[cacheKey] = placeholderUri
+                        negativeAlbumImageCache.add(normalizedAlbumKey)
                         updatedAlbums.add(album.copy(artworkUri = placeholderUri))
                     }
                 } else {
@@ -5539,11 +5572,13 @@ class MusicRepository(context: Context) {
                         "No valid image found for album: ${album.title}, using generated placeholder"
                     )
                     albumImageCache[cacheKey] = placeholderUri
+                    negativeAlbumImageCache.add(normalizedAlbumKey)
                     updatedAlbums.add(album.copy(artworkUri = placeholderUri))
                 }
 
             } catch (e: Exception) {
                 Log.e(TAG, "Error fetching album artwork for ${album.title}", e)
+                negativeAlbumImageCache.add(normalizedAlbumKey)
                 // Try to use a generated placeholder
                 try {
                     val placeholderUri =
@@ -5597,6 +5632,16 @@ class MusicRepository(context: Context) {
 
         for (song in songs) {
             val cacheKey = "${song.artist}:${song.title}"
+            val normalizedTrackKey = cacheKey.lowercase().trim()
+            if (negativeTrackArtworkCache.contains(normalizedTrackKey)) {
+                val cached = albumImageCache[cacheKey]
+                if (cached != null) {
+                    updatedSongs.add(song.copy(artworkUri = cached))
+                } else {
+                    updatedSongs.add(song)
+                }
+                continue
+            }
             
             // Skip songs with empty or "Unknown" title
             if (song.title.isBlank() || song.title.equals("Unknown", ignoreCase = true)) {
@@ -5650,6 +5695,7 @@ class MusicRepository(context: Context) {
                 albumImageCache[cacheKey] = fetchedUri
                 updatedSongs.add(song.copy(artworkUri = fetchedUri))
             } else {
+                negativeTrackArtworkCache.add(normalizedTrackKey)
                 updatedSongs.add(song)
             }
         }
@@ -6062,6 +6108,9 @@ class MusicRepository(context: Context) {
             synchronized(lyricsCache) {
                 lyricsCache.clear()
             }
+            negativeArtistImageCache.clear()
+            negativeAlbumImageCache.clear()
+            negativeTrackArtworkCache.clear()
             // Also clear the song in-memory cache
             cachedSongs = null
             cacheTimestamp = 0L

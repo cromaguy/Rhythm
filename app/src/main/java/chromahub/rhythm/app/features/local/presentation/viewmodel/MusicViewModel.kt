@@ -106,6 +106,7 @@ import java.time.Duration
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import java.util.Calendar
+import java.util.Collections
 import java.io.File
 import java.util.concurrent.atomic.AtomicBoolean
 import chromahub.rhythm.app.shared.data.model.LyricsData
@@ -1068,6 +1069,11 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
     private val _isFetchingArtwork = MutableStateFlow(false)
     val isFetchingArtwork: StateFlow<Boolean> = _isFetchingArtwork.asStateFlow()
     
+    // Negative caches (circuit breakers) for background artwork fetching in the current session
+    internal val failedArtistArtworkLookups = Collections.synchronizedSet(mutableSetOf<String>())
+    internal val failedAlbumArtworkLookups = Collections.synchronizedSet(mutableSetOf<String>())
+    internal val failedTrackArtworkLookups = Collections.synchronizedSet(mutableSetOf<String>())
+    
     // Audio metadata extraction state
     private val _isExtractingMetadata = MutableStateFlow(false)
     val isExtractingMetadata: StateFlow<Boolean> = _isExtractingMetadata.asStateFlow()
@@ -1265,6 +1271,9 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                     // Invalidate caches and reload
                     withContext(Dispatchers.IO) {
                         repository.clearInMemoryCaches()
+                        failedArtistArtworkLookups.clear()
+                        failedAlbumArtworkLookups.clear()
+                        failedTrackArtworkLookups.clear()
                         val freshSongs = repository.loadSongs()
                         val freshAlbums = repository.loadAlbums()
                         val freshArtists = repository.loadArtists()
@@ -2017,19 +2026,21 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                 val hasMissingSongs = _songs.value.any { it.artworkUri == null }
                 
                 val artistSource1 = appSettings.artistArtworkSource.value
-                val shouldFetchArtists = hasMissingArtists &&
-                    artistSource1 != chromahub.rhythm.app.shared.data.model.ArtistArtworkSource.DISABLED &&
+                val isArtistRemoteAllowed1 = (artistSource1 == chromahub.rhythm.app.shared.data.model.ArtistArtworkSource.PREFER_LOCAL_THEN_API ||
+                    artistSource1 == chromahub.rhythm.app.shared.data.model.ArtistArtworkSource.API_ONLY) &&
                     (artistSource1 != chromahub.rhythm.app.shared.data.model.ArtistArtworkSource.API_ONLY || appSettings.deezerApiEnabled.value)
+                val shouldFetchArtists = hasMissingArtists && isArtistRemoteAllowed1
                 val shouldFetchAlbumsAndSongs = (hasMissingAlbums || hasMissingSongs) && appSettings.isAutoFetchArtworkActive.value && (appSettings.ytMusicApiEnabled.value || appSettings.deezerApiEnabled.value)
 
-                if (shouldFetchArtists || shouldFetchAlbumsAndSongs) {
+                val isMeteredOrRestricted = chromahub.rhythm.app.core.utils.NetworkUtils.isBackgroundDataRestricted(context)
+                if (!isMeteredOrRestricted && (shouldFetchArtists || shouldFetchAlbumsAndSongs)) {
                     _isFetchingArtwork.value = true
                     fetchArtworkFromInternet(
                         fetchArtists = shouldFetchArtists,
                         fetchAlbumsAndSongs = shouldFetchAlbumsAndSongs
                     )
                 } else {
-                    Log.d(TAG, "All artist/album/song artworks are present or auto-fetch is disabled, skipping startup internet fetches")
+                    Log.d(TAG, "Startup internet artwork fetch skipped (restricted=$isMeteredOrRestricted, fetchArtists=$shouldFetchArtists, fetchAlbums=$shouldFetchAlbumsAndSongs)")
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Error fetching artwork from internet", e)
@@ -2188,19 +2199,21 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                 val hasMissingSongs = _songs.value.any { it.artworkUri == null }
                 
                 val artistSource2 = appSettings.artistArtworkSource.value
-                val shouldFetchArtists = hasMissingArtists &&
-                    artistSource2 != chromahub.rhythm.app.shared.data.model.ArtistArtworkSource.DISABLED &&
+                val isArtistRemoteAllowed2 = (artistSource2 == chromahub.rhythm.app.shared.data.model.ArtistArtworkSource.PREFER_LOCAL_THEN_API ||
+                    artistSource2 == chromahub.rhythm.app.shared.data.model.ArtistArtworkSource.API_ONLY) &&
                     (artistSource2 != chromahub.rhythm.app.shared.data.model.ArtistArtworkSource.API_ONLY || appSettings.deezerApiEnabled.value)
+                val shouldFetchArtists = hasMissingArtists && isArtistRemoteAllowed2
                 val shouldFetchAlbumsAndSongs = (hasMissingAlbums || hasMissingSongs) && appSettings.isAutoFetchArtworkActive.value && (appSettings.ytMusicApiEnabled.value || appSettings.deezerApiEnabled.value)
 
-                if (shouldFetchArtists || shouldFetchAlbumsAndSongs) {
+                val isMeteredOrRestricted = chromahub.rhythm.app.core.utils.NetworkUtils.isBackgroundDataRestricted(context)
+                if (!isMeteredOrRestricted && (shouldFetchArtists || shouldFetchAlbumsAndSongs)) {
                     _isFetchingArtwork.value = true
                     fetchArtworkFromInternet(
                         fetchArtists = shouldFetchArtists,
                         fetchAlbumsAndSongs = shouldFetchAlbumsAndSongs
                     )
                 } else {
-                    Log.d(TAG, "All artist/album/song artworks are present or auto-fetch is disabled, skipping internet fetches")
+                    Log.d(TAG, "Library refresh artwork fetch skipped (restricted=$isMeteredOrRestricted, fetchArtists=$shouldFetchArtists, fetchAlbums=$shouldFetchAlbumsAndSongs)")
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Error fetching artwork from internet", e)
@@ -2539,19 +2552,21 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                         val hasMissingSongs = _songs.value.any { it.artworkUri == null }
                         
                         val artistSource3 = appSettings.artistArtworkSource.value
-                        val shouldFetchArtists = hasMissingArtists &&
-                            artistSource3 != chromahub.rhythm.app.shared.data.model.ArtistArtworkSource.DISABLED &&
+                        val isArtistRemoteAllowed3 = (artistSource3 == chromahub.rhythm.app.shared.data.model.ArtistArtworkSource.PREFER_LOCAL_THEN_API ||
+                            artistSource3 == chromahub.rhythm.app.shared.data.model.ArtistArtworkSource.API_ONLY) &&
                             (artistSource3 != chromahub.rhythm.app.shared.data.model.ArtistArtworkSource.API_ONLY || appSettings.deezerApiEnabled.value)
+                        val shouldFetchArtists = hasMissingArtists && isArtistRemoteAllowed3
                         val shouldFetchAlbumsAndSongs = (hasMissingAlbums || hasMissingSongs) && appSettings.isAutoFetchArtworkActive.value && (appSettings.ytMusicApiEnabled.value || appSettings.deezerApiEnabled.value)
 
-                        if (shouldFetchArtists || shouldFetchAlbumsAndSongs) {
+                        val isMeteredOrRestricted = chromahub.rhythm.app.core.utils.NetworkUtils.isBackgroundDataRestricted(context)
+                        if (!isMeteredOrRestricted && (shouldFetchArtists || shouldFetchAlbumsAndSongs)) {
                             _isFetchingArtwork.value = true
                             fetchArtworkFromInternet(
                                 fetchArtists = shouldFetchArtists,
                                 fetchAlbumsAndSongs = shouldFetchAlbumsAndSongs
                             )
                         } else {
-                            Log.d(TAG, "All artist/album/song artworks are present or auto-fetch is disabled, skipping internet fetches")
+                            Log.d(TAG, "Library rescan artwork fetch skipped (restricted=$isMeteredOrRestricted, fetchArtists=$shouldFetchArtists, fetchAlbums=$shouldFetchAlbumsAndSongs)")
                         }
                     } catch (e: Exception) {
                         Log.w(TAG, "Artwork fetching failed but continuing with library refresh", e)
@@ -3854,23 +3869,42 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
         fetchArtists: Boolean = true,
         fetchAlbumsAndSongs: Boolean = true
     ) = withContext(Dispatchers.IO) {
+        val context = getApplication<Application>()
+        if (chromahub.rhythm.app.core.utils.NetworkUtils.isBackgroundDataRestricted(context)) {
+            Log.d(TAG, "Network is metered or background data restricted, aborting internet artwork fetch")
+            return@withContext
+        }
         val artistSource = appSettings.artistArtworkSource.value
         val isAutoFetchActive = appSettings.isAutoFetchArtworkActive.value
-        if (!isAutoFetchActive && artistSource == chromahub.rhythm.app.shared.data.model.ArtistArtworkSource.DISABLED) {
-            Log.d(TAG, "isAutoFetchArtworkActive and artist artwork are disabled, skipping internet artwork fetch")
+        val canFetchArtistsRemotely = fetchArtists &&
+            (artistSource == chromahub.rhythm.app.shared.data.model.ArtistArtworkSource.PREFER_LOCAL_THEN_API ||
+             artistSource == chromahub.rhythm.app.shared.data.model.ArtistArtworkSource.API_ONLY)
+        val canFetchAlbumsAndSongsRemotely = fetchAlbumsAndSongs && isAutoFetchActive &&
+            (appSettings.ytMusicApiEnabled.value || appSettings.deezerApiEnabled.value)
+
+        if (!canFetchArtistsRemotely && !canFetchAlbumsAndSongsRemotely) {
+            Log.d(TAG, "Internet artwork fetch not allowed by current settings, skipping")
             return@withContext
         }
         try {
-            if (fetchArtists && artistSource != chromahub.rhythm.app.shared.data.model.ArtistArtworkSource.DISABLED) {
+            if (canFetchArtistsRemotely) {
                 Log.d(TAG, "Fetching artist images")
-                val missingArtists = _artists.value.filter { it.artworkUri == null }
+                val missingArtists = _artists.value.filter { 
+                    it.artworkUri == null && !failedArtistArtworkLookups.contains(it.name.lowercase().trim()) 
+                }
                 Log.d(TAG, "Found ${missingArtists.size} artists without images out of ${_artists.value.size} total artists")
                 val chunkSize = 10
                 for (batch in missingArtists.chunked(chunkSize)) {
                     val updatedArtists = repository.fetchArtistImages(batch)
+                    val artistMap: Map<String, Artist> = updatedArtists.associateBy { a: Artist -> a.id }
+                    for (artist in batch) {
+                        val result = artistMap[artist.id]
+                        if (result?.artworkUri == null) {
+                            failedArtistArtworkLookups.add(artist.name.lowercase().trim())
+                        }
+                    }
                     if (updatedArtists.isNotEmpty()) {
-                        val artistMap: Map<String, Artist> = updatedArtists.associateBy { a: Artist -> a.id }
-                        _artists.value = _artists.value.map { artist: Artist -> artistMap[artist.id] ?: artist }
+                        _artists.update { current -> current.map { artist: Artist -> artistMap[artist.id] ?: artist } }
                         Log.d(TAG, "Updated ${updatedArtists.size} artists with images from internet (batch)")
                     }
                     // Throttle between batches to avoid hitting API rate limits
@@ -3878,13 +3912,14 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                 }
             }
             
-            if (fetchAlbumsAndSongs) {
+            if (canFetchAlbumsAndSongsRemotely) {
                 Log.d(TAG, "Fetching album artwork from internet")
-                val context = getApplication<Application>()
                 
                 // Only fetch for a subset of albums to avoid overwhelming the API
                 // Check for albums with genuinely missing or unreadable cover art URIs
-                val albumsToUpdate = _albums.value.filter { it.artworkUri == null }.take(10)
+                val albumsToUpdate = _albums.value.filter { 
+                    it.artworkUri == null && !failedAlbumArtworkLookups.contains("${it.artist}:${it.title}".lowercase().trim()) 
+                }.take(10)
                 
                 Log.d(TAG, "Found ${albumsToUpdate.size} albums that genuinely need artwork out of ${_albums.value.size} total albums")
                 if (albumsToUpdate.isNotEmpty()) {
@@ -3892,13 +3927,21 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                     val updatedAlbums = repository.fetchAlbumArtwork(albumsToUpdate)
                     // Update only the albums we fetched, keeping the rest unchanged
                     val albumMap: Map<String, Album> = updatedAlbums.associateBy { a: Album -> a.id }
-                    _albums.value = _albums.value.map { album: Album -> albumMap[album.id] ?: album }
+                    for (album in albumsToUpdate) {
+                        val result = albumMap[album.id]
+                        if (result?.artworkUri == null) {
+                            failedAlbumArtworkLookups.add("${album.artist}:${album.title}".lowercase().trim())
+                        }
+                    }
+                    _albums.update { current -> current.map { album: Album -> albumMap[album.id] ?: album } }
                     Log.d(TAG, "Updated ${updatedAlbums.size} albums with artwork from internet")
                 } else {
                     Log.d(TAG, "No albums found that need artwork")
                 }
 
                 val songsToUpdate = _songs.value.filter { song ->
+                    val trackKey = "${song.artist}:${song.title}".lowercase().trim()
+                    if (failedTrackArtworkLookups.contains(trackKey)) return@filter false
                     val uri = song.artworkUri
                     if (uri == null || uri == Uri.EMPTY) true
                     else {
@@ -3917,6 +3960,12 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                 if (songsToUpdate.isNotEmpty()) {
                     val updatedSongs = repository.fetchTrackArtwork(songsToUpdate)
                     val songMap: Map<String, Song> = updatedSongs.associateBy { song: Song -> song.id }
+                    for (song in songsToUpdate) {
+                        val result = songMap[song.id]
+                        if (result?.artworkUri == null) {
+                            failedTrackArtworkLookups.add("${song.artist}:${song.title}".lowercase().trim())
+                        }
+                    }
                     val mergedSongs: List<Song> = _songs.value.map { song: Song ->
                         songMap[song.id] ?: song
                     }

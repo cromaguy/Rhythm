@@ -48,6 +48,30 @@ object NetworkUtils {
     }
     
     /**
+     * Check if the active network is metered.
+     */
+    fun isNetworkMetered(context: Context): Boolean {
+        val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager ?: return false
+        return connectivityManager.isActiveNetworkMetered
+    }
+
+    /**
+     * Check if background data usage should be restricted (metered network or Data Saver enabled).
+     */
+    fun isBackgroundDataRestricted(context: Context): Boolean {
+        val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager ?: return false
+        if (connectivityManager.isActiveNetworkMetered) {
+            return true
+        }
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+            if (connectivityManager.restrictBackgroundStatus == ConnectivityManager.RESTRICT_BACKGROUND_STATUS_ENABLED) {
+                return true
+            }
+        }
+        return false
+    }
+    
+    /**
      * Check if streaming is allowed based on network conditions and user settings.
      */
     fun canStream(context: Context, allowCellular: Boolean): Boolean {
