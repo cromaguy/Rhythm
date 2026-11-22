@@ -36,7 +36,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.ui.graphics.Shape
-import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -1703,15 +1703,10 @@ fun MaterialPlayerScreen(
                                                 }
                                             },
                                             onTap = {
-                                                if (gestureArtworkSingleTap) {
+                                                if (gestureArtworkSingleTap && showLyrics) {
                                                     // Single tap - toggle lyrics if available
-                                                    if (showLyrics && !isLyricsContentVisible && isSongInfoVisible) {
-                                                        HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
-                                                        showLyricsView = !showLyricsView
-                                                    } else if (showLyrics && isLyricsContentVisible && !isSongInfoVisible) {
-                                                        HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
-                                                        showLyricsView = !showLyricsView
-                                                    }
+                                                    HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
+                                                    showLyricsView = !showLyricsView
                                                 }
                                             }
                                         )
@@ -1719,8 +1714,7 @@ fun MaterialPlayerScreen(
                                 }
                                 .pointerInput(gesturePlayerSwipeTracks) {
                                     if (gesturePlayerSwipeTracks) {
-                                        detectDragGestures(
-                                            onDragStart = { },
+                                        detectHorizontalDragGestures(
                                             onDragEnd = {
                                                 if (artworkOffsetX < -artworkSwipeThreshold) {
                                                     // Swipe left - next track
@@ -1736,9 +1730,9 @@ fun MaterialPlayerScreen(
                                             onDragCancel = {
                                                 artworkOffsetX = 0f
                                             },
-                                            onDrag = { change, dragAmount ->
+                                            onHorizontalDrag = { change, dragAmount ->
                                                 change.consume()
-                                                artworkOffsetX += dragAmount.x
+                                                artworkOffsetX += dragAmount
                                             }
                                         )
                                     }
@@ -2782,11 +2776,7 @@ fun MaterialPlayerScreen(
                                     haptic,
                                     HapticType.HEAVY
                                 )
-                                if (!isLyricsContentVisible && isSongInfoVisible) {
-                                    showLyricsView = !showLyricsView
-                                } else if (isLyricsContentVisible && !isSongInfoVisible) {
-                                    showLyricsView = !showLyricsView
-                                }
+                                showLyricsView = !showLyricsView
                             },
                             onToggleRepeat = {
                                 HapticUtils.performHapticFeedback(

@@ -20,7 +20,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -1214,7 +1214,7 @@ fun ExpressivePlayerScreen(
                                 }
                                 .pointerInput(gesturePlayerSwipeTracks) {
                                     if (gesturePlayerSwipeTracks) {
-                                        detectDragGestures(
+                                        detectHorizontalDragGestures(
                                             onDragEnd = {
                                                 if (artworkOffsetX < -artworkSwipeThreshold) {
                                                     HapticUtils.performHapticFeedback(context, haptic, HapticType.HEAVY)
@@ -1226,9 +1226,9 @@ fun ExpressivePlayerScreen(
                                                 artworkOffsetX = 0f
                                             },
                                             onDragCancel = { artworkOffsetX = 0f },
-                                            onDrag = { change, dragAmount ->
+                                            onHorizontalDrag = { change, dragAmount ->
                                                 change.consume()
-                                                artworkOffsetX += dragAmount.x
+                                                artworkOffsetX += dragAmount
                                             }
                                         )
                                     }
