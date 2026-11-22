@@ -158,8 +158,17 @@ fun SyncedLyricsView(
     subtitleColor: Color? = null
 ) {
     val context = LocalContext.current
-    // TODO: Apply syncOffset to all timestamp comparisons for manual sync adjustment
-    val adjustedPlaybackTime = currentPlaybackTime + syncOffset
+    var maxSeenPlaybackTime by remember(lyrics, parsedLyricsInput) { mutableLongStateOf(0L) }
+    val effectivePlaybackTime = remember(currentPlaybackTime) {
+        if (abs(currentPlaybackTime - maxSeenPlaybackTime) > 1500L) {
+            maxSeenPlaybackTime = currentPlaybackTime
+            currentPlaybackTime
+        } else {
+            maxSeenPlaybackTime = maxOf(maxSeenPlaybackTime, currentPlaybackTime)
+            maxSeenPlaybackTime
+        }
+    }
+    val adjustedPlaybackTime = effectivePlaybackTime + syncOffset
     
     val parsedLyrics by produceState(
         initialValue = parsedLyricsInput ?: emptyList(),

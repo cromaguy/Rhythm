@@ -4639,11 +4639,36 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
     
+    private var lastMonotonicPositionMs = 0L
+    private var lastMonotonicSongId: String? = null
+
     private fun updateProgress() {
         mediaController?.let { controller ->
+            val currentSongId = _currentSong.value?.id
+            if (currentSongId != lastMonotonicSongId) {
+                lastMonotonicSongId = currentSongId
+                lastMonotonicPositionMs = 0L
+            }
+
+            val rawPosition = controller.currentPosition
+            val isPlayingNow = controller.isPlaying
+
+            // Allow backward updates if paused, intentional seek (> 1000ms jump), or song reset
+            val effectivePosition = if (
+                !isPlayingNow ||
+                rawPosition >= lastMonotonicPositionMs ||
+                (lastMonotonicPositionMs - rawPosition) > 1000L
+            ) {
+                lastMonotonicPositionMs = rawPosition
+                rawPosition
+            } else {
+                // Micro-drift backwards while playing: clamp monotonically
+                lastMonotonicPositionMs
+            }
+
             val playbackDuration = resolvePlaybackDuration(controller)
             if (playbackDuration > 0) {
-                val currentProgress = controller.currentPosition.toFloat() / playbackDuration.toFloat()
+                val currentProgress = effectivePosition.toFloat() / playbackDuration.toFloat()
                 _progress.value = currentProgress.coerceIn(0f, 1f)
             }
 
@@ -6436,6 +6461,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
     fun seekTo(positionMs: Long, autoPlayIfPaused: Boolean = false) {
         Log.d(TAG, "Seek to position: $positionMs ms (autoPlay=$autoPlayIfPaused)")
         _isSeeking.value = true
+        lastMonotonicPositionMs = positionMs
         mediaController?.let { controller ->
             controller.seekTo(positionMs)
             if (autoPlayIfPaused && !controller.isPlaying) {
@@ -6457,6 +6483,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
             val positionMs = (progress * playbackDuration).toLong()
             Log.d(TAG, "Seek to progress: $progress (${positionMs}ms)")
             _isSeeking.value = true
+            lastMonotonicPositionMs = positionMs
             controller.seekTo(positionMs)
             updateProgress() // Immediately update progress after seeking
             
