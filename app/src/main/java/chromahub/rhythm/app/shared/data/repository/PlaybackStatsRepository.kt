@@ -11,10 +11,14 @@ import com.google.gson.JsonElement
 import com.google.gson.reflect.TypeToken
 import chromahub.rhythm.app.shared.data.model.Song
 import chromahub.rhythm.app.util.GenreUtils
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.time.Instant
@@ -64,11 +68,31 @@ enum class StatsTimeRange(val displayName: String, val daysBack: Int) {
  * Repository for tracking and analyzing playback statistics
  * Provides comprehensive stats tracking for songs and listening habits
  */
-class PlaybackStatsRepository private constructor(private val context: Context) {
+class PlaybackStatsRepository internal constructor(
+    private val context: Context,
+    historyFileOverride: File? = null,
+    coroutineScopeOverride: CoroutineScope? = null
+) {
     private val gson = Gson()
-    private val historyFile = File(context.applicationContext.filesDir, "playback_history.json")
-    private val fileLock = Any()
+    private val historyFile = historyFileOverride ?: File(context.applicationContext.filesDir, "playback_history.json")
+    private val memoryLock = Any()
     private val eventsType = object : TypeToken<MutableList<PlaybackEvent>>() {}.type
+    
+    private val ioScope = coroutineScopeOverride ?: CoroutineScope(Dispatchers.IO + SupervisorJob())
+    private val saveChannel = Channel<List<PlaybackEvent>>(Channel.CONFLATED)
+    
+    @Volatile
+    private var isLoaded = false
+    private val inMemoryEvents = mutableListOf<PlaybackEvent>()
+    
+    init {
+        ioScope.launch {
+            ensureLoadedFromDisk()
+            for (eventsToSave in saveChannel) {
+                writeEventsToDiskAtomic(eventsToSave)
+            }
+        }
+    }
     
     companion object {
         @Volatile
@@ -87,6 +111,23 @@ class PlaybackStatsRepository private constructor(private val context: Context) 
             return instance ?: synchronized(this) {
                 instance ?: PlaybackStatsRepository(context.applicationContext).also { instance = it }
             }
+        }
+        
+        internal fun createForTesting(
+            context: Context,
+            historyFile: File,
+            scope: CoroutineScope
+        ): PlaybackStatsRepository {
+            return PlaybackStatsRepository(
+                context = context,
+                historyFileOverride = historyFile,
+                coroutineScopeOverride = scope
+            )
+        }
+        
+        @org.jetbrains.annotations.TestOnly
+        fun resetInstanceForTesting() {
+            instance = null
         }
     }
     
@@ -252,36 +293,57 @@ class PlaybackStatsRepository private constructor(private val context: Context) 
         durationMs: Long,
         timestamp: Long = System.currentTimeMillis()
     ) {
-        if (song.id.isBlank() || durationMs <= 0) return
+        recordPlayback(
+            songId = song.id,
+            title = song.title,
+            artist = song.artist,
+            album = song.album,
+            genre = song.genre,
+            durationMs = durationMs,
+            timestamp = timestamp
+        )
+    }
+
+    /**
+     * Record a playback event by metadata fields
+     */
+    fun recordPlayback(
+        songId: String,
+        title: String?,
+        artist: String?,
+        album: String?,
+        genre: String?,
+        durationMs: Long,
+        timestamp: Long = System.currentTimeMillis()
+    ) {
+        if (songId.isBlank() || durationMs <= 0) return
         
         val coercedTimestamp = timestamp.coerceAtLeast(0L)
         val coercedDuration = durationMs.coerceIn(0L, MAX_REASONABLE_EVENT_DURATION_MS)
         val start = (coercedTimestamp - coercedDuration).coerceAtLeast(0L)
         
         val event = PlaybackEvent(
-            songId = song.id,
+            songId = songId,
             timestamp = coercedTimestamp,
             durationMs = coercedDuration,
             startTimestamp = start,
             endTimestamp = coercedTimestamp,
-            songTitle = song.title,
-            artistName = song.artist,
-            albumName = song.album,
-            genre = song.genre
+            songTitle = title,
+            artistName = artist,
+            albumName = album,
+            genre = genre
         )
         
-        synchronized(fileLock) {
-            val events = readEventsLocked()
-            
-            // Clean old events
+        val snapshot = synchronized(memoryLock) {
+            ensureLoadedFromDisk()
             val cutoff = coercedTimestamp - MAX_HISTORY_AGE_MS
             if (cutoff > 0) {
-                events.removeAll { it.endMillis() < cutoff }
+                inMemoryEvents.removeAll { it.endMillis() < cutoff }
             }
-            
-            events += event
-            writeEventsLocked(events)
+            inMemoryEvents += event
+            inMemoryEvents.toList()
         }
+        saveChannel.trySend(snapshot)
     }
     
     /**
@@ -296,29 +358,15 @@ class PlaybackStatsRepository private constructor(private val context: Context) 
         durationMs: Long,
         timestamp: Long = System.currentTimeMillis()
     ) {
-        if (songId.isBlank() || durationMs <= 0) return
-        
-        val event = PlaybackEvent(
+        recordPlayback(
             songId = songId,
-            timestamp = timestamp,
-            durationMs = durationMs.coerceIn(0L, MAX_REASONABLE_EVENT_DURATION_MS),
-            startTimestamp = (timestamp - durationMs).coerceAtLeast(0L),
-            endTimestamp = timestamp,
-            songTitle = title,
-            artistName = artist,
-            albumName = album,
-            genre = genre
+            title = title,
+            artist = artist,
+            album = album,
+            genre = genre,
+            durationMs = durationMs,
+            timestamp = timestamp
         )
-        
-        synchronized(fileLock) {
-            val events = readEventsLocked()
-            val cutoff = timestamp - MAX_HISTORY_AGE_MS
-            if (cutoff > 0) {
-                events.removeAll { it.endMillis() < cutoff }
-            }
-            events += event
-            writeEventsLocked(events)
-        }
     }
     
     /**
@@ -709,25 +757,56 @@ class PlaybackStatsRepository private constructor(private val context: Context) 
      * Clear all history
      */
     fun clearHistory() {
-        synchronized(fileLock) {
-            if (historyFile.exists()) {
-                historyFile.delete()
-            }
+        synchronized(memoryLock) {
+            inMemoryEvents.clear()
+            isLoaded = true
         }
         _statsSummary.value = null
+        ioScope.launch {
+            runCatching {
+                if (historyFile.exists()) {
+                    historyFile.delete()
+                }
+                val tempFile = File(historyFile.parentFile, "${historyFile.name}.tmp")
+                if (tempFile.exists()) {
+                    tempFile.delete()
+                }
+            }
+        }
     }
     
     // Private helper methods
     
-    private fun readEvents(): List<PlaybackEvent> = synchronized(fileLock) { 
-        readEventsLocked() 
+    private fun ensureLoadedFromDisk() {
+        if (isLoaded) return
+        synchronized(memoryLock) {
+            if (isLoaded) return
+            val diskEvents = readEventsFromDisk()
+            inMemoryEvents.clear()
+            inMemoryEvents.addAll(diskEvents)
+            isLoaded = true
+        }
     }
     
-    private fun readEventsLocked(): MutableList<PlaybackEvent> {
-        if (!historyFile.exists()) {
+    private fun readEvents(): List<PlaybackEvent> {
+        ensureLoadedFromDisk()
+        return synchronized(memoryLock) {
+            inMemoryEvents.toList()
+        }
+    }
+    
+    private fun readEventsFromDisk(): MutableList<PlaybackEvent> {
+        val targetFile = when {
+            historyFile.exists() && historyFile.length() > 0 -> historyFile
+            else -> {
+                val tempFile = File(historyFile.parentFile, "${historyFile.name}.tmp")
+                if (tempFile.exists() && tempFile.length() > 0) tempFile else historyFile
+            }
+        }
+        if (!targetFile.exists()) {
             return mutableListOf()
         }
-        val raw = runCatching { historyFile.readText() }
+        val raw = runCatching { targetFile.readText() }
             .getOrNull()
             ?.takeIf { it.isNotBlank() }
             ?: return mutableListOf()
@@ -742,9 +821,27 @@ class PlaybackStatsRepository private constructor(private val context: Context) 
         }.getOrElse { mutableListOf() }
     }
     
-    private fun writeEventsLocked(events: List<PlaybackEvent>) {
+    private fun writeEventsToDiskAtomic(events: List<PlaybackEvent>) {
         runCatching {
-            historyFile.writeText(gson.toJson(events))
+            val parent = historyFile.parentFile ?: return@runCatching
+            if (!parent.exists()) {
+                parent.mkdirs()
+            }
+            val tempFile = File(parent, "${historyFile.name}.tmp")
+            tempFile.writeText(gson.toJson(events))
+            if (!tempFile.renameTo(historyFile)) {
+                tempFile.copyTo(historyFile, overwrite = true)
+                tempFile.delete()
+            }
+        }
+    }
+    
+    suspend fun flushPendingWrites() {
+        val snapshot = synchronized(memoryLock) {
+            inMemoryEvents.toList()
+        }
+        withContext(Dispatchers.IO) {
+            writeEventsToDiskAtomic(snapshot)
         }
     }
     

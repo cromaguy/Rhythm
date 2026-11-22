@@ -5578,13 +5578,13 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                 val song = _songs.value.find { it.id == songId } ?: _recentlyPlayed.value.find { it.id == songId }
                 if (song != null) {
                     Log.d(TAG, "Finalizing playback for '${song.title}': ${actualDuration}ms actual listening time")
-                    playbackStatsRepository.recordPlayback(
-                        song = song,
-                        durationMs = actualDuration
-                    )
-                    if (appSettings.defaultPlaylistsEnabled.value) {
-                        viewModelScope.launch(Dispatchers.IO) {
-                            try {
+                    viewModelScope.launch(Dispatchers.IO) {
+                        try {
+                            playbackStatsRepository.recordPlayback(
+                                song = song,
+                                durationMs = actualDuration
+                            )
+                            if (appSettings.defaultPlaylistsEnabled.value) {
                                 if (appSettings.smartPlaylistRecentlyPlayed.value) {
                                     populateRecentlyPlayedPlaylist()
                                 }
@@ -5594,9 +5594,9 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                                 if (appSettings.smartPlaylistMostPlayed.value) {
                                     populateMostPlayedPlaylist()
                                 }
-                            } catch (e: Exception) {
-                                Log.w(TAG, "Failed to update dynamic playlists on playback finalized", e)
                             }
+                        } catch (e: Exception) {
+                            Log.w(TAG, "Failed to record playback or update dynamic playlists on playback finalized", e)
                         }
                     }
                 } else {
