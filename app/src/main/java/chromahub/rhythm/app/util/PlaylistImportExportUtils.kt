@@ -793,8 +793,9 @@ object PlaylistImportExportUtils {
         return SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
     }
     
-    private fun sanitizeFileName(fileName: String): String {
-        return fileName.replace(Regex("[^a-zA-Z0-9._-]"), "_")
+    internal fun sanitizeFileName(fileName: String): String {
+        val sanitized = fileName.replace(Regex("[\\\\/:*?\"<>|\\x00-\\x1F]"), "_").trim()
+        return sanitized.ifBlank { "playlist" }
     }
     
     private fun getFileName(context: Context, uri: Uri): String {
