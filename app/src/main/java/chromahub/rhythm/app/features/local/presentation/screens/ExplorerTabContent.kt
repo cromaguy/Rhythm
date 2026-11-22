@@ -738,11 +738,13 @@ fun SingleCardExplorerContent(
                                         if (isSelectionMode) {
                                             onSongSelectionToggle(song)
                                         } else {
-                                            val songIndex = pathFolderSongs.indexOfFirst { it.id == song.id }
+                                            val songIndex = pathFolderSongs.indexOfFirst {
+                                                it.id == song.id || (it.path != null && it.path == song.path)
+                                            }
                                             if (songIndex >= 0) {
                                                 onPlayQueueFromIndex(pathFolderSongs, songIndex)
                                             } else {
-                                                onSongClick(song)
+                                                onPlayQueueFromIndex(listOf(song), 0)
                                             }
                                         }
                                     }

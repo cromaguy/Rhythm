@@ -1879,7 +1879,17 @@ fun LibraryScreen(
                                     )
                                     "EXPLORER" -> SingleCardExplorerContent(
                                         songs = songs,
-                                        onSongClick = onSongClick,
+                                        onSongClick = { song ->
+                                            val folderSongs = explorerFolderSongs
+                                            val index = folderSongs.indexOfFirst {
+                                                it.id == song.id || (it.path != null && it.path == song.path)
+                                            }
+                                            if (index >= 0) {
+                                                onPlayQueueFromIndex(folderSongs, index)
+                                            } else {
+                                                onPlayQueueFromIndex(listOf(song), 0)
+                                            }
+                                        },
                                         listState = explorerListState,
                                         onAddToPlaylist = { song ->
                                             songsToAddToPlaylist = listOf(song)
