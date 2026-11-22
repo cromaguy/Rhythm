@@ -845,6 +845,18 @@ class MainActivity : AppCompatActivity() {
                         Log.w(TAG, "ACTION_VIEW intent received without data")
                     }
                 }
+                Intent.ACTION_MAIN,
+                "android.intent.action.MUSIC_PLAYER" -> {
+                    Log.d(TAG, "Received music player launch intent: ${intent.action}")
+                }
+                "android.media.action.MEDIA_PLAY_FROM_SEARCH",
+                android.provider.MediaStore.INTENT_ACTION_MEDIA_PLAY_FROM_SEARCH -> {
+                    Log.d(TAG, "Received MEDIA_PLAY_FROM_SEARCH intent from automation or assistant")
+                    val playIntent = Intent(this, chromahub.rhythm.app.infrastructure.service.MediaPlaybackService::class.java).apply {
+                        action = chromahub.rhythm.app.infrastructure.service.MediaPlaybackService.ACTION_PLAY_PAUSE
+                    }
+                    ServiceStartUtils.startServiceSafely(this, playIntent, TAG, "media_play_from_search")
+                }
                 else -> {
                     Log.d(TAG, "Unhandled intent action: ${intent.action}")
                 }
