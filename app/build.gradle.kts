@@ -23,7 +23,11 @@ plugins {
 
 android {
     namespace = "chromahub.rhythm.app"
-    compileSdk = 37
+    compileSdk {
+        version = release(37) {
+            minorApiLevel = 2
+        }
+    }
 
     defaultConfig {
         applicationId = "chromahub.rhythm.app"
@@ -280,6 +284,7 @@ dependencies {
     
     // Fragment
     implementation(libs.androidx.fragment.ktx)
+    implementation(libs.androidx.documentfile)
     
     // MediaRouter for Android media output switching
     implementation(libs.androidx.mediarouter)

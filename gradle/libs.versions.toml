@@ -43,6 +43,7 @@ profileinstaller = "1.4.1"
 uiautomator = "2.4.1"
 window = "1.5.1"
 reorderables = "3.1.0"
+documentfile = "1.1.0"
 
 [libraries]
 androidx-window = { group = "androidx.window", name = "window", version.ref = "window" }
@@ -84,6 +85,7 @@ androidx-compose-animation-graphics = { group = "androidx.compose.animation", na
 androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" }
 com-google-accompanist-accompanist-permissions = { group = "com.google.accompanist", name = "accompanist-permissions", version.ref = "accompanistPermissions" }
 androidx-fragment-ktx = { group = "androidx.fragment", name = "fragment-ktx", version.ref = "fragmentKtx" }
+androidx-documentfile = { group = "androidx.documentfile", name = "documentfile", version.ref = "documentfile" }
 androidx-mediarouter = { group = "androidx.mediarouter", name = "mediarouter", version.ref = "mediaRouter" }
 io-coil-kt-coil-compose = { group = "io.coil-kt", name = "coil-compose", version.ref = "coilCompose" }
 net-jthink-jaudiotagger = { group = "net.jthink", name = "jaudiotagger", version.ref = "jaudiotagger" }
