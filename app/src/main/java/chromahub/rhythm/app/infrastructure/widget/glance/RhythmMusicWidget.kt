@@ -110,6 +110,13 @@ class RhythmMusicWidget : GlanceAppWidget() {
         private val EXTRA_LARGE_PLUS_SIZE = DpSize(350.dp, 260.dp)
         private val HUGE_SIZE = DpSize(400.dp, 300.dp)
 
+        internal fun computeResponsiveScale(width: Float, height: Float): Float {
+            if (width <= 0f || height <= 0f) return 1.0f
+            val widthScale = width / 250f
+            val heightScale = if (height < 100f) height / 80f else height / 180f
+            return minOf(widthScale, heightScale).coerceIn(0.65f, 1.2f)
+        }
+
         // LruCache for album art bitmaps
         private object AlbumArtCache {
             private const val CACHE_SIZE = 4 * 1024 * 1024 // 4 MiB
@@ -1082,14 +1089,14 @@ class RhythmMusicWidget : GlanceAppWidget() {
     // ==================== Shared UI Components ====================
 
     /**
-     * Responsive scale factor based on the widget width so fonts, artwork and
-     * spacing grow/shrink with the widget instead of staying fixed. Capped at
-     * 1.2x so elements never balloon on large widgets.
+     * Responsive scale factor constrained by both widget width and height so
+     * fonts, artwork and spacing scale harmoniously without pushing controls
+     * off-screen on wide/short widgets (such as 4x1 or 4x2 on foldables).
      */
     @Composable
     private fun responsiveScale(): Float {
         val size = LocalSize.current
-        return (size.width.value / 250f).coerceIn(0.7f, 1.2f)
+        return computeResponsiveScale(size.width.value, size.height.value)
     }
 
     @OptIn(ExperimentalMaterial3ExpressiveApi::class)
