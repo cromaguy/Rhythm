@@ -2110,8 +2110,8 @@ private fun LocalNavigationContent(
                         chromahub.rhythm.app.shared.presentation.screens.UniversalSearchScreen(
                             localViewModel = viewModel,
                             streamingViewModel = streamingMusicViewModel,
-                            onLocalSongClick = { song ->
-                                viewModel.playSongFromSearch(song, songs)
+                            onLocalSongClick = { song, searchContextSongs ->
+                                viewModel.playSongFromSearch(song, searchContextSongs)
                                 navController.navigate(Screen.Player.route)
                             },
                             onLocalAlbumClick = { album ->

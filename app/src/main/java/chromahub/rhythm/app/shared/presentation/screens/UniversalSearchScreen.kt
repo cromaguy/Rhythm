@@ -112,7 +112,7 @@ import chromahub.rhythm.app.util.windowScreenHeightDp
 fun UniversalSearchScreen(
     localViewModel: MusicViewModel = viewModel(),
     streamingViewModel: StreamingMusicViewModel = viewModel(),
-    onLocalSongClick: (Song) -> Unit = {},
+    onLocalSongClick: (Song, List<Song>) -> Unit = { _, _ -> },
     onLocalAlbumClick: (Album) -> Unit = {},
     onLocalArtistClick: (Artist) -> Unit = {},
     onLocalPlaylistClick: (Playlist) -> Unit = {},
@@ -699,7 +699,7 @@ fun UniversalSearchScreen(
                                     matchedLocalSongs.take(3).forEach { song ->
                                         add(SongSearchItem("LOCAL", song.title, "${song.artist} • ${song.album}", song.artworkUri, song) {
                                             if (query.isNotBlank()) localViewModel.addSearchQuery(query)
-                                            handleAction("LOCAL") { onLocalSongClick(song) }
+                                            handleAction("LOCAL") { onLocalSongClick(song, matchedLocalSongs) }
                                         })
                                     }
                                     matchedStreamingSongs.take(3).forEach { song ->
@@ -947,7 +947,7 @@ fun UniversalSearchScreen(
                                 matchedLocalSongs.take(3).forEach { song ->
                                     add(SongSearchItem("LOCAL", song.title, "${song.artist} • ${song.album}", song.artworkUri, song) {
                                         if (query.isNotBlank()) localViewModel.addSearchQuery(query)
-                                        handleAction("LOCAL") { onLocalSongClick(song) }
+                                        handleAction("LOCAL") { onLocalSongClick(song, matchedLocalSongs) }
                                     })
                                 }
                                 matchedStreamingSongs.take(3).forEach { song ->
@@ -1442,7 +1442,7 @@ fun UniversalSearchScreen(
                     selectedSongForOptions = songObj
                     showSongOptionsSheet = true
                 },
-                onLocalSongClick = { song -> handleAction("LOCAL") { onLocalSongClick(song) } },
+                onLocalSongClick = { song, songsList -> handleAction("LOCAL") { onLocalSongClick(song, songsList) } },
                 onStreamingSongClick = { song -> handleAction("STREAMING") { onStreamingSongClick(song) } },
                 haptics = haptics
             )
@@ -1468,7 +1468,7 @@ fun UniversalSearchScreen(
                 onPlay = {
                     handleAction(if (isLocal) "LOCAL" else "STREAMING") {
                         if (localSong != null) {
-                            onLocalSongClick(localSong)
+                            onLocalSongClick(localSong, matchedLocalSongs)
                         } else if (streamingSong != null) {
                             onStreamingSongClick(streamingSong)
                         }
@@ -2034,7 +2034,7 @@ fun UniversalAllSongsPage(
     streamingSongs: List<StreamingSong>,
     onBack: () -> Unit,
     onOptionsClick: (Any) -> Unit,
-    onLocalSongClick: (Song) -> Unit,
+    onLocalSongClick: (Song, List<Song>) -> Unit,
     onStreamingSongClick: (StreamingSong) -> Unit,
     haptics: androidx.compose.ui.hapticfeedback.HapticFeedback
 ) {
@@ -2084,7 +2084,7 @@ fun UniversalAllSongsPage(
                     artworkUri = artworkUri,
                     mode = item.second,
                     onClick = {
-                        if (isLocal) onLocalSongClick(item.first as Song)
+                        if (isLocal) onLocalSongClick(item.first as Song, localSongs)
                         else onStreamingSongClick(item.first as StreamingSong)
                     },
                     onMoreClick = {
