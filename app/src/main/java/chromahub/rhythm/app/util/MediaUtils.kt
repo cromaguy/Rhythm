@@ -3630,11 +3630,22 @@ object MediaUtils {
                     null
                 }
                 val propertyMap = HashMap(existingMetadata?.propertyMap ?: emptyMap())
+                val ext = file.extension.lowercase(java.util.Locale.ROOT)
 
                 if (lyrics.isNotBlank()) {
                     propertyMap["LYRICS"] = arrayOf(lyrics)
+                    if (ext in setOf("m4a", "mp4", "m4b", "alac", "aac")) {
+                        propertyMap["©lyr"] = arrayOf(lyrics)
+                    } else if (ext in setOf("flac", "ogg", "oga", "opus")) {
+                        propertyMap["UNSYNCEDLYRICS"] = arrayOf(lyrics)
+                    }
                 } else {
                     propertyMap.remove("LYRICS")
+                    propertyMap.remove("UNSYNCEDLYRICS")
+                    propertyMap.remove("SYNCEDLYRICS")
+                    propertyMap.remove("©lyr")
+                    propertyMap.remove("\u00A9lyr")
+                    propertyMap.remove("lyr")
                 }
 
                 val saveFd = fd.dup()
@@ -3683,17 +3694,57 @@ object MediaUtils {
             ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY).use { fd ->
                 val metadata = TagLib.getMetadata(fd.detachFd())
                 val propertyMap = metadata?.propertyMap ?: emptyMap()
-                val lyricsValues = propertyMap["LYRICS"]
-                if (!lyricsValues.isNullOrEmpty() && lyricsValues[0].isNotBlank()) {
-                    lyricsValues[0]
-                } else {
-                    null
-                }
+                extractLyricsFromPropertyMap(propertyMap)
             }
         } catch (e: Exception) {
             Log.w(TAG, "TAGLIB: Failed to read lyrics", e)
             null
         }
+    }
+
+    /**
+     * Extracts lyrics from a TagLib property map supporting Vorbis comments, MP4 atoms, ID3, and WMA tags.
+     */
+    fun extractLyricsFromPropertyMap(propertyMap: Map<String, Array<String>>): String? {
+        if (propertyMap.isEmpty()) return null
+
+        val priorityKeys = listOf(
+            "LYRICS",
+            "UNSYNCEDLYRICS",
+            "SYNCEDLYRICS",
+            "UNSYNCED LYRICS",
+            "SYNCED LYRICS",
+            "©lyr",
+            "\u00A9lyr",
+            "USLT",
+            "SYLT",
+            "lyr",
+            "WM/Lyrics",
+            "WM/Lyrics_Synchronised",
+            "TEXT"
+        )
+
+        for (key in priorityKeys) {
+            val values = propertyMap[key]
+            if (!values.isNullOrEmpty() && values[0].isNotBlank()) {
+                return values[0].trim()
+            }
+        }
+
+        for (key in priorityKeys) {
+            val entry = propertyMap.entries.firstOrNull { it.key.equals(key, ignoreCase = true) }
+            val values = entry?.value
+            if (!values.isNullOrEmpty() && values[0].isNotBlank()) {
+                return values[0].trim()
+            }
+        }
+
+        val fallbackEntry = propertyMap.entries.firstOrNull { (k, v) ->
+            val upperKey = k.uppercase(java.util.Locale.ROOT)
+            (upperKey.contains("LYRIC") || upperKey.contains("USLT") || k.contains("lyr")) &&
+                !v.isNullOrEmpty() && v[0].isNotBlank()
+        }
+        return fallbackEntry?.value?.get(0)?.trim()
     }
 }
 

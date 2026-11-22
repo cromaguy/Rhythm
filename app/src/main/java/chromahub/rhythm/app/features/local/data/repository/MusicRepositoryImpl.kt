@@ -2941,9 +2941,13 @@ class MusicRepository(context: Context) {
                         return@use extractLyricsFromFLAC(filePath)
                     }
                     
-                    // For M4A files, try direct iTunes metadata parsing
-                    if (filePath?.endsWith(".m4a", ignoreCase = true) == true) {
-                        Log.d(TAG, "===== Detected M4A file, trying M4A extraction =====")
+                    // For MP4/M4A/ALAC/M4B/AAC files, try direct iTunes metadata parsing
+                    if (filePath?.endsWith(".m4a", ignoreCase = true) == true ||
+                        filePath?.endsWith(".mp4", ignoreCase = true) == true ||
+                        filePath?.endsWith(".m4b", ignoreCase = true) == true ||
+                        filePath?.endsWith(".alac", ignoreCase = true) == true ||
+                        filePath?.endsWith(".aac", ignoreCase = true) == true) {
+                        Log.d(TAG, "===== Detected MP4/M4A file, trying M4A extraction =====")
                         return@use extractLyricsFromM4A(filePath)
                     }
                     
@@ -3031,8 +3035,17 @@ class MusicRepository(context: Context) {
     private fun parseVorbisComments(data: ByteArray): LyricsData? {
         val commentEntries = parseVorbisCommentEntries(data) ?: return null
 
+        val recognizedKeys = setOf(
+            "LYRICS",
+            "UNSYNCEDLYRICS",
+            "SYNCEDLYRICS",
+            "UNSYNCED LYRICS",
+            "SYNCED LYRICS"
+        )
+
         for ((key, value) in commentEntries) {
-            if ((key == "LYRICS" || key == "UNSYNCEDLYRICS") && value.isNotBlank()) {
+            val upperKey = key.uppercase(java.util.Locale.ROOT).trim()
+            if (upperKey in recognizedKeys && value.isNotBlank()) {
                 Log.d(TAG, "Found $key tag in Vorbis comments (${value.length} chars)")
                 return parseLyricsData(value)
             }
