@@ -958,10 +958,15 @@ class RhythmPlayerEngine(
         playerB.clearMediaItems()
 
         try {
-            playerB.seekTo(0)
+            if (!playerB.currentTimeline.isEmpty) {
+                playerB.seekTo(0)
+            }
             playerB.playbackParameters = playerA.playbackParameters
         } catch (e: Exception) {
-            playerB.release()
+            Log.w(TAG, "Failed to reset playerB standby parameters, falling back to clean rebuild", e)
+            try {
+                playerB.release()
+            } catch (_: Exception) {}
             val otherReplayGain = if (incomingReplayGain === playerAReplayGain) playerBReplayGain else playerAReplayGain
             val otherBassBoost = if (incomingReplayGain === playerAReplayGain) playerBBassBoost else playerABassBoost
             val otherSpatial = if (incomingReplayGain === playerAReplayGain) playerBSpatialization else playerASpatialization
@@ -974,6 +979,7 @@ class RhythmPlayerEngine(
                 replayGainProcessor = otherReplayGain
             ).apply {
                 playbackParameters = playerA.playbackParameters
+                addAnalyticsListener(analyticsListenerB)
             }
         }
     }
