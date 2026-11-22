@@ -163,7 +163,8 @@ fun List<Album>.findAlbumForRoute(albumId: String, albumName: String): Album? {
         .orEmpty()
     val fallbackAlbumName = routeAlbumName.ifBlank { legacyUnknownName }
 
-    return firstOrNull { it.id == routeAlbumId || it.id.replace('/', '_') == routeAlbumId }
+    // Direct match by ID (both raw and slash-replaced)
+    val directIdMatch = firstOrNull { it.id == routeAlbumId || it.id.replace('/', '_') == routeAlbumId }
         ?: firstOrNull { album ->
             routeAlbumId.isNotBlank() &&
                 album.songs.any {
@@ -171,9 +172,35 @@ fun List<Album>.findAlbumForRoute(albumId: String, albumName: String): Album? {
                     id == routeAlbumId || id.replace('/', '_') == routeAlbumId
                 }
         }
-        ?: fallbackAlbumName.takeIf { it.isNotBlank() }?.let { name ->
-            firstOrNull { it.hasTitle(name) }
-        }
+    if (directIdMatch != null) return directIdMatch
+
+    // Direct match by title
+    if (fallbackAlbumName.isNotBlank()) {
+        val titleMatch = firstOrNull { it.hasTitle(fallbackAlbumName) }
+        if (titleMatch != null) return titleMatch
+    }
+
+    // Fallback: check if the route params are URL-encoded (e.g. %25 or %20)
+    val decodedId = runCatching { Uri.decode(routeAlbumId) }.getOrNull()?.trim()
+    val decodedName = runCatching { Uri.decode(fallbackAlbumName) }.getOrNull()?.trim()
+
+    if (!decodedId.isNullOrBlank() && decodedId != routeAlbumId) {
+        val matchByDecodedId = firstOrNull { it.id == decodedId || it.id.replace('/', '_') == decodedId }
+            ?: firstOrNull { album ->
+                album.songs.any {
+                    val id = it.albumId.trim()
+                    id == decodedId || id.replace('/', '_') == decodedId
+                }
+            }
+        if (matchByDecodedId != null) return matchByDecodedId
+    }
+
+    if (!decodedName.isNullOrBlank() && decodedName != fallbackAlbumName) {
+        val matchByDecodedName = firstOrNull { it.hasTitle(decodedName) }
+        if (matchByDecodedName != null) return matchByDecodedName
+    }
+
+    return null
 }
 
 @Immutable

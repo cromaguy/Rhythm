@@ -2477,8 +2477,8 @@ private fun LocalNavigationContent(
                             )
                     }
                 ) { backStackEntry ->
-                    val albumId = backStackEntry.arguments?.getString("albumId")?.let(Uri::decode).orEmpty()
-                    val albumName = backStackEntry.arguments?.getString("albumName")?.let(Uri::decode).orEmpty()
+                    val albumId = backStackEntry.arguments?.getString("albumId").orEmpty()
+                    val albumName = backStackEntry.arguments?.getString("albumName").orEmpty()
 
                     var isAlbumLoading by remember(albumId) { mutableStateOf(true) }
                     var albumSongs by remember(albumId) { mutableStateOf<List<StreamingSong>>(emptyList()) }
@@ -2738,8 +2738,8 @@ private fun LocalNavigationContent(
                             )
                     }
                 ) { backStackEntry ->
-                    val artistId = backStackEntry.arguments?.getString("artistId")?.let(Uri::decode).orEmpty()
-                    val routeArtistName = backStackEntry.arguments?.getString("artistName")?.let(Uri::decode).orEmpty()
+                    val artistId = backStackEntry.arguments?.getString("artistId").orEmpty()
+                    val routeArtistName = backStackEntry.arguments?.getString("artistName").orEmpty()
 
                     val followedArtists by streamingMusicViewModel.followedArtists.collectAsState()
                     val searchResults by streamingMusicViewModel.searchResults.collectAsState()
@@ -3029,7 +3029,7 @@ private fun LocalNavigationContent(
                             )
                     }
                 ) { backStackEntry ->
-                    val playlistId = backStackEntry.arguments?.getString("playlistId")?.let(Uri::decode).orEmpty()
+                    val playlistId = backStackEntry.arguments?.getString("playlistId").orEmpty()
 
                     val savedPlaylists by streamingMusicViewModel.savedPlaylists.collectAsState()
                     val featuredPlaylists by streamingMusicViewModel.featuredPlaylists.collectAsState()
@@ -3258,7 +3258,7 @@ private fun LocalNavigationContent(
                         fadeOut(animationSpec = tween(300))
                     }
                 ) { backStackEntry ->
-                    val serviceId = backStackEntry.arguments?.getString("serviceId")?.let(Uri::decode).orEmpty()
+                    val serviceId = backStackEntry.arguments?.getString("serviceId").orEmpty()
                     StreamingServiceSetupScreen(
                         serviceId = serviceId,
                         viewModel = streamingMusicViewModel,
@@ -3835,7 +3835,7 @@ private fun LocalNavigationContent(
                                 )
                     }
                 ) { backStackEntry ->
-                    val artistName = backStackEntry.arguments?.getString("artistName")?.let { Uri.decode(it) } ?: ""
+                    val artistName = backStackEntry.arguments?.getString("artistName") ?: ""
                     val favoriteSongs by viewModel.favoriteSongs.collectAsState()
                     var pendingMetadataEditCompleteCallback by remember { mutableStateOf<((Boolean) -> Unit)?>(null) }
                     
@@ -4072,8 +4072,8 @@ private fun LocalNavigationContent(
                                 )
                     }
                 ) { backStackEntry ->
-                    val albumId = backStackEntry.arguments?.getString("albumId")?.let { Uri.decode(it) } ?: ""
-                    val albumName = backStackEntry.arguments?.getString("albumName")?.let { Uri.decode(it) } ?: ""
+                    val albumId = backStackEntry.arguments?.getString("albumId") ?: ""
+                    val albumName = backStackEntry.arguments?.getString("albumName") ?: ""
                     val favoriteSongs by viewModel.favoriteSongs.collectAsState()
 
                     // Write permission launcher for Android 11+ metadata editing

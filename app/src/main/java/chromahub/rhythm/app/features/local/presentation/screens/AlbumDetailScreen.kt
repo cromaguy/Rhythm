@@ -244,9 +244,23 @@ fun AlbumDetailScreen(
 
     val allDisplaySongs = remember(album, songsOverride, allLibrarySongs, albumId, albumName) {
         songsOverride ?: album?.songs?.takeIf { it.isNotEmpty() } ?: run {
+            val decodedAlbumId = runCatching { Uri.decode(albumId.trim()) }.getOrNull()
+            val decodedAlbumName = runCatching { Uri.decode(albumName.trim()) }.getOrNull()
             val matchingSongs = allLibrarySongs.filter { song ->
-                (albumId.isNotBlank() && song.albumId.trim() == albumId.trim()) ||
-                (albumName.isNotBlank() && song.album.trim().equals(albumName.trim(), ignoreCase = true))
+                val sId = song.albumId.trim()
+                val sIdSafe = sId.replace('/', '_')
+                val targetId = albumId.trim()
+                val matchesId = targetId.isNotBlank() && (
+                    sId == targetId || sIdSafe == targetId ||
+                    (decodedAlbumId != null && (sId == decodedAlbumId || sIdSafe == decodedAlbumId))
+                )
+                val sName = song.album.trim()
+                val targetName = albumName.trim()
+                val matchesName = targetName.isNotBlank() && (
+                    sName.equals(targetName, ignoreCase = true) ||
+                    (decodedAlbumName != null && sName.equals(decodedAlbumName, ignoreCase = true))
+                )
+                matchesId || matchesName
             }
             matchingSongs.takeIf { it.isNotEmpty() } ?: album?.songs ?: emptyList()
         }
