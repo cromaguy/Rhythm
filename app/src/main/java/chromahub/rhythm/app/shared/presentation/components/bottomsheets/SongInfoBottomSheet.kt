@@ -76,6 +76,7 @@ import androidx.compose.ui.window.DialogProperties
 import chromahub.rhythm.app.R
 import chromahub.rhythm.app.shared.data.model.Song
 import chromahub.rhythm.app.shared.data.model.AppSettings
+import chromahub.rhythm.app.util.StoragePathUtils
 import chromahub.rhythm.app.shared.presentation.components.common.M3PlaceholderType
 import chromahub.rhythm.app.shared.presentation.components.common.ActionProgressLoader
 import chromahub.rhythm.app.shared.presentation.components.common.ContentLoadingIndicator
@@ -287,11 +288,11 @@ fun SongInfoBottomSheet(
     }
     
     val isInBlacklistedFolder = folderPath?.let { currentPath ->
-        blacklistedFolders.any { currentPath.startsWith(it, ignoreCase = true) }
+        StoragePathUtils.isPathInFolders(currentPath, blacklistedFolders)
     } ?: false
     
     val isInWhitelistedFolder = folderPath?.let { currentPath ->
-        whitelistedFolders.any { currentPath.startsWith(it, ignoreCase = true) }
+        StoragePathUtils.isPathInFolders(currentPath, whitelistedFolders)
     } ?: false
 
     if (song == null) {

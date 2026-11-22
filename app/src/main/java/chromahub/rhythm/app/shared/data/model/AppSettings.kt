@@ -4389,9 +4389,7 @@ private val _autoCheckForUpdates = MutableStateFlow(prefs.getBoolean(KEY_AUTO_CH
         
         // Check folder blacklist
         if (songPath != null) {
-            return _blacklistedFolders.value.any { folderPath ->
-                isFolderSubdirectoryOrEqual(folderPath, songPath)
-            }
+            return StoragePathUtils.isPathInFolders(songPath, _blacklistedFolders.value)
         }
         
         return false
@@ -4507,9 +4505,7 @@ private val _autoCheckForUpdates = MutableStateFlow(prefs.getBoolean(KEY_AUTO_CH
         
         // Check folder whitelist
         if (songPath != null) {
-            return _whitelistedFolders.value.any { folderPath ->
-                isFolderSubdirectoryOrEqual(folderPath, songPath)
-            }
+            return StoragePathUtils.isPathInFolders(songPath, _whitelistedFolders.value)
         }
         
         return false

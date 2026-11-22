@@ -124,7 +124,22 @@ class StoragePathUtilsTest {
         val folders = setOf("/storage/emulated/0/Music")
 
         assertFalse(StoragePathUtils.isPathInFolders("/storage/emulated/0/Music2/song.mp3", folders))
+        assertFalse(StoragePathUtils.isPathInFolders("/storage/emulated/0/Music2", folders))
+        assertFalse(StoragePathUtils.isPathInFolders("/storage/emulated/0/Music-Archive", folders))
+        assertFalse(StoragePathUtils.isPathInFolders("/storage/emulated/0/Music-Archive/track.flac", folders))
+        assertFalse(StoragePathUtils.isPathInFolders("/storage/emulated/0/MusicOld", folders))
         assertFalse(StoragePathUtils.isPathInFolders("/storage/emulated/0/Download/song.mp3", folders))
+    }
+
+    @Test
+    fun isPathInFolders_caseInsensitiveAndTrailingSlashHandling() {
+        val folders = listOf("/storage/emulated/0/Music/")
+
+        assertTrue(StoragePathUtils.isPathInFolders("/storage/emulated/0/music", folders))
+        assertTrue(StoragePathUtils.isPathInFolders("/STORAGE/EMULATED/0/MUSIC/", folders))
+        assertTrue(StoragePathUtils.isPathInFolders("/storage/emulated/0/Music/Pop/song.mp3", folders))
+        assertFalse(StoragePathUtils.isPathInFolders("/storage/emulated/0/Music2", folders))
+        assertFalse(StoragePathUtils.isPathInFolders("/storage/emulated/0/music2/song.mp3", folders))
     }
 
     @Test
