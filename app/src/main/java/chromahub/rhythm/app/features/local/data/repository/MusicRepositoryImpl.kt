@@ -742,6 +742,102 @@ class MusicRepository(context: Context) {
         
         // Precompiled regex for primary artist extraction
         private val PRIMARY_ARTIST_REGEX = Regex("""(?i)\s+(feat\.|ft\.|featuring|with|and|&)\s+.*""")
+        private val DISC_FOLDER_REGEX = Regex("""/(?:cd|disc|disk)\s*\d+$""", RegexOption.IGNORE_CASE)
+        private val GENERIC_DIRECTORY_NAMES = setOf(
+            "download",
+            "downloads",
+            "music",
+            "audio",
+            "media",
+            "bluetooth",
+            "internal storage",
+            "sdcard",
+            "0",
+            "emulated"
+        )
+
+        internal fun getRootAlbumFolder(path: String?): String? {
+            if (path.isNullOrBlank()) return null
+            val parent = path.substringBeforeLast('/', "")
+            if (parent.isBlank()) return null
+            val normalized = DISC_FOLDER_REGEX.replace(parent, "")
+            return normalized.lowercase(Locale.ROOT).takeIf { it.isNotBlank() }
+        }
+
+        internal fun isGenericRootDirectory(folderPath: String): Boolean {
+            val trimmed = folderPath.trimEnd('/').lowercase(Locale.ROOT)
+            if (trimmed == "/storage/emulated/0" ||
+                trimmed == "/storage/emulated" ||
+                trimmed == "/storage" ||
+                trimmed == "/sdcard" ||
+                trimmed == "/mnt/sdcard") {
+                return true
+            }
+
+            val rootPrefixes = listOf(
+                "/storage/emulated/0/",
+                "/sdcard/",
+                "/mnt/sdcard/"
+            )
+            for (prefix in rootPrefixes) {
+                if (trimmed.startsWith(prefix)) {
+                    val rel = trimmed.removePrefix(prefix)
+                    if (!rel.contains('/') && rel in GENERIC_DIRECTORY_NAMES) {
+                        return true
+                    }
+                }
+            }
+
+            if (trimmed.startsWith("/storage/")) {
+                val parts = trimmed.removePrefix("/storage/").split('/')
+                if (parts.size == 1) return true
+                if (parts.size == 2 && parts[1] in GENERIC_DIRECTORY_NAMES) return true
+            }
+
+            return false
+        }
+
+        internal fun extractPrimaryArtist(artistStr: String): String {
+            val trimmed = artistStr.trim()
+            if (trimmed.isBlank() || trimmed.equals("<unknown>", ignoreCase = true)) return "Unknown Artist"
+            val main = trimmed.replace(PRIMARY_ARTIST_REGEX, "").trim()
+            return if (main.isNotBlank()) main else trimmed
+        }
+
+        internal fun getAlbumGroupingKey(song: Song): String {
+            val normAlbum = song.album.trim().lowercase(Locale.ROOT).ifBlank { "unknown album" }
+
+            val rootAlbumFolder = getRootAlbumFolder(song.path)
+            val isGeneric = rootAlbumFolder != null && isGenericRootDirectory(rootAlbumFolder)
+
+            if (rootAlbumFolder != null && !isGeneric) {
+                return "folder_${rootAlbumFolder}|${normAlbum}"
+            }
+
+            val normAlbumArtist = song.albumArtist?.trim()
+                ?.takeIf { it.isNotBlank() && !it.equals("<unknown>", ignoreCase = true) }
+                ?.lowercase(Locale.ROOT)
+
+            if (normAlbumArtist != null) {
+                return "albumartist_${normAlbumArtist}|${normAlbum}"
+            }
+
+            val primaryArtist = extractPrimaryArtist(song.artist).lowercase(Locale.ROOT)
+            if (primaryArtist.isNotBlank() && primaryArtist != "unknown artist") {
+                return "artist_${primaryArtist}|${normAlbum}"
+            }
+
+            val normAlbumId = song.albumId.trim().takeIf { it.isNotBlank() && it != "0" && it != "-1" }
+            if (normAlbumId != null && normAlbumId.all { it.isDigit() }) {
+                return "mediastore_${normAlbumId}|${normAlbum}"
+            }
+
+            if (rootAlbumFolder != null) {
+                return "folder_${rootAlbumFolder}|${normAlbum}"
+            }
+
+            return "artist_${primaryArtist}|${normAlbum}"
+        }
         
         // API rate limiting constants
         private const val DEEZER_MIN_DELAY = 200L
@@ -1923,38 +2019,6 @@ class MusicRepository(context: Context) {
             }
             null
         }
-    }
-
-    private fun extractPrimaryArtist(artistStr: String): String {
-        val trimmed = artistStr.trim()
-        if (trimmed.isBlank() || trimmed.equals("<unknown>", ignoreCase = true)) return "Unknown Artist"
-        val main = trimmed.replace(PRIMARY_ARTIST_REGEX, "").trim()
-        return if (main.isNotBlank()) main else trimmed
-    }
-
-    private fun getAlbumGroupingKey(song: Song): String {
-        val normAlbum = song.album.trim().lowercase(Locale.ROOT).ifBlank { "unknown album" }
-
-        val normAlbumArtist = song.albumArtist?.trim()
-            ?.takeIf { it.isNotBlank() && !it.equals("<unknown>", ignoreCase = true) }
-            ?.lowercase(Locale.ROOT)
-
-        if (normAlbumArtist != null) {
-            return "albumartist_${normAlbumArtist}|${normAlbum}"
-        }
-
-        val normAlbumId = song.albumId.trim().takeIf { it.isNotBlank() && it != "0" && it != "-1" }
-        if (normAlbumId != null && normAlbumId.all { it.isDigit() }) {
-            return "mediastore_${normAlbumId}|${normAlbum}"
-        }
-
-        val parentFolder = song.path?.substringBeforeLast('/', "")?.lowercase(Locale.ROOT)?.takeIf { it.isNotBlank() }
-        if (!parentFolder.isNullOrBlank()) {
-            return "folder_${parentFolder}|${normAlbum}"
-        }
-
-        val primaryArtist = extractPrimaryArtist(song.artist).lowercase(Locale.ROOT)
-        return "artist_${primaryArtist}|${normAlbum}"
     }
 
     private fun findBestAlbumArtist(songs: List<Song>): String {
