@@ -1326,7 +1326,9 @@ fun ExpressivePlayerControlGroup(
     isCompactWidth: Boolean = false,
     isCompactHeight: Boolean = false,
     isLoading: Boolean = false,
-    useGlassEffect: Boolean = false
+    useGlassEffect: Boolean = false,
+    showContainer: Boolean = true,
+    sizeScale: Float = 1f
 ) {
     // Animation state management
     var lastClicked by remember { mutableStateOf<PlaybackButtonType?>(null) }
@@ -1363,7 +1365,7 @@ fun ExpressivePlayerControlGroup(
         isCompactHeight -> 68.dp
         isCompactWidth -> 76.dp
         else -> 80.dp
-    }
+    } * sizeScale
     
     val containerPadding = when {
         isCompactHeight -> 8.dp
@@ -1379,7 +1381,7 @@ fun ExpressivePlayerControlGroup(
         isCompactHeight -> 48.dp
         isCompactWidth -> 48.dp
         else -> 50.dp
-    }
+    } * sizeScale
     
     val seekButtonSize = when {
         isExtraSmallWidth && isCompactHeight -> 48.dp
@@ -1387,7 +1389,7 @@ fun ExpressivePlayerControlGroup(
         isCompactHeight -> 48.dp
         isCompactWidth -> 54.dp
         else -> 60.dp
-    }
+    } * sizeScale
     
     // Spacing using native expressive pattern
     val buttonSpacing = when {
@@ -1469,9 +1471,13 @@ fun ExpressivePlayerControlGroup(
                 else -> 40.dp
             }
         ),
-        color = if (useGlassEffect) (if (isDark) Color.White else Color.Black).copy(alpha = 0.07f) else MaterialTheme.colorScheme.surfaceContainerHighest,
-        border = if (useGlassEffect) BorderStroke(1.dp, (if (isDark) Color.White else Color.Black).copy(alpha = 0.12f)) else null,
-        tonalElevation = if (useGlassEffect) 0.dp else 2.dp
+        color = when {
+            !showContainer -> Color.Transparent
+            useGlassEffect -> (if (isDark) Color.White else Color.Black).copy(alpha = 0.07f)
+            else -> MaterialTheme.colorScheme.surfaceContainerHighest
+        },
+        border = if (showContainer && useGlassEffect) BorderStroke(1.dp, (if (isDark) Color.White else Color.Black).copy(alpha = 0.12f)) else null,
+        tonalElevation = if (showContainer && !useGlassEffect) 2.dp else 0.dp
     ) {
         Row(
             modifier = Modifier
@@ -1583,6 +1589,7 @@ fun ExpressivePlayerControlGroup(
                     cornerRadius = playCorner,
                     useGlassEffect = useGlassEffect,
                     isDark = isDark,
+                    iconScale = sizeScale,
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -1686,7 +1693,8 @@ private fun ExpressiveMorphingPlayPauseButton(
     showSeekButtons: Boolean = true,
     cornerRadius: Dp = 26.dp,
     useGlassEffect: Boolean = false,
-    isDark: Boolean = false
+    isDark: Boolean = false,
+    iconScale: Float = 1f
 ) {
     // Show PAUSE text after 2 seconds when paused
     var showPauseText by remember { mutableStateOf(false) }
@@ -1750,7 +1758,7 @@ private fun ExpressiveMorphingPlayPauseButton(
                         imageVector = if (playing) RhythmIcons.Pause else RhythmIcons.Play,
                         contentDescription = if (playing) "Pause" else "Play",
                         tint = buttonTint,
-                        modifier = Modifier.size(if (isExtraSmallWidth) 18.dp else 24.dp)
+                        modifier = Modifier.size((if (isExtraSmallWidth) 18.dp else 24.dp) * iconScale)
                     )
                 }
                 AnimatedVisibility(

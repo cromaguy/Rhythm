@@ -19,4 +19,13 @@
         <item name="android:colorPrimary">@android:color/white</item>
         <item name="colorPrimary">@android:color/white</item>
     </style>
+
+    <!-- Transparent host for activities that render a modal bottom sheet over the caller -->
+    <style name="Theme.Rhythm.Translucent" parent="Theme.Rhythm">
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowIsFloating">false</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:backgroundDimEnabled">false</item>
+        <item name="android:windowNoTitle">true</item>
+    </style>
 </resources>

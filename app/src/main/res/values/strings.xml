@@ -1770,7 +1770,7 @@
     <string name="externalplaybackactivity_unable_to_open_audio">Unable to open audio file</string>
     <string name="externalplaybackactivity_unsupported_or_unreadable_audio">Unsupported or unreadable audio file</string>
     <string name="externalplaybackactivity_failed_to_play_audio">Failed to play audio file</string>
-    <string name="externalplaybackactivity_open_rhythm">Open Rhythm</string>
+    <string name="externalplaybackactivity_open_rhythm">Open in Rhythm</string>
     <string name="mainactivity_error_opening_file">Error opening file</string>
     <string name="mainactivity_unsupported_file_format">Unsupported file format</string>
     <string name="mainactivity_failed_to_initialize_media">Failed to initialize media player</string>

@@ -25,13 +25,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.layout
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -43,9 +41,17 @@ import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkHorizontally
-import androidx.compose.ui.draw.blur
 import androidx.compose.ui.graphics.Color
+import chromahub.rhythm.app.shared.presentation.components.bottomsheets.RhythmAdaptiveModalSheet
+import chromahub.rhythm.app.shared.presentation.components.lyrics.ActiveLyricLine
+import chromahub.rhythm.app.shared.presentation.components.icons.Icon
+import chromahub.rhythm.app.shared.presentation.components.icons.MaterialSymbolIcon
 import chromahub.rhythm.app.shared.presentation.components.common.AutoScrollingTextOnDemand
+import chromahub.rhythm.app.shared.presentation.components.common.ExpressivePlayerControlGroup
+import chromahub.rhythm.app.shared.presentation.components.common.RhythmButtonType
+import chromahub.rhythm.app.shared.presentation.components.common.RhythmDetailActionButton
+import chromahub.rhythm.app.shared.presentation.components.common.ExpressiveShapeTarget
+import chromahub.rhythm.app.shared.presentation.components.common.rememberExpressiveShapeFor
 import chromahub.rhythm.app.shared.presentation.components.common.WaveSlider
 import chromahub.rhythm.app.shared.presentation.components.common.M3CircularLoader
 import chromahub.rhythm.app.ui.theme.RhythmTheme
@@ -85,14 +91,35 @@ class ExternalPlaybackActivity : ComponentActivity() {
             handleIntent(intent)
         }
         
+        val appSettings = chromahub.rhythm.app.shared.data.model.AppSettings.getInstance(this)
+
         setContent {
             val useSystemTheme by themeViewModel.useSystemTheme.collectAsState()
             val darkMode by themeViewModel.darkMode.collectAsState()
             val useDynamicColors by themeViewModel.useDynamicColors.collectAsState()
-            
+            val customFont by appSettings.customFont.collectAsState()
+            val fontSource by appSettings.fontSource.collectAsState()
+            val customFontPath by appSettings.customFontPath.collectAsState()
+            val amoledTheme by appSettings.amoledTheme.collectAsState()
+            val customColorScheme by appSettings.customColorScheme.collectAsState()
+            val colorSource by appSettings.colorSource.collectAsState()
+            val extractedAlbumColors by appSettings.extractedAlbumColors.collectAsState()
+            val expressiveColors by appSettings.expressiveColors.collectAsState()
+            val themeIntensity by appSettings.themeIntensity.collectAsState()
+            val isDarkTheme = if (useSystemTheme) isSystemInDarkTheme() else darkMode
+
             RhythmTheme(
-                darkTheme = if (useSystemTheme) isSystemInDarkTheme() else darkMode,
-                dynamicColor = true
+                darkTheme = isDarkTheme,
+                amoledTheme = amoledTheme && isDarkTheme,
+                dynamicColor = useDynamicColors,
+                customColorScheme = customColorScheme,
+                customFont = customFont,
+                fontSource = fontSource,
+                customFontPath = customFontPath,
+                colorSource = colorSource,
+                extractedAlbumColorsJson = extractedAlbumColors,
+                expressiveColors = expressiveColors,
+                themeIntensity = themeIntensity
             ) {
                 ExternalPlaybackBottomSheet(
                     musicViewModel = musicViewModel,
@@ -248,13 +275,15 @@ fun ExternalPlaybackBottomSheet(
     onDismiss: () -> Unit,
     onOpenFullPlayer: () -> Unit
 ) {
+    val context = LocalContext.current
     val currentSong by musicViewModel.currentSong.collectAsState()
     val isPlaying by musicViewModel.isPlaying.collectAsState()
     val isBuffering by musicViewModel.isBuffering.collectAsState()
     val isSeeking by musicViewModel.isSeeking.collectAsState()
     val progress by musicViewModel.progress.collectAsState()
+    val lyrics by musicViewModel.currentLyrics.collectAsState()
+    val lyricsTimeOffset by musicViewModel.lyricsTimeOffset.collectAsState()
 
-    // Animation states
     var showContent by remember { mutableStateOf(false) }
     var awaitingSong by remember { mutableStateOf(true) }
     var isScrubbing by remember { mutableStateOf(false) }
@@ -285,14 +314,13 @@ fun ExternalPlaybackBottomSheet(
             }
         }
     }
-    Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .systemBarsPadding(),
-        shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
-        color = Color.Transparent,
-        tonalElevation = 6.dp,
-        shadowElevation = 8.dp
+    RhythmAdaptiveModalSheet(
+        onDismissRequest = onDismiss,
+        sheetState = rememberBottomSheetState(
+            initialValue = SheetValue.Expanded,
+            enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded)
+        ),
+        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
     ) {
         Box {
             Box(
@@ -308,103 +336,59 @@ fun ExternalPlaybackBottomSheet(
                         )
                     )
             ) {
-                // Album art background (doesn't affect layout)
-                currentSong?.artworkUri?.let { artUri ->
-                    AsyncImage(
-                        model = artUri,
-                        contentDescription = null,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier
-                            .layout { measurable, constraints ->
-                                val placeable = measurable.measure(constraints)
-                                layout(0, 0) {
-                                    placeable.place(0, 0)
-                                }
-                            }
-                            .fillMaxSize()
-                            .blur(20.dp)
-                            .graphicsLayer { alpha = 0.3f }
-                    )
-                }
-
-                // Additional gradient overlay for depth
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(200.dp)
-                        .background(
-                            Brush.verticalGradient(
-                                colors = listOf(
-                                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.1f),
-                                    MaterialTheme.colorScheme.surface.copy(alpha = 0f)
-                                )
-                            )
-                        )
-                )
-
-                // Content
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 20.dp, vertical = 24.dp),
+                        .padding(top = 4.dp, bottom = 24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                // Drag handle
-//                Box(
-//                    modifier = Modifier
-//                        .width(48.dp)
-//                        .height(4.dp)
-//                        .clip(RoundedCornerShape(2.dp))
-//                        .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f))
-//                )
 
-                Spacer(modifier = Modifier.height(20.dp))
-
-                // Rhythm Logo and Name with splash screen style
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center,
                     modifier = Modifier
                         .fillMaxWidth()
+                        .padding(horizontal = 20.dp)
                 ) {
-                    // Logo with breathing animation like splash screen
-                    val infiniteTransition = rememberInfiniteTransition(label = "logoBreathing")
-                    val logoBreathing by infiniteTransition.animateFloat(
-                        initialValue = 0.97f,
-                        targetValue = 1.03f,
-                        animationSpec = infiniteRepeatable(
-                            animation = tween(
-                                durationMillis = 2500,
-                                easing = EaseInOutSine
-                            ),
-                            repeatMode = RepeatMode.Reverse
-                        ),
-                        label = "logoBreathing"
-                    )
-
                     Image(
                         painter = painterResource(R.drawable.rhythm_splash_logo),
                         contentDescription = stringResource(R.string.updates_rhythm_logo_cd),
-                        modifier = Modifier
-                            .size(50.dp)
-//                            .graphicsLayer {
-//                                scaleX = logoBreathing
-//                                scaleY = logoBreathing
-//                            }
+                        modifier = Modifier.size(50.dp)
                     )
-                    Spacer(modifier = Modifier.width(3.dp))
-                    Column {
-                        Text(
-                            text = stringResource(R.string.cd_rhythm_splash),
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                        Text(
-                            text = stringResource(R.string.settings_about_music_player),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = stringResource(R.string.cd_rhythm_splash),
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = if (isSystemInDarkTheme()) Color.White else Color.Black,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Surface(
+                        onClick = {
+                            val song = currentSong ?: return@Surface
+                            try {
+                                val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                                    type = "audio/*"
+                                    putExtra(Intent.EXTRA_STREAM, song.uri)
+                                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                }
+                                context.startActivity(Intent.createChooser(shareIntent, song.title))
+                            } catch (e: Exception) {
+                                Toast.makeText(context, R.string.materialplayerscreen_unable_to_share_file, Toast.LENGTH_SHORT).show()
+                            }
+                        },
+                        modifier = Modifier.size(44.dp),
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                        tonalElevation = 2.dp
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                icon = MaterialSymbolIcon("share", filled = true),
+                                contentDescription = stringResource(R.string.action_share),
+                                tint = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
                     }
                 }
 
@@ -420,48 +404,46 @@ fun ExternalPlaybackBottomSheet(
                         M3CircularLoader(modifier = Modifier.size(48.dp), strokeWidth = 4f)
                     }
                 } else {
-                    // Album Art and Song Info Row with enhanced styling
-                    Surface(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(20.dp),
-                        color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.5f),
-                        tonalElevation = 1.dp
-                    ) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(20.dp),
+                            .padding(horizontal = 20.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(20.dp)
                     ) {
-                        // Album Art with shadow
-//                        currentSong?.artworkUri?.let { artUri ->
-//                            AsyncImage(
-//                                model = artUri,
-//                                contentDescription = "Album Art",
-//                                modifier = Modifier
-//                                    .size(88.dp)
-//                                    .shadow(0.dp, RoundedCornerShape(16.dp))
-//                                    .clip(RoundedCornerShape(16.dp)),
-//                                contentScale = ContentScale.Crop
-//                            )
-//                        } ?: Surface(
-//                            modifier = Modifier.size(88.dp),
-//                            shape = RoundedCornerShape(16.dp),
-//                            color = MaterialTheme.colorScheme.surfaceVariant,
-//                            tonalElevation = 2.dp
-//                        ) {
-//                            Box(contentAlignment = Alignment.Center) {
-//                                Icon(
-//                                    painter = painterResource(R.drawable.ic_music_note),
-//                                    contentDescription = null,
-//                                    modifier = Modifier.size(36.dp),
-//                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-//                                )
-//                            }
-//                        }
+                        val artworkShape = rememberExpressiveShapeFor(
+                            target = ExpressiveShapeTarget.PLAYER_ART,
+                            fallbackShape = RoundedCornerShape(24.dp)
+                        )
+                        val artUri = currentSong?.artworkUri
+                        if (artUri != null) {
+                            AsyncImage(
+                                model = artUri,
+                                contentDescription = currentSong?.title,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier
+                                    .size(88.dp)
+                                    .clip(artworkShape)
+                            )
+                        } else {
+                            Surface(
+                                modifier = Modifier
+                                    .size(88.dp)
+                                    .clip(artworkShape),
+                                shape = artworkShape,
+                                color = MaterialTheme.colorScheme.surfaceContainerHighest
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        painter = painterResource(R.drawable.ic_music_note),
+                                        contentDescription = null,
+                                        modifier = Modifier.size(36.dp),
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        }
 
-                        // Song Info with better hierarchy
                         Column(
                             modifier = Modifier.weight(1f)
                         ) {
@@ -493,20 +475,27 @@ fun ExternalPlaybackBottomSheet(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
-                // Progress Section with better spacing
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(20.dp),
-                    color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.5f),
-                    tonalElevation = 1.dp
-                ) {
-                    currentSong?.let { song ->
+                ActiveLyricLine(
+                    lyrics = lyrics,
+                    playbackTimeMs = (
+                        (currentSong?.duration ?: 0L) * (if (isScrubbing) scrubProgress else progress)
+                        ).toLong() + lyricsTimeOffset,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp)
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                currentSong?.let { song ->
                         val displayedProgress = if (isScrubbing) scrubProgress else progress
 
                         Column(
-                            modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 20.dp)
                         ) {
                             WaveSlider(
                                 value = displayedProgress,
@@ -531,7 +520,6 @@ fun ExternalPlaybackBottomSheet(
                             
                             Spacer(modifier = Modifier.height(4.dp))
                             
-                            // Time Row with better design
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween
@@ -550,150 +538,71 @@ fun ExternalPlaybackBottomSheet(
                                 )
                             }
                         }
-                    }
                 }
 
                 Spacer(modifier = Modifier.height(28.dp))
 
-                // Playback Controls Row - Enhanced with better visual hierarchy
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 8.dp),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    // Previous Button with better styling
-//                    Surface(
-//                        onClick = {
-//                            musicViewModel.skipToPrevious()
-//                        },
-//                        modifier = Modifier.size(68.dp),
-//                        shape = CircleShape,
-//                        color = MaterialTheme.colorScheme.surfaceContainerHighest,
-//                        tonalElevation = 2.dp
-//                    ) {
-//                        Box(contentAlignment = Alignment.Center) {
-//                            Icon(
-//                                painter = painterResource(R.drawable.ic_skip_previous),
-//                                contentDescription = "Previous",
-//                                tint = MaterialTheme.colorScheme.onSurface,
-//                                modifier = Modifier.size(30.dp)
-//                            )
-//                        }
-//                    }
-
-                    // Play/Pause Button - Larger and more prominent
-                    val buttonWidth by animateDpAsState(
-                        targetValue = if (isPlaying || isBuffering) 76.dp else 160.dp,
-                        animationSpec = spring(
-                            dampingRatio = Spring.DampingRatioMediumBouncy,
-                            stiffness = Spring.StiffnessLow
-                        ),
-                        label = "playPauseWidth"
-                    )
-
-                    Surface(
-                        onClick = {
-                            if (!isBuffering) {
-                                musicViewModel.togglePlayPause()
-                            }
-                        },
-                        modifier = Modifier
-                            .height(76.dp)
-                            .width(buttonWidth),
-                        shape = RoundedCornerShape(38.dp),
-                        color = MaterialTheme.colorScheme.primary,
-                        tonalElevation = 3.dp,
-                        shadowElevation = 0.dp
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Row(
-                                horizontalArrangement = Arrangement.Center,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                if (isBuffering) {
-                                    M3CircularLoader(
-                                        modifier = Modifier.size(30.dp),
-                                        color = MaterialTheme.colorScheme.onPrimary,
-                                        strokeWidth = 2.5f
-                                    )
-                                } else {
-                                    Icon(
-                                        painter = painterResource(
-                                            if (isPlaying) R.drawable.ic_pause else R.drawable.ic_play_arrow
-                                        ),
-                                        contentDescription = if (isPlaying) "Pause" else "Play",
-                                        tint = MaterialTheme.colorScheme.onPrimary,
-                                        modifier = Modifier.size(36.dp)
-                                    )
-                                }
-
-                                AnimatedVisibility(
-                                    visible = !isPlaying && !isBuffering,
-                                    enter = fadeIn() + expandHorizontally(),
-                                    exit = fadeOut() + shrinkHorizontally()
-                                ) {
-                                    Text(
-                                        text = stringResource(R.string.cd_play),
-                                        modifier = Modifier.padding(start = 8.dp, end = 4.dp),
-                                        style = MaterialTheme.typography.labelLarge,
-                                        fontWeight = FontWeight.ExtraBold,
-                                        color = MaterialTheme.colorScheme.onPrimary
-                                    )
-                                }
-                            }
+                ExpressivePlayerControlGroup(
+                    isPlaying = isPlaying,
+                    showSeekButtons = false,
+                    onPrevious = { musicViewModel.skipToPrevious() },
+                    onPlayPause = {
+                        if (!isBuffering) {
+                            musicViewModel.togglePlayPause()
                         }
-                    }
-
-                    // Next Button with better styling
-//                    Surface(
-//                        onClick = {
-//                            musicViewModel.skipToNext()
-//                        },
-//                        modifier = Modifier.size(68.dp),
-//                        shape = CircleShape,
-//                        color = MaterialTheme.colorScheme.surfaceContainerHighest,
-//                        tonalElevation = 2.dp
-//                    ) {
-//                        Box(contentAlignment = Alignment.Center) {
-//                            Icon(
-//                                painter = painterResource(R.drawable.ic_skip_next),
-//                                contentDescription = "Next",
-//                                tint = MaterialTheme.colorScheme.onSurface,
-//                                modifier = Modifier.size(30.dp)
-//                            )
-//                        }
-//                    }
-                }
+                    },
+                    onNext = { musicViewModel.skipToNext() },
+                    onSeekBack = {},
+                    onSeekForward = {},
+                    isExtraSmallWidth = false,
+                    isCompactWidth = false,
+                    isCompactHeight = false,
+                    isLoading = isBuffering,
+                    showContainer = false,
+                    sizeScale = 1.15f,
+                    modifier = Modifier.fillMaxWidth()
+                )
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Open Rhythm Button - Enhanced design
-                FilledTonalButton(
-                    onClick = onOpenFullPlayer,
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(60.dp),
-                    shape = RoundedCornerShape(20.dp),
-                    colors = ButtonDefaults.filledTonalButtonColors(
+                        .padding(horizontal = 20.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    RhythmDetailActionButton(
+                        onClick = onOpenFullPlayer,
+                        weight = 1f,
+                        height = 52.dp,
+                        isFirst = true,
+                        isLast = false,
+                        type = RhythmButtonType.Tonal,
+                        icon = MaterialSymbolIcon("open_in_new", filled = true),
+                        iconSize = 18.dp,
+                        text = stringResource(R.string.externalplaybackactivity_open_rhythm),
                         containerColor = MaterialTheme.colorScheme.secondaryContainer,
                         contentColor = MaterialTheme.colorScheme.onSecondaryContainer
                     )
-                ) {
-                    Text(
-                        text = stringResource(R.string.externalplaybackactivity_open_rhythm),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
+
+                    RhythmDetailActionButton(
+                        onClick = onDismiss,
+                        weight = 1f,
+                        height = 52.dp,
+                        isFirst = false,
+                        isLast = true,
+                        type = RhythmButtonType.Tonal,
+                        icon = MaterialSymbolIcon("close", filled = true),
+                        iconSize = 18.dp,
+                        text = stringResource(R.string.dialog_close),
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                        contentColor = MaterialTheme.colorScheme.onSurface
                     )
                 }
-                
-                Spacer(modifier = Modifier.height(8.dp))
-            }
-
             }
         }
-    }}
+    }
+    }
 }
 
 private fun formatTime(milliseconds: Long): String {

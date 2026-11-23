@@ -241,7 +241,7 @@
             android:name=".activities.ExternalPlaybackActivity"
             android:exported="true"
             android:label="Play Audio"
-            android:theme="@android:style/Theme.DeviceDefault.Dialog.NoActionBar"
+            android:theme="@style/Theme.Rhythm.Translucent"
             android:launchMode="singleTask"
             android:excludeFromRecents="false"
             android:configChanges="orientation|screenSize|keyboardHidden">
