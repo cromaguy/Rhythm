@@ -239,6 +239,10 @@ fun UniversalSearchScreen(
     val searchHistory by localViewModel.searchHistory.collectAsState()
     val favoriteSongs by localViewModel.favoriteSongs.collectAsState()
 
+    val streamingSessions by streamingViewModel.serviceSessions.collectAsState()
+    val isGoModeConfigured = remember(streamingSessions) { streamingViewModel.isConfigured() }
+    val isGoModeActive = appMode == "STREAMING" && isGoModeConfigured
+
     val streamingQuery by streamingViewModel.searchQuery.collectAsState()
     val streamingResults by streamingViewModel.searchResults.collectAsState()
     val isStreamingLoading by streamingViewModel.isLoading.collectAsState()
@@ -247,26 +251,32 @@ fun UniversalSearchScreen(
     val isGenreDetectionComplete by localViewModel.isGenreDetectionComplete.collectAsState()
     val streamingBrowseCategories by streamingViewModel.browseCategories.collectAsState()
 
-    val genres = remember(localSongs, streamingBrowseCategories, streamingResults.songs) {
+    val genres = remember(localSongs, streamingBrowseCategories, streamingResults.songs, isGoModeActive) {
         val localGenres = localSongs
             .flatMap { song -> GenreUtils.splitGenres(song.genre) }
-        val streamingGenres = streamingBrowseCategories.map { it.name } +
-            streamingResults.songs.flatMap { song -> GenreUtils.splitGenres(song.genre) }
+        val streamingGenres = if (isGoModeActive) {
+            streamingBrowseCategories.map { it.name } +
+                streamingResults.songs.flatMap { song -> GenreUtils.splitGenres(song.genre) }
+        } else emptyList()
         (localGenres + streamingGenres)
             .distinctBy { it.lowercase() }
             .sortedBy { it.lowercase() }
     }
 
-    val genreSongCounts = remember(genres, localSongs, streamingResults.songs) {
+    val genreSongCounts = remember(genres, localSongs, streamingResults.songs, isGoModeActive) {
         genres.associateWith { genre ->
             localSongs.count { song -> GenreUtils.matchesGenre(song.genre, genre) } +
-                streamingResults.songs.count { song -> GenreUtils.matchesGenre(song.genre, genre) }
+                if (isGoModeActive) streamingResults.songs.count { song -> GenreUtils.matchesGenre(song.genre, genre) } else 0
         }
     }
 
-    LaunchedEffect(query) {
-        if (query.isNotBlank() && streamingQuery != query) {
-            streamingViewModel.search(query)
+    LaunchedEffect(query, isGoModeActive) {
+        if (query.isNotBlank() && isGoModeActive) {
+            if (streamingQuery != query) {
+                streamingViewModel.search(query)
+            }
+        } else {
+            streamingViewModel.clearSearch()
         }
     }
 
@@ -302,10 +312,10 @@ fun UniversalSearchScreen(
         else localPlaylists.filter { it.name.contains(query, true) }
     }
 
-    val matchedStreamingSongs = if (filterSongs) streamingResults.songs else emptyList()
-    val matchedStreamingAlbums = if (filterAlbums) streamingResults.albums else emptyList()
-    val matchedStreamingArtists = if (filterArtists) streamingResults.artists else emptyList()
-    val matchedStreamingPlaylists = if (filterPlaylists) streamingResults.playlists else emptyList()
+    val matchedStreamingSongs = if (filterSongs && isGoModeActive) streamingResults.songs else emptyList()
+    val matchedStreamingAlbums = if (filterAlbums && isGoModeActive) streamingResults.albums else emptyList()
+    val matchedStreamingArtists = if (filterArtists && isGoModeActive) streamingResults.artists else emptyList()
+    val matchedStreamingPlaylists = if (filterPlaylists && isGoModeActive) streamingResults.playlists else emptyList()
 
     val hasResults = matchedLocalSongs.isNotEmpty() || matchedStreamingSongs.isNotEmpty() ||
             matchedLocalAlbums.isNotEmpty() || matchedStreamingAlbums.isNotEmpty() ||
@@ -644,7 +654,10 @@ fun UniversalSearchScreen(
                                     Spacer(modifier = Modifier.height(20.dp))
 
                                     Text(
-                                        text = stringResource(R.string.universalsearchscreen_search_across_local_streaming),
+                                        text = stringResource(
+                                            if (isGoModeActive) R.string.universalsearchscreen_search_across_local_streaming
+                                            else R.string.universalsearchscreen_search_everywhere
+                                        ),
                                         style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold),
                                         color = MaterialTheme.colorScheme.onSurface,
                                         textAlign = TextAlign.Center,
@@ -713,7 +726,7 @@ fun UniversalSearchScreen(
                             ),
                             verticalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
-                            if (isStreamingLoading && !hasResults) {
+                            if (isGoModeActive && isStreamingLoading && !hasResults) {
                                 item(key = "loading_left") {
                                     Box(modifier = Modifier.fillMaxWidth().padding(vertical = 48.dp), contentAlignment = Alignment.Center) {
                                         M3CircularLoader(modifier = Modifier.size(48.dp), strokeWidth = 4f)
@@ -938,7 +951,7 @@ fun UniversalSearchScreen(
                                 }
                             }
 
-                            if (isStreamingLoading) {
+                            if (isGoModeActive && isStreamingLoading) {
                                 item(key = "streaming_loading_right") {
                                     Box(modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp).animateItem(), contentAlignment = Alignment.Center) {
                                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -961,7 +974,7 @@ fun UniversalSearchScreen(
                         ),
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        if (isStreamingLoading && !hasResults) {
+                        if (isGoModeActive && isStreamingLoading && !hasResults) {
                             item(key = "loading") {
                                 Box(modifier = Modifier.fillMaxWidth().padding(vertical = 48.dp).animateItem(), contentAlignment = Alignment.Center) {
                                     M3CircularLoader(modifier = Modifier.size(48.dp), strokeWidth = 4f)
@@ -1173,7 +1186,7 @@ fun UniversalSearchScreen(
                                 }
                             }
 
-                            if (isStreamingLoading) {
+                            if (isGoModeActive && isStreamingLoading) {
                                 item(key = "streaming_loading") {
                                     Box(modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp).animateItem(), contentAlignment = Alignment.Center) {
                                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {

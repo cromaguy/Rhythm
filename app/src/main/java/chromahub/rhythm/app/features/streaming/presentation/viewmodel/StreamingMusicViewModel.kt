@@ -1022,6 +1022,24 @@ class StreamingMusicViewModel(application: Application) : AndroidViewModel(appli
     }
     
     /**
+     * Checks if Go mode / streaming service is configured with valid credentials or connection.
+     */
+    fun isConfigured(serviceId: String = appSettings.streamingService.value): Boolean {
+        val normalized = normalizeServiceId(serviceId)
+        val sessionMarkedConnected = serviceSessionRepository.isConnected(normalized)
+        val credentialsExist = providerRepository?.isServiceConnected(normalized) ?: sessionMarkedConnected
+        return credentialsExist || serviceSessionRepository.sessions.value.values.any { it.isConnected }
+    }
+
+    /**
+     * Clears streaming search query and results.
+     */
+    fun clearSearch() {
+        _searchQuery.value = ""
+        _searchResults.value = StreamingSearchResults()
+    }
+
+    /**
      * Search across the streaming service.
      */
     fun search(query: String) {
@@ -1032,26 +1050,29 @@ class StreamingMusicViewModel(application: Application) : AndroidViewModel(appli
             return
         }
 
+        // Do not search streaming if Go mode is off or not configured
+        if (appSettings.appMode.value != "STREAMING" || !isConfigured()) {
+            _searchResults.value = StreamingSearchResults()
+            return
+        }
+
         viewModelScope.launch {
             _isLoading.value = true
 
             try {
                 if (!checkAndSyncAuthentication()) {
                     _searchResults.value = StreamingSearchResults()
-                    showToast("Connect to a streaming service first")
                     return@launch
                 }
                 
                 // Check network and offline constraints
                 if (!NetworkUtils.canStream(getApplication(), appSettings.allowCellularStreaming.value)) {
                     _searchResults.value = StreamingSearchResults()
-                    showToast("Streaming not allowed on current network")
                     return@launch
                 }
                 
                 if (appSettings.offlineMode.value) {
                     _searchResults.value = StreamingSearchResults()
-                    showToast("Search not available in offline mode")
                     return@launch
                 }
 
@@ -1067,7 +1088,7 @@ class StreamingMusicViewModel(application: Application) : AndroidViewModel(appli
                     playlists = playlists
                 )
             } catch (e: Exception) {
-                showToast("Search failed: ${e.message}")
+                _searchResults.value = StreamingSearchResults()
             } finally {
                 _isLoading.value = false
             }

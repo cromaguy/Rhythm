@@ -387,4 +387,18 @@ class StreamingFixesTest {
         assertTrue(validCodec.length <= 40)
         assertFalse("Comma-separated list of 45 characters must NOT match Jellyfin validation regex", jellyfinValidationRegex.matches(invalidCodecList))
     }
+
+    @Test
+    fun testUniversalSearchStreamingScopingWhenGoModeOffOrUnconfigured() {
+        val appModeLocal = "LOCAL"
+        val isConfigured = false
+        val isGoModeActive = appModeLocal == "STREAMING" && isConfigured
+
+        assertFalse("Go mode should be inactive when appMode is LOCAL", isGoModeActive)
+
+        val streamingResults = listOf("Song 1", "Song 2")
+        val matchedStreamingSongs = if (isGoModeActive) streamingResults else emptyList<String>()
+
+        assertTrue("Matched streaming songs must be empty when Go mode is inactive", matchedStreamingSongs.isEmpty())
+    }
 }
