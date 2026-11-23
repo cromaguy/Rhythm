@@ -9974,7 +9974,7 @@ fun EnhancedStreamingSetupContent(
         if (serverUrl.isBlank()) {
             isAutoScanning = true
             scanner.startScan()
-            delay(3500)
+            delay(5000)
             isAutoScanning = false
             if (scanner.discoveredServers.isNotEmpty() && serverUrl.isBlank()) {
                 showDiscoverySheet = true

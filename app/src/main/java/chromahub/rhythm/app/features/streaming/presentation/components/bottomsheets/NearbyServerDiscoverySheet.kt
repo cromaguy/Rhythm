@@ -130,7 +130,11 @@ class NearbyServerScanner(
             else -> "_http._tcp"
         }
 
-        val serviceTypesToScan = listOf(targetServiceType, "_http._tcp")
+        val serviceTypesToScan = if (targetServiceType != "_http._tcp") {
+            listOf(targetServiceType)
+        } else {
+            listOf("_http._tcp")
+        }
 
         if (upperServiceId == StreamingServiceId.JELLYFIN) {
             jellyfinUdpJob = scope.launch(Dispatchers.IO) {
@@ -403,10 +407,10 @@ fun NearbyServerDiscoverySheet(
     val discoveredServers = effectiveScanner.discoveredServers
     val isScanning = effectiveScanner.isScanning
 
-    // Automatically stop scanning after 10 seconds to conserve battery
+    // Automatically stop scanning after 20 seconds to conserve battery and allow resolution
     LaunchedEffect(effectiveScanner.isScanning) {
         if (effectiveScanner.isScanning) {
-            delay(10000)
+            delay(20000)
             effectiveScanner.stopScan()
         }
     }
