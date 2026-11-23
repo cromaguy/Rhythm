@@ -82,8 +82,10 @@ import chromahub.rhythm.app.shared.presentation.components.common.M3PlaceholderT
 import chromahub.rhythm.app.shared.presentation.components.common.ExpressiveShapeTarget
 import chromahub.rhythm.app.shared.presentation.components.common.ExpressiveCookieEmptyState
 import chromahub.rhythm.app.shared.presentation.components.common.MarqueeText
+import chromahub.rhythm.app.shared.presentation.components.common.RhythmButtonSize
 import chromahub.rhythm.app.shared.presentation.components.common.RhythmButtonType
-import chromahub.rhythm.app.shared.presentation.components.common.RhythmDetailActionButtonFullWidth
+import chromahub.rhythm.app.shared.presentation.components.common.RhythmButtonWeighted
+import chromahub.rhythm.app.shared.presentation.components.common.RhythmGroupedButton
 import chromahub.rhythm.app.shared.presentation.components.common.rememberExpressiveShapeFor
 import chromahub.rhythm.app.util.ImageUtils
 import chromahub.rhythm.app.util.HapticUtils
@@ -206,20 +208,29 @@ fun AddToPlaylistBottomSheet(
             Spacer(modifier = Modifier.height(16.dp))
 
             // Bottom action: create a new playlist
-            RhythmDetailActionButtonFullWidth(
-                onClick = {
-                    HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
-                    scope.launch { sheetState.hide() }.invokeOnCompletion {
-                        if (!sheetState.isVisible) {
-                            onCreateNewPlaylist()
+            RhythmGroupedButton(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp),
+                size = RhythmButtonSize.Large
+            ) {
+                RhythmButtonWeighted(
+                    onClick = {
+                        HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
+                        scope.launch { sheetState.hide() }.invokeOnCompletion {
+                            if (!sheetState.isVisible) {
+                                onCreateNewPlaylist()
+                            }
                         }
-                    }
-                },
-                modifier = Modifier.padding(horizontal = 24.dp),
-                type = RhythmButtonType.Filled,
-                icon = RhythmIcons.Add,
-                text = context.getString(R.string.playlist_create_new)
-            )
+                    },
+                    weight = 1f,
+                    isFirst = true,
+                    isLast = true,
+                    type = RhythmButtonType.Filled,
+                    icon = RhythmIcons.Add,
+                    text = context.getString(R.string.playlist_create_new)
+                )
+            }
         }
     }
 }

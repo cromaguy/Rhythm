@@ -1369,7 +1369,7 @@ private fun LocalNavigationContent(
                         onMaxVolume = {
                             viewModel.maxVolume()
                         },
-                        playlists = playlists,
+                        playlists = if (isStreamingMode) streamingMappedPlaylists else playlists,
                         queue = viewModel.currentQueue.collectAsState().value.songs,
                         onSongClick = { song ->
                             viewModel.playSong(song)
@@ -1401,12 +1401,28 @@ private fun LocalNavigationContent(
                             viewModel.clearSelectedSongForPlaylist()
                         },
                         onAddSongToPlaylist = { song, playlistId ->
-                            viewModel.addSongToPlaylist(song, playlistId) { message ->
-                                Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                            if (isStreamingMode) {
+                                val streamingSong = streamingSongById[song.id] ?: streamingCurrentSong
+                                if (streamingSong != null) {
+                                    streamingMusicViewModel.addSongToPlaylist(playlistId, streamingSong)
+                                } else {
+                                    viewModel.addSongToPlaylist(song, playlistId) { message ->
+                                        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                            } else {
+                                viewModel.addSongToPlaylist(song, playlistId) { message ->
+                                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                                }
                             }
                         },
                         onCreatePlaylist = { name ->
-                            viewModel.createPlaylist(name)
+                            if (isStreamingMode) {
+                                val streamingSong = streamingSongById[currentSong.id] ?: streamingCurrentSong
+                                streamingMusicViewModel.createPlaylist(name, listOfNotNull(streamingSong))
+                            } else {
+                                viewModel.createPlaylist(name)
+                            }
                         },
                         onShowCreatePlaylistDialog = { song ->
                             songForCreatePlaylistDialog.value = song
@@ -3059,6 +3075,12 @@ private fun LocalNavigationContent(
                     val featuredPlaylists by streamingMusicViewModel.featuredPlaylists.collectAsState()
                     val searchResults by streamingMusicViewModel.searchResults.collectAsState()
 
+                    LaunchedEffect(playlistId) {
+                        if (playlistId.isNotBlank()) {
+                            streamingMusicViewModel.loadPlaylist(playlistId)
+                        }
+                    }
+
                     val selectedPlaylist = remember(
                         playlistId,
                         savedPlaylists,
@@ -3096,6 +3118,13 @@ private fun LocalNavigationContent(
                         musicViewModel = viewModel,
                         playlist = localPlaylist,
                         isStreamingPlaylist = true,
+                        availableSongsPool = streamingMappedSongs,
+                        onAddSongs = { localSongsToAdd ->
+                            val streamingSongsToAdd = localSongsToAdd.mapNotNull { streamingSongById[it.id] }
+                            if (streamingSongsToAdd.isNotEmpty()) {
+                                streamingMusicViewModel.addSongsToPlaylist(playlistId, streamingSongsToAdd)
+                            }
+                        },
                         onDownloadAll = {
                             selectedPlaylist?.let { streamingMusicViewModel.downloadPlaylist(it) }
                         },
@@ -3178,6 +3207,21 @@ private fun LocalNavigationContent(
                         onRemoveSong = { localSong, _ ->
                             playlistTracksById[localSong.id]?.let { streamingSong ->
                                 streamingMusicViewModel.removeSongFromPlaylist(playlistId, streamingSong.id)
+                            }
+                        },
+                        onRemoveSongs = { songsToRemove ->
+                            val songIds = songsToRemove.mapNotNull { playlistTracksById[it.id]?.id }
+                            if (songIds.isNotEmpty()) {
+                                streamingMusicViewModel.removeSongsFromPlaylist(playlistId, songIds)
+                            }
+                        },
+                        onToggleDownload = { song ->
+                            playlistTracksById[song.id]?.let { streamingSong ->
+                                if (song.id in streamingDownloadedSongIds) {
+                                    streamingMusicViewModel.removeDownload(streamingSong.id)
+                                } else {
+                                    streamingMusicViewModel.downloadSong(streamingSong)
+                                }
                             }
                         },
                         onRenamePlaylist = { newName ->
@@ -4384,13 +4428,19 @@ private fun LocalNavigationContent(
 
                     // If we have a target playlist ID, we're adding songs to that playlist
                     if (targetPlaylistId != null) {
-                        val targetPlaylist = playlists.find { it.id == targetPlaylistId }
+                        val isStreamingTarget = targetPlaylistId.contains("::playlist::")
+                        val targetPlaylist = if (isStreamingTarget) {
+                            streamingMappedPlaylists.find { it.id == targetPlaylistId }
+                        } else {
+                            playlists.find { it.id == targetPlaylistId }
+                        }
 
                         if (targetPlaylist != null) {
+                            val candidateSongs = if (isStreamingTarget) streamingMappedSongs else songs
                             // Filter available songs
-                             val availableSongs =
-                                remember(songs, targetPlaylist.songs, searchQuery) {
-                                    songs.filter { song ->
+                            val availableSongs =
+                                remember(candidateSongs, targetPlaylist.songs, searchQuery) {
+                                    candidateSongs.filter { song ->
                                         // Filter out songs that are already in the playlist
                                         !targetPlaylist.songs.any { it.id == song.id }
                                     }
@@ -4439,25 +4489,40 @@ private fun LocalNavigationContent(
                                         viewModel.clearTargetPlaylistForAddingSongs()
                                         navigateBackOrToLanding()
                                     },
-                                    onAddSongsToPlaylist = { songs ->
-                                        if (songs.size == 1) {
-                                            viewModel.addSongToPlaylist(
-                                                songs[0],
-                                                targetPlaylistId
-                                            ) { message ->
-                                                Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                                    onAddSongsToPlaylist = { songsToAdd ->
+                                        if (isStreamingTarget) {
+                                            val streamingSongs = songsToAdd.mapNotNull { streamingSongById[it.id] }
+                                            if (streamingSongs.isNotEmpty()) {
+                                                streamingMusicViewModel.addSongsToPlaylist(targetPlaylistId, streamingSongs) {
+                                                    viewModel.clearTargetPlaylistForAddingSongs()
+                                                    navigateBackOrToLanding()
+                                                }
+                                            } else {
+                                                viewModel.clearTargetPlaylistForAddingSongs()
+                                                navigateBackOrToLanding()
                                             }
                                         } else {
-                                            val (successCount, playlistName) = viewModel.addSongsToPlaylist(
-                                                songs,
-                                                targetPlaylistId
-                                            )
-                                            val message = when {
-                                                successCount == 0 -> "No songs added - they may already be in the playlist"
-                                                successCount == songs.size -> "Added $successCount songs to $playlistName"
-                                                else -> "Added $successCount of ${songs.size} songs to $playlistName"
+                                            if (songsToAdd.size == 1) {
+                                                viewModel.addSongToPlaylist(
+                                                    songsToAdd[0],
+                                                    targetPlaylistId
+                                                ) { message ->
+                                                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                                                }
+                                            } else {
+                                                val (successCount, playlistName) = viewModel.addSongsToPlaylist(
+                                                    songsToAdd,
+                                                    targetPlaylistId
+                                                )
+                                                val message = when {
+                                                    successCount == 0 -> "No songs added - they may already be in the playlist"
+                                                    successCount == songsToAdd.size -> "Added $successCount songs to $playlistName"
+                                                    else -> "Added $successCount of ${songsToAdd.size} songs to $playlistName"
+                                                }
+                                                Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                                             }
-                                            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                                            viewModel.clearTargetPlaylistForAddingSongs()
+                                            navigateBackOrToLanding()
                                         }
                                     }
                                 )

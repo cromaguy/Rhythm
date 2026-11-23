@@ -222,6 +222,10 @@ fun PlaylistDetailScreen(
     onReorderSongs: ((Int, Int) -> Unit)? = null,
     onUpdatePlaylistSongs: ((List<Song>) -> Unit)? = null,
     isStreamingPlaylist: Boolean = false,
+    availableSongsPool: List<Song>? = null,
+    onAddSongs: ((List<Song>) -> Unit)? = null,
+    onRemoveSongs: ((List<Song>) -> Unit)? = null,
+    onToggleDownload: ((Song) -> Unit)? = null,
     // "Download all" for server playlists (Go mode); the button is hidden while onDownloadAll is null.
     onDownloadAll: (() -> Unit)? = null,
     onCancelDownloadAll: () -> Unit = {},
@@ -502,8 +506,11 @@ fun PlaylistDetailScreen(
                     onClick = {
                         HapticUtils.performHapticFeedback(context, haptics, HapticType.LIGHT)
                         // Remove selected songs
-                        selectedSongs.forEach { songId ->
-                            playlist.songs.find { it.id == songId }?.let { song ->
+                        val songsToRemove = selectedSongs.mapNotNull { songId -> playlist.songs.find { it.id == songId } }
+                        if (onRemoveSongs != null) {
+                            onRemoveSongs(songsToRemove)
+                        } else {
+                            songsToRemove.forEach { song ->
                                 onRemoveSong(song, context.getString(R.string.playlist_removed_from_playlist, song.title))
                             }
                         }
@@ -616,6 +623,10 @@ fun PlaylistDetailScreen(
             onToggleFavorite = {
                 onToggleFavorite(targetSong)
             },
+            onAddToPlaylist = {
+                onAddToPlaylist(targetSong)
+                showSongOptionsSheet = false
+            },
             onGoToAlbum = {
                 onGoToAlbum(targetSong)
                 showSongOptionsSheet = false
@@ -665,13 +676,21 @@ fun PlaylistDetailScreen(
                 onShare(targetSong)
                 showSongOptionsSheet = false
             },
+            isDownloaded = if (isStreamingPlaylist) targetSong.id in downloadedSongIds else null,
+            onToggleDownload = if (isStreamingPlaylist && onToggleDownload != null) {
+                {
+                    onToggleDownload(targetSong)
+                    showSongOptionsSheet = false
+                }
+            } else null,
             isStreaming = isStreamingPlaylist
         )
     }
 
-    val availableSongs = remember(allSongs, playlist.songs) {
+    val songsPool = if (isStreamingPlaylist && availableSongsPool != null) availableSongsPool else allSongs
+    val availableSongs = remember(songsPool, playlist.songs) {
         val playlistSongIds = playlist.songs.map { it.id }.toSet()
-        allSongs.filter { song -> song.id !in playlistSongIds }
+        songsPool.filter { song -> song.id !in playlistSongIds }
     }
 
     if (showSongPicker) {
@@ -680,17 +699,31 @@ fun PlaylistDetailScreen(
             availableSongs = availableSongs,
             onDismissRequest = { showSongPicker = false },
             onAddSongsToPlaylist = { songs ->
-                operationInProgress = "Adding"
-                showOperationProgress = true
-                val (successCount, playlistName) = musicViewModel.addSongsToPlaylist(songs, playlist.id)
-                showOperationProgress = false
-                val message = when {
-                    successCount == 0 -> "No songs added - they may already be in the playlist"
-                    successCount == songs.size -> "Added $successCount songs to $playlistName"
-                    else -> "Added $successCount of ${songs.size} songs to $playlistName"
+                if (onAddSongs != null) {
+                    operationInProgress = "Adding"
+                    showOperationProgress = true
+                    onAddSongs(songs)
+                    showOperationProgress = false
+                    val message = if (songs.size == 1) {
+                        "Added ${songs[0].title} to ${playlist.name}"
+                    } else {
+                        "Added ${songs.size} songs to ${playlist.name}"
+                    }
+                    operationResult = Pair(message, false)
+                    showSongPicker = false
+                } else {
+                    operationInProgress = "Adding"
+                    showOperationProgress = true
+                    val (successCount, playlistName) = musicViewModel.addSongsToPlaylist(songs, playlist.id)
+                    showOperationProgress = false
+                    val message = when {
+                        successCount == 0 -> "No songs added - they may already be in the playlist"
+                        successCount == songs.size -> "Added $successCount songs to $playlistName"
+                        else -> "Added $successCount of ${songs.size} songs to $playlistName"
+                    }
+                    operationResult = Pair(message, false)
+                    showSongPicker = false
                 }
-                operationResult = Pair(message, false)
-                showSongPicker = false
             },
             sheetState = sheetState
         )
@@ -779,7 +812,7 @@ fun PlaylistDetailScreen(
             }
         },
         headerActions = buildList {
-            if (playlist.isDefault || (onUpdatePlaylistSongs != null && playlist.songs.size > 1)) {
+            if (playlist.isDefault || playlist.songs.size > 1) {
                 add(
                     HeaderAction(
                         contentDescription = context.getString(R.string.content_desc_sort_songs),
@@ -851,6 +884,22 @@ fun PlaylistDetailScreen(
                     shape = RoundedCornerShape(20.dp)
                 ) {
                     val playlistMenuItems = buildList {
+                    // Add songs option
+                    if (onAddSongs != null || !isStreamingPlaylist) {
+                        add(
+                            RhythmMenuItem(
+                                title = stringResource(R.string.playlist_add_songs_button),
+                                icon = RhythmIcons.Add,
+                                iconContainerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f),
+                                iconTint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                onClick = {
+                                    showMenu = false
+                                    showSongPicker = true
+                                }
+                            )
+                        )
+                    }
+
                     // Reorder songs option
                     if (isDefault || ((onReorderSongs != null || onUpdatePlaylistSongs != null) && playlist.songs.isNotEmpty())) {
                         add(
@@ -1045,6 +1094,7 @@ fun PlaylistDetailScreen(
                                 PlaylistSortOrder.DATE_ADDED_ASC -> playlist.songs.sortedBy { it.dateAdded }
                                 PlaylistSortOrder.DATE_ADDED_DESC -> playlist.songs.sortedByDescending { it.dateAdded }
                             }
+                            localPlaylistEntries = keyTracker.sync(sortedSongs)
                             onUpdatePlaylistSongs?.invoke(sortedSongs)
                         },
                         onDirectionToggled = { asc ->
@@ -1065,6 +1115,7 @@ fun PlaylistDetailScreen(
                                 PlaylistSortOrder.DATE_ADDED_ASC -> playlist.songs.sortedBy { it.dateAdded }
                                 PlaylistSortOrder.DATE_ADDED_DESC -> playlist.songs.sortedByDescending { it.dateAdded }
                             }
+                            localPlaylistEntries = keyTracker.sync(sortedSongs)
                             onUpdatePlaylistSongs?.invoke(sortedSongs)
                         }
                     )
@@ -1856,62 +1907,8 @@ fun PlaylistDetailScreen(
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        if (isStreamingPlaylist) {
-                            var searchPressed by remember { mutableStateOf(false) }
-                            val searchScale by animateFloatAsState(
-                                targetValue = if (searchPressed) 0.96f else 1f,
-                                animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
-                                label = "searchScale"
-                            )
-                            LaunchedEffect(searchPressed) {
-                                if (searchPressed) {
-                                    delay(100)
-                                    searchPressed = false
-                                }
-                            }
-                            Button(
-                                onClick = {
-                                    HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
-                                    showSearchBar = !showSearchBar
-                                    if (!showSearchBar) {
-                                        searchQuery = ""
-                                    }
-                                    searchPressed = true
-                                },
-                                modifier = Modifier
-                                    .height(48.dp)
-                                    .graphicsLayer {
-                                        scaleX = searchScale
-                                        scaleY = searchScale
-                                    },
-                                shape = RoundedCornerShape(100.dp),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = if (showSearchBar)
-                                        MaterialTheme.colorScheme.primaryContainer
-                                    else
-                                        MaterialTheme.colorScheme.tertiaryContainer,
-                                    contentColor = if (showSearchBar)
-                                        MaterialTheme.colorScheme.onPrimaryContainer
-                                    else
-                                        MaterialTheme.colorScheme.onTertiaryContainer
-                                ),
-                                contentPadding = PaddingValues(horizontal = 20.dp)
-                            ) {
-                                Icon(
-                                    imageVector = if (showSearchBar) RhythmIcons.Close else RhythmIcons.Search,
-                                    contentDescription = if (showSearchBar) "Close search" else "Search",
-                                    modifier = Modifier.size(20.dp)
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    text = if (showSearchBar) "Searching" else "Search",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-                        } else {
-                            // Left side - Search button
-                            var searchPressed by remember { mutableStateOf(false) }
+                        // Left side - Search button
+                        var searchPressed by remember { mutableStateOf(false) }
                             val searchScale by animateFloatAsState(
                                 targetValue = if (searchPressed) 0.92f else 1f,
                                 animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
@@ -2049,7 +2046,6 @@ fun PlaylistDetailScreen(
                                     modifier = Modifier.size(24.dp)
                                 )
                             }
-                        }
                     }
                 }
             }
@@ -2500,65 +2496,8 @@ fun PlaylistDetailScreen(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        if (isStreamingPlaylist) {
-                            var searchPressed by remember { mutableStateOf(false) }
-                            val searchScale by animateFloatAsState(
-                                targetValue = if (searchPressed) 0.96f else 1f,
-                                animationSpec = spring(
-                                    dampingRatio = Spring.DampingRatioMediumBouncy,
-                                    stiffness = Spring.StiffnessMedium
-                                ),
-                                label = "searchScale"
-                            )
-                            LaunchedEffect(searchPressed) {
-                                if (searchPressed) {
-                                    delay(120)
-                                    searchPressed = false
-                                }
-                            }
-                            Button(
-                                onClick = {
-                                    HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
-                                    showSearchBar = !showSearchBar
-                                    if (!showSearchBar) {
-                                        searchQuery = ""
-                                    }
-                                    searchPressed = true
-                                },
-                                modifier = Modifier
-                                    .height(48.dp)
-                                    .graphicsLayer {
-                                        scaleX = searchScale
-                                        scaleY = searchScale
-                                    },
-                                shape = RoundedCornerShape(100.dp),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = if (showSearchBar)
-                                        MaterialTheme.colorScheme.primaryContainer
-                                    else
-                                        MaterialTheme.colorScheme.tertiaryContainer,
-                                    contentColor = if (showSearchBar)
-                                        MaterialTheme.colorScheme.onPrimaryContainer
-                                    else
-                                        MaterialTheme.colorScheme.onTertiaryContainer
-                                ),
-                                contentPadding = PaddingValues(horizontal = 20.dp)
-                            ) {
-                                Icon(
-                                    imageVector = if (showSearchBar) RhythmIcons.Close else RhythmIcons.Search,
-                                    contentDescription = if (showSearchBar) "Close search" else "Search",
-                                    modifier = Modifier.size(20.dp)
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    text = if (showSearchBar) "Searching" else "Search",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-                        } else {
-                            // Left: Select/Remove button
-                            var removePressed by remember { mutableStateOf(false) }
+                        // Left: Select/Remove button
+                        var removePressed by remember { mutableStateOf(false) }
                             val removeScale by animateFloatAsState(
                                 targetValue = if (removePressed) 0.88f else 1f,
                                 animationSpec = spring(
@@ -2705,7 +2644,6 @@ fun PlaylistDetailScreen(
                                     modifier = Modifier.size(24.dp)
                                 )
                             }
-                        }
                     }
                 }
             }

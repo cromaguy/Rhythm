@@ -1748,13 +1748,41 @@ class StreamingMusicViewModel(application: Application) : AndroidViewModel(appli
     }
 
     /**
+     * Load/refresh a playlist and its tracks from the repository.
+     */
+    suspend fun loadPlaylist(playlistId: String): StreamingPlaylist? {
+        return try {
+            val playlist = repository.getPlaylistById(playlistId) as? StreamingPlaylist
+            if (playlist != null) {
+                val updated = _savedPlaylists.value.filterNot { it.id == playlistId } + playlist
+                _savedPlaylists.value = updated.sortedBy { it.name.lowercase() }
+            }
+            playlist
+        } catch (e: Exception) {
+            Log.e("StreamingMusicViewModel", "Failed to load playlist: $playlistId", e)
+            null
+        }
+    }
+
+    /**
      * Add a song to a playlist.
      */
     fun addSongToPlaylist(playlistId: String, song: StreamingSong) {
         viewModelScope.launch {
             try {
-                repository.addSongsToPlaylist(playlistId, listOf(song.id))
-                _savedPlaylists.value = repository.getPlaylists().first().filterIsInstance<StreamingPlaylist>()
+                val success = repository.addSongsToPlaylist(playlistId, listOf(song.id))
+                if (success) {
+                    val updated = repository.getPlaylistById(playlistId) as? StreamingPlaylist
+                    if (updated != null) {
+                        val current = _savedPlaylists.value.filterNot { it.id == playlistId }
+                        _savedPlaylists.value = (current + updated).sortedBy { it.name.lowercase() }
+                    } else {
+                        _savedPlaylists.value = repository.getPlaylists().first().filterIsInstance<StreamingPlaylist>()
+                    }
+                    showToast("Added to playlist")
+                } else {
+                    showToast("Failed to add song to playlist")
+                }
             } catch (e: Exception) {
                 showToast("Failed to add song to playlist: ${e.message}")
             }
@@ -1764,15 +1792,28 @@ class StreamingMusicViewModel(application: Application) : AndroidViewModel(appli
     /**
      * Add multiple songs to a playlist.
      */
-    fun addSongsToPlaylist(playlistId: String, songs: List<StreamingSong>) {
+    fun addSongsToPlaylist(playlistId: String, songs: List<StreamingSong>, onComplete: ((Boolean) -> Unit)? = null) {
         if (songs.isEmpty()) return
 
         viewModelScope.launch {
             try {
-                repository.addSongsToPlaylist(playlistId, songs.map { it.id })
-                _savedPlaylists.value = repository.getPlaylists().first().filterIsInstance<StreamingPlaylist>()
+                val success = repository.addSongsToPlaylist(playlistId, songs.map { it.id })
+                if (success) {
+                    val updated = repository.getPlaylistById(playlistId) as? StreamingPlaylist
+                    if (updated != null) {
+                        val current = _savedPlaylists.value.filterNot { it.id == playlistId }
+                        _savedPlaylists.value = (current + updated).sortedBy { it.name.lowercase() }
+                    } else {
+                        _savedPlaylists.value = repository.getPlaylists().first().filterIsInstance<StreamingPlaylist>()
+                    }
+                    showToast(if (songs.size == 1) "Added to playlist" else "Added ${songs.size} songs to playlist")
+                } else {
+                    showToast("Failed to add songs to playlist")
+                }
+                onComplete?.invoke(success)
             } catch (e: Exception) {
                 showToast("Failed to add songs to playlist: ${e.message}")
+                onComplete?.invoke(false)
             }
         }
     }
@@ -1781,12 +1822,34 @@ class StreamingMusicViewModel(application: Application) : AndroidViewModel(appli
      * Remove a song from a playlist.
      */
     fun removeSongFromPlaylist(playlistId: String, songId: String) {
+        removeSongsFromPlaylist(playlistId, listOf(songId))
+    }
+
+    /**
+     * Remove multiple songs from a playlist in a single operation.
+     */
+    fun removeSongsFromPlaylist(playlistId: String, songIds: List<String>, onComplete: ((Boolean) -> Unit)? = null) {
+        if (songIds.isEmpty()) return
         viewModelScope.launch {
             try {
-                repository.removeSongsFromPlaylist(playlistId, listOf(songId))
-                _savedPlaylists.value = repository.getPlaylists().first().filterIsInstance<StreamingPlaylist>()
+                val success = repository.removeSongsFromPlaylist(playlistId, songIds)
+                if (success) {
+                    val updated = repository.getPlaylistById(playlistId) as? StreamingPlaylist
+                    if (updated != null) {
+                        val current = _savedPlaylists.value.filterNot { it.id == playlistId }
+                        _savedPlaylists.value = (current + updated).sortedBy { it.name.lowercase() }
+                    } else {
+                        _savedPlaylists.value = repository.getPlaylists().first().filterIsInstance<StreamingPlaylist>()
+                    }
+                    val msg = if (songIds.size == 1) "Removed song from playlist" else "Removed ${songIds.size} songs from playlist"
+                    showToast(msg)
+                } else {
+                    showToast("Failed to remove song(s) from playlist")
+                }
+                onComplete?.invoke(success)
             } catch (e: Exception) {
-                showToast("Failed to remove song from playlist: ${e.message}")
+                showToast("Failed to remove songs from playlist: ${e.message}")
+                onComplete?.invoke(false)
             }
         }
     }

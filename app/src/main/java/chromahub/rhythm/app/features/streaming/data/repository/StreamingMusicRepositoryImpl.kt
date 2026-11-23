@@ -1752,7 +1752,32 @@ class StreamingMusicRepositoryImpl(
     }
 
     override suspend fun getPlaylistById(id: String): PlaylistItem? {
-        return playlistsFlow.value.firstOrNull { it.id == id }
+        val cached = playlistsFlow.value.firstOrNull { it.id == id } as? StreamingPlaylist
+        if (appSettings.offlineMode.value) return cached
+
+        val decoded = decodePlaylistId(id) ?: return cached
+        val serviceId = decoded.first
+        val providerPlaylistId = decoded.second
+        if (!isServiceConnected(serviceId)) return cached
+
+        val tracks = fetchPlaylistTracks(serviceId, providerPlaylistId)
+        val updatedPlaylist = if (cached != null) {
+            cached.withTracks(tracks)
+        } else {
+            val providerPlaylist = when (serviceId) {
+                StreamingServiceId.SUBSONIC -> subsonicClient.getPlaylists().getOrNull()?.firstOrNull { it.providerId == providerPlaylistId }
+                StreamingServiceId.JELLYFIN -> jellyfinClient.getPlaylists().getOrNull()?.firstOrNull { it.providerId == providerPlaylistId }
+                else -> null
+            }
+            providerPlaylist?.let { mapProviderPlaylist(serviceId, it, tracks) }
+        }
+
+        if (updatedPlaylist != null) {
+            playlistsFlow.value = (playlistsFlow.value.filterNot { it.id == id } + updatedPlaylist)
+                .sortedBy { it.name.lowercase() }
+        }
+
+        return updatedPlaylist ?: cached
     }
 
     override suspend fun getSongsForAlbum(albumId: String): List<PlayableItem> {

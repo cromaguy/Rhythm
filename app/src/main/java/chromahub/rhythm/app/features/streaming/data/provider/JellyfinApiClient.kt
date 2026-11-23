@@ -320,7 +320,11 @@ class JellyfinApiClient(context: Context) {
                         query = null,
                         limit = minOf(pageSize, limit - songs.size),
                         startIndex = startIndex
-                    )
+                    ).toMutableMap().apply {
+                        put("UserId", cred.userId)
+                        remove("SortBy")
+                        remove("SortOrder")
+                    }
                     val response = requestJson("/Playlists/$playlistId/Items", params).getOrThrow()
                     val pageSongs = parseAudioItems(response)
 
@@ -584,6 +588,10 @@ class JellyfinApiClient(context: Context) {
             return Result.failure(IllegalArgumentException("At least one song id is required"))
         }
 
+        val bodyJson = JSONObject().apply {
+            put("Ids", JSONArray(songIds))
+            put("UserId", cred.userId)
+        }
         val params = mapOf(
             "ids" to songIds.joinToString(","),
             "userId" to cred.userId
@@ -592,7 +600,8 @@ class JellyfinApiClient(context: Context) {
         return request(
             path = "/Playlists/$playlistId/Items",
             params = params,
-            method = "POST"
+            method = "POST",
+            body = bodyJson.toString().toRequestBody("application/json".toMediaType())
         ).map { true }
     }
 

@@ -35,6 +35,10 @@ data class StreamingPlaylist(
      * Get tracks if already loaded.
      */
     fun getTracks(): List<StreamingSong> = tracks
+
+    fun withTracks(newTracks: List<StreamingSong>): StreamingPlaylist {
+        return copy(tracks = newTracks, songCount = if (newTracks.isNotEmpty()) newTracks.size else songCount)
+    }
 }
 
 /**
