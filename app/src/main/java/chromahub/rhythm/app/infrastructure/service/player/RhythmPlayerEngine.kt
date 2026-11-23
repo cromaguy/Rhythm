@@ -131,7 +131,7 @@ class RhythmPlayerEngine(
             initializationDurationMs: Long
         ) {
             playerADecoderName = decoderName
-            val format = (playerA as? ExoPlayer)?.audioFormat ?: playerA.currentTracks.getFirstSelectedTrackFormatByType(C.TRACK_TYPE_AUDIO)
+            val format = playerA.audioFormat ?: playerA.currentTracks.getFirstSelectedTrackFormatByType(C.TRACK_TYPE_AUDIO)
             if (format != null && masterPlayer === playerA) {
                 _currentEngineFormat.value = EngineAudioFormat(format, decoderName)
             }
@@ -156,7 +156,7 @@ class RhythmPlayerEngine(
             initializationDurationMs: Long
         ) {
             playerBDecoderName = decoderName
-            val format = (playerB as? ExoPlayer)?.audioFormat ?: playerB.currentTracks.getFirstSelectedTrackFormatByType(C.TRACK_TYPE_AUDIO)
+            val format = playerB.audioFormat ?: playerB.currentTracks.getFirstSelectedTrackFormatByType(C.TRACK_TYPE_AUDIO)
             if (format != null && masterPlayer === playerB) {
                 _currentEngineFormat.value = EngineAudioFormat(format, decoderName)
             }
@@ -864,7 +864,7 @@ class RhythmPlayerEngine(
 
         _activeAudioSessionId.value = playerA.audioSessionId
 
-        val swappedFormat = (playerA as? ExoPlayer)?.audioFormat ?: playerA.currentTracks.getFirstSelectedTrackFormatByType(C.TRACK_TYPE_AUDIO)
+        val swappedFormat = playerA.audioFormat ?: playerA.currentTracks.getFirstSelectedTrackFormatByType(C.TRACK_TYPE_AUDIO)
         val swappedDecoder = if (playerA === incomingPlayer) {
             if (incomingPlayer === playerA) playerADecoderName else playerBDecoderName
         } else playerADecoderName

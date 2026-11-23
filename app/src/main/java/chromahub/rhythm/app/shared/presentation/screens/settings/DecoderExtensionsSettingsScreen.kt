@@ -27,6 +27,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
+import android.content.ClipData
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
@@ -38,14 +39,15 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.toClipEntry
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -53,6 +55,7 @@ import chromahub.rhythm.app.R
 import chromahub.rhythm.app.shared.data.model.AppSettings
 import chromahub.rhythm.app.shared.presentation.components.Material3SettingsGroup
 import chromahub.rhythm.app.shared.presentation.components.common.CollapsibleHeaderScreen
+import kotlinx.coroutines.launch
 import chromahub.rhythm.app.shared.presentation.components.common.ExpressiveCookieEmptyState
 import chromahub.rhythm.app.shared.presentation.components.common.horizontalEdgeBlend
 import chromahub.rhythm.app.shared.presentation.components.icons.Icon
@@ -136,7 +139,8 @@ fun DecoderExtensionsSettingsScreen(
     val context = LocalContext.current
     val appSettings = remember { AppSettings.getInstance(context) }
     val haptics = LocalHapticFeedback.current
-    val clipboardManager = LocalClipboardManager.current
+    val clipboard = LocalClipboard.current
+    val scope = rememberCoroutineScope()
 
     val extensionsMasterEnabled by appSettings.decoderExtensionsEnabled.collectAsState()
     val disabledExtensions by appSettings.disabledDecoderExtensions.collectAsState()
@@ -145,7 +149,10 @@ fun DecoderExtensionsSettingsScreen(
     val filterOptions = listOf("All", "Engines", "Dolby & Atmos", "Lossless & Hi-Res", "MIDI")
 
     fun copyToClipboard(label: String, value: String) {
-        clipboardManager.setText(AnnotatedString("$label: $value"))
+        val clipData = ClipData.newPlainText(label, "$label: $value")
+        scope.launch {
+            clipboard.setClipEntry(clipData.toClipEntry())
+        }
         Toast.makeText(context, "$label copied", Toast.LENGTH_SHORT).show()
     }
 

@@ -41,6 +41,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.rememberTextFieldState
+import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -48,10 +51,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -2818,6 +2823,22 @@ fun SettingsSearchBar(
 ) {
     val context = LocalContext.current
     val haptic = LocalHapticFeedback.current
+    val textFieldState = rememberTextFieldState(query)
+
+    LaunchedEffect(query) {
+        if (textFieldState.text.toString() != query) {
+            textFieldState.setTextAndPlaceCursorAtEnd(query)
+        }
+    }
+
+    LaunchedEffect(textFieldState) {
+        snapshotFlow { textFieldState.text.toString() }
+            .collect { newText ->
+                if (newText != query) {
+                    onQueryChange(newText)
+                }
+            }
+    }
     
     Card(
         modifier = modifier.fillMaxWidth(),
@@ -2843,8 +2864,7 @@ fun SettingsSearchBar(
             Spacer(modifier = Modifier.width(12.dp))
             
             BasicTextField(
-                value = query,
-                onValueChange = onQueryChange,
+                state = textFieldState,
                 modifier = Modifier
                     .weight(1f)
                     .focusRequester(focusRequester)
@@ -2853,13 +2873,15 @@ fun SettingsSearchBar(
                     color = MaterialTheme.colorScheme.onSurface,
                     fontSize = MaterialTheme.typography.bodyLarge.fontSize
                 ),
-                singleLine = true,
+                lineLimits = TextFieldLineLimits.SingleLine,
                 cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                 keyboardOptions = keyboardOptions,
-                keyboardActions = keyboardActions,
-                decorationBox = { innerTextField ->
+                onKeyboardAction = { performDefaultAction ->
+                    performDefaultAction()
+                },
+                decorator = { innerTextField ->
                     Box {
-                        if (query.isEmpty()) {
+                        if (textFieldState.text.isEmpty()) {
                             Text(
                                 text = hint,
                                 style = MaterialTheme.typography.bodyLarge,

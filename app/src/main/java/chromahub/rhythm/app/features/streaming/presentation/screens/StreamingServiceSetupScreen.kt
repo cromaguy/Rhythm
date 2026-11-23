@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -30,6 +31,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedSecureTextField
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -46,7 +48,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -88,10 +89,10 @@ fun StreamingServiceSetupScreen(
 
     var serverUrl by rememberSaveable(serviceId) { mutableStateOf(session.serverUrl) }
     var username by rememberSaveable(serviceId) { mutableStateOf(session.username) }
-    var password by rememberSaveable(serviceId) { mutableStateOf("") }
+    val passwordState = rememberSaveable(serviceId, saver = TextFieldState.Saver) { TextFieldState("") }
     var showDiscoverySheet by remember { mutableStateOf(false) }
 
-    val canSubmit = username.isNotBlank() && password.isNotBlank() && (!requiresServerUrl || serverUrl.isNotBlank())
+    val canSubmit = username.isNotBlank() && passwordState.text.isNotBlank() && (!requiresServerUrl || serverUrl.isNotBlank())
     val primaryActionText = when {
         isBusy && session.isConnected -> R.string.streaming_service_setup_disconnecting
         isBusy -> R.string.streaming_service_setup_connecting
@@ -247,14 +248,11 @@ fun StreamingServiceSetupScreen(
                                 enabled = !isBusy
                             )
 
-                            OutlinedTextField(
-                                value = password,
-                                onValueChange = { password = it },
+                            OutlinedSecureTextField(
+                                state = passwordState,
                                 modifier = Modifier.fillMaxWidth(),
                                 label = { Text(text = stringResource(id = R.string.streaming_service_setup_password)) },
                                 placeholder = { Text(text = stringResource(id = R.string.streaming_service_setup_password_hint)) },
-                                visualTransformation = PasswordVisualTransformation(),
-                                singleLine = true,
                                 enabled = !isBusy
                             )
 
@@ -336,7 +334,7 @@ fun StreamingServiceSetupScreen(
                                     serviceId = serviceId,
                                     serverUrl = serverUrl,
                                     username = username,
-                                    password = password
+                                    password = passwordState.text.toString()
                                 )
                             },
                             modifier = Modifier.fillMaxWidth(),

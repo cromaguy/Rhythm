@@ -2992,7 +2992,10 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
                 it.type == AudioDeviceInfo.TYPE_WIRED_HEADSET
             }
 
-            val isA2dpOn = try { audioManager.isBluetoothA2dpOn } catch (_: Exception) { true }
+            val isA2dpOn = outputDevices.any {
+                it.type == AudioDeviceInfo.TYPE_BLUETOOTH_A2DP ||
+                (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && (it.type == AudioDeviceInfo.TYPE_BLE_HEADSET || it.type == AudioDeviceInfo.TYPE_BLE_SPEAKER))
+            }
             val mediaRouterSelectedRoute = try {
                 androidx.mediarouter.media.MediaRouter.getInstance(this).selectedRoute
             } catch (_: Exception) { null }

@@ -1590,9 +1590,14 @@ class AudioDeviceManager(private val context: Context) {
                 }
             } catch (_: Exception) {}
 
-            val isA2dpOn = try { audioManager.isBluetoothA2dpOn } catch (_: Exception) { true }
+            val isA2dpOn = devices.any {
+                (it.type == AudioDeviceInfo.TYPE_BLUETOOTH_A2DP ||
+                 it.type == AudioDeviceInfo.TYPE_BLUETOOTH_SCO ||
+                 (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && (it.type == AudioDeviceInfo.TYPE_BLE_HEADSET || it.type == AudioDeviceInfo.TYPE_BLE_SPEAKER))) &&
+                it.isSink
+            }
             if (!isA2dpOn) {
-                Log.d(TAG, "Bluetooth device present, but audioManager.isBluetoothA2dpOn is false")
+                Log.d(TAG, "Bluetooth device present, but no active Bluetooth audio sink found")
                 return false
             }
 

@@ -21,8 +21,10 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.clearText
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -123,7 +125,7 @@ fun ArtistDelimitersBottomSheet(
         appSettings.setArtistSeparatorCustomDelimiters(clean)
     }
 
-    var customInputText by remember { mutableStateOf("") }
+    val customInputState = rememberTextFieldState()
 
     val quickSuggestions = remember {
         listOf("feat.", "ft.", "featuring", "//", " x ", "with", "vs.", "、", "／", "・", "•")
@@ -135,7 +137,7 @@ fun ArtistDelimitersBottomSheet(
     }
 
     val onAddToken = {
-        val trimmed = customInputText.trim()
+        val trimmed = customInputState.text.toString().trim()
         if (trimmed.isNotEmpty()) {
             HapticUtils.performHapticFeedback(context, haptic, HapticType.HEAVY)
             val newCustom = (customTokens + trimmed).distinct()
@@ -143,7 +145,7 @@ fun ArtistDelimitersBottomSheet(
             val newTokens = (activeTokens + trimmed).distinct()
             activeTokens = newTokens
             saveTokens(newTokens)
-            customInputText = ""
+            customInputState.clearText()
             currentPage = DelimiterSheetPage.Main
         }
     }
@@ -532,19 +534,18 @@ fun ArtistDelimitersBottomSheet(
                                         Spacer(modifier = Modifier.width(12.dp))
 
                                         BasicTextField(
-                                            value = customInputText,
-                                            onValueChange = { customInputText = it },
+                                            state = customInputState,
                                             modifier = Modifier.weight(1f),
                                             textStyle = MaterialTheme.typography.bodyLarge.copy(
                                                 color = MaterialTheme.colorScheme.onSurface
                                             ),
-                                            singleLine = true,
+                                            lineLimits = TextFieldLineLimits.SingleLine,
                                             cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                                             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                                            keyboardActions = KeyboardActions(onDone = { onAddToken() }),
-                                            decorationBox = { innerTextField ->
+                                            onKeyboardAction = { onAddToken() },
+                                            decorator = { innerTextField ->
                                                 Box {
-                                                    if (customInputText.isEmpty()) {
+                                                    if (customInputState.text.isEmpty()) {
                                                         Text(
                                                             text = stringResource(R.string.delimiter_custom_hint),
                                                             style = MaterialTheme.typography.bodyLarge,
@@ -557,12 +558,12 @@ fun ArtistDelimitersBottomSheet(
                                         )
 
                                         AnimatedVisibility(
-                                            visible = customInputText.isNotEmpty(),
+                                            visible = customInputState.text.isNotEmpty(),
                                             enter = fadeIn() + expandVertically(),
                                             exit = fadeOut() + shrinkVertically()
                                         ) {
                                             IconButton(
-                                                onClick = { customInputText = "" },
+                                                onClick = { customInputState.clearText() },
                                                 modifier = Modifier.size(24.dp)
                                             ) {
                                                 Icon(

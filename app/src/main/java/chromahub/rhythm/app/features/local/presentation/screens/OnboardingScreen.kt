@@ -97,7 +97,9 @@ import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.material3.OutlinedSecureTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
  
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -9956,7 +9958,7 @@ fun EnhancedStreamingSetupContent(
 
     var serverUrl by rememberSaveable(selectedProvider) { mutableStateOf(currentSession.serverUrl) }
     var username by rememberSaveable(selectedProvider) { mutableStateOf(currentSession.username) }
-    var password by rememberSaveable(selectedProvider) { mutableStateOf("") }
+    val passwordState = rememberSaveable(selectedProvider, saver = TextFieldState.Saver) { TextFieldState("") }
     var showDiscoverySheet by remember { mutableStateOf(false) }
 
     val scanner = remember(selectedProvider) { NearbyServerScanner(context, selectedProvider, scope) }
@@ -9981,7 +9983,7 @@ fun EnhancedStreamingSetupContent(
     }
 
     val isConnected = currentSession.isConnected
-    val canSubmit = username.isNotBlank() && password.isNotBlank() && (!requiresServerUrl || serverUrl.isNotBlank())
+    val canSubmit = username.isNotBlank() && passwordState.text.isNotBlank() && (!requiresServerUrl || serverUrl.isNotBlank())
     val scrollState = rememberScrollState()
 
     val providerDisplayName = if (selectedProvider == "JELLYFIN") {
@@ -10097,8 +10099,7 @@ fun EnhancedStreamingSetupContent(
                     onServerUrlChange = { serverUrl = it },
                     username = username,
                     onUsernameChange = { username = it },
-                    password = password,
-                    onPasswordChange = { password = it },
+                    passwordState = passwordState,
                     isConnected = isConnected,
                     isLoading = isLoading,
                     error = error,
@@ -10118,7 +10119,7 @@ fun EnhancedStreamingSetupContent(
                             serviceId = selectedProvider,
                             serverUrl = serverUrl,
                             username = username,
-                            password = password
+                            password = passwordState.text.toString()
                         )
                     },
                     onDisconnect = {
@@ -10202,8 +10203,7 @@ fun EnhancedStreamingSetupContent(
                 onServerUrlChange = { serverUrl = it },
                 username = username,
                 onUsernameChange = { username = it },
-                password = password,
-                onPasswordChange = { password = it },
+                passwordState = passwordState,
                 isConnected = isConnected,
                 isLoading = isLoading,
                 error = error,
@@ -10223,7 +10223,7 @@ fun EnhancedStreamingSetupContent(
                         serviceId = selectedProvider,
                         serverUrl = serverUrl,
                         username = username,
-                        password = password
+                        password = passwordState.text.toString()
                     )
                 },
                 onDisconnect = {
@@ -10298,8 +10298,7 @@ private fun StreamingSetupSelectionAndForm(
     onServerUrlChange: (String) -> Unit,
     username: String,
     onUsernameChange: (String) -> Unit,
-    password: String,
-    onPasswordChange: (String) -> Unit,
+    passwordState: TextFieldState,
     isConnected: Boolean,
     isLoading: Boolean,
     error: String?,
@@ -10359,14 +10358,17 @@ private fun StreamingSetupSelectionAndForm(
                 enabled = !isLoading && !isConnected
             )
 
-            OutlinedTextField(
-                value = password,
-                onValueChange = onPasswordChange,
+            OutlinedSecureTextField(
+                state = passwordState,
                 modifier = Modifier.fillMaxWidth(),
                 label = { Text(stringResource(R.string.streaming_service_setup_password)) },
                 placeholder = { Text(stringResource(R.string.onboardingscreen_enter_server_password)) },
-                visualTransformation = PasswordVisualTransformation(),
-                singleLine = true,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
+                ),
                 enabled = !isLoading && !isConnected
             )
 
@@ -10702,7 +10704,6 @@ private fun OutlinedTextField(
     suffix: @Composable (() -> Unit)? = null,
     supportingText: @Composable (() -> Unit)? = null,
     isError: Boolean = false,
-    visualTransformation: androidx.compose.ui.text.input.VisualTransformation = androidx.compose.ui.text.input.VisualTransformation.None,
     keyboardOptions: androidx.compose.foundation.text.KeyboardOptions = androidx.compose.foundation.text.KeyboardOptions.Default,
     keyboardActions: androidx.compose.foundation.text.KeyboardActions = androidx.compose.foundation.text.KeyboardActions.Default,
     singleLine: Boolean = false,
@@ -10732,7 +10733,6 @@ private fun OutlinedTextField(
         suffix = suffix,
         supportingText = supportingText,
         isError = isError,
-        visualTransformation = visualTransformation,
         keyboardOptions = keyboardOptions,
         keyboardActions = keyboardActions,
         singleLine = singleLine,

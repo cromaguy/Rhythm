@@ -41,6 +41,10 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.clearText
+import androidx.compose.foundation.text.input.rememberTextFieldState
+import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -146,6 +150,23 @@ fun UniversalSearchScreen(
     val horizontalPadding = if (isTablet) 32.dp else 24.dp
 
     var query by remember { mutableStateOf("") }
+    val searchTextFieldState = rememberTextFieldState(query)
+
+    LaunchedEffect(query) {
+        if (searchTextFieldState.text.toString() != query) {
+            searchTextFieldState.setTextAndPlaceCursorAtEnd(query)
+        }
+    }
+
+    LaunchedEffect(searchTextFieldState) {
+        snapshotFlow { searchTextFieldState.text.toString() }
+            .collect { newText ->
+                if (newText != query) {
+                    query = newText
+                }
+            }
+    }
+
     val focusRequester = remember { FocusRequester() }
 
     LaunchedEffect(Unit) {
@@ -1226,15 +1247,14 @@ fun UniversalSearchScreen(
                         Icon(RhythmIcons.Search, contentDescription = null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(modifier = Modifier.width(8.dp))
                         BasicTextField(
-                            value = query,
-                            onValueChange = { query = it },
+                            state = searchTextFieldState,
                             modifier = Modifier.weight(1f).focusRequester(focusRequester),
                             textStyle = TextStyle(color = MaterialTheme.colorScheme.onSurface, fontSize = 16.sp, fontWeight = FontWeight.Medium),
-                            singleLine = true,
+                            lineLimits = TextFieldLineLimits.SingleLine,
                             cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                            decorationBox = { innerTextField ->
+                            decorator = { innerTextField ->
                                 Box(contentAlignment = Alignment.CenterStart) {
-                                    if (query.isEmpty()) {
+                                    if (searchTextFieldState.text.isEmpty()) {
                                         Text(stringResource(R.string.universalsearchscreen_search_everywhere), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                     }
                                     innerTextField()
