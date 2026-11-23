@@ -6,6 +6,7 @@
 
 package chromahub.rhythm.app.features.local.presentation.screens.equalizer
 
+import android.content.Intent
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -16,11 +17,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import chromahub.rhythm.app.R
 import chromahub.rhythm.app.infrastructure.audio.viper.ViperEngineTelemetry
 import chromahub.rhythm.app.shared.presentation.components.bottomsheets.RhythmAdaptiveModalSheet
@@ -28,6 +32,8 @@ import chromahub.rhythm.app.shared.presentation.components.bottomsheets.SheetAda
 import chromahub.rhythm.app.shared.presentation.components.icons.Icon
 import chromahub.rhythm.app.shared.presentation.components.icons.MaterialSymbolIcon
 import chromahub.rhythm.app.ui.theme.MusicDimensions
+import chromahub.rhythm.app.util.HapticUtils
+import chromahub.rhythm.app.util.HapticType
 
 /**
  * Connected-corner shape for a tile inside a grouped grid, matching the
@@ -65,6 +71,9 @@ fun ViperEngineStatusSheet(
     isMasterEnabled: Boolean,
     onDismiss: () -> Unit
 ) {
+    val context = LocalContext.current
+    val haptic = LocalHapticFeedback.current
+
     val stateLabel = if (isMasterEnabled) {
         stringResource(R.string.viper_status_active)
     } else {
@@ -178,6 +187,31 @@ fun ViperEngineStatusSheet(
                 tint = MaterialTheme.colorScheme.secondary,
                 tintContainer = MaterialTheme.colorScheme.secondaryContainer
             )
+
+            TextButton(
+                onClick = {
+                    HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
+                    val intent = Intent(
+                        Intent.ACTION_VIEW,
+                        "https://github.com/vipersaudio/viper4android_fx".toUri()
+                    ).apply {
+                        addCategory(Intent.CATEGORY_BROWSABLE)
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    }
+                    context.startActivity(intent)
+                }
+            ) {
+                Text(
+                    text = stringResource(R.string.viper_engine_upstream),
+                    style = MaterialTheme.typography.labelLarge
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Icon(
+                    imageVector = MaterialSymbolIcon("open_in_new", filled = true),
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp)
+                )
+            }
         }
     }
 }

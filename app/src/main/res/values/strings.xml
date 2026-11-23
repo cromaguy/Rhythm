@@ -2653,6 +2653,7 @@
     <string name="licenses_desc_vivi_music">More Than Just Music — Your Ultimate Audio Experience</string>
     <string name="licenses_desc_zenith">A Material Design 3 Expressive Digital Wellbeing App</string>
     <string name="licenses_desc_autoeq">Automatic headphone equalization from frequency responses</string>
+    <string name="licenses_desc_viper4android">ViPER4Android DSP effects engine by the ViperAudio team</string>
     <string name="licenses_desc_jetpack_compose">Android\'s modern toolkit for building native UI</string>
     <string name="licenses_desc_material3_components">Material Design 3 components for Android</string>
     <string name="licenses_desc_media3_exoplayer">Modern media playback library for Android</string>
@@ -2678,6 +2679,19 @@
     <string name="licenses_desc_room">SQLite object mapping library for database persistence</string>
     <string name="licenses_desc_androidx_paging">Paginated loading for large music lists</string>
     <string name="licenses_desc_geom_font">Modern, clean sans-serif typeface from Google Fonts</string>
+    <string name="licenses_desc_androidx_core">Core, lifecycle and activity support libraries for Android</string>
+    <string name="licenses_desc_androidx_appcompat">Backward-compatible support library for Android APIs</string>
+    <string name="licenses_desc_compose_animation">Compose animation APIs and Material shape generation</string>
+    <string name="licenses_desc_material_components">Material Design components for classic Android views</string>
+    <string name="licenses_desc_reorderables">Drag-and-drop reorderable lists for Compose</string>
+    <string name="licenses_desc_androidx_documentfile">Document tree access and baseline profile installation</string>
+    <string name="licenses_desc_kotlin">Kotlin language runtime and coroutine libraries</string>
+    <string name="licenses_category_apps">Apps &amp; Inspiration</string>
+    <string name="licenses_category_jetpack">Jetpack &amp; AndroidX</string>
+    <string name="licenses_category_media">Media &amp; Audio</string>
+    <string name="licenses_category_ui">UI &amp; Typefaces</string>
+    <string name="licenses_category_networking">Networking &amp; Data</string>
+    <string name="licenses_category_tools">Language &amp; Tooling</string>
     <string name="settings_value_dp">%1$ddp</string>
     <string name="settings_value_percent">%1$d%%</string>
     <string name="cd_selected">Selected</string>
@@ -3030,4 +3044,5 @@
     <string name="viper_profile_invalid_format">Invalid profile format!</string>
     <string name="viper_engine_status_title">Audio Engine Status</string>
     <string name="viper_engine_status_subtitle">ViPER4Android DSP Monitor</string>
+    <string name="viper_engine_upstream">ViPER4Android on GitHub</string>
 </resources>
