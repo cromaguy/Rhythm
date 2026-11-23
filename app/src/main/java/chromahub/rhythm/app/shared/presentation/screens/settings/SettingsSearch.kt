@@ -443,6 +443,15 @@ fun buildSettingsSearchIndex(context: Context): List<SearchableSettingItem> {
             parentScreen = context.getString(R.string.settings_section_audio_lyrics)
         ))
         add(SearchableSettingItem(
+            id = "viper4android",
+            title = context.getString(R.string.settings_viper_title),
+            description = context.getString(R.string.settings_viper_desc),
+            keywords = listOf("viper", "viper4android", "dsp", "clarity", "ddc", "convolver", "irs", "audio", "effects", "enhancement"),
+            icon = MaterialSymbolIcon("developer_board", filled = true),
+            route = SettingsRoutes.VIPER,
+            parentScreen = context.getString(R.string.settings_viper_group)
+        ))
+        add(SearchableSettingItem(
             id = "battery_saver",
             title = context.getString(R.string.performancesettingsscreen_performance),
             description = context.getString(R.string.performancesettingsscreen_performance_desc),

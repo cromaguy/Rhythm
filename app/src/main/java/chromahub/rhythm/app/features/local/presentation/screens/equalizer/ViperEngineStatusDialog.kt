@@ -7,117 +7,238 @@
 package chromahub.rhythm.app.features.local.presentation.screens.equalizer
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
 import chromahub.rhythm.app.R
 import chromahub.rhythm.app.infrastructure.audio.viper.ViperEngineTelemetry
-import chromahub.rhythm.app.infrastructure.audio.viper.ViperOutputDevice
-import chromahub.rhythm.app.shared.presentation.components.icons.MaterialSymbolIcon
+import chromahub.rhythm.app.shared.presentation.components.bottomsheets.RhythmAdaptiveModalSheet
+import chromahub.rhythm.app.shared.presentation.components.bottomsheets.SheetAdaptiveType
 import chromahub.rhythm.app.shared.presentation.components.icons.Icon
-import java.util.Locale
+import chromahub.rhythm.app.shared.presentation.components.icons.MaterialSymbolIcon
+import chromahub.rhythm.app.ui.theme.MusicDimensions
+
+/**
+ * Connected-corner shape for a tile inside a grouped grid, matching the
+ * grouped cards used elsewhere in the app's bottom sheets.
+ */
+private fun statusTileShape(
+    row: Int,
+    col: Int,
+    rowCount: Int,
+    columnCount: Int
+): RoundedCornerShape {
+    fun corner(outerRow: Boolean, outerColumn: Boolean) = when {
+        outerRow && outerColumn -> 20.dp
+        outerRow || outerColumn -> 12.dp
+        else -> 4.dp
+    }
+
+    return RoundedCornerShape(
+        topStart = corner(row == 0, col == 0),
+        topEnd = corner(row == 0, col == columnCount - 1),
+        bottomStart = corner(row == rowCount - 1, col == 0),
+        bottomEnd = corner(row == rowCount - 1, col == columnCount - 1)
+    )
+}
+
+private data class ViperStatusItem(
+    val icon: MaterialSymbolIcon,
+    val label: String,
+    val value: String
+)
 
 @Composable
-fun ViperEngineStatusDialog(
+fun ViperEngineStatusSheet(
     telemetry: ViperEngineTelemetry,
     isMasterEnabled: Boolean,
     onDismiss: () -> Unit
 ) {
-    Dialog(onDismissRequest = onDismiss) {
-        Surface(
-            shape = RoundedCornerShape(28.dp),
-            color = MaterialTheme.colorScheme.surfaceContainerHigh,
-            tonalElevation = 6.dp,
-            modifier = Modifier.fillMaxWidth().padding(16.dp)
+    val stateLabel = if (isMasterEnabled) {
+        stringResource(R.string.viper_status_active)
+    } else {
+        stringResource(R.string.viper_status_standby)
+    }
+
+    val engineItems = listOf(
+        ViperStatusItem(
+            icon = MaterialSymbolIcon("power_settings_new", filled = true),
+            label = stringResource(R.string.viper_status_engine),
+            value = stateLabel
+        ),
+        ViperStatusItem(
+            icon = MaterialSymbolIcon("auto_awesome", filled = true),
+            label = stringResource(R.string.viper_status_active_effects),
+            value = if (isMasterEnabled) "${telemetry.activeEffectsCount} / 24" else "0 / 24"
+        ),
+        ViperStatusItem(
+            icon = MaterialSymbolIcon("memory", filled = true),
+            label = stringResource(R.string.viper_status_dsp_core),
+            value = "32-bit Float NEON"
+        ),
+        ViperStatusItem(
+            icon = MaterialSymbolIcon("bolt", filled = true),
+            label = stringResource(R.string.viper_status_buffer),
+            value = "${telemetry.bufferFrames} frames"
+        )
+    )
+
+    val outputItems = listOf(
+        ViperStatusItem(
+            icon = MaterialSymbolIcon("speed", filled = true),
+            label = stringResource(R.string.viper_status_sample_rate),
+            value = "${telemetry.sampleRate} Hz"
+        ),
+        ViperStatusItem(
+            icon = MaterialSymbolIcon("surround_sound", filled = true),
+            label = stringResource(R.string.viper_status_channels),
+            value = if (telemetry.channelCount == 2) "Stereo (2 Ch)" else "Mono (1 Ch)"
+        ),
+        ViperStatusItem(
+            icon = MaterialSymbolIcon("speaker", filled = true),
+            label = stringResource(R.string.viper_status_output_device),
+            value = telemetry.currentDevice.displayName
+        ),
+        ViperStatusItem(
+            icon = MaterialSymbolIcon("graphic_eq", filled = true),
+            label = stringResource(R.string.viper_status_pipeline),
+            value = "Media3 / ExoPlayer"
+        )
+    )
+
+    RhythmAdaptiveModalSheet(
+        adaptiveType = SheetAdaptiveType.TWO_PANE_DIALOG,
+        onDismissRequest = onDismiss,
+        modifier = Modifier
+            .widthIn(max = 600.dp)
+            .fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 24.dp)
+                .padding(top = 8.dp, bottom = 32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
             Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(24.dp)
+                    .padding(top = 8.dp)
             ) {
+                Icon(
+                    imageVector = MaterialSymbolIcon("developer_board", filled = true),
+                    contentDescription = null,
+                    modifier = Modifier.size(64.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+
+                Text(
+                    text = stateLabel,
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+
+                Text(
+                    text = stringResource(R.string.viper_engine_status_subtitle),
+                    style = MaterialTheme.typography.bodyMedium,
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            ViperStatusSection(
+                title = stringResource(R.string.viper_status_engine),
+                icon = MaterialSymbolIcon("insights", filled = true),
+                items = engineItems,
+                tint = MaterialTheme.colorScheme.primary,
+                tintContainer = MaterialTheme.colorScheme.primaryContainer
+            )
+
+            ViperStatusSection(
+                title = stringResource(R.string.viper_status_output_device),
+                icon = MaterialSymbolIcon("speaker_group", filled = true),
+                items = outputItems,
+                tint = MaterialTheme.colorScheme.secondary,
+                tintContainer = MaterialTheme.colorScheme.secondaryContainer
+            )
+        }
+    }
+}
+
+@Composable
+private fun ViperStatusSection(
+    title: String,
+    icon: MaterialSymbolIcon,
+    items: List<ViperStatusItem>,
+    tint: androidx.compose.ui.graphics.Color,
+    tintContainer: androidx.compose.ui.graphics.Color
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = tint,
+                modifier = Modifier.size(20.dp)
+            )
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+        }
+
+        val rows = items.chunked(2)
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            rows.forEachIndexed { rowIndex, rowItems ->
                 Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    Icon(
-                        imageVector = MaterialSymbolIcon("insights", filled = true),
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(32.dp)
-                    )
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Column {
-                        Text(
-                            text = stringResource(R.string.viper_engine_status_title),
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = stringResource(R.string.viper_engine_status_subtitle),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                    rowItems.forEachIndexed { colIndex, item ->
+                        ViperStatusTile(
+                            item = item,
+                            tint = tint,
+                            tintContainer = tintContainer,
+                            shape = statusTileShape(
+                                row = rowIndex,
+                                col = colIndex,
+                                rowCount = rows.size,
+                                columnCount = 2
+                            ),
+                            modifier = Modifier.weight(1f)
                         )
                     }
-                }
-
-                HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
-
-                StatusRow(
-                    label = "Engine Status",
-                    value = if (isMasterEnabled) "Active / Processing" else "Standby (Disabled)",
-                    isHighlight = isMasterEnabled
-                )
-
-                StatusRow(
-                    label = "DSP Core Architecture",
-                    value = "Internal 32-bit Float NEON"
-                )
-
-                StatusRow(
-                    label = "Audio Pipeline",
-                    value = "Media3 / ExoPlayer Realtime"
-                )
-
-                StatusRow(
-                    label = "Sampling Rate",
-                    value = "${telemetry.sampleRate} Hz"
-                )
-
-                StatusRow(
-                    label = "Audio Channels",
-                    value = if (telemetry.channelCount == 2) "Stereo (2 Ch)" else "Mono (1 Ch)"
-                )
-
-                StatusRow(
-                    label = "Output Device",
-                    value = telemetry.currentDevice.displayName
-                )
-
-                StatusRow(
-                    label = "Active Effects",
-                    value = if (isMasterEnabled) "${telemetry.activeEffectsCount} of 24 Active" else "0 Active",
-                    isHighlight = telemetry.activeEffectsCount > 0
-                )
-
-                StatusRow(
-                    label = "Buffer Size",
-                    value = "${telemetry.bufferFrames} Frames (< 1.0 ms Latency)"
-                )
-
-                Spacer(modifier = Modifier.height(20.dp))
-
-                Button(
-                    onClick = onDismiss,
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp)
-                ) {
-                    Text(stringResource(R.string.dialog_close))
+                    if (rowItems.size == 1) {
+                        Spacer(modifier = Modifier.weight(1f))
+                    }
                 }
             }
         }
@@ -125,28 +246,73 @@ fun ViperEngineStatusDialog(
 }
 
 @Composable
-private fun StatusRow(
-    label: String,
-    value: String,
-    isHighlight: Boolean = false
+private fun ViperStatusTile(
+    item: ViperStatusItem,
+    tint: androidx.compose.ui.graphics.Color,
+    tintContainer: androidx.compose.ui.graphics.Color,
+    shape: RoundedCornerShape,
+    modifier: Modifier = Modifier
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+    val tileColor = lerp(
+        MaterialTheme.colorScheme.surfaceContainer,
+        tintContainer,
+        0.35f
+    )
+
+    Surface(
+        modifier = modifier
+            .height(MusicDimensions.infoTileHeight)
+            .clip(shape),
+        shape = shape,
+        color = tileColor
     ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Text(
-            text = value,
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = if (isHighlight) FontWeight.Bold else FontWeight.Medium,
-            color = if (isHighlight) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-        )
+        Box(modifier = Modifier.fillMaxSize()) {
+            Icon(
+                imageVector = item.icon,
+                contentDescription = null,
+                tint = tint.copy(alpha = MusicDimensions.infoTileWatermarkAlpha),
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .offset(
+                        x = MusicDimensions.infoTileBackdropCut,
+                        y = MusicDimensions.infoTileBackdropCut
+                    )
+                    .size(MusicDimensions.infoTileIconSize)
+            )
+
+            Text(
+                text = item.value,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .fillMaxWidth()
+                    .padding(
+                        start = MusicDimensions.infoTileInset,
+                        end = MusicDimensions.infoTileInset,
+                        bottom = MusicDimensions.infoTileInset
+                    )
+            )
+
+            Text(
+                text = item.label,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                color = tint,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .fillMaxWidth()
+                    .padding(
+                        top = MusicDimensions.infoTileInset,
+                        start = MusicDimensions.infoTileInset,
+                        end = MusicDimensions.infoTileInset
+                    )
+            )
+        }
     }
 }

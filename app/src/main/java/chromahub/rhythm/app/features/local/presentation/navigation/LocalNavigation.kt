@@ -262,6 +262,7 @@ sealed class Screen(val route: String) {
     object TunerBackupRestore : Screen("tuner_backup_restore_settings")
     object TunerThemeCustomization : Screen("tuner_theme_customization_settings")
     object TunerEqualizer : Screen("tuner_equalizer_settings")
+    object TunerViper : Screen("tuner_viper_settings")
     object TunerSleepTimer : Screen("tuner_sleep_timer_settings")
     object TunerCrashLogHistory : Screen("tuner_crash_log_history_settings")
     object TunerQueue : Screen("tuner_queue_settings")
@@ -2212,7 +2213,14 @@ private fun LocalNavigationContent(
                 }
 
                 composable(Screen.TunerLabs.route) {
-                    chromahub.rhythm.app.shared.presentation.screens.settings.LabsSettingsScreen(onBackClick = navigateBackOrToSettings)
+                    chromahub.rhythm.app.shared.presentation.screens.settings.LabsSettingsScreen(
+                        onBackClick = navigateBackOrToSettings,
+                        onNavigateTo = { route ->
+                            if (route == SettingsRoutes.VIPER) {
+                                navController.navigate(Screen.TunerViper.route)
+                            }
+                        }
+                    )
                 }
 
                 composable(Screen.TunerAbout.route) {
@@ -2316,6 +2324,31 @@ private fun LocalNavigationContent(
                 ) {
                     SlideUpCornerWrapper {
                         EqualizerScreen(navController = navController, viewModel = viewModel)
+                    }
+                }
+
+                composable(
+                    route = Screen.TunerViper.route,
+                    enterTransition = {
+                        fadeIn(animationSpec = tween(300)) +
+                                slideInVertically(
+                                    initialOffsetY = { it / 4 },
+                                    animationSpec = tween(350, easing = EaseInOutQuart)
+                                )
+                    },
+                    exitTransition = {
+                        fadeOut(animationSpec = tween(300))
+                    },
+                    popExitTransition = {
+                        fadeOut(animationSpec = tween(300)) +
+                                slideOutVertically(
+                                    targetOffsetY = { it / 4 },
+                                    animationSpec = tween(350, easing = EaseInOutQuart)
+                                )
+                    }
+                ) {
+                    SlideUpCornerWrapper {
+                        ViperSettingsScreen(onBackClick = navigateBackOrToSettings)
                     }
                 }
 
@@ -2480,6 +2513,31 @@ private fun LocalNavigationContent(
                 ) {
                     SlideUpCornerWrapper {
                         EqualizerScreen(navController = navController, viewModel = viewModel)
+                    }
+                }
+
+                composable(
+                    route = Screen.TunerViper.route,
+                    enterTransition = {
+                        fadeIn(animationSpec = tween(300)) +
+                                slideInVertically(
+                                    initialOffsetY = { it / 4 },
+                                    animationSpec = tween(350, easing = EaseInOutQuart)
+                                )
+                    },
+                    exitTransition = {
+                        fadeOut(animationSpec = tween(300))
+                    },
+                    popExitTransition = {
+                        fadeOut(animationSpec = tween(300)) +
+                                slideOutVertically(
+                                    targetOffsetY = { it / 4 },
+                                    animationSpec = tween(350, easing = EaseInOutQuart)
+                                )
+                    }
+                ) {
+                    SlideUpCornerWrapper {
+                        ViperSettingsScreen(onBackClick = navigateBackOrToSettings)
                     }
                 }
 

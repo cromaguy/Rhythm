@@ -143,36 +143,45 @@ fun ViperDdcCard(
         onEnabledChange = { onConfigChange(config.copy(enabled = it)) },
         activeColor = activeColor
     ) {
-        ViperSegmentedRow(
-            label = "Headphone Model",
-            options = listOf("None", "AirPods", "Sony XM4", "HD 650", "M50x"),
-            selectedIndex = when (config.deviceName) {
-                "Apple AirPods Pro" -> 1
-                "Sony WH-1000XM4" -> 2
-                "Sennheiser HD 650" -> 3
-                "Audio-Technica ATH-M50x" -> 4
-                else -> 0
-            },
-            onSelectIndex = { idx ->
-                val chosen = when (idx) {
-                    1 -> "Apple AirPods Pro"
-                    2 -> "Sony WH-1000XM4"
-                    3 -> "Sennheiser HD 650"
-                    4 -> "Audio-Technica ATH-M50x"
-                    else -> "None"
-                }
-                onConfigChange(config.copy(deviceName = chosen))
-            },
-            activeColor = activeColor
-        )
-
-        Text(
-            text = "Currently applied DDC curve: ${config.deviceName}",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = 6.dp)
-        )
+        ViperDdcControls(config = config, onConfigChange = onConfigChange, activeColor = activeColor)
     }
+}
+
+@Composable
+fun ViperDdcControls(
+    config: ViperDdcConfig,
+    onConfigChange: (ViperDdcConfig) -> Unit,
+    activeColor: Color = MaterialTheme.colorScheme.primary
+) {
+    ViperSegmentedRow(
+        label = "Headphone Model",
+        options = listOf("None", "AirPods", "Sony XM4", "HD 650", "M50x"),
+        selectedIndex = when (config.deviceName) {
+            "Apple AirPods Pro" -> 1
+            "Sony WH-1000XM4" -> 2
+            "Sennheiser HD 650" -> 3
+            "Audio-Technica ATH-M50x" -> 4
+            else -> 0
+        },
+        onSelectIndex = { idx ->
+            val chosen = when (idx) {
+                1 -> "Apple AirPods Pro"
+                2 -> "Sony WH-1000XM4"
+                3 -> "Sennheiser HD 650"
+                4 -> "Audio-Technica ATH-M50x"
+                else -> "None"
+            }
+            onConfigChange(config.copy(deviceName = chosen))
+        },
+        activeColor = activeColor
+    )
+
+    Text(
+        text = "Currently applied DDC curve: ${config.deviceName}",
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(top = 6.dp)
+    )
 }
 
 /**
@@ -192,23 +201,32 @@ fun ViperClarityCard(
         onEnabledChange = { onConfigChange(config.copy(enabled = it)) },
         activeColor = activeColor
     ) {
-        ViperSegmentedRow(
-            label = "Clarity Mode",
-            options = listOf("Natural", "Ozone+", "X-HiFi"),
-            selectedIndex = config.mode.coerceIn(0, 2),
-            onSelectIndex = { idx -> onConfigChange(config.copy(mode = idx)) },
-            activeColor = activeColor
-        )
-
-        ViperSliderRow(
-            label = "Clarity Gain",
-            value = config.gainDb,
-            valueRange = 0.0f..12.0f,
-            valueFormatted = String.format(Locale.US, "+%.1f dB", config.gainDb),
-            onValueChange = { v -> onConfigChange(config.copy(gainDb = v)) },
-            activeColor = activeColor
-        )
+        ViperClarityControls(config = config, onConfigChange = onConfigChange, activeColor = activeColor)
     }
+}
+
+@Composable
+fun ViperClarityControls(
+    config: ViperClarityConfig,
+    onConfigChange: (ViperClarityConfig) -> Unit,
+    activeColor: Color = MaterialTheme.colorScheme.primary
+) {
+    ViperSegmentedRow(
+        label = "Clarity Mode",
+        options = listOf("Natural", "Ozone+", "X-HiFi"),
+        selectedIndex = config.mode.coerceIn(0, 2),
+        onSelectIndex = { idx -> onConfigChange(config.copy(mode = idx)) },
+        activeColor = activeColor
+    )
+
+    ViperSliderRow(
+        label = "Clarity Gain",
+        value = config.gainDb,
+        valueRange = 0.0f..12.0f,
+        valueFormatted = String.format(Locale.US, "+%.1f dB", config.gainDb),
+        onValueChange = { v -> onConfigChange(config.copy(gainDb = v)) },
+        activeColor = activeColor
+    )
 }
 
 /**
@@ -230,23 +248,34 @@ fun ViperConvolverCard(
         onEnabledChange = { onConfigChange(config.copy(enabled = it)) },
         activeColor = activeColor
     ) {
-        ViperSegmentedRow(
-            label = "Impulse Preset",
-            options = presets,
-            selectedIndex = presets.indexOf(config.kernelName).coerceAtLeast(0),
-            onSelectIndex = { idx -> onConfigChange(config.copy(kernelName = presets[idx])) },
-            activeColor = activeColor
-        )
-
-        ViperSliderRow(
-            label = "Cross Channel Level",
-            value = config.crossChannel * 100f,
-            valueRange = 0.0f..100.0f,
-            valueFormatted = String.format(Locale.US, "%d%%", (config.crossChannel * 100).toInt()),
-            onValueChange = { v -> onConfigChange(config.copy(crossChannel = v / 100f)) },
-            activeColor = activeColor
-        )
+        ViperConvolverControls(config = config, onConfigChange = onConfigChange, activeColor = activeColor)
     }
+}
+
+@Composable
+fun ViperConvolverControls(
+    config: ConvolverConfig,
+    onConfigChange: (ConvolverConfig) -> Unit,
+    activeColor: Color = MaterialTheme.colorScheme.primary
+) {
+    val presets = listOf("Studio Master", "Warm Tube", "Analog Tape", "Acoustic Room")
+
+    ViperSegmentedRow(
+        label = "Impulse Preset",
+        options = presets,
+        selectedIndex = presets.indexOf(config.kernelName).coerceAtLeast(0),
+        onSelectIndex = { idx -> onConfigChange(config.copy(kernelName = presets[idx])) },
+        activeColor = activeColor
+    )
+
+    ViperSliderRow(
+        label = "Cross Channel Level",
+        value = config.crossChannel * 100f,
+        valueRange = 0.0f..100.0f,
+        valueFormatted = String.format(Locale.US, "%d%%", (config.crossChannel * 100).toInt()),
+        onValueChange = { v -> onConfigChange(config.copy(crossChannel = v / 100f)) },
+        activeColor = activeColor
+    )
 }
 
 /**

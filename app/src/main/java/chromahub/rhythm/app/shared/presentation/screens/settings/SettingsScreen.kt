@@ -176,6 +176,7 @@ object SettingsRoutes {
     const val PLAYER_CUSTOMIZATION = "player_customization_settings"
     const val MINIPLAYER_CUSTOMIZATION = "miniplayer_customization_settings"
     const val EQUALIZER = "equalizer_settings"
+    const val VIPER = "viper_settings"
     const val SLEEP_TIMER = "sleep_timer_settings"
     const val CRASH_LOG_HISTORY = "crash_log_history_settings"
     const val QUEUE = "queue_settings"
@@ -1038,6 +1039,8 @@ fun SettingsScreenWrapper(
             }
         } else if (route == SettingsRoutes.EQUALIZER) {
             navController.navigate(Screen.Equalizer.route)
+        } else if (route == SettingsRoutes.VIPER) {
+            navController.navigate(Screen.TunerViper.route)
         } else if (route == SettingsRoutes.SLEEP_TIMER) {
             showSleepTimerBottomSheet = true
         } else {
@@ -1059,7 +1062,7 @@ fun SettingsScreenWrapper(
                 SettingsScreen(
                     onBackClick = handleBack,
                     onNavigateTo = { route ->
-                        if (route == SettingsRoutes.RHYTHM_STATS || route == SettingsRoutes.EQUALIZER || route == SettingsRoutes.SLEEP_TIMER) {
+                        if (route == SettingsRoutes.RHYTHM_STATS || route == SettingsRoutes.EQUALIZER || route == SettingsRoutes.VIPER || route == SettingsRoutes.SLEEP_TIMER) {
                             onNavigateToSubsetting(route)
                         } else {
                             routeStack = listOf(route)

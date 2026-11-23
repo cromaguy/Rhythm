@@ -220,6 +220,20 @@ fun LabsSettingsScreen(
                 )
             )
             
+            add(
+                SettingGroup(
+                    title = context.getString(R.string.settings_viper_group),
+                    items = listOf(
+                        SettingItem(
+                            icon = MaterialSymbolIcon("developer_board", filled = true),
+                            title = context.getString(R.string.settings_viper_title),
+                            description = context.getString(R.string.settings_viper_desc),
+                            onClick = { onNavigateTo(SettingsRoutes.VIPER) }
+                        )
+                    )
+                )
+            )
+
             // Developer/Debugging features group
             add(
                 SettingGroup(
