@@ -1374,7 +1374,13 @@ fun EnhancedPermissionContent(
         )
     }
 
-    val essentialPermissions = storagePermissions + bluetoothPermissions + notificationPermissions
+    val localNetworkPermissions = if (Build.VERSION.SDK_INT >= 37) {
+        listOf("android.permission.ACCESS_LOCAL_NETWORK")
+    } else {
+        emptyList()
+    }
+
+    val essentialPermissions = storagePermissions + bluetoothPermissions + notificationPermissions + localNetworkPermissions
     val permissionsState = rememberMultiplePermissionsState(essentialPermissions)
     val scrollState = rememberScrollState()
 

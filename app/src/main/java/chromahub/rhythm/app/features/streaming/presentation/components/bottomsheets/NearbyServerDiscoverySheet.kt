@@ -9,9 +9,14 @@ import chromahub.rhythm.app.shared.presentation.components.bottomsheets.RhythmAd
 import chromahub.rhythm.app.shared.presentation.components.bottomsheets.SheetAdaptiveType
 
 import android.content.Context
+import android.content.pm.PackageManager
 import android.net.nsd.NsdManager
 import android.net.nsd.NsdServiceInfo
 import android.net.wifi.WifiManager
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -391,6 +396,26 @@ fun NearbyServerDiscoverySheet(
     
     val effectiveScanner = scanner ?: remember(upperServiceId) {
         NearbyServerScanner(context, upperServiceId, scope)
+    }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            effectiveScanner.rescan()
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        if (Build.VERSION.SDK_INT >= 37) {
+            val hasPerm = ContextCompat.checkSelfPermission(
+                context,
+                "android.permission.ACCESS_LOCAL_NETWORK"
+            ) == PackageManager.PERMISSION_GRANTED
+            if (!hasPerm) {
+                permissionLauncher.launch("android.permission.ACCESS_LOCAL_NETWORK")
+            }
+        }
     }
 
     DisposableEffect(effectiveScanner) {
