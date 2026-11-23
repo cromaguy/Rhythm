@@ -383,11 +383,6 @@ fun AlbumDetailScreen(
     var selectedSongForOptions by remember { mutableStateOf<Song?>(null) }
     var showSortMenu by remember { mutableStateOf(false) }
 
-    var addToQueuePressed by remember { mutableStateOf(false) }
-    val addToQueueScale by animateFloatAsState(targetValue = if (addToQueuePressed) 0.96f else 1f, animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium), label = "addToQueueScale")
-
-    LaunchedEffect(addToQueuePressed) { if (addToQueuePressed) { delay(150); addToQueuePressed = false } }
-
     val totalDuration = songDisplayState.totalDuration
     val aggregatedArtists = remember(allDisplaySongs, effectiveDelimiters, artistSeparatorEnabled) {
         allDisplaySongs.flatMap { song ->
@@ -637,9 +632,32 @@ fun AlbumDetailScreen(
                                     height = 50.dp,
                                     type = if (isAlbumActive && isShuffleActive) RhythmButtonType.Filled else RhythmButtonType.Tonal,
                                     isFirst = false,
-                                    isLast = onDownloadAll == null,
+                                    isLast = true,
                                     icon = RhythmIcons.Shuffle,
                                     text = stringResource(R.string.action_shuffle),
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            ) {
+                                RhythmDetailActionButton(
+                                    onClick = {
+                                        HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
+                                        displaySongs.forEach { onAddToQueue(it) }
+                                    },
+                                    height = 50.dp,
+                                    type = RhythmButtonType.Tonal,
+                                    isFirst = true,
+                                    isLast = onDownloadAll == null,
+                                    enabled = displaySongs.isNotEmpty(),
+                                    icon = RhythmIcons.Queue,
+                                    text = stringResource(R.string.action_add_to_queue),
                                     fontWeight = FontWeight.Medium
                                 )
 
@@ -650,7 +668,10 @@ fun AlbumDetailScreen(
                                         activeDownloadProgress = activeDownloadProgress,
                                         onDownloadAll = onDownloadAll,
                                         onCancelDownloadAll = onCancelDownloadAll,
-                                        height = 50.dp
+                                        height = 50.dp,
+                                        isFirst = false,
+                                        isLast = true,
+                                        compact = false
                                     )
                                 }
                             }
@@ -1097,9 +1118,29 @@ fun AlbumDetailScreen(
                                                 height = 52.dp,
                                                 type = if (isAlbumActive && isShuffleActive) RhythmButtonType.Filled else RhythmButtonType.Tonal,
                                                 isFirst = false,
-                                                isLast = onDownloadAll == null,
+                                                isLast = true,
                                                 icon = RhythmIcons.Shuffle,
                                                 text = stringResource(R.string.action_shuffle),
+                                                fontWeight = FontWeight.Medium
+                                            )
+                                        }
+
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                        ) {
+                                            RhythmDetailActionButton(
+                                                onClick = {
+                                                    HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
+                                                    displaySongs.forEach { onAddToQueue(it) }
+                                                },
+                                                height = 52.dp,
+                                                type = RhythmButtonType.Tonal,
+                                                isFirst = true,
+                                                isLast = onDownloadAll == null,
+                                                enabled = displaySongs.isNotEmpty(),
+                                                icon = RhythmIcons.Queue,
+                                                text = stringResource(R.string.action_add_to_queue),
                                                 fontWeight = FontWeight.Medium
                                             )
 
@@ -1109,42 +1150,13 @@ fun AlbumDetailScreen(
                                                     downloadedSongCount = downloadedSongCount,
                                                     activeDownloadProgress = activeDownloadProgress,
                                                     onDownloadAll = onDownloadAll,
-                                                    onCancelDownloadAll = onCancelDownloadAll
+                                                    onCancelDownloadAll = onCancelDownloadAll,
+                                                    height = 52.dp,
+                                                    isFirst = false,
+                                                    isLast = true,
+                                                    compact = false
                                                 )
                                             }
-                                        }
-
-                                        FilledTonalButton(
-                                            onClick = {
-                                                HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
-                                                addToQueuePressed = true
-                                                displaySongs.forEach { onAddToQueue(it) }
-                                            },
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .height(48.dp)
-                                                .graphicsLayer {
-                                                    scaleX = addToQueueScale
-                                                    scaleY = addToQueueScale
-                                                },
-                                            shape = RoundedCornerShape(24.dp),
-                                            colors = ButtonDefaults.filledTonalButtonColors(
-                                                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                                                contentColor = MaterialTheme.colorScheme.onSurface
-                                            ),
-                                            enabled = displaySongs.isNotEmpty()
-                                        ) {
-                                            Icon(
-                                                imageVector = RhythmIcons.Queue,
-                                                contentDescription = null,
-                                                modifier = Modifier.size(20.dp)
-                                            )
-                                            Spacer(modifier = Modifier.width(8.dp))
-                                            Text(
-                                                text = stringResource(R.string.action_add_to_queue),
-                                                style = MaterialTheme.typography.titleMedium,
-                                                fontWeight = FontWeight.SemiBold
-                                            )
                                         }
                                     }
                                 }

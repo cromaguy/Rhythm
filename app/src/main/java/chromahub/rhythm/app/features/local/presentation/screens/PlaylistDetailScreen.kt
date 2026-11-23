@@ -1191,45 +1191,50 @@ fun PlaylistDetailScreen(
                 val isPlaylistPlaying = isPlaylistActive && isPlaying
                 val isShuffleActive by musicViewModel.isShuffleEnabled.collectAsState()
 
-                Row(
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 15.dp)
                         .padding(vertical = 12.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    // Play All Button - Equal sizing with text
-                    RhythmDetailActionButton(
-                        onClick = {
-                            HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
-                            if (isPlaylistActive) {
-                                onPlayPause()
-                            } else {
-                                onPlayAll()
-                            }
-                        },
-                        isFirst = true,
-                        isLast = false,
-                        icon = if (isPlaylistPlaying) RhythmIcons.Pause else RhythmIcons.Play,
-                        text = if (isPlaylistPlaying) stringResource(R.string.action_pause) else if (isPlaylistActive) stringResource(R.string.action_resume) else stringResource(R.string.action_play_all),
-                        fontWeight = FontWeight.Bold
-                    )
-                    
-                    RhythmDetailActionButton(
-                        onClick = {
-                            HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
-                            onShufflePlay()
-                        },
-                        type = if (isPlaylistActive && isShuffleActive) RhythmButtonType.Filled else RhythmButtonType.Tonal,
-                        isFirst = false,
-                        isLast = onDownloadAll == null,
-                        icon = RhythmIcons.Shuffle,
-                        text = stringResource(R.string.action_shuffle),
-                        fontWeight = FontWeight.Medium
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        // Play All Button - Equal sizing with text
+                        RhythmDetailActionButton(
+                            onClick = {
+                                HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
+                                if (isPlaylistActive) {
+                                    onPlayPause()
+                                } else {
+                                    onPlayAll()
+                                }
+                            },
+                            isFirst = true,
+                            isLast = false,
+                            icon = if (isPlaylistPlaying) RhythmIcons.Pause else RhythmIcons.Play,
+                            text = if (isPlaylistPlaying) stringResource(R.string.action_pause) else if (isPlaylistActive) stringResource(R.string.action_resume) else stringResource(R.string.action_play_all),
+                            fontWeight = FontWeight.Bold
+                        )
+                        
+                        RhythmDetailActionButton(
+                            onClick = {
+                                HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
+                                onShufflePlay()
+                            },
+                            type = if (isPlaylistActive && isShuffleActive) RhythmButtonType.Filled else RhythmButtonType.Tonal,
+                            isFirst = false,
+                            isLast = true,
+                            icon = RhythmIcons.Shuffle,
+                            text = stringResource(R.string.action_shuffle),
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
 
                     if (onDownloadAll != null) {
-                        DownloadAllActionButton(
+                        DownloadAllActionButtonFullWidth(
                             songCount = playlist.songs.size,
                             downloadedSongCount = downloadedSongCount,
                             activeDownloadProgress = activeDownloadProgress,

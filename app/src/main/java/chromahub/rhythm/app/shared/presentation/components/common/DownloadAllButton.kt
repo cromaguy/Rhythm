@@ -7,6 +7,7 @@ package chromahub.rhythm.app.shared.presentation.components.common
 
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
@@ -32,18 +33,21 @@ fun RowScope.DownloadAllActionButton(
     activeDownloadProgress: Pair<Int, Int>?,
     onDownloadAll: () -> Unit,
     onCancelDownloadAll: () -> Unit,
-    height: Dp = 52.dp
+    height: Dp = 52.dp,
+    isFirst: Boolean = false,
+    isLast: Boolean = true,
+    compact: Boolean = true
 ) {
     val state = downloadAllButtonState(
-        songCount, downloadedSongCount, activeDownloadProgress, onDownloadAll, onCancelDownloadAll, compact = true
+        songCount, downloadedSongCount, activeDownloadProgress, onDownloadAll, onCancelDownloadAll, compact = compact
     )
     RhythmDetailActionButton(
         onClick = state.onClick,
         height = height,
         type = state.type,
         enabled = state.enabled,
-        isFirst = false,
-        isLast = true,
+        isFirst = isFirst,
+        isLast = isLast,
         icon = state.icon,
         text = state.text,
         fontWeight = FontWeight.Medium,
@@ -58,19 +62,23 @@ fun DownloadAllActionButtonFullWidth(
     downloadedSongCount: Int,
     activeDownloadProgress: Pair<Int, Int>?,
     onDownloadAll: () -> Unit,
-    onCancelDownloadAll: () -> Unit
+    onCancelDownloadAll: () -> Unit,
+    modifier: Modifier = Modifier,
+    height: Dp = 48.dp
 ) {
     val state = downloadAllButtonState(
         songCount, downloadedSongCount, activeDownloadProgress, onDownloadAll, onCancelDownloadAll, compact = false
     )
     RhythmDetailActionButtonFullWidth(
         onClick = state.onClick,
+        modifier = modifier,
+        height = height,
         type = state.type,
         enabled = state.enabled,
         icon = state.icon,
         iconSize = 24.dp,
         text = state.text,
-        fontWeight = FontWeight.Normal,
+        fontWeight = FontWeight.Medium,
         contentDescription = state.contentDescription
     )
 }

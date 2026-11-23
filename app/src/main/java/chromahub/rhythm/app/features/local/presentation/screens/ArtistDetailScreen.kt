@@ -1188,23 +1188,6 @@ private fun ArtistActionButtons(
     onPlayPause: () -> Unit = {}
 ) {
     val context = LocalContext.current
-    var addToQueuePressed by remember { mutableStateOf(false) }
-
-    val addToQueueScale by animateFloatAsState(
-        targetValue = if (addToQueuePressed) 0.96f else 1f,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessMedium
-        ),
-        label = "addToQueueScale"
-    )
-
-    LaunchedEffect(addToQueuePressed) {
-        if (addToQueuePressed) {
-            delay(150)
-            addToQueuePressed = false
-        }
-    }
     
     Column(
         modifier = modifier,
@@ -1251,36 +1234,23 @@ private fun ArtistActionButtons(
         }
 
         // Add to Queue Button
-        FilledTonalButton(
-            onClick = {
-                HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
-                addToQueuePressed = true
-                onAddToQueueAll()
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(48.dp)
-                .graphicsLayer {
-                    scaleX = addToQueueScale
-                    scaleY = addToQueueScale
-                },
-            shape = RoundedCornerShape(24.dp),
-            colors = ButtonDefaults.filledTonalButtonColors(
-                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                contentColor = MaterialTheme.colorScheme.onSurface
-            ),
-            enabled = artistSongs.isNotEmpty()
+        Row(
+            modifier = Modifier.fillMaxWidth()
         ) {
-            Icon(
-                imageVector = RhythmIcons.Queue,
-                contentDescription = null,
-                modifier = Modifier.size(20.dp)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
+            RhythmDetailActionButton(
+                onClick = {
+                    HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
+                    onAddToQueueAll()
+                },
+                type = RhythmButtonType.Tonal,
+                height = 52.dp,
+                isFirst = true,
+                isLast = true,
+                enabled = artistSongs.isNotEmpty(),
+                icon = RhythmIcons.Queue,
                 text = stringResource(R.string.action_add_to_queue),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold
+                fontWeight = FontWeight.Medium,
+                contentPadding = PaddingValues(horizontal = 24.dp)
             )
         }
     }
