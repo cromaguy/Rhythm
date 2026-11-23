@@ -232,22 +232,12 @@ class StreamingMusicRepositoryImpl(
         }
     }
 
-    private val audioExtensions = listOf(".mp3", ".flac", ".m4a", ".aac", ".ogg", ".opus", ".wav", ".wma", ".webm")
-
-    fun getDownloadFile(songId: String, extension: String = ".mp3"): java.io.File {
-        val safeName = songId.replace(":", "_").replace("/", "_").replace("\\", "_")
-        val ext = if (extension.startsWith(".")) extension else ".$extension"
-        val exactFile = java.io.File(downloadDirectory, "$safeName$ext")
-        if (exactFile.exists() && exactFile.length() > 0) return exactFile
-
-        for (candidateExt in audioExtensions) {
-            val candidate = java.io.File(downloadDirectory, "$safeName$candidateExt")
-            if (candidate.exists() && candidate.length() > 0) {
-                return candidate
-            }
-        }
-        return exactFile
-    }
+    /**
+     * Also called from `init` (through [loadDownloadedSongsIndex]), so it must not touch
+     * instance fields declared below the `init` block; see [DownloadFiles].
+     */
+    fun getDownloadFile(songId: String, extension: String = ".mp3"): java.io.File =
+        DownloadFiles.resolve(downloadDirectory, songId, extension)
 
     private fun extractExtension(contentDisposition: String?, contentType: String?): String {
         if (!contentDisposition.isNullOrBlank()) {
@@ -256,7 +246,7 @@ class StreamingMusicRepositoryImpl(
             val filename = filenameMatch?.groupValues?.get(1)?.trim()
             if (!filename.isNullOrBlank() && filename.contains(".")) {
                 val ext = "." + filename.substringAfterLast(".").lowercase()
-                if (ext in audioExtensions) return ext
+                if (ext in DownloadFiles.AUDIO_EXTENSIONS) return ext
             }
         }
         if (!contentType.isNullOrBlank()) {
@@ -1274,7 +1264,7 @@ class StreamingMusicRepositoryImpl(
         val deletedFile = if (file.exists()) file.delete() else true
 
         val safeSongId = songId.replace(":", "_").replace("/", "_").replace("\\", "_")
-        for (candidateExt in audioExtensions) {
+        for (candidateExt in DownloadFiles.AUDIO_EXTENSIONS) {
             val candidate = java.io.File(downloadDirectory, "$safeSongId$candidateExt")
             if (candidate.exists()) {
                 candidate.delete()
