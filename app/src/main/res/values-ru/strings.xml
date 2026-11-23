@@ -2713,5 +2713,4 @@
     <string name="settings_lyrics_gestures">Жесты для текста</string>
     <string name="settings_lyrics_tap_seek">Нажмите чтобы увидеть текст песни</string>
     <string name="settings_lyrics_tap_seek_desc">Нажмите на любой строке текста чтобы переместить воспроизведение на эту позицию</string>
-    <string name="settings_thumb_rotate"></string>
 </resources>
