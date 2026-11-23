@@ -29,6 +29,7 @@ class ViperSettingsRepository private constructor(private val context: Context) 
 
     companion object {
         private const val PREFS_NAME = "rhythm_viper_audio_settings"
+        private const val KEY_GLOBAL_MASTER_ENABLE = "viper_master_enabled"
 
         @Volatile
         private var instance: ViperSettingsRepository? = null
@@ -81,9 +82,11 @@ class ViperSettingsRepository private constructor(private val context: Context) 
         val newConfig = updater(_configFlow.value)
         _configFlow.value = newConfig
         saveConfigToPrefs(newConfig)
+        saveProfileForDevice(newConfig.activeOutputDevice, newConfig)
     }
 
     fun setMasterEnabled(enabled: Boolean) {
+        prefs.edit { putBoolean(KEY_GLOBAL_MASTER_ENABLE, enabled) }
         updateConfig { it.copy(masterEnabled = enabled) }
     }
 
@@ -94,14 +97,32 @@ class ViperSettingsRepository private constructor(private val context: Context) 
     fun switchDeviceProfile(device: ViperOutputDevice) {
         // Save current device profile first
         saveProfileForDevice(_configFlow.value.activeOutputDevice, _configFlow.value)
-        // Load target device profile
+        // Load target device profile while preserving user global master enable & UI mode
+        val globalMaster = prefs.getBoolean(KEY_GLOBAL_MASTER_ENABLE, _configFlow.value.masterEnabled)
         val targetConfig = loadProfileForDevice(device).copy(
+            masterEnabled = globalMaster,
             activeOutputDevice = device,
             uiMode = _configFlow.value.uiMode,
             autoDeviceProfileEnabled = _configFlow.value.autoDeviceProfileEnabled
         )
         _configFlow.value = targetConfig
         saveConfigToPrefs(targetConfig)
+        saveProfileForDevice(device, targetConfig)
+    }
+
+    fun resetConfig() {
+        val currentDevice = _configFlow.value.activeOutputDevice
+        val currentMode = _configFlow.value.uiMode
+        val globalMaster = prefs.getBoolean(KEY_GLOBAL_MASTER_ENABLE, _configFlow.value.masterEnabled)
+        val defaultConfig = ViperMasterConfig(
+            masterEnabled = globalMaster,
+            uiMode = currentMode,
+            activeOutputDevice = currentDevice,
+            autoDeviceProfileEnabled = _configFlow.value.autoDeviceProfileEnabled
+        )
+        _configFlow.value = defaultConfig
+        saveConfigToPrefs(defaultConfig)
+        saveProfileForDevice(currentDevice, defaultConfig)
     }
 
     private fun getDevicePrefix(device: ViperOutputDevice): String = "dev_${device.name.lowercase()}_"
@@ -119,7 +140,10 @@ class ViperSettingsRepository private constructor(private val context: Context) 
         val json = prefs.getString("${p}profile_json", null)
         if (json != null) {
             try {
-                return GsonUtils.gson.fromJson(json, ViperMasterConfig::class.java)
+                val loaded = GsonUtils.gson.fromJson(json, ViperMasterConfig::class.java)
+                if (loaded != null) {
+                    return sanitizeConfig(loaded).copy(activeOutputDevice = device)
+                }
             } catch (_: Exception) {}
         }
         return ViperMasterConfig(activeOutputDevice = device)
@@ -137,13 +161,51 @@ class ViperSettingsRepository private constructor(private val context: Context) 
      */
     fun importProfileJson(json: String): Boolean {
         return try {
-            val imported = GsonUtils.gson.fromJson(json, ViperMasterConfig::class.java)
-            _configFlow.value = imported
-            saveConfigToPrefs(imported)
+            val imported = GsonUtils.gson.fromJson(json, ViperMasterConfig::class.java) ?: return false
+            val sanitized = sanitizeConfig(imported)
+            _configFlow.value = sanitized
+            saveConfigToPrefs(sanitized)
+            saveProfileForDevice(sanitized.activeOutputDevice, sanitized)
             true
         } catch (_: Exception) {
             false
         }
+    }
+
+    @Suppress("SENSELESS_COMPARISON")
+    private fun sanitizeConfig(c: ViperMasterConfig?): ViperMasterConfig {
+        if (c == null) return ViperMasterConfig()
+        val default = ViperMasterConfig()
+        val feq = if (c.fireEqualizer != null) c.fireEqualizer else default.fireEqualizer
+        val bands = feq.bands
+        val sanitizedBands = if (bands != null && bands.size == 10) bands else List(10) { 0.0f }
+        val sanitizedFeq = feq.copy(bands = sanitizedBands)
+        return c.copy(
+            masterGate = if (c.masterGate != null) c.masterGate else default.masterGate,
+            playbackGain = if (c.playbackGain != null) c.playbackGain else default.playbackGain,
+            fetCompressor = if (c.fetCompressor != null) c.fetCompressor else default.fetCompressor,
+            fireEqualizer = sanitizedFeq,
+            viperDdc = if (c.viperDdc != null) c.viperDdc else default.viperDdc,
+            spectrumExtension = if (c.spectrumExtension != null) c.spectrumExtension else default.spectrumExtension,
+            convolver = if (c.convolver != null) c.convolver else default.convolver,
+            fieldSurround = if (c.fieldSurround != null) c.fieldSurround else default.fieldSurround,
+            diffSurround = if (c.diffSurround != null) c.diffSurround else default.diffSurround,
+            headphoneSurround = if (c.headphoneSurround != null) c.headphoneSurround else default.headphoneSurround,
+            reverberation = if (c.reverberation != null) c.reverberation else default.reverberation,
+            dynamicSystem = if (c.dynamicSystem != null) c.dynamicSystem else default.dynamicSystem,
+            tubeSimulator = if (c.tubeSimulator != null) c.tubeSimulator else default.tubeSimulator,
+            analogX = if (c.analogX != null) c.analogX else default.analogX,
+            viperBass = if (c.viperBass != null) c.viperBass else default.viperBass,
+            viperClarity = if (c.viperClarity != null) c.viperClarity else default.viperClarity,
+            bassMono = if (c.bassMono != null) c.bassMono else default.bassMono,
+            psychoacousticBass = if (c.psychoacousticBass != null) c.psychoacousticBass else default.psychoacousticBass,
+            stereoImager = if (c.stereoImager != null) c.stereoImager else default.stereoImager,
+            cureCrossfeed = if (c.cureCrossfeed != null) c.cureCrossfeed else default.cureCrossfeed,
+            dynamicEq = if (c.dynamicEq != null) c.dynamicEq else default.dynamicEq,
+            speakerOpt = if (c.speakerOpt != null) c.speakerOpt else default.speakerOpt,
+            lufs = if (c.lufs != null) c.lufs else default.lufs,
+            multibandCompressor = if (c.multibandCompressor != null) c.multibandCompressor else default.multibandCompressor
+        )
     }
 
     private fun loadConfigFromPrefs(): ViperMasterConfig {
@@ -151,12 +213,31 @@ class ViperSettingsRepository private constructor(private val context: Context) 
         val uiMode = try { ViperUiMode.valueOf(rawUiMode ?: "MODERATE") } catch (_: Exception) { ViperUiMode.MODERATE }
         val rawDevice = prefs.getString("viper_active_device", ViperOutputDevice.SPEAKER.name)
         val device = try { ViperOutputDevice.valueOf(rawDevice ?: "SPEAKER") } catch (_: Exception) { ViperOutputDevice.SPEAKER }
+        val masterEnabled = prefs.getBoolean(KEY_GLOBAL_MASTER_ENABLE, prefs.getBoolean("master_enabled", false))
+
+        // Check if device profile JSON exists
+        val p = getDevicePrefix(device)
+        val deviceJson = prefs.getString("${p}profile_json", null)
+        if (deviceJson != null) {
+            try {
+                val profile = GsonUtils.gson.fromJson(deviceJson, ViperMasterConfig::class.java)
+                if (profile != null) {
+                    return sanitizeConfig(profile).copy(
+                        masterEnabled = masterEnabled,
+                        uiMode = uiMode,
+                        activeOutputDevice = device,
+                        autoDeviceProfileEnabled = prefs.getBoolean("auto_device_profile", true),
+                        bindToSystemEffect = prefs.getBoolean("bind_system_effect", false)
+                    )
+                }
+            } catch (_: Exception) {}
+        }
 
         val bandsString = prefs.getString("feq_bands", null)
         val bandsList = bandsString?.split(",")?.mapNotNull { it.toFloatOrNull() } ?: List(10) { 0.0f }
 
         return ViperMasterConfig(
-            masterEnabled = prefs.getBoolean("master_enabled", false),
+            masterEnabled = masterEnabled,
             uiMode = uiMode,
             activeOutputDevice = device,
             autoDeviceProfileEnabled = prefs.getBoolean("auto_device_profile", true),
@@ -285,6 +366,7 @@ class ViperSettingsRepository private constructor(private val context: Context) 
 
     private fun saveConfigToPrefs(c: ViperMasterConfig) {
         prefs.edit {
+            putBoolean(KEY_GLOBAL_MASTER_ENABLE, c.masterEnabled)
             putBoolean("master_enabled", c.masterEnabled)
             putString("viper_ui_mode", c.uiMode.name)
             putString("viper_active_device", c.activeOutputDevice.name)

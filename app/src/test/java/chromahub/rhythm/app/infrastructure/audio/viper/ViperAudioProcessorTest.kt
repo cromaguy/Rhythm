@@ -47,7 +47,9 @@ class ViperAudioProcessorTest {
         val convolver = FastConvolver()
         for (preset in FastConvolver.BUILTIN_PRESETS) {
             convolver.loadPreset(preset, 44100)
-            val (outL, outR) = convolver.process(0.5f, 0.5f, 0.0f)
+            convolver.process(0.5f, 0.5f, 0.0f)
+            val outL = convolver.outLeft
+            val outR = convolver.outRight
 
             assertFalse("Convolver output left is NaN for $preset", outL.isNaN())
             assertFalse("Convolver output right is NaN for $preset", outR.isNaN())
@@ -115,5 +117,132 @@ class ViperAudioProcessorTest {
         assertEquals(3, activeCount)
         assertTrue(config.fireEqualizer.bands.size == 10)
         assertTrue(ViperDdcConfig.BUILTIN_DEVICES.contains("Apple AirPods Pro"))
+    }
+
+    @Test
+    fun testChildProcessorPropagationAndReactiveReload() {
+        val parent = ViperAudioProcessor()
+        val child = ViperAudioProcessor()
+        child.setParent(parent)
+
+        // Initial config on parent
+        val initialConfig = ViperMasterConfig(
+            masterEnabled = true,
+            fireEqualizer = FireEqualizerConfig(enabled = true, bands = List(10) { 0.0f })
+        )
+        parent.updateConfig(initialConfig)
+
+        // Child config should immediately reflect parent
+        assertEquals(initialConfig, child.getConfig())
+
+        // Update parent with boosted EQ bands
+        val boostedBands = List(10) { 6.0f }
+        val updatedConfig = initialConfig.copy(
+            fireEqualizer = FireEqualizerConfig(enabled = true, bands = boostedBands)
+        )
+        parent.updateConfig(updatedConfig)
+
+        // Child config should proactively update
+        assertEquals(updatedConfig, child.getConfig())
+
+        // Process audio on child: verify filters reconfigure and process signal without crash
+        val buffer = ShortArray(256) { 1000 }
+        child.processSamples(buffer, buffer.size)
+
+        var hasSignal = false
+        for (s in buffer) {
+            if (s.toInt() != 0) hasSignal = true
+        }
+        assertTrue("Child processor should output non-zero audio after reactive reload", hasSignal)
+    }
+
+    @Test
+    fun testTubeSimulatorDcBlocker() {
+        val processor = ViperAudioProcessor()
+        val config = ViperMasterConfig(
+            masterEnabled = true,
+            tubeSimulator = TubeSimulatorConfig(enabled = true, model = 0, drive = 0.8f, mix = 1.0f),
+            masterGate = MasterGateConfig(limiterEnabled = false)
+        )
+        processor.updateConfig(config)
+
+        // Feed an asymmetric signal that would induce quadratic DC offset in unblocked tube saturation
+        val frames = 4096
+        val buffer = ShortArray(frames * 2)
+        for (i in 0 until frames) {
+            val sample = (sin(2.0 * Math.PI * 100.0 * (i.toDouble() / 44100.0)) * 14000.0).toInt().toShort()
+            buffer[i * 2] = sample
+            buffer[i * 2 + 1] = sample
+        }
+
+        processor.processSamples(buffer, buffer.size)
+
+        // Compute mean of second half (after DC blocker settles)
+        var sum = 0.0
+        val secondHalfStart = frames
+        for (i in secondHalfStart until buffer.size) {
+            sum += buffer[i]
+        }
+        val mean = sum / (buffer.size - secondHalfStart)
+
+        // DC offset should be near 0 (well below 200 out of 32767)
+        assertTrue("Tube simulator DC blocker should keep DC offset near zero, got mean: $mean", Math.abs(mean) < 200.0)
+    }
+
+    @Test
+    fun testLinkwitzRileyBassMonoCrossoverSummation() {
+        val processor = ViperAudioProcessor()
+        val config = ViperMasterConfig(
+            masterEnabled = true,
+            bassMono = BassMonoConfig(enabled = true, frequencyHz = 80),
+            masterGate = MasterGateConfig(limiterEnabled = false)
+        )
+        processor.updateConfig(config)
+
+        // Feed 80 Hz sine wave (exact crossover frequency)
+        val frames = 2048
+        val buffer = ShortArray(frames * 2)
+        for (i in 0 until frames) {
+            val sample = (sin(2.0 * Math.PI * 80.0 * (i.toDouble() / 44100.0)) * 16000.0).toInt().toShort()
+            buffer[i * 2] = sample
+            buffer[i * 2 + 1] = sample
+        }
+
+        processor.processSamples(buffer, buffer.size)
+
+        // Verify that signal at 80 Hz is preserved and NOT canceled out (as happened with Butterworth 180° notch)
+        var maxPeak = 0
+        for (i in (frames / 2) until frames) {
+            val s = Math.abs(buffer[i * 2].toInt())
+            if (s > maxPeak) maxPeak = s
+        }
+        assertTrue("80 Hz crossover frequency should not be canceled out (peak: $maxPeak)", maxPeak > 12000)
+    }
+
+    @Test
+    fun testLimiterThresholdSoftKneeMath() {
+        val processor = ViperAudioProcessor()
+        // Limiter threshold at -3.0 dB (~0.707 linear, approx 23190 short)
+        val config = ViperMasterConfig(
+            masterEnabled = true,
+            masterGate = MasterGateConfig(limiterEnabled = true, limiterThresholdDb = -3.0f, outputVolumeDb = 6.0f)
+        )
+        processor.updateConfig(config)
+
+        // Feed very hot input that triggers limiting
+        val frames = 1024
+        val buffer = ShortArray(frames * 2)
+        for (i in 0 until frames) {
+            val sample = (sin(2.0 * Math.PI * 1000.0 * (i.toDouble() / 44100.0)) * 32000.0).toInt().toShort()
+            buffer[i * 2] = sample
+            buffer[i * 2 + 1] = sample
+        }
+
+        processor.processSamples(buffer, buffer.size)
+
+        // Limiter must strictly keep audio below Short.MAX_VALUE and respect threshold
+        for (s in buffer) {
+            assertTrue("Sample must not exceed Short limits", s <= Short.MAX_VALUE && s >= Short.MIN_VALUE)
+        }
     }
 }

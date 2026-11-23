@@ -302,8 +302,8 @@ fun LicensesBottomSheet(
             licenseItem(
                 name = "ViPER4Android",
                 description = context.getString(R.string.licenses_desc_viper4android),
-                license = "GPL License",
-                url = "https://github.com/vipersaudio/viper4android_fx",
+                license = "GPL-3.0 License",
+                url = "https://github.com/likelikeslike/ViPER4Android",
                 icon = RhythmIcons.Connectivity.OpenInNew,
                 context = context,
                 haptic = haptic

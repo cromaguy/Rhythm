@@ -103,7 +103,12 @@ class FastConvolver {
         historyIndex = 0
     }
 
-    fun process(left: Float, right: Float, crossChannel: Float): Pair<Float, Float> {
+    var outLeft: Float = 0.0f
+        private set
+    var outRight: Float = 0.0f
+        private set
+
+    fun process(left: Float, right: Float, crossChannel: Float) {
         val size = kernel.size
         historyL[historyIndex] = left
         historyR[historyIndex] = right
@@ -126,8 +131,7 @@ class FastConvolver {
         historyIndex++
         if (historyIndex >= size) historyIndex = 0
 
-        val outL = convL * (1.0f - crossChannel) + convR * crossChannel
-        val outR = convR * (1.0f - crossChannel) + convL * crossChannel
-        return Pair(outL, outR)
+        outLeft = convL * (1.0f - crossChannel) + convR * crossChannel
+        outRight = convR * (1.0f - crossChannel) + convL * crossChannel
     }
 }

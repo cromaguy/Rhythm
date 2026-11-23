@@ -382,6 +382,12 @@ class RhythmPlayerEngine(
             }
             launch { appSettings.gaplessPlayback.collect { updateTrackSelectionParameters() } }
             launch { appSettings.skipSilenceEnabled.collect { updateTrackSelectionParameters() } }
+            launch {
+                try {
+                    chromahub.rhythm.app.infrastructure.audio.viper.ViperSettingsRepository.getInstance(context)
+                        .configFlow.collect { updateTrackSelectionParameters() }
+                } catch (_: Exception) {}
+            }
         }
     }
 
@@ -432,11 +438,16 @@ class RhythmPlayerEngine(
         val isPlaybackRateModified =
             kotlin.math.abs(appSettings.playbackSpeed.value - 1f) > 0.001f ||
             kotlin.math.abs(appSettings.playbackPitch.value - 1f) > 0.001f
+        val isViperActive = viperProcessor?.isEnabled() == true ||
+            try {
+                chromahub.rhythm.app.infrastructure.audio.viper.ViperSettingsRepository.getInstance(context).configFlow.value.masterEnabled
+            } catch (_: Exception) { false }
         val hasActiveProcessors =
             appSettings.bassBoostEnabled.value ||
             appSettings.virtualizerEnabled.value ||
             appSettings.monoAudioEnabled.value ||
             appSettings.skipSilenceEnabled.value ||
+            isViperActive ||
             isPlaybackRateModified
 
         val floatOutputPref = appSettings.audioEngineFloatOutput.value &&
@@ -467,8 +478,8 @@ class RhythmPlayerEngine(
                 enableAudioTrackPlaybackParams: Boolean
             ): androidx.media3.exoplayer.audio.AudioSink? {
                 val processors = mutableListOf<androidx.media3.common.audio.AudioProcessor>()
-                if (viperProcessor != null) {
-                    processors.add(viperProcessor)
+                if (replayGainProcessor != null) {
+                    processors.add(replayGainProcessor)
                 }
                 if (bassProcessor != null) {
                     processors.add(bassProcessor)
@@ -479,8 +490,8 @@ class RhythmPlayerEngine(
                 if (monoProcessor != null) {
                     processors.add(monoProcessor)
                 }
-                if (replayGainProcessor != null) {
-                    processors.add(replayGainProcessor)
+                if (viperProcessor != null) {
+                    processors.add(viperProcessor)
                 }
                 
                 val silenceSkippingProcessor = SilenceSkippingAudioProcessor(
@@ -1049,11 +1060,15 @@ class RhythmPlayerEngine(
             kotlin.math.abs(appSettings.playbackPitch.value - 1f) > 0.001f
 
         val isSkipSilenceEnabled = appSettings.skipSilenceEnabled.value
+        val isViperActive = viperProcessor?.isEnabled() == true ||
+            try {
+                chromahub.rhythm.app.infrastructure.audio.viper.ViperSettingsRepository.getInstance(context).configFlow.value.masterEnabled
+            } catch (_: Exception) { false }
 
         val isOffloadSupported = appSettings.isAudioOffloadActive.value &&
             (!isCrossfadeEnabled && !isEqualizerEnabled && !isReplayGainEnabled &&
              !isBassBoostEnabled && !isVirtualizerEnabled && !isMonoAudioEnabled &&
-             !isPlaybackRateModified && !isSkipSilenceEnabled)
+             !isPlaybackRateModified && !isSkipSilenceEnabled && !isViperActive)
 
         val audioOffloadPreferences = TrackSelectionParameters.AudioOffloadPreferences.Builder()
             .setAudioOffloadMode(
@@ -1100,7 +1115,7 @@ class RhythmPlayerEngine(
             if (playerB.trackSelectionParameters != paramsB) {
                 playerB.trackSelectionParameters = paramsB
             }
-            Log.d(TAG, "Updated track selection parameters: offloadActive=${appSettings.isAudioOffloadActive.value}, crossfadeEnabled=${appSettings.crossfade.value}, eqEnabled=${appSettings.equalizerEnabled.value}, bassEnabled=${appSettings.bassBoostEnabled.value}, virtualizerEnabled=${appSettings.virtualizerEnabled.value}, monoAudioEnabled=${appSettings.monoAudioEnabled.value}, speed=${appSettings.playbackSpeed.value}, pitch=${appSettings.playbackPitch.value}")
+            Log.d(TAG, "Updated track selection parameters: offloadActive=${appSettings.isAudioOffloadActive.value}, crossfadeEnabled=${appSettings.crossfade.value}, eqEnabled=${appSettings.equalizerEnabled.value}, viperActive=${viperProcessor?.isEnabled() == true}, bassEnabled=${appSettings.bassBoostEnabled.value}, virtualizerEnabled=${appSettings.virtualizerEnabled.value}, monoAudioEnabled=${appSettings.monoAudioEnabled.value}, speed=${appSettings.playbackSpeed.value}, pitch=${appSettings.playbackPitch.value}")
         }
     }
 

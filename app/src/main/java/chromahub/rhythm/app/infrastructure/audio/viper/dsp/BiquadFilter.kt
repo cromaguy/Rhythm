@@ -27,11 +27,16 @@ class BiquadFilter {
         NOTCH
     }
 
-    private var b0 = 1.0f
-    private var b1 = 0.0f
-    private var b2 = 0.0f
-    private var a1 = 0.0f
-    private var a2 = 0.0f
+    private class Coefficients(
+        val b0: Float,
+        val b1: Float,
+        val b2: Float,
+        val a1: Float,
+        val a2: Float
+    )
+
+    @Volatile
+    private var coeffs: Coefficients = Coefficients(1.0f, 0.0f, 0.0f, 0.0f, 0.0f)
 
     // State memory for Stereo channels
     private var z1L = 0.0f
@@ -58,7 +63,12 @@ class BiquadFilter {
         val alpha = sinW0 / (2.0f * safeQ)
         val aLinear = 10.0f.pow(gainDb / 40.0f) // sqrt of 10^(gainDb/20)
 
+        var b0 = 1.0f
+        var b1 = 0.0f
+        var b2 = 0.0f
         var a0 = 1.0f
+        var a1 = 0.0f
+        var a2 = 0.0f
 
         when (type) {
             Type.LOW_PASS -> {
@@ -123,22 +133,25 @@ class BiquadFilter {
             }
         }
 
-        // Normalize by a0
+        // Normalize by a0 and update coeffs atomically
         val invA0 = 1.0f / a0
-        b0 *= invA0
-        b1 *= invA0
-        b2 *= invA0
-        a1 *= invA0
-        a2 *= invA0
+        coeffs = Coefficients(
+            b0 = b0 * invA0,
+            b1 = b1 * invA0,
+            b2 = b2 * invA0,
+            a1 = a1 * invA0,
+            a2 = a2 * invA0
+        )
     }
 
     /**
      * Process Left sample in Direct Form II Transposed
      */
     fun processLeft(input: Float): Float {
-        val out = b0 * input + z1L
-        z1L = b1 * input - a1 * out + z2L
-        z2L = b2 * input - a2 * out
+        val c = coeffs
+        val out = c.b0 * input + z1L
+        z1L = c.b1 * input - c.a1 * out + z2L
+        z2L = c.b2 * input - c.a2 * out
         return out
     }
 
@@ -146,9 +159,10 @@ class BiquadFilter {
      * Process Right sample in Direct Form II Transposed
      */
     fun processRight(input: Float): Float {
-        val out = b0 * input + z1R
-        z1R = b1 * input - a1 * out + z2R
-        z2R = b2 * input - a2 * out
+        val c = coeffs
+        val out = c.b0 * input + z1R
+        z1R = c.b1 * input - c.a1 * out + z2R
+        z2R = c.b2 * input - c.a2 * out
         return out
     }
 }

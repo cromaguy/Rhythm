@@ -2673,7 +2673,7 @@
     <string name="licenses_desc_vivi_music">More Than Just Music — Your Ultimate Audio Experience</string>
     <string name="licenses_desc_zenith">A Material Design 3 Expressive Digital Wellbeing App</string>
     <string name="licenses_desc_autoeq">Automatic headphone equalization from frequency responses</string>
-    <string name="licenses_desc_viper4android">ViPER4Android DSP effects engine by the ViperAudio team</string>
+    <string name="licenses_desc_viper4android">ViPER4Android FX DSP engine by likelikeslike and the ViperAudio team</string>
     <string name="licenses_desc_jetpack_compose">Android\'s modern toolkit for building native UI</string>
     <string name="licenses_desc_material3_components">Material Design 3 components for Android</string>
     <string name="licenses_desc_media3_exoplayer">Modern media playback library for Android</string>
@@ -3038,6 +3038,12 @@
     <string name="eq_reorder">Reorder</string>
 
     <!-- ViPER4Android DSP Engine -->
+    <string name="viper_output_device_title">Active Audio Target</string>
+    <string name="viper_auto_device_profile">Auto-Switch Target Profile</string>
+    <string name="viper_auto_device_profile_desc">Automatically load profile when audio device changes</string>
+    <string name="viper_ui_complexity">DSP Interface Mode</string>
+    <string name="viper_reset_confirm_desc">Reset all ViPER4Android audio effects to default settings for the active profile?</string>
+    <string name="viper_reset_done">ViPER settings reset to default</string>
     <string name="viper_profiles_title">ViPER Profiles</string>
     <string name="viper_profiles_subtitle">Import and export your DSP profile</string>
     <string name="viper_export_profile_desc">Copy the current ViPER configuration to the clipboard</string>

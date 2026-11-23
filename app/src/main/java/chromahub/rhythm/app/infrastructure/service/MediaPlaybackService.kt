@@ -3538,6 +3538,18 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
                 Log.e(TAG, "Failed to create mono audio processor", e)
             }
         }
+
+        if (rhythmViperProcessor == null) {
+            Log.w(TAG, "Rhythm ViPER processor is null, creating new instance")
+            try {
+                val viperRepo = chromahub.rhythm.app.infrastructure.audio.viper.ViperSettingsRepository.getInstance(applicationContext)
+                rhythmViperProcessor = chromahub.rhythm.app.infrastructure.audio.viper.ViperAudioProcessor().apply {
+                    updateConfig(viperRepo.configFlow.value)
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to create ViPER processor", e)
+            }
+        }
     }
 
     fun initializeAudioEffects() {

@@ -90,12 +90,15 @@ fun ViperFireEqualizerCard(
         activeColor = activeColor
     ) {
         // Preset selector
+        val presetKeys = listOf("Flat", "Rock", "Acoustic", "Bass Booster", "R&B")
+        val currentPresetName = if (config.presetName == "Bass") "Bass Booster" else config.presetName
+        val currentIdx = presetKeys.indexOf(currentPresetName).coerceAtLeast(0)
         ViperSegmentedRow(
             label = "Equalizer Preset",
             options = listOf("Flat", "Rock", "Acoustic", "Bass", "R&B"),
-            selectedIndex = listOf("Flat", "Rock", "Acoustic", "Bass Booster", "R&B").indexOf(config.presetName).coerceAtLeast(0),
+            selectedIndex = currentIdx,
             onSelectIndex = { idx ->
-                val pName = listOf("Flat", "Rock", "Acoustic", "Bass Booster", "R&B")[idx]
+                val pName = presetKeys[idx]
                 val bands = FireEqualizerConfig.BUILTIN_PRESETS[pName] ?: List(10) { 0.0f }
                 onConfigChange(config.copy(presetName = pName, bands = bands))
             },
@@ -750,7 +753,7 @@ fun ViperSpatialGroup(
     if (masterConfig.uiMode == ViperUiMode.EXPERT) {
         // 5. Differential Surround
         ViperSectionCard(
-            title = "Diffrential Surround",
+            title = "Differential Surround",
             subtitle = "Haas-Effect Phase Delay",
             icon = MaterialSymbolIcon("spatial_audio", filled = true),
             enabled = masterConfig.diffSurround.enabled,

@@ -81,9 +81,20 @@ class ViperAudioProcessor : RhythmAudioProcessor() {
     private val bassFilter = BiquadFilter()
     private val bassAntiPopFilter = BiquadFilter()
 
-    // Bass Mono low-pass & high-pass crossover
-    private val bassMonoLp = BiquadFilter()
-    private val bassMonoHp = BiquadFilter()
+    // Bass Mono Linkwitz-Riley 4th order (cascaded 2nd-order Butterworth filters)
+    private val bassMonoLp1 = BiquadFilter()
+    private val bassMonoLp2 = BiquadFilter()
+    private val bassMonoHp1 = BiquadFilter()
+    private val bassMonoHp2 = BiquadFilter()
+
+    // Psychoacoustic Bass bandpass/lowpass filter
+    private val psychoBassLp = BiquadFilter()
+
+    // Spectrum Extension exciter high-pass filter
+    private val specExtHp = BiquadFilter()
+
+    // Tube Simulator DC-blocking high-pass filter
+    private val tubeDcBlocker = BiquadFilter()
 
     // ViPER Clarity filters
     private val clarityFilter = BiquadFilter()
@@ -100,6 +111,8 @@ class ViperAudioProcessor : RhythmAudioProcessor() {
 
     // Stereo Imager Crossover
     private val imagerLowLp = BiquadFilter()
+    private val imagerLowHp = BiquadFilter()
+    private val imagerMidLp = BiquadFilter()
     private val imagerHighHp = BiquadFilter()
 
     // Cure Crossfeed Low-Pass filter
@@ -122,22 +135,51 @@ class ViperAudioProcessor : RhythmAudioProcessor() {
     private var fetEnvelope = 0.0f
     private var telemetryUpdateCounter = 0
 
-    // Reverb comb & allpass memory
-    private val reverbCombsL = Array(4) { FloatArray(1600) }
-    private val reverbCombsR = Array(4) { FloatArray(1600) }
-    private val reverbCombIndices = IntArray(4)
+    // Reverb comb & allpass memory with prime delay lengths
+    private val REVERB_COMB_L_SIZES = intArrayOf(1116, 1277, 1422, 1617)
+    private val REVERB_COMB_R_SIZES = intArrayOf(1188, 1356, 1491, 1693)
+    private val reverbCombsL = Array(4) { FloatArray(REVERB_COMB_L_SIZES[it]) }
+    private val reverbCombsR = Array(4) { FloatArray(REVERB_COMB_R_SIZES[it]) }
+    private val reverbCombIndicesL = IntArray(4)
+    private val reverbCombIndicesR = IntArray(4)
+
+    private val REVERB_ALLPASS_L_SIZES = intArrayOf(556, 441)
+    private val REVERB_ALLPASS_R_SIZES = intArrayOf(568, 453)
+    private val reverbAllpassL = Array(2) { FloatArray(REVERB_ALLPASS_L_SIZES[it]) }
+    private val reverbAllpassR = Array(2) { FloatArray(REVERB_ALLPASS_R_SIZES[it]) }
+    private val reverbAllpassIndicesL = IntArray(2)
+    private val reverbAllpassIndicesR = IntArray(2)
+
+    // Dynamic list of child processors registered to this parent
+    private val childProcessors = java.util.concurrent.CopyOnWriteArrayList<ViperAudioProcessor>()
+
+    @Volatile
+    private var lastAppliedConfig: ViperMasterConfig? = null
+
+    @Volatile
+    private var lastAppliedSampleRate: Int = 0
 
     fun setParent(parent: ViperAudioProcessor?) {
+        this.parentProcessor?.childProcessors?.remove(this)
         this.parentProcessor = parent
+        parent?.childProcessors?.add(this)
+        if (parent != null) {
+            updateConfig(parent.getConfig())
+        }
     }
 
     fun updateConfig(newConfig: ViperMasterConfig) {
         this.config = newConfig
         reconfigureFilters()
+        lastAppliedConfig = newConfig
+        lastAppliedSampleRate = sampleRate
         _globalTelemetry.value = _globalTelemetry.value.copy(
             currentDevice = newConfig.activeOutputDevice,
             activeEffectsCount = countActiveEffects(newConfig)
         )
+        for (child in childProcessors) {
+            child.updateConfig(newConfig)
+        }
     }
 
     fun getConfig(): ViperMasterConfig = parentProcessor?.getConfig() ?: config
@@ -154,12 +196,26 @@ class ViperAudioProcessor : RhythmAudioProcessor() {
     override fun configure(inputAudioFormat: AudioProcessor.AudioFormat): AudioProcessor.AudioFormat {
         val outputFormat = super.configure(inputAudioFormat)
         reconfigureFilters()
+        lastAppliedConfig = getConfig()
+        lastAppliedSampleRate = sampleRate
         return outputFormat
     }
 
     override fun flush() {
         super.flush()
         resetDspStates()
+        val cfg = getConfig()
+        val telem = ViperEngineTelemetry(
+            isProcessing = false,
+            sampleRate = sampleRate,
+            channelCount = channelCount,
+            activeEffectsCount = countActiveEffects(cfg),
+            currentDevice = cfg.activeOutputDevice,
+            peakOutputL = 0.0f,
+            peakOutputR = 0.0f
+        )
+        _telemetry.value = telem
+        _globalTelemetry.value = telem
     }
 
     private fun resetDspStates() {
@@ -168,8 +224,17 @@ class ViperAudioProcessor : RhythmAudioProcessor() {
         for (f in ddcFilters) f.reset()
         bassFilter.reset()
         bassAntiPopFilter.reset()
-        bassMonoLp.reset()
-        bassMonoHp.reset()
+        bassMonoLp1.reset()
+        bassMonoLp2.reset()
+        bassMonoHp1.reset()
+        bassMonoHp2.reset()
+        imagerLowLp.reset()
+        imagerLowHp.reset()
+        imagerMidLp.reset()
+        imagerHighHp.reset()
+        psychoBassLp.reset()
+        specExtHp.reset()
+        tubeDcBlocker.reset()
         clarityFilter.reset()
         diffDelayBuffer.fill(0f)
         diffDelayIndex = 0
@@ -178,7 +243,12 @@ class ViperAudioProcessor : RhythmAudioProcessor() {
         fetEnvelope = 0.0f
         for (comb in reverbCombsL) comb.fill(0f)
         for (comb in reverbCombsR) comb.fill(0f)
-        reverbCombIndices.fill(0)
+        reverbCombIndicesL.fill(0)
+        reverbCombIndicesR.fill(0)
+        for (ap in reverbAllpassL) ap.fill(0f)
+        for (ap in reverbAllpassR) ap.fill(0f)
+        reverbAllpassIndicesL.fill(0)
+        reverbAllpassIndicesR.fill(0)
     }
 
     private fun reconfigureFilters() {
@@ -206,9 +276,11 @@ class ViperAudioProcessor : RhythmAudioProcessor() {
         }
         bassAntiPopFilter.configure(BiquadFilter.Type.HIGH_PASS, fs, 25.0f, 0.707f, 0.0f)
 
-        // 4. Bass Mono
-        bassMonoLp.configure(BiquadFilter.Type.LOW_PASS, fs, cfg.bassMono.frequencyHz.toFloat(), 0.707f, 0.0f)
-        bassMonoHp.configure(BiquadFilter.Type.HIGH_PASS, fs, cfg.bassMono.frequencyHz.toFloat(), 0.707f, 0.0f)
+        // 4. Bass Mono (Linkwitz-Riley 4th Order)
+        bassMonoLp1.configure(BiquadFilter.Type.LOW_PASS, fs, cfg.bassMono.frequencyHz.toFloat(), 0.707f, 0.0f)
+        bassMonoLp2.configure(BiquadFilter.Type.LOW_PASS, fs, cfg.bassMono.frequencyHz.toFloat(), 0.707f, 0.0f)
+        bassMonoHp1.configure(BiquadFilter.Type.HIGH_PASS, fs, cfg.bassMono.frequencyHz.toFloat(), 0.707f, 0.0f)
+        bassMonoHp2.configure(BiquadFilter.Type.HIGH_PASS, fs, cfg.bassMono.frequencyHz.toFloat(), 0.707f, 0.0f)
 
         // 5. ViPER Clarity
         val clarityCfg = cfg.viperClarity
@@ -219,7 +291,16 @@ class ViperAudioProcessor : RhythmAudioProcessor() {
         }
         clarityFilter.configure(BiquadFilter.Type.PEAKING, fs, clarityFreq, 1.2f, if (clarityCfg.enabled) clarityCfg.gainDb else 0.0f)
 
-        // 6. Multiband Crossover Filters
+        // 6. Psychoacoustic Bass Band-Limiter (Low-pass)
+        psychoBassLp.configure(BiquadFilter.Type.LOW_PASS, fs, cfg.psychoacousticBass.cutoffHz.toFloat(), 0.707f, 0.0f)
+
+        // 7. Spectrum Extension Band-Limiter (High-pass exciter)
+        specExtHp.configure(BiquadFilter.Type.HIGH_PASS, fs, 7000.0f, 0.707f, 0.0f)
+
+        // 8. Tube Simulator DC-Blocker
+        tubeDcBlocker.configure(BiquadFilter.Type.HIGH_PASS, fs, 15.0f, 0.707f, 0.0f)
+
+        // 9. Multiband Crossover Filters
         val mb = cfg.multibandCompressor
         mbLp1.configure(BiquadFilter.Type.LOW_PASS, fs, mb.crossover1.toFloat(), 0.707f, 0.0f)
         mbHp1.configure(BiquadFilter.Type.HIGH_PASS, fs, mb.crossover1.toFloat(), 0.707f, 0.0f)
@@ -230,14 +311,16 @@ class ViperAudioProcessor : RhythmAudioProcessor() {
         mbLp4.configure(BiquadFilter.Type.LOW_PASS, fs, mb.crossover4.toFloat(), 0.707f, 0.0f)
         mbHp4.configure(BiquadFilter.Type.HIGH_PASS, fs, mb.crossover4.toFloat(), 0.707f, 0.0f)
 
-        // 7. Differential Surround Low-Pass
+        // 10. Differential Surround Low-Pass
         diffSurroundLp.configure(BiquadFilter.Type.LOW_PASS, fs, cfg.diffSurround.lpCutoffHz.toFloat(), 0.707f, 0.0f)
 
-        // 8. Stereo Imager Crossover
+        // 11. Stereo Imager 3-Band Crossover
         imagerLowLp.configure(BiquadFilter.Type.LOW_PASS, fs, cfg.stereoImager.lowCrossoverHz.toFloat(), 0.707f, 0.0f)
+        imagerLowHp.configure(BiquadFilter.Type.HIGH_PASS, fs, cfg.stereoImager.lowCrossoverHz.toFloat(), 0.707f, 0.0f)
+        imagerMidLp.configure(BiquadFilter.Type.LOW_PASS, fs, cfg.stereoImager.highCrossoverHz.toFloat(), 0.707f, 0.0f)
         imagerHighHp.configure(BiquadFilter.Type.HIGH_PASS, fs, cfg.stereoImager.highCrossoverHz.toFloat(), 0.707f, 0.0f)
 
-        // 9. Cure Crossfeed Low-Pass filter
+        // 12. Cure Crossfeed Low-Pass filter
         cureLpFilter.configure(BiquadFilter.Type.LOW_PASS, fs, 700.0f, 0.707f, -3.0f)
 
         // 10. Speaker Optimization
@@ -290,6 +373,11 @@ class ViperAudioProcessor : RhythmAudioProcessor() {
 
     override fun processSamples(samples: ShortArray, sampleCount: Int) {
         val cfg = getConfig()
+        if (cfg !== lastAppliedConfig && cfg != lastAppliedConfig || sampleRate != lastAppliedSampleRate) {
+            reconfigureFilters()
+            lastAppliedConfig = cfg
+            lastAppliedSampleRate = sampleRate
+        }
         if (!cfg.masterEnabled || channelCount != 2) return
 
         val fs = sampleRate.coerceAtLeast(8000).toFloat()
@@ -463,29 +551,33 @@ class ViperAudioProcessor : RhythmAudioProcessor() {
                 }
             }
 
-            // 6. Bass Mono
+            // 6. Bass Mono (Linkwitz-Riley 4th Order - in-phase flat sum)
             if (bassMonoEnabled) {
-                val lowL = bassMonoLp.processLeft(left)
-                val lowR = bassMonoLp.processRight(right)
+                val lowL = bassMonoLp2.processLeft(bassMonoLp1.processLeft(left))
+                val lowR = bassMonoLp2.processRight(bassMonoLp1.processRight(right))
                 val lowMono = (lowL + lowR) * 0.5f
-                val highL = bassMonoHp.processLeft(left)
-                val highR = bassMonoHp.processRight(right)
+                val highL = bassMonoHp2.processLeft(bassMonoHp1.processLeft(left))
+                val highR = bassMonoHp2.processRight(bassMonoHp1.processRight(right))
                 left = lowMono + highL
                 right = lowMono + highR
             }
 
-            // 7. Psychoacoustic Bass (Harmonic Generator)
+            // 7. Psychoacoustic Bass (Band-limited Harmonic Generator)
             if (psychoEnabled) {
-                val bassHarmonic = sin(left * Math.PI.toFloat()) * psychoIntensity
+                val bassL = psychoBassLp.processLeft(left)
+                val bassR = psychoBassLp.processRight(right)
+                val bassHarmonic = sin(bassL * Math.PI.toFloat()) * psychoIntensity
+                val bassHarmonicR = sin(bassR * Math.PI.toFloat()) * psychoIntensity
                 left = left * psychoOriginal + bassHarmonic
-                val bassHarmonicR = sin(right * Math.PI.toFloat()) * psychoIntensity
                 right = right * psychoOriginal + bassHarmonicR
             }
 
-            // 8. Spectrum Extension (Harmonic Exciter)
+            // 8. Spectrum Extension (Band-limited Harmonic Exciter)
             if (specExtEnabled) {
-                val exciterL = (left * left * left) * specExciter * specStrength
-                val exciterR = (right * right * right) * specExciter * specStrength
+                val highsL = specExtHp.processLeft(left)
+                val highsR = specExtHp.processRight(right)
+                val exciterL = (highsL * highsL * highsL) * specExciter * specStrength
+                val exciterR = (highsR * highsR * highsR) * specExciter * specStrength
                 left += exciterL
                 right += exciterR
             }
@@ -496,15 +588,17 @@ class ViperAudioProcessor : RhythmAudioProcessor() {
                 right = clarityFilter.processRight(right)
             }
 
-            // 10. Tube Simulator (6N1J Vacuum Tube Triode Warmth)
+            // 10. Tube Simulator (6N1J Vacuum Tube Triode Warmth + DC-Blocker)
             if (tubeEnabled) {
                 val drivenL = left * tubeDrive
                 val drivenR = right * tubeDrive
                 // 6N1J Triode transfer curve
                 val tubeL = drivenL - 0.20f * (drivenL * drivenL) - 0.08f * (drivenL * drivenL * drivenL)
                 val tubeR = drivenR - 0.20f * (drivenR * drivenR) - 0.08f * (drivenR * drivenR * drivenR)
-                left = left * (1.0f - tubeMix) + tubeL * tubeMix
-                right = right * (1.0f - tubeMix) + tubeR * tubeMix
+                val mixedL = left * (1.0f - tubeMix) + tubeL * tubeMix
+                val mixedR = right * (1.0f - tubeMix) + tubeR * tubeMix
+                left = tubeDcBlocker.processLeft(mixedL)
+                right = tubeDcBlocker.processRight(mixedR)
             }
 
             // 11. AnalogX (Class-A Analog Warmth)
@@ -523,11 +617,11 @@ class ViperAudioProcessor : RhythmAudioProcessor() {
                 right = dsR
             }
 
-            // 13. Convolver (Impulse Response Engine)
+            // 13. Convolver (Zero-allocation Impulse Response Engine)
             if (convEnabled) {
-                val (convL, convR) = convolver.process(left, right, convCross)
-                left = convL
-                right = convR
+                convolver.process(left, right, convCross)
+                left = convolver.outLeft
+                right = convolver.outRight
             }
 
             // 14. Field Surround (Mid/Side soundfield expander)
@@ -549,14 +643,16 @@ class ViperAudioProcessor : RhythmAudioProcessor() {
                 diffDelayIndex = (diffDelayIndex + 1) % diffDelayBuffer.size
             }
 
-            // 16. Stereo Imager (3-Band Stereo Width)
+            // 16. Stereo Imager (3-Band Stereo Width via Phase-Preserving Crossover)
             if (imagerEnabled) {
                 val lowL = imagerLowLp.processLeft(left)
                 val lowR = imagerLowLp.processRight(right)
-                val highL = imagerHighHp.processLeft(left)
-                val highR = imagerHighHp.processRight(right)
-                val midL = left - lowL - highL
-                val midR = right - lowR - highR
+                val restL = imagerLowHp.processLeft(left)
+                val restR = imagerLowHp.processRight(right)
+                val midL = imagerMidLp.processLeft(restL)
+                val midR = imagerMidLp.processRight(restR)
+                val highL = imagerHighHp.processLeft(restL)
+                val highR = imagerHighHp.processRight(restR)
 
                 val lowMid = (lowL + lowR) * 0.5f
                 val lowSide = (lowL - lowR) * 0.5f * imLowW
@@ -577,24 +673,41 @@ class ViperAudioProcessor : RhythmAudioProcessor() {
                 right = right * (1.0f - cureFeed * 0.4f) + crossR
             }
 
-            // 18. Reverberation (Freeverb)
+            // 18. Reverberation (Schroeder / Freeverb with prime delay lines & allpass diffusers)
             if (revEnabled) {
                 var reverbSumL = 0.0f
                 var reverbSumR = 0.0f
                 for (c in 0 until 4) {
                     val bufL = reverbCombsL[c]
                     val bufR = reverbCombsR[c]
-                    val idx = reverbCombIndices[c]
-                    val outL = bufL[idx]
-                    val outR = bufR[idx]
-                    bufL[idx] = left + outL * revRoom * (1.0f - revDamp)
-                    bufR[idx] = right + outR * revRoom * (1.0f - revDamp)
-                    reverbCombIndices[c] = (idx + 1) % bufL.size
+                    val idxL = reverbCombIndicesL[c]
+                    val idxR = reverbCombIndicesR[c]
+                    val outL = bufL[idxL]
+                    val outR = bufR[idxR]
+                    bufL[idxL] = left + outL * revRoom * (1.0f - revDamp)
+                    bufR[idxR] = right + outR * revRoom * (1.0f - revDamp)
+                    reverbCombIndicesL[c] = (idxL + 1) % bufL.size
+                    reverbCombIndicesR[c] = (idxR + 1) % bufR.size
                     reverbSumL += outL
                     reverbSumR += outR
                 }
-                left = left * revDry + reverbSumL * 0.25f * revWet
-                right = right * revDry + reverbSumR * 0.25f * revWet
+                // Schroeder allpass diffusers
+                for (a in 0 until 2) {
+                    val bufL = reverbAllpassL[a]
+                    val bufR = reverbAllpassR[a]
+                    val idxL = reverbAllpassIndicesL[a]
+                    val idxR = reverbAllpassIndicesR[a]
+                    val delayedL = bufL[idxL]
+                    val delayedR = bufR[idxR]
+                    bufL[idxL] = reverbSumL + delayedL * -0.5f
+                    bufR[idxR] = reverbSumR + delayedR * -0.5f
+                    reverbSumL = delayedL + bufL[idxL] * 0.5f
+                    reverbSumR = delayedR + bufR[idxR] * 0.5f
+                    reverbAllpassIndicesL[a] = (idxL + 1) % bufL.size
+                    reverbAllpassIndicesR[a] = (idxR + 1) % bufR.size
+                }
+                left = left * revDry + reverbSumL * 0.125f * revWet
+                right = right * revDry + reverbSumR * 0.125f * revWet
             }
 
             // 19. Speaker Optimization
@@ -607,15 +720,19 @@ class ViperAudioProcessor : RhythmAudioProcessor() {
             left = left * masterGainLinear * panL
             right = right * masterGainLinear * panR
 
-            // 21. Master Limiter / Transparent Soft Clipper
+            // 21. Master Limiter (True ceiling soft-knee transparent limiter)
             if (isLimiterEnabled) {
+                val knee = limiterThresholdLinear * 0.85f
+                val headroom = max(0.0001f, limiterThresholdLinear - knee)
                 val absL = abs(left)
                 val absR = abs(right)
-                if (absL > limiterThresholdLinear) {
-                    left = (limiterThresholdLinear + tanh((absL - limiterThresholdLinear) * 0.8f) * (1.0f - limiterThresholdLinear)) * sign(left)
+                if (absL > knee) {
+                    val excess = (absL - knee) / headroom
+                    left = (knee + tanh(excess) * headroom) * sign(left)
                 }
-                if (absR > limiterThresholdLinear) {
-                    right = (limiterThresholdLinear + tanh((absR - limiterThresholdLinear) * 0.8f) * (1.0f - limiterThresholdLinear)) * sign(right)
+                if (absR > knee) {
+                    val excess = (absR - knee) / headroom
+                    right = (knee + tanh(excess) * headroom) * sign(right)
                 }
             }
 

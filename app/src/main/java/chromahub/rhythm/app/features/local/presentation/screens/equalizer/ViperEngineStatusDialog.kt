@@ -193,7 +193,7 @@ fun ViperEngineStatusSheet(
                     HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
                     val intent = Intent(
                         Intent.ACTION_VIEW,
-                        "https://github.com/vipersaudio/viper4android_fx".toUri()
+                        "https://github.com/likelikeslike/ViPER4Android".toUri()
                     ).apply {
                         addCategory(Intent.CATEGORY_BROWSABLE)
                         addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
