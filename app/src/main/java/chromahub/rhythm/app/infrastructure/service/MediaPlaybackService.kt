@@ -123,6 +123,7 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
     private var rhythmBassBoostProcessor: chromahub.rhythm.app.infrastructure.audio.RhythmBassBoostProcessor? = null
     private var rhythmSpatializationProcessor: chromahub.rhythm.app.infrastructure.audio.RhythmSpatializationProcessor? = null
     private var rhythmMonoAudioProcessor: chromahub.rhythm.app.infrastructure.audio.RhythmMonoAudioProcessor? = null
+    private var rhythmViperProcessor: chromahub.rhythm.app.infrastructure.audio.viper.ViperAudioProcessor? = null
     
     private var virtualizerStrength: Short = 0 // Store strength for virtualizer
     private var isInitializingAudioEffects: Boolean = false // Prevent concurrent initialization
@@ -625,6 +626,15 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
             rhythmMonoAudioProcessor = chromahub.rhythm.app.infrastructure.audio.RhythmMonoAudioProcessor().apply {
                 setEnabled(appSettings.monoAudioEnabled.value)
             }
+            val viperRepo = chromahub.rhythm.app.infrastructure.audio.viper.ViperSettingsRepository.getInstance(applicationContext)
+            rhythmViperProcessor = chromahub.rhythm.app.infrastructure.audio.viper.ViperAudioProcessor().apply {
+                updateConfig(viperRepo.configFlow.value)
+            }
+            serviceScope.launch {
+                viperRepo.configFlow.collect { newConfig ->
+                    rhythmViperProcessor?.updateConfig(newConfig)
+                }
+            }
             isBassBoostAvailable = true
             appSettings.setBassBoostAvailable(true)
             Log.d(TAG, "Rhythm audio processors initialized early with saved settings (mono=${appSettings.monoAudioEnabled.value}, bass=${appSettings.bassBoostEnabled.value}, spatial=${appSettings.virtualizerEnabled.value})")
@@ -633,6 +643,7 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
             rhythmBassBoostProcessor = null
             rhythmSpatializationProcessor = null
             rhythmMonoAudioProcessor = null
+            rhythmViperProcessor = null
             isBassBoostAvailable = false
             appSettings.setBassBoostAvailable(false)
         }
@@ -966,7 +977,8 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
             this, 
             bassBoostProcessor = rhythmBassBoostProcessor,
             spatializationProcessor = rhythmSpatializationProcessor,
-            monoProcessor = rhythmMonoAudioProcessor
+            monoProcessor = rhythmMonoAudioProcessor,
+            viperProcessor = rhythmViperProcessor
         )
         rhythmPlayerEngine.initialize()
         serviceScope.launch {
@@ -4041,9 +4053,11 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
             rhythmBassBoostProcessor?.reset()
             rhythmSpatializationProcessor?.reset()
             rhythmMonoAudioProcessor?.reset()
+            rhythmViperProcessor?.reset()
             rhythmBassBoostProcessor = null
             rhythmSpatializationProcessor = null
             rhythmMonoAudioProcessor = null
+            rhythmViperProcessor = null
             
             Log.d(TAG, "Audio effects released")
         } catch (e: Exception) {

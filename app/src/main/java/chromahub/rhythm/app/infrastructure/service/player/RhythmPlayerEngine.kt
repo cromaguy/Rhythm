@@ -83,7 +83,8 @@ class RhythmPlayerEngine(
     private val context: Context,
     private val bassBoostProcessor: RhythmBassBoostProcessor? = null,
     private val spatializationProcessor: RhythmSpatializationProcessor? = null,
-    private val monoProcessor: RhythmMonoAudioProcessor? = null
+    private val monoProcessor: RhythmMonoAudioProcessor? = null,
+    private val viperProcessor: chromahub.rhythm.app.infrastructure.audio.viper.ViperAudioProcessor? = null
 ) {
     companion object {
         private const val TAG = "RhythmPlayerEngine"
@@ -104,6 +105,8 @@ class RhythmPlayerEngine(
     private var playerBSpatialization: RhythmSpatializationProcessor? = null
     private var playerAMono: RhythmMonoAudioProcessor? = null
     private var playerBMono: RhythmMonoAudioProcessor? = null
+    private var playerAViper: chromahub.rhythm.app.infrastructure.audio.viper.ViperAudioProcessor? = null
+    private var playerBViper: chromahub.rhythm.app.infrastructure.audio.viper.ViperAudioProcessor? = null
     private lateinit var playerAReplayGain: ReplayGainAudioProcessor
     private lateinit var playerBReplayGain: ReplayGainAudioProcessor
     private var activeReplayGainProcessor: ReplayGainAudioProcessor? = null
@@ -308,20 +311,24 @@ class RhythmPlayerEngine(
         val aBass = bassBoostProcessor?.let { RhythmBassBoostProcessor().apply { setParent(it) } }
         val aSpatial = spatializationProcessor?.let { RhythmSpatializationProcessor().apply { setParent(it) } }
         val aMono = monoProcessor?.let { RhythmMonoAudioProcessor().apply { setParent(it) } }
+        val aViper = viperProcessor?.let { chromahub.rhythm.app.infrastructure.audio.viper.ViperAudioProcessor().apply { setParent(it) } }
         val aReplayGain = ReplayGainAudioProcessor()
         playerABassBoost = aBass
         playerASpatialization = aSpatial
         playerAMono = aMono
+        playerAViper = aViper
         playerAReplayGain = aReplayGain
 
         // Instantiate child processors for Player B
         val bBass = bassBoostProcessor?.let { RhythmBassBoostProcessor().apply { setParent(it) } }
         val bSpatial = spatializationProcessor?.let { RhythmSpatializationProcessor().apply { setParent(it) } }
         val bMono = monoProcessor?.let { RhythmMonoAudioProcessor().apply { setParent(it) } }
+        val bViper = viperProcessor?.let { chromahub.rhythm.app.infrastructure.audio.viper.ViperAudioProcessor().apply { setParent(it) } }
         val bReplayGain = ReplayGainAudioProcessor()
         playerBBassBoost = bBass
         playerBSpatialization = bSpatial
         playerBMono = bMono
+        playerBViper = bViper
         playerBReplayGain = bReplayGain
 
         // Apply settings initially
@@ -329,8 +336,8 @@ class RhythmPlayerEngine(
         applyReplayGainSettingsOnProcessor(aReplayGain, appSettings.replayGain.value)
         applyReplayGainSettingsOnProcessor(bReplayGain, appSettings.replayGain.value)
 
-        playerA = buildPlayer(handleAudioFocus = false, bassProcessor = aBass, spatialProcessor = aSpatial, monoProcessor = aMono, replayGainProcessor = aReplayGain)
-        playerB = buildPlayer(handleAudioFocus = false, bassProcessor = bBass, spatialProcessor = bSpatial, monoProcessor = bMono, replayGainProcessor = bReplayGain)
+        playerA = buildPlayer(handleAudioFocus = false, bassProcessor = aBass, spatialProcessor = aSpatial, monoProcessor = aMono, replayGainProcessor = aReplayGain, viperProcessor = aViper)
+        playerB = buildPlayer(handleAudioFocus = false, bassProcessor = bBass, spatialProcessor = bSpatial, monoProcessor = bMono, replayGainProcessor = bReplayGain, viperProcessor = bViper)
 
         val initVolume = if (appSettings.useSystemVolume.value) 1.0f else appSettings.appVolume.value
         userVolume = initVolume
@@ -412,7 +419,8 @@ class RhythmPlayerEngine(
         bassProcessor: RhythmBassBoostProcessor? = null,
         spatialProcessor: RhythmSpatializationProcessor? = null,
         monoProcessor: RhythmMonoAudioProcessor? = null,
-        replayGainProcessor: ReplayGainAudioProcessor? = null
+        replayGainProcessor: ReplayGainAudioProcessor? = null,
+        viperProcessor: chromahub.rhythm.app.infrastructure.audio.viper.ViperAudioProcessor? = null
     ): ExoPlayer {
         val loadControl = DefaultLoadControl.Builder()
             .setBufferDurationsMs(15_000, 30_000, 1_500, 2_500)
@@ -459,6 +467,9 @@ class RhythmPlayerEngine(
                 enableAudioTrackPlaybackParams: Boolean
             ): androidx.media3.exoplayer.audio.AudioSink? {
                 val processors = mutableListOf<androidx.media3.common.audio.AudioProcessor>()
+                if (viperProcessor != null) {
+                    processors.add(viperProcessor)
+                }
                 if (bassProcessor != null) {
                     processors.add(bassProcessor)
                 }
@@ -971,12 +982,14 @@ class RhythmPlayerEngine(
             val otherBassBoost = if (incomingReplayGain === playerAReplayGain) playerBBassBoost else playerABassBoost
             val otherSpatial = if (incomingReplayGain === playerAReplayGain) playerBSpatialization else playerASpatialization
             val otherMono = if (incomingReplayGain === playerAReplayGain) playerBMono else playerAMono
+            val otherViper = if (incomingReplayGain === playerAReplayGain) playerBViper else playerAViper
             playerB = buildPlayer(
                 handleAudioFocus = false,
                 bassProcessor = otherBassBoost,
                 spatialProcessor = otherSpatial,
                 monoProcessor = otherMono,
-                replayGainProcessor = otherReplayGain
+                replayGainProcessor = otherReplayGain,
+                viperProcessor = otherViper
             ).apply {
                 playbackParameters = playerA.playbackParameters
                 addAnalyticsListener(analyticsListenerB)

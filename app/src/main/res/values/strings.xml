@@ -2969,4 +2969,20 @@
     <string name="eq_device_no_profile">No AutoEQ profile linked</string>
     <string name="eq_manage_all_devices">Manage Devices</string>
     <string name="eq_reorder">Reorder</string>
+
+    <!-- ViPER4Android DSP Engine -->
+    <string name="viper_profiles_title">ViPER Profiles</string>
+    <string name="viper_profiles_subtitle">Import, Export &amp; Studio Presets</string>
+    <string name="viper_studio_presets">Studio Presets</string>
+    <string name="viper_backup_sharing">Backup &amp; Sharing</string>
+    <string name="viper_export_profile">Export Profile (Copy to Clipboard)</string>
+    <string name="viper_profile_copied">Profile copied to clipboard!</string>
+    <string name="viper_import_profile">Import Profile from JSON</string>
+    <string name="viper_hide_import">Hide Import</string>
+    <string name="viper_paste_json">Paste Profile JSON</string>
+    <string name="viper_apply_imported">Apply Imported Profile</string>
+    <string name="viper_profile_imported_success">Profile successfully imported!</string>
+    <string name="viper_profile_invalid_format">Invalid profile format!</string>
+    <string name="viper_engine_status_title">Audio Engine Status</string>
+    <string name="viper_engine_status_subtitle">ViPER4Android DSP Monitor</string>
 </resources>
