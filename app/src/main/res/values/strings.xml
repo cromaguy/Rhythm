@@ -2931,6 +2931,10 @@
     <string name="rhythm_go_offline_toast">Rhythm Go is offline</string>
     <string name="rhythm_go_online_toast">Rhythm Go is back online</string>
     <string name="streaming_downloaded_albums">Downloaded Albums</string>
+    <string name="streaming_offline_lossless">Lossless</string>
+    <string name="streaming_offline_complete_lossless">Downloaded • Lossless</string>
+    <string name="streaming_offline_partial">%1$d of %2$d downloaded</string>
+    <string name="streaming_offline_partial_desc">Partly downloaded</string>
     <string name="streaming_syncing_downloads_subtitle">Available while syncing</string>
     <string name="streaming_download_all">Download all</string>
     <string name="streaming_download_all_progress">%1$d/%2$d</string>
