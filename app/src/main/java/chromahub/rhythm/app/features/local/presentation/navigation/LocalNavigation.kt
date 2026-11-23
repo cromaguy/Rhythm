@@ -271,6 +271,7 @@ sealed class Screen(val route: String) {
     object TunerExpressiveShapes : Screen("tuner_expressive_shapes_settings")
     object TunerPlayerCustomization : Screen("tuner_player_customization_settings")
     object TunerMiniPlayerCustomization : Screen("tuner_miniplayer_customization_settings")
+    object TunerExternalPlayerCustomization : Screen("tuner_external_player_customization_settings")
     object TunerBatterySaver : Screen("tuner_battery_saver_settings")
     object TunerLibrarySettings : Screen("tuner_library_settings")
     object TunerRhythmGuard : Screen("tuner_rhythm_guard_settings")
@@ -589,6 +590,20 @@ fun LocalNavigation(
                     launchSingleTop = true
                 }
             }
+        }
+    }
+
+    val pendingTopLevelRoute by appSettings.pendingTopLevelRoute.collectAsState()
+    LaunchedEffect(pendingTopLevelRoute) {
+        pendingTopLevelRoute?.let { route ->
+            navController.navigate(route) {
+                popUpTo(navController.graph.findStartDestination().id) {
+                    saveState = true
+                }
+                launchSingleTop = true
+                restoreState = true
+            }
+            appSettings.clearPendingTopLevelRoute()
         }
     }
 
@@ -2422,6 +2437,10 @@ private fun LocalNavigationContent(
 
                 composable(Screen.TunerMiniPlayerCustomization.route) {
                     MiniPlayerCustomizationSettingsScreen(onBackClick = navigateBackOrToSettings)
+                }
+
+                composable(Screen.TunerExternalPlayerCustomization.route) {
+                    ExternalPlayerCustomizationSettingsScreen(onBackClick = navigateBackOrToSettings)
                 }
 
                 composable(Screen.TunerBatterySaver.route) {

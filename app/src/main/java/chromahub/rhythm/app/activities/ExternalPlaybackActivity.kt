@@ -47,6 +47,9 @@ import chromahub.rhythm.app.shared.presentation.components.lyrics.ActiveLyricLin
 import chromahub.rhythm.app.shared.presentation.components.icons.Icon
 import chromahub.rhythm.app.shared.presentation.components.icons.MaterialSymbolIcon
 import chromahub.rhythm.app.shared.presentation.components.common.AutoScrollingTextOnDemand
+import chromahub.rhythm.app.shared.presentation.components.common.ButtonGroupStyle
+import chromahub.rhythm.app.shared.presentation.components.common.ExpressiveButtonGroup
+import chromahub.rhythm.app.shared.presentation.components.common.ExpressiveGroupButton
 import chromahub.rhythm.app.shared.presentation.components.common.ExpressivePlayerControlGroup
 import chromahub.rhythm.app.shared.presentation.components.common.RhythmButtonType
 import chromahub.rhythm.app.shared.presentation.components.common.RhythmDetailActionButton
@@ -68,6 +71,11 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlin.math.abs
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.LocalHapticFeedback
+import chromahub.rhythm.app.util.HapticType
+import chromahub.rhythm.app.util.HapticUtils
+import chromahub.rhythm.app.features.local.presentation.navigation.Screen
+import chromahub.rhythm.app.shared.presentation.screens.settings.SettingsRoutes
 import java.util.Locale
 
 /**
@@ -80,7 +88,16 @@ class ExternalPlaybackActivity : ComponentActivity() {
     private val themeViewModel: ThemeViewModel by viewModels()
     private var playbackRequestJob: Job? = null
     private var lastHandledUri: String? = null
-    
+    private var openedInRhythm = false
+
+    private fun handleDismiss() {
+        val appSettings = chromahub.rhythm.app.shared.data.model.AppSettings.getInstance(this)
+        if (!appSettings.externalPlayerContinuePlaybackOnClose.value && !openedInRhythm) {
+            musicViewModel.pauseMusic()
+        }
+        finish()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -123,14 +140,24 @@ class ExternalPlaybackActivity : ComponentActivity() {
             ) {
                 ExternalPlaybackBottomSheet(
                     musicViewModel = musicViewModel,
-                    onDismiss = { finish() },
+                    onDismiss = { handleDismiss() },
                     onOpenFullPlayer = {
+                        openedInRhythm = true
                         val intent = Intent(this, MainActivity::class.java).apply {
                             flags = Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
                             putExtra(MainActivity.EXTRA_OPEN_PLAYER, true)
                         }
                         startActivity(intent)
                         finish()
+                    },
+                    onOpenSettings = {
+                        appSettings.setInitialSettingsSubroute(SettingsRoutes.EXTERNAL_PLAYER_CUSTOMIZATION)
+                        appSettings.requestTopLevelRoute("settings")
+                        val intent = Intent(this, MainActivity::class.java).apply {
+                            flags = Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+                            putExtra(MainActivity.EXTRA_OPEN_SETTINGS_SUBROUTE, SettingsRoutes.EXTERNAL_PLAYER_CUSTOMIZATION)
+                        }
+                        startActivity(intent)
                     }
                 )
             }
@@ -146,6 +173,10 @@ class ExternalPlaybackActivity : ComponentActivity() {
 
     override fun onDestroy() {
         playbackRequestJob?.cancel()
+        val appSettings = chromahub.rhythm.app.shared.data.model.AppSettings.getInstance(this)
+        if (!appSettings.externalPlayerContinuePlaybackOnClose.value && !openedInRhythm) {
+            musicViewModel.pauseMusic()
+        }
         super.onDestroy()
     }
 
@@ -273,9 +304,20 @@ class ExternalPlaybackActivity : ComponentActivity() {
 fun ExternalPlaybackBottomSheet(
     musicViewModel: MusicViewModel,
     onDismiss: () -> Unit,
-    onOpenFullPlayer: () -> Unit
+    onOpenFullPlayer: () -> Unit,
+    onOpenSettings: () -> Unit
 ) {
     val context = LocalContext.current
+    val appSettings = remember { chromahub.rhythm.app.shared.data.model.AppSettings.getInstance(context) }
+    val haptics = LocalHapticFeedback.current
+    val hapticSetting by appSettings.externalPlayerHapticFeedback.collectAsState()
+    val globalHaptics by appSettings.isHapticEnabled.collectAsState()
+    val hapticEnabled = hapticSetting && globalHaptics
+    val showLyrics by appSettings.externalPlayerShowLyrics.collectAsState()
+    val showAudioDetails by appSettings.externalPlayerShowAudioDetails.collectAsState()
+    val showWaveSeeker by appSettings.externalPlayerShowWaveSeeker.collectAsState()
+    val autoCloseOnFinish by appSettings.externalPlayerAutoCloseOnFinish.collectAsState()
+
     val currentSong by musicViewModel.currentSong.collectAsState()
     val isPlaying by musicViewModel.isPlaying.collectAsState()
     val isBuffering by musicViewModel.isBuffering.collectAsState()
@@ -297,6 +339,12 @@ fun ExternalPlaybackBottomSheet(
     LaunchedEffect(progress, isScrubbing) {
         if (!isScrubbing) {
             scrubProgress = progress.coerceIn(0f, 1f)
+        }
+    }
+
+    LaunchedEffect(progress, isPlaying, autoCloseOnFinish) {
+        if (autoCloseOnFinish && progress >= 0.995f && !isPlaying && !isScrubbing) {
+            onDismiss()
         }
     }
 
@@ -362,31 +410,62 @@ fun ExternalPlaybackBottomSheet(
                         color = if (isSystemInDarkTheme()) Color.White else Color.Black,
                         modifier = Modifier.weight(1f)
                     )
-                    Surface(
-                        onClick = {
-                            val song = currentSong ?: return@Surface
-                            try {
-                                val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                                    type = "audio/*"
-                                    putExtra(Intent.EXTRA_STREAM, song.uri)
-                                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                }
-                                context.startActivity(Intent.createChooser(shareIntent, song.title))
-                            } catch (e: Exception) {
-                                Toast.makeText(context, R.string.materialplayerscreen_unable_to_share_file, Toast.LENGTH_SHORT).show()
-                            }
-                        },
-                        modifier = Modifier.size(44.dp),
-                        shape = CircleShape,
-                        color = MaterialTheme.colorScheme.surfaceContainerHighest,
-                        tonalElevation = 2.dp
+                    ExpressiveButtonGroup(
+                        style = ButtonGroupStyle.Tonal
                     ) {
-                        Box(contentAlignment = Alignment.Center) {
+                        ExpressiveGroupButton(
+                            onClick = {
+                                if (hapticEnabled) {
+                                    HapticUtils.performHapticFeedback(context, haptics, HapticType.LIGHT)
+                                }
+                                onOpenSettings()
+                            },
+                            isStart = true,
+                            colors = ButtonDefaults.filledTonalButtonColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                contentColor = MaterialTheme.colorScheme.onSurface
+                            ),
+                            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
+                            modifier = Modifier.height(40.dp)
+                        ) {
+                            Icon(
+                                icon = MaterialSymbolIcon("settings", filled = true),
+                                contentDescription = stringResource(R.string.settings_external_player_customization),
+                                tint = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                        ExpressiveGroupButton(
+                            onClick = {
+                                val song = currentSong ?: return@ExpressiveGroupButton
+                                if (hapticEnabled) {
+                                    HapticUtils.performHapticFeedback(context, haptics, HapticType.MEDIUM)
+                                }
+                                try {
+                                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                                        type = "audio/*"
+                                        putExtra(Intent.EXTRA_STREAM, song.uri)
+                                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                    }
+                                    context.startActivity(Intent.createChooser(shareIntent, song.title))
+                                } catch (e: Exception) {
+                                    Toast.makeText(context, R.string.materialplayerscreen_unable_to_share_file, Toast.LENGTH_SHORT).show()
+                                }
+                            },
+                            isEnd = true,
+                            enabled = currentSong != null,
+                            colors = ButtonDefaults.filledTonalButtonColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                contentColor = MaterialTheme.colorScheme.onSurface
+                            ),
+                            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
+                            modifier = Modifier.height(40.dp)
+                        ) {
                             Icon(
                                 icon = MaterialSymbolIcon("share", filled = true),
                                 contentDescription = stringResource(R.string.action_share),
                                 tint = MaterialTheme.colorScheme.onSurface,
-                                modifier = Modifier.size(22.dp)
+                                modifier = Modifier.size(20.dp)
                             )
                         }
                     }
@@ -463,31 +542,43 @@ fun ExternalPlaybackBottomSheet(
                                 ),
                                 gradientEdgeColor = MaterialTheme.colorScheme.surfaceContainerHighest
                             )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            AutoScrollingTextOnDemand(
-                                text = currentSong?.album ?: "Unknown album",
-                                style = MaterialTheme.typography.bodySmall.copy(
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
-                                ),
-                                gradientEdgeColor = MaterialTheme.colorScheme.surfaceContainerHighest
-                            )
+                            if (showAudioDetails) {
+                                Spacer(modifier = Modifier.height(4.dp))
+                                AutoScrollingTextOnDemand(
+                                    text = currentSong?.album ?: "Unknown album",
+                                    style = MaterialTheme.typography.bodySmall.copy(
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+                                    ),
+                                    gradientEdgeColor = MaterialTheme.colorScheme.surfaceContainerHighest
+                                )
+                            }
                         }
                     }
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                if (showLyrics) {
+                    Spacer(modifier = Modifier.height(12.dp))
 
-                ActiveLyricLine(
-                    lyrics = lyrics,
-                    playbackTimeMs = (
-                        (currentSong?.duration ?: 0L) * (if (isScrubbing) scrubProgress else progress)
-                        ).toLong() + lyricsTimeOffset,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 20.dp)
-                )
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(52.dp)
+                            .padding(horizontal = 20.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        ActiveLyricLine(
+                            lyrics = lyrics,
+                            playbackTimeMs = (
+                                (currentSong?.duration ?: 0L) * (if (isScrubbing) scrubProgress else progress)
+                                ).toLong() + lyricsTimeOffset,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
+                } else {
+                    Spacer(modifier = Modifier.height(20.dp))
+                }
 
                 currentSong?.let { song ->
                         val displayedProgress = if (isScrubbing) scrubProgress else progress
@@ -497,26 +588,63 @@ fun ExternalPlaybackBottomSheet(
                                 .fillMaxWidth()
                                 .padding(horizontal = 20.dp)
                         ) {
-                            WaveSlider(
-                                value = displayedProgress,
-                                onValueChange = { newProgress ->
-                                    isScrubbing = true
-                                    scrubProgress = newProgress.coerceIn(0f, 1f)
-                                },
-                                onValueChangeFinished = {
-                                    val targetPositionMs = (song.duration * scrubProgress).toLong()
-                                    val currentPositionMs =
-                                        (song.duration * progress.coerceIn(0f, 1f)).toLong()
-                                    if (abs(targetPositionMs - currentPositionMs) >= 750L) {
-                                        musicViewModel.seekTo(targetPositionMs)
-                                    }
-                                    isScrubbing = false
-                                },
-                                modifier = Modifier.fillMaxWidth(),
-                                activeTrackColor = MaterialTheme.colorScheme.primary,
-                                inactiveTrackColor = MaterialTheme.colorScheme.surfaceVariant,
-                                isPlaying = isPlaying
-                            )
+                            if (showWaveSeeker) {
+                                WaveSlider(
+                                    value = displayedProgress,
+                                    onValueChange = { newProgress ->
+                                        isScrubbing = true
+                                        scrubProgress = newProgress.coerceIn(0f, 1f)
+                                        if (hapticEnabled) {
+                                            HapticUtils.performHapticFeedback(context, haptics, HapticType.LIGHT)
+                                        }
+                                    },
+                                    onValueChangeFinished = {
+                                        val targetPositionMs = (song.duration * scrubProgress).toLong()
+                                        val currentPositionMs =
+                                            (song.duration * progress.coerceIn(0f, 1f)).toLong()
+                                        if (abs(targetPositionMs - currentPositionMs) >= 750L) {
+                                            musicViewModel.seekTo(targetPositionMs)
+                                        }
+                                        if (hapticEnabled) {
+                                            HapticUtils.performHapticFeedback(context, haptics, HapticType.LIGHT)
+                                        }
+                                        isScrubbing = false
+                                    },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    activeTrackColor = MaterialTheme.colorScheme.primary,
+                                    inactiveTrackColor = MaterialTheme.colorScheme.surfaceVariant,
+                                    isPlaying = isPlaying
+                                )
+                            } else {
+                                Slider(
+                                    value = displayedProgress,
+                                    onValueChange = { newProgress ->
+                                        isScrubbing = true
+                                        scrubProgress = newProgress.coerceIn(0f, 1f)
+                                        if (hapticEnabled) {
+                                            HapticUtils.performHapticFeedback(context, haptics, HapticType.LIGHT)
+                                        }
+                                    },
+                                    onValueChangeFinished = {
+                                        val targetPositionMs = (song.duration * scrubProgress).toLong()
+                                        val currentPositionMs =
+                                            (song.duration * progress.coerceIn(0f, 1f)).toLong()
+                                        if (abs(targetPositionMs - currentPositionMs) >= 750L) {
+                                            musicViewModel.seekTo(targetPositionMs)
+                                        }
+                                        if (hapticEnabled) {
+                                            HapticUtils.performHapticFeedback(context, haptics, HapticType.LIGHT)
+                                        }
+                                        isScrubbing = false
+                                    },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    colors = SliderDefaults.colors(
+                                        thumbColor = MaterialTheme.colorScheme.primary,
+                                        activeTrackColor = MaterialTheme.colorScheme.primary,
+                                        inactiveTrackColor = MaterialTheme.colorScheme.surfaceVariant
+                                    )
+                                )
+                            }
                             
                             Spacer(modifier = Modifier.height(4.dp))
                             
@@ -545,13 +673,26 @@ fun ExternalPlaybackBottomSheet(
                 ExpressivePlayerControlGroup(
                     isPlaying = isPlaying,
                     showSeekButtons = false,
-                    onPrevious = { musicViewModel.skipToPrevious() },
+                    onPrevious = {
+                        if (hapticEnabled) {
+                            HapticUtils.performHapticFeedback(context, haptics, HapticType.LIGHT)
+                        }
+                        musicViewModel.skipToPrevious()
+                    },
                     onPlayPause = {
+                        if (hapticEnabled) {
+                            HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
+                        }
                         if (!isBuffering) {
                             musicViewModel.togglePlayPause()
                         }
                     },
-                    onNext = { musicViewModel.skipToNext() },
+                    onNext = {
+                        if (hapticEnabled) {
+                            HapticUtils.performHapticFeedback(context, haptics, HapticType.LIGHT)
+                        }
+                        musicViewModel.skipToNext()
+                    },
                     onSeekBack = {},
                     onSeekForward = {},
                     isExtraSmallWidth = false,
@@ -572,7 +713,12 @@ fun ExternalPlaybackBottomSheet(
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     RhythmDetailActionButton(
-                        onClick = onOpenFullPlayer,
+                        onClick = {
+                            if (hapticEnabled) {
+                                HapticUtils.performHapticFeedback(context, haptics, HapticType.MEDIUM)
+                            }
+                            onOpenFullPlayer()
+                        },
                         weight = 1f,
                         height = 52.dp,
                         isFirst = true,
@@ -580,13 +726,18 @@ fun ExternalPlaybackBottomSheet(
                         type = RhythmButtonType.Tonal,
                         icon = MaterialSymbolIcon("open_in_new", filled = true),
                         iconSize = 18.dp,
-                        text = stringResource(R.string.externalplaybackactivity_open_rhythm),
+                        text = stringResource(R.string.externalplaybackactivity_open),
                         containerColor = MaterialTheme.colorScheme.secondaryContainer,
                         contentColor = MaterialTheme.colorScheme.onSecondaryContainer
                     )
 
                     RhythmDetailActionButton(
-                        onClick = onDismiss,
+                        onClick = {
+                            if (hapticEnabled) {
+                                HapticUtils.performHapticFeedback(context, haptics, HapticType.LIGHT)
+                            }
+                            onDismiss()
+                        },
                         weight = 1f,
                         height = 52.dp,
                         isFirst = false,

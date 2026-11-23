@@ -144,6 +144,15 @@ fun buildSettingsSearchIndex(context: Context): List<SearchableSettingItem> {
             parentScreen = context.getString(R.string.settings_section_appearance)
         ))
         add(SearchableSettingItem(
+            id = "external_player_customization",
+            title = context.getString(R.string.settings_external_player_customization),
+            description = context.getString(R.string.settings_external_player_customization_desc),
+            keywords = listOf("external player", "external", "intent", "audio file", "background playback", "lyrics", "haptics"),
+            icon = MaterialSymbolIcon("open_in_new"),
+            route = SettingsRoutes.EXTERNAL_PLAYER_CUSTOMIZATION,
+            parentScreen = context.getString(R.string.settings_section_appearance)
+        ))
+        add(SearchableSettingItem(
             id = "album_bottom_sheet_blur",
             title = context.getString(R.string.settings_album_bottom_sheet_gradient_blur),
             description = context.getString(R.string.settings_album_bottom_sheet_gradient_blur_desc),
@@ -1950,6 +1959,43 @@ fun buildSettingsSearchIndex(context: Context): List<SearchableSettingItem> {
             icon = MaterialSymbolIcon("tablet"),
             route = SettingsRoutes.MINIPLAYER_CUSTOMIZATION,
             parentScreen = context.getString(R.string.settings_miniplayer_customization)
+        ))
+
+        add(SearchableSettingItem(
+            id = "external_player_continue_playback",
+            title = context.getString(R.string.external_player_continue_playback),
+            description = context.getString(R.string.external_player_continue_playback_desc),
+            keywords = listOf("external", "background", "playback", "continue", "close", "dismiss"),
+            icon = MaterialSymbolIcon("play_circle"),
+            route = SettingsRoutes.EXTERNAL_PLAYER_CUSTOMIZATION,
+            parentScreen = context.getString(R.string.settings_external_player_customization)
+        ))
+        add(SearchableSettingItem(
+            id = "external_player_auto_close",
+            title = context.getString(R.string.external_player_auto_close),
+            description = context.getString(R.string.external_player_auto_close_desc),
+            keywords = listOf("external", "auto dismiss", "close", "completion", "finish"),
+            icon = MaterialSymbolIcon("timer"),
+            route = SettingsRoutes.EXTERNAL_PLAYER_CUSTOMIZATION,
+            parentScreen = context.getString(R.string.settings_external_player_customization)
+        ))
+        add(SearchableSettingItem(
+            id = "external_player_lyrics",
+            title = context.getString(R.string.external_player_show_lyrics),
+            description = context.getString(R.string.external_player_show_lyrics_desc),
+            keywords = listOf("external", "lyrics", "synchronized", "lrc"),
+            icon = MaterialSymbolIcon("lyrics"),
+            route = SettingsRoutes.EXTERNAL_PLAYER_CUSTOMIZATION,
+            parentScreen = context.getString(R.string.settings_external_player_customization)
+        ))
+        add(SearchableSettingItem(
+            id = "external_player_haptics",
+            title = context.getString(R.string.external_player_haptics),
+            description = context.getString(R.string.external_player_haptics_desc),
+            keywords = listOf("external", "haptic", "vibration", "feedback"),
+            icon = MaterialSymbolIcon("vibration"),
+            route = SettingsRoutes.EXTERNAL_PLAYER_CUSTOMIZATION,
+            parentScreen = context.getString(R.string.settings_external_player_customization)
         ))
         
         // ======================== GESTURES SCREEN ========================

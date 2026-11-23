@@ -1590,7 +1590,7 @@ fun ExpressivePlayerControlGroup(
                     useGlassEffect = useGlassEffect,
                     isDark = isDark,
                     iconScale = sizeScale,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxSize()
                 )
             }
             
@@ -1738,8 +1738,8 @@ private fun ExpressiveMorphingPlayPauseButton(
         Box(
             modifier = modifier
                 .then(if (modifier == Modifier) Modifier.width(width) else Modifier)
-                .height(height)
-                .clip(RoundedCornerShape(height / 2))
+                .fillMaxHeight()
+                .clip(RoundedCornerShape(percent = 50))
                 .background(buttonBg)
                 .clickable(onClick = onClick),
             contentAlignment = Alignment.Center
@@ -1781,8 +1781,9 @@ private fun ExpressiveMorphingPlayPauseButton(
         // Icon button when seek buttons enabled or loading
         Box(
             modifier = modifier
-                .then(if (modifier == Modifier) Modifier.size(height) else Modifier.fillMaxWidth().height(height))
-                .clip(RoundedCornerShape(height / 2))
+                .then(if (modifier == Modifier) Modifier.size(height) else Modifier.fillMaxWidth())
+                .fillMaxHeight()
+                .clip(RoundedCornerShape(percent = 50))
                 .background(buttonBg)
                 .clickable(onClick = onClick),
             contentAlignment = Alignment.Center

@@ -175,6 +175,7 @@ object SettingsRoutes {
     const val THEME_CUSTOMIZATION = "theme_customization_settings"
     const val PLAYER_CUSTOMIZATION = "player_customization_settings"
     const val MINIPLAYER_CUSTOMIZATION = "miniplayer_customization_settings"
+    const val EXTERNAL_PLAYER_CUSTOMIZATION = "tuner_external_player_customization_settings"
     const val EQUALIZER = "equalizer_settings"
     const val VIPER = "viper_settings"
     const val SLEEP_TIMER = "sleep_timer_settings"
@@ -288,6 +289,7 @@ fun SettingsScreen(
                     add(SettingItem(MaterialSymbolIcon("interests"), context.getString(R.string.settings_shapes), context.getString(R.string.settings_shapes_desc), palette = SettingsPalettes.Purple, onClick = { onNavigateTo(SettingsRoutes.EXPRESSIVE_SHAPES) }))
                     add(SettingItem(RhythmIcons.MusicNote, context.getString(R.string.settings_player_customization), context.getString(R.string.settings_player_customization_desc), palette = SettingsPalettes.SkyBlue, onClick = { onNavigateTo(SettingsRoutes.PLAYER_CUSTOMIZATION) }))
                     add(SettingItem(MaterialSymbolIcon("dock_to_bottom"), context.getString(R.string.settings_miniplayer_customization), context.getString(R.string.settings_miniplayer_customization_desc), palette = SettingsPalettes.Rose, onClick = { onNavigateTo(SettingsRoutes.MINIPLAYER_CUSTOMIZATION) }))
+                    add(SettingItem(MaterialSymbolIcon("open_in_new"), context.getString(R.string.settings_external_player_customization), context.getString(R.string.settings_external_player_customization_desc), palette = SettingsPalettes.Amber, onClick = { onNavigateTo(SettingsRoutes.EXTERNAL_PLAYER_CUSTOMIZATION) }))
                 }
             ),
             // 2. Home & Widgets - only show in LOCAL mode
@@ -1005,10 +1007,12 @@ fun SettingsScreenWrapper(
     }
 
     // Consume any initial subroute requested by external callers (e.g., open settings -> specific pane)
-    LaunchedEffect(Unit) {
-        val pending = appSettings.consumeInitialSettingsSubroute()
+    val pendingSettingsSubroute by appSettings.pendingSettingsSubroute.collectAsState()
+    LaunchedEffect(pendingSettingsSubroute) {
+        val pending = pendingSettingsSubroute ?: appSettings.consumeInitialSettingsSubroute()
         if (!pending.isNullOrBlank()) {
             routeStack = listOf(pending)
+            appSettings.consumeInitialSettingsSubroute()
         }
     }
 
@@ -1185,6 +1189,7 @@ fun SettingsScreenWrapper(
                         SettingsRoutes.THEME_CUSTOMIZATION -> ThemeCustomizationSettingsScreen(onBackClick = handleBack)
                         SettingsRoutes.PLAYER_CUSTOMIZATION -> PlayerCustomizationSettingsScreen(onBackClick = handleBack)
                         SettingsRoutes.MINIPLAYER_CUSTOMIZATION -> MiniPlayerCustomizationSettingsScreen(onBackClick = handleBack)
+                        SettingsRoutes.EXTERNAL_PLAYER_CUSTOMIZATION -> ExternalPlayerCustomizationSettingsScreen(onBackClick = handleBack)
                         SettingsRoutes.CRASH_LOG_HISTORY -> CrashLogHistorySettingsScreen(onBackClick = handleBack, appSettings = appSettings)
                         SettingsRoutes.QUEUE -> QueueSettingsScreen(onBackClick = handleBack)
                         SettingsRoutes.PLAYBACK -> PlaybackSettingsScreen(
@@ -1340,6 +1345,7 @@ fun SettingsScreenWrapper(
                 SettingsRoutes.THEME_CUSTOMIZATION -> ThemeCustomizationSettingsScreen(onBackClick = handleBack)
                 SettingsRoutes.PLAYER_CUSTOMIZATION -> PlayerCustomizationSettingsScreen(onBackClick = handleBack)
                 SettingsRoutes.MINIPLAYER_CUSTOMIZATION -> MiniPlayerCustomizationSettingsScreen(onBackClick = handleBack)
+                SettingsRoutes.EXTERNAL_PLAYER_CUSTOMIZATION -> ExternalPlayerCustomizationSettingsScreen(onBackClick = handleBack)
                 SettingsRoutes.CRASH_LOG_HISTORY -> CrashLogHistorySettingsScreen(onBackClick = handleBack, appSettings = appSettings)
                 SettingsRoutes.QUEUE -> QueueSettingsScreen(onBackClick = handleBack)
                 SettingsRoutes.PLAYBACK -> PlaybackSettingsScreen(

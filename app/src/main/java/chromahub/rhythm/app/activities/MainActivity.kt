@@ -187,6 +187,7 @@ class MainActivity : AppCompatActivity() {
         const val DISPLAY_AUDIO_EFFECT_CONTROL_PANEL_REQUEST = 1002
         const val EXTRA_OPEN_PLAYER = "OPEN_PLAYER"
         const val EXTRA_OPEN_QUEUE = "OPEN_QUEUE"
+        const val EXTRA_OPEN_SETTINGS_SUBROUTE = "OPEN_SETTINGS_SUBROUTE"
     }
     
     // Track coroutine jobs to prevent memory leaks
@@ -312,7 +313,8 @@ class MainActivity : AppCompatActivity() {
                                     it.action == "chromahub.rhythm.app.action.SHORTCUT_SKIP_NEXT" ||
                                     it.action == "chromahub.rhythm.app.action.SHORTCUT_SKIP_PREVIOUS" ||
                                     it.getBooleanExtra(EXTRA_OPEN_PLAYER, false) ||
-                                    it.getBooleanExtra(EXTRA_OPEN_QUEUE, false)
+                                    it.getBooleanExtra(EXTRA_OPEN_QUEUE, false) ||
+                                    !it.getStringExtra(EXTRA_OPEN_SETTINGS_SUBROUTE).isNullOrBlank()
                             } == true
 
                             if (shouldHandleStartupIntent) {
@@ -789,6 +791,14 @@ class MainActivity : AppCompatActivity() {
         Log.d(TAG, "Handling intent: ${intent.action}, data: ${intent.data}")
         
         try {
+            val settingsSubroute = intent.getStringExtra(EXTRA_OPEN_SETTINGS_SUBROUTE)
+            if (!settingsSubroute.isNullOrBlank()) {
+                Log.d(TAG, "Opening settings subroute from intent: $settingsSubroute")
+                appSettings.setInitialSettingsSubroute(settingsSubroute)
+                appSettings.requestTopLevelRoute("settings")
+                return
+            }
+
             val shouldOpenPlayer = intent.getBooleanExtra(EXTRA_OPEN_PLAYER, false)
 
             // OPEN_PLAYER/OPEN_QUEUE are navigation hints, not content intents.

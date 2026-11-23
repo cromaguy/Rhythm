@@ -196,6 +196,13 @@ class AppSettings private constructor(context: Context) {
         private const val KEY_MINI_PLAYER_THEME_ID = "miniplayer_theme_id"
         private const val KEY_USE_EXPERIMENTAL_PLAYER_UI = "use_experimental_player_ui"
         private const val KEY_ENABLE_ALBUM_EDITING = "enable_album_editing"
+
+        private const val KEY_EXTERNAL_PLAYER_CONTINUE_PLAYBACK_ON_CLOSE = "external_player_continue_playback_on_close"
+        private const val KEY_EXTERNAL_PLAYER_HAPTIC_FEEDBACK = "external_player_haptic_feedback"
+        private const val KEY_EXTERNAL_PLAYER_SHOW_LYRICS = "external_player_show_lyrics"
+        private const val KEY_EXTERNAL_PLAYER_SHOW_AUDIO_DETAILS = "external_player_show_audio_details"
+        private const val KEY_EXTERNAL_PLAYER_SHOW_WAVE_SEEKER = "external_player_show_wave_seeker"
+        private const val KEY_EXTERNAL_PLAYER_AUTO_CLOSE_ON_FINISH = "external_player_auto_close_on_finish"
         
         // Library Settings
         private const val KEY_ALBUM_VIEW_TYPE = "album_view_type"
@@ -676,13 +683,29 @@ class AppSettings private constructor(context: Context) {
     private val context: Context = context.applicationContext
     val prefs: SharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
+    private val _pendingTopLevelRoute = MutableStateFlow<String?>(null)
+    val pendingTopLevelRoute: StateFlow<String?> = _pendingTopLevelRoute.asStateFlow()
+
+    fun requestTopLevelRoute(route: String?) {
+        _pendingTopLevelRoute.value = route
+    }
+
+    fun clearPendingTopLevelRoute() {
+        _pendingTopLevelRoute.value = null
+    }
+
+    private val _pendingSettingsSubroute = MutableStateFlow<String?>(prefs.getString(KEY_INITIAL_SETTINGS_SUBROUTE, null))
+    val pendingSettingsSubroute: StateFlow<String?> = _pendingSettingsSubroute.asStateFlow()
+
     fun setInitialSettingsSubroute(route: String?) {
         prefs.edit { putString(KEY_INITIAL_SETTINGS_SUBROUTE, route) }
+        _pendingSettingsSubroute.value = route
     }
 
     fun consumeInitialSettingsSubroute(): String? {
         val v = prefs.getString(KEY_INITIAL_SETTINGS_SUBROUTE, null)
         if (v != null) prefs.edit { remove(KEY_INITIAL_SETTINGS_SUBROUTE) }
+        _pendingSettingsSubroute.value = null
         return v
     }
 
@@ -896,6 +919,24 @@ class AppSettings private constructor(context: Context) {
     
     private val _miniPlayerThemeId = MutableStateFlow(prefs.getString(KEY_MINI_PLAYER_THEME_ID, "EXPRESSIVE") ?: "EXPRESSIVE")
     val miniPlayerThemeId: StateFlow<String> = _miniPlayerThemeId.asStateFlow()
+
+    private val _externalPlayerContinuePlaybackOnClose = MutableStateFlow(prefs.getBoolean(KEY_EXTERNAL_PLAYER_CONTINUE_PLAYBACK_ON_CLOSE, false))
+    val externalPlayerContinuePlaybackOnClose: StateFlow<Boolean> = _externalPlayerContinuePlaybackOnClose.asStateFlow()
+
+    private val _externalPlayerHapticFeedback = MutableStateFlow(prefs.getBoolean(KEY_EXTERNAL_PLAYER_HAPTIC_FEEDBACK, true))
+    val externalPlayerHapticFeedback: StateFlow<Boolean> = _externalPlayerHapticFeedback.asStateFlow()
+
+    private val _externalPlayerShowLyrics = MutableStateFlow(prefs.getBoolean(KEY_EXTERNAL_PLAYER_SHOW_LYRICS, true))
+    val externalPlayerShowLyrics: StateFlow<Boolean> = _externalPlayerShowLyrics.asStateFlow()
+
+    private val _externalPlayerShowAudioDetails = MutableStateFlow(prefs.getBoolean(KEY_EXTERNAL_PLAYER_SHOW_AUDIO_DETAILS, true))
+    val externalPlayerShowAudioDetails: StateFlow<Boolean> = _externalPlayerShowAudioDetails.asStateFlow()
+
+    private val _externalPlayerShowWaveSeeker = MutableStateFlow(prefs.getBoolean(KEY_EXTERNAL_PLAYER_SHOW_WAVE_SEEKER, true))
+    val externalPlayerShowWaveSeeker: StateFlow<Boolean> = _externalPlayerShowWaveSeeker.asStateFlow()
+
+    private val _externalPlayerAutoCloseOnFinish = MutableStateFlow(prefs.getBoolean(KEY_EXTERNAL_PLAYER_AUTO_CLOSE_ON_FINISH, false))
+    val externalPlayerAutoCloseOnFinish: StateFlow<Boolean> = _externalPlayerAutoCloseOnFinish.asStateFlow()
     
     // Library Settings
     private val _albumViewType = MutableStateFlow(
@@ -2683,6 +2724,36 @@ private val _autoCheckForUpdates = MutableStateFlow(prefs.getBoolean(KEY_AUTO_CH
     fun setMiniPlayerThemeId(themeId: String) {
         prefs.edit { putString(KEY_MINI_PLAYER_THEME_ID, themeId) }
         _miniPlayerThemeId.value = themeId
+    }
+
+    fun setExternalPlayerContinuePlaybackOnClose(enabled: Boolean) {
+        prefs.edit { putBoolean(KEY_EXTERNAL_PLAYER_CONTINUE_PLAYBACK_ON_CLOSE, enabled) }
+        _externalPlayerContinuePlaybackOnClose.value = enabled
+    }
+
+    fun setExternalPlayerHapticFeedback(enabled: Boolean) {
+        prefs.edit { putBoolean(KEY_EXTERNAL_PLAYER_HAPTIC_FEEDBACK, enabled) }
+        _externalPlayerHapticFeedback.value = enabled
+    }
+
+    fun setExternalPlayerShowLyrics(enabled: Boolean) {
+        prefs.edit { putBoolean(KEY_EXTERNAL_PLAYER_SHOW_LYRICS, enabled) }
+        _externalPlayerShowLyrics.value = enabled
+    }
+
+    fun setExternalPlayerShowAudioDetails(enabled: Boolean) {
+        prefs.edit { putBoolean(KEY_EXTERNAL_PLAYER_SHOW_AUDIO_DETAILS, enabled) }
+        _externalPlayerShowAudioDetails.value = enabled
+    }
+
+    fun setExternalPlayerShowWaveSeeker(enabled: Boolean) {
+        prefs.edit { putBoolean(KEY_EXTERNAL_PLAYER_SHOW_WAVE_SEEKER, enabled) }
+        _externalPlayerShowWaveSeeker.value = enabled
+    }
+
+    fun setExternalPlayerAutoCloseOnFinish(enabled: Boolean) {
+        prefs.edit { putBoolean(KEY_EXTERNAL_PLAYER_AUTO_CLOSE_ON_FINISH, enabled) }
+        _externalPlayerAutoCloseOnFinish.value = enabled
     }
     
     // Library Settings Methods
@@ -5625,6 +5696,13 @@ private val _autoCheckForUpdates = MutableStateFlow(prefs.getBoolean(KEY_AUTO_CH
         // General Broadcast Status Settings
         _broadcastStatusEnabled.value = prefs.getBoolean(KEY_BROADCAST_STATUS_ENABLED, false)
         _bluetoothLyricsEnabled.value = prefs.getBoolean(KEY_BLUETOOTH_LYRICS_ENABLED, false)
+
+        _externalPlayerContinuePlaybackOnClose.value = prefs.getBoolean(KEY_EXTERNAL_PLAYER_CONTINUE_PLAYBACK_ON_CLOSE, false)
+        _externalPlayerHapticFeedback.value = prefs.getBoolean(KEY_EXTERNAL_PLAYER_HAPTIC_FEEDBACK, true)
+        _externalPlayerShowLyrics.value = prefs.getBoolean(KEY_EXTERNAL_PLAYER_SHOW_LYRICS, true)
+        _externalPlayerShowAudioDetails.value = prefs.getBoolean(KEY_EXTERNAL_PLAYER_SHOW_AUDIO_DETAILS, true)
+        _externalPlayerShowWaveSeeker.value = prefs.getBoolean(KEY_EXTERNAL_PLAYER_SHOW_WAVE_SEEKER, true)
+        _externalPlayerAutoCloseOnFinish.value = prefs.getBoolean(KEY_EXTERNAL_PLAYER_AUTO_CLOSE_ON_FINISH, false)
         
         // App Updates
         _autoCheckForUpdates.value = prefs.getBoolean(KEY_AUTO_CHECK_FOR_UPDATES, BuildConfig.FLAVOR != "fdroid")
