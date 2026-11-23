@@ -17,6 +17,8 @@ import chromahub.rhythm.app.features.streaming.data.repository.StreamingServiceS
 import chromahub.rhythm.app.features.streaming.data.repository.StreamingServiceSessionRepository
 import chromahub.rhythm.app.features.streaming.di.StreamingMusicModule
 import chromahub.rhythm.app.features.streaming.domain.model.BrowseCategory
+import chromahub.rhythm.app.features.streaming.domain.model.BulkDownloadPlanner
+import chromahub.rhythm.app.features.streaming.domain.model.BulkDownloadProgress
 import chromahub.rhythm.app.features.streaming.domain.model.StreamingAlbum
 import chromahub.rhythm.app.features.streaming.domain.model.StreamingArtist
 import chromahub.rhythm.app.features.streaming.domain.model.StreamingPlaylist
@@ -276,6 +278,11 @@ class StreamingMusicViewModel(application: Application) : AndroidViewModel(appli
 
     private val _downloadingSongIds = MutableStateFlow<Set<String>>(emptySet())
     val downloadingSongIds: StateFlow<Set<String>> = _downloadingSongIds.asStateFlow()
+
+    /** The running "Download all" of a playlist or album, null while none is running. */
+    private val _bulkDownload = MutableStateFlow<BulkDownloadProgress?>(null)
+    val bulkDownload: StateFlow<BulkDownloadProgress?> = _bulkDownload.asStateFlow()
+    private var bulkDownloadJob: Job? = null
 
     // All provider songs (full catalog exposed by repository)
     private val _allSongs = MutableStateFlow<List<StreamingSong>>(emptyList())
@@ -1503,34 +1510,54 @@ class StreamingMusicViewModel(application: Application) : AndroidViewModel(appli
      * Download a song for offline playback.
      */
     fun downloadSong(song: StreamingSong) {
-        if (!_isOnline.value || !NetworkUtils.isNetworkAvailable(getApplication()) || appSettings.offlineMode.value) {
-            showToast("Cannot download while offline")
+        if (!canDownloadNow()) {
+            showToast(R.string.streaming_download_offline)
             return
         }
         viewModelScope.launch {
-            if (_downloadingSongIds.value.contains(song.id)) return@launch
-            _downloadingSongIds.value = _downloadingSongIds.value + song.id
-            showToast("Downloading ${song.title}...")
-            try {
-                val success = repository.downloadSong(song)
-                if (success) {
-                    val downloaded = repository.getDownloadedSongs().first()
-                    _downloadedSongs.value = downloaded
-                    _downloadedAlbums.value = deriveAlbumsFromSongs(downloaded, limit = 500)
-                    _downloadedArtists.value = deriveArtistsFromSongs(downloaded, limit = 500)
-                    showToast("Downloaded ${song.title}")
-                    if (!_isAuthenticated.value || appSettings.offlineMode.value || !NetworkUtils.isNetworkAvailable(getApplication())) {
-                        switchToDownloadedMode()
-                    }
-                } else {
-                    showToast("Failed to download ${song.title}")
-                }
-            } catch (e: Exception) {
-                showToast("Download failed: ${e.message ?: "Server error"}")
-            } finally {
-                _downloadingSongIds.value = _downloadingSongIds.value - song.id
-            }
+            downloadSongInternal(song, quiet = false)
         }
+    }
+
+    private fun canDownloadNow(): Boolean =
+        _isOnline.value && NetworkUtils.isNetworkAvailable(getApplication()) && !appSettings.offlineMode.value
+
+    /**
+     * One download, shared by the single-track action and "Download all". Returns true when the
+     * track is on the device afterwards. [quiet] drops the per-track toasts, which a 200-track run
+     * would otherwise show twice per track.
+     */
+    private suspend fun downloadSongInternal(song: StreamingSong, quiet: Boolean): Boolean {
+        if (_downloadingSongIds.value.contains(song.id)) return false
+        _downloadingSongIds.value = _downloadingSongIds.value + song.id
+        if (!quiet) showToast("Downloading ${song.title}...")
+        return try {
+            val success = repository.downloadSong(song)
+            if (success) {
+                refreshDownloadedLibrary()
+                if (!quiet) showToast("Downloaded ${song.title}")
+                if (!_isAuthenticated.value || appSettings.offlineMode.value || !NetworkUtils.isNetworkAvailable(getApplication())) {
+                    switchToDownloadedMode()
+                }
+            } else if (!quiet) {
+                showToast("Failed to download ${song.title}")
+            }
+            success
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            if (!quiet) showToast("Download failed: ${e.message ?: "Server error"}")
+            false
+        } finally {
+            _downloadingSongIds.value = _downloadingSongIds.value - song.id
+        }
+    }
+
+    private suspend fun refreshDownloadedLibrary() {
+        val downloaded = repository.getDownloadedSongs().first()
+        _downloadedSongs.value = downloaded
+        _downloadedAlbums.value = deriveAlbumsFromSongs(downloaded, limit = 500)
+        _downloadedArtists.value = deriveArtistsFromSongs(downloaded, limit = 500)
     }
 
     /**
@@ -1601,21 +1628,62 @@ class StreamingMusicViewModel(application: Application) : AndroidViewModel(appli
     }
 
     /**
-     * Download multiple songs for offline playback (batch).
+     * "Download all": fetch every track of a playlist or album that is not on the device yet, one
+     * at a time, with a single progress value ([bulkDownload]) and one toast at the end instead of
+     * two per track. [targetId] is the playlist or album id, so only its detail screen shows the
+     * progress; [label] names it in the toasts. One run at a time; [cancelBulkDownload] stops it
+     * after the track in flight and keeps what is already downloaded.
      */
-    fun downloadSongs(songs: List<StreamingSong>) {
-        if (!_isOnline.value || !NetworkUtils.isNetworkAvailable(getApplication()) || appSettings.offlineMode.value) {
-            showToast("Cannot download while offline")
+    fun downloadSongs(songs: List<StreamingSong>, targetId: String, label: String) {
+        if (!canDownloadNow()) {
+            showToast(R.string.streaming_download_offline)
             return
         }
-        val pending = songs.filter { !isSongDownloaded(it.id) && !_downloadingSongIds.value.contains(it.id) }
-        if (pending.isEmpty()) return
-        showToast("Downloading ${pending.size} tracks...")
-        viewModelScope.launch {
-            pending.forEach { song ->
-                downloadSong(song)
+        if (bulkDownloadJob?.isActive == true) {
+            showToast(R.string.streaming_download_all_busy)
+            return
+        }
+        val pending = BulkDownloadPlanner.pending(
+            songs,
+            downloadedIds = _downloadedSongs.value.mapTo(HashSet()) { it.id },
+            downloadingIds = _downloadingSongIds.value
+        )
+        if (pending.isEmpty()) {
+            showToast(R.string.streaming_download_all_nothing)
+            return
+        }
+        val app = getApplication<Application>()
+        showToast(app.getString(R.string.streaming_download_all_started, pending.size, label))
+        _bulkDownload.value = BulkDownloadProgress(targetId = targetId, label = label, total = pending.size)
+        bulkDownloadJob = viewModelScope.launch {
+            var completed = 0
+            var failed = 0
+            try {
+                for (song in pending) {
+                    if (downloadSongInternal(song, quiet = true)) completed++ else failed++
+                    _bulkDownload.value = _bulkDownload.value?.copy(completed = completed, failed = failed)
+                }
+                showToast(
+                    app.getString(R.string.streaming_download_all_done, completed, pending.size, label),
+                    Toast.LENGTH_LONG
+                )
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                showToast(app.getString(R.string.streaming_download_all_cancelled, completed, pending.size))
+                throw e
+            } finally {
+                _bulkDownload.value = null
             }
         }
+    }
+
+    /** "Download all" for a server playlist; see [downloadSongs]. */
+    fun downloadPlaylist(playlist: StreamingPlaylist) {
+        downloadSongs(playlist.getTracks(), targetId = playlist.id, label = playlist.name)
+    }
+
+    /** Stops a running "Download all" after the track in flight; finished tracks stay. */
+    fun cancelBulkDownload() {
+        bulkDownloadJob?.cancel()
     }
 
     /**

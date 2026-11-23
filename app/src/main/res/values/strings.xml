@@ -2932,6 +2932,16 @@
     <string name="rhythm_go_online_toast">Rhythm Go is back online</string>
     <string name="streaming_downloaded_albums">Downloaded Albums</string>
     <string name="streaming_syncing_downloads_subtitle">Available while syncing</string>
+    <string name="streaming_download_all">Download all</string>
+    <string name="streaming_download_all_progress">%1$d/%2$d</string>
+    <string name="streaming_download_all_started">Downloading %1$d tracks from %2$s&#8230;</string>
+    <string name="streaming_download_all_done">Downloaded %1$d of %2$d tracks from %3$s</string>
+    <string name="streaming_download_all_nothing">All tracks are already downloaded</string>
+    <string name="streaming_download_all_busy">Another download is still running</string>
+    <string name="streaming_download_all_cancelled">Download stopped after %1$d of %2$d tracks</string>
+    <string name="streaming_download_offline">Cannot download while offline</string>
+    <string name="content_desc_download_all">Download all tracks for offline playback</string>
+    <string name="content_desc_cancel_download_all">Stop downloading</string>
 
     <!-- Equalizer & AutoEQ Improvements -->
     <string name="eq_preset_order_title">Reorder Presets</string>
