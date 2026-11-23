@@ -1619,21 +1619,19 @@ class StreamingMusicRepositoryImpl(
     }
 
     override suspend fun syncPlaylists(): List<StreamingPlaylist> {
-        if (appSettings.offlineMode.value) {
-            playlistsFlow.value = emptyList()
-            return emptyList()
-        }
+        // With no way to ask the server the cached playlists stay as they are; they used to be cleared here and
+        // the empty list saved over the cache, so offline the playlists were gone.
+        val cachedPlaylists = playlistsFlow.value.filterIsInstance<StreamingPlaylist>()
+        if (appSettings.offlineMode.value) return cachedPlaylists
         val serviceId = activeServiceId()
-        if (!isServiceConnected(serviceId)) {
-            playlistsFlow.value = emptyList()
-            return emptyList()
-        }
+        if (!isServiceConnected(serviceId)) return cachedPlaylists
 
         val result = when (serviceId) {
             StreamingServiceId.SUBSONIC -> subsonicClient.getPlaylists()
             StreamingServiceId.JELLYFIN -> jellyfinClient.getPlaylists()
             else -> Result.success(emptyList())
         }
+        if (result.isFailure) return cachedPlaylists // a failed fetch says nothing about the server's playlists
 
         val playlists = coroutineScope {
             result.getOrElse { emptyList() }
