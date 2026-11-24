@@ -16,6 +16,7 @@ import chromahub.rhythm.app.shared.presentation.components.bottomsheets.Standard
 
 import chromahub.rhythm.app.ui.LocalMiniPlayerPadding
 import androidx.compose.foundation.layout.PaddingValues
+import chromahub.rhythm.app.shared.presentation.components.common.ExpressiveCookieEmptyState
 import chromahub.rhythm.app.shared.presentation.components.icons.RhythmIcons
 import chromahub.rhythm.app.shared.presentation.components.icons.MaterialSymbolIcon
 import chromahub.rhythm.app.shared.presentation.components.icons.Icon
@@ -92,6 +93,7 @@ import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontFamily
@@ -826,7 +828,6 @@ fun MediaScanSettingsScreen(onBackClick: () -> Unit) {
         }
     }
 
-    // Folders bottom sheet
     if (showFoldersBottomSheet) {
         val sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded))
 
@@ -850,294 +851,209 @@ fun MediaScanSettingsScreen(onBackClick: () -> Unit) {
 
             val foldersScrollState = rememberScrollState()
 
-            AdaptiveSheetScrollContainer(
-                scrollState = foldersScrollState,
-                modifier = Modifier.fillMaxWidth()
-            ) { endPadding ->
-                Column(
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = LocalConfiguration.current.screenHeightDp.dp * 0.72f)
+            ) {
+                AdaptiveSheetScrollContainer(
+                    scrollState = foldersScrollState,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .verticalScroll(foldersScrollState)
-                        .padding(start = 24.dp, end = 24.dp + endPadding, bottom = 24.dp)
-                ) {
-                    // Stats card
-                    Card(
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
-                        ),
-                        shape = RoundedCornerShape(20.dp),
-                        modifier = Modifier.fillMaxWidth()
+                        .weight(1f, fill = false)
+                ) { endPadding ->
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .verticalScroll(foldersScrollState)
+                            .padding(start = 24.dp, end = 24.dp + endPadding, bottom = 24.dp)
                     ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(20.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Icon(
-                                imageVector = if (currentMode == MediaScanMode.BLACKLIST) MaterialSymbolIcon("folder_off") else RhythmIcons.Folder,
-                                contentDescription = null,
-                                tint = if (currentMode == MediaScanMode.BLACKLIST)
-                                    MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(32.dp)
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                text = "${filteredFoldersList.size}",
-                                style = MaterialTheme.typography.displaySmall,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Text(
-                                text = if (currentMode == MediaScanMode.BLACKLIST) context.getString(R.string.settings_blocked_folders) else context.getString(R.string.settings_whitelisted_folders),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // Folders list
-                    if (filteredFoldersList.isNotEmpty()) {
-                        Text(
-                            text = if (currentMode == MediaScanMode.BLACKLIST) "Currently Blocked Folders" else "Currently Whitelisted Folders",
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(bottom = 8.dp)
-                        )
-                        filteredFoldersList.forEach { folder ->
-                            Card(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 4.dp),
-                                colors = CardDefaults.cardColors(
-                                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
-                                ),
-                                shape = RoundedCornerShape(16.dp)
-                            ) {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(16.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(48.dp)
-                                            .clip(CircleShape)
-                                            .background(
-                                                if (currentMode == MediaScanMode.BLACKLIST)
-                                                    MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
-                                                else MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
-                                            ),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Icon(
-                                            imageVector = RhythmIcons.Folder,
-                                            contentDescription = null,
-                                            tint = if (currentMode == MediaScanMode.BLACKLIST)
-                                                MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
-                                            modifier = Modifier.size(24.dp)
-                                        )
-                                    }
-
-                                    Spacer(modifier = Modifier.width(16.dp))
-
-                                    Column(modifier = Modifier.weight(1f)) {
-                                        Text(
-                                            text = File(folder).name.ifEmpty { context.getString(R.string.settings_root) },
-                                            style = MaterialTheme.typography.titleMedium,
-                                            fontWeight = FontWeight.SemiBold,
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis
-                                        )
-                                        Spacer(modifier = Modifier.height(2.dp))
-                                        Text(
-                                            text = folder,
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis
-                                        )
-                                    }
-
-                                    FilledIconButton(
-                                        onClick = {
-                                            HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
-                                            if (currentMode == MediaScanMode.BLACKLIST) {
-                                                appSettings.removeFolderFromBlacklist(folder)
-                                            } else {
-                                                appSettings.removeFolderFromWhitelist(folder)
-                                            }
-                                        },
-                                        colors = IconButtonDefaults.filledIconButtonColors(
-                                            containerColor = if (currentMode == MediaScanMode.BLACKLIST)
-                                                MaterialTheme.colorScheme.errorContainer
-                                            else MaterialTheme.colorScheme.primaryContainer
-                                        )
-                                    ) {
-                                        Icon(
-                                            imageVector = RhythmIcons.Close,
-                                            contentDescription = context.getString(R.string.cd_remove),
-                                            tint = if (currentMode == MediaScanMode.BLACKLIST)
-                                                MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onPrimaryContainer
-                                        )
-                                    }
-                                }
+                        val removeFolder: (String) -> Unit = { folder ->
+                            HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
+                            if (currentMode == MediaScanMode.BLACKLIST) {
+                                appSettings.removeFolderFromBlacklist(folder)
+                            } else {
+                                appSettings.removeFolderFromWhitelist(folder)
                             }
                         }
-                    }
 
-                    if (suggestedFolders.isNotEmpty()) {
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Text(
-                            text = context.getString(R.string.media_suggested_folders),
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(bottom = 8.dp)
-                        )
-                        suggestedFolders.forEach { folder ->
-                            Card(
-                                onClick = {
-                                    HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
-                                    val folderName = File(folder).name.ifEmpty { folder }
-                                    if (currentMode == MediaScanMode.BLACKLIST) {
-                                        appSettings.addFolderToBlacklist(folder)
-                                        Toast.makeText(
-                                            context,
-                                            context.getString(R.string.folder_blocked_success, folderName),
-                                            Toast.LENGTH_SHORT
-                                        ).show()
-                                    } else {
-                                        appSettings.addFolderToWhitelist(folder)
-                                        Toast.makeText(
-                                            context,
-                                            context.getString(R.string.folder_whitelisted_success, folderName),
-                                            Toast.LENGTH_SHORT
-                                        ).show()
-                                    }
+                        val addFolder: (String) -> Unit = { folder ->
+                            HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
+                            val folderName = File(folder).name.ifEmpty { folder }
+                            if (currentMode == MediaScanMode.BLACKLIST) {
+                                appSettings.addFolderToBlacklist(folder)
+                                Toast.makeText(context, context.getString(R.string.folder_blocked_success, folderName), Toast.LENGTH_SHORT).show()
+                            } else {
+                                appSettings.addFolderToWhitelist(folder)
+                                Toast.makeText(context, context.getString(R.string.folder_whitelisted_success, folderName), Toast.LENGTH_SHORT).show()
+                            }
+                        }
+
+                        if (filteredFoldersList.isEmpty()) {
+                            ExpressiveCookieEmptyState(
+                                title = context.getString(R.string.settings_no_folders_yet),
+                                subtitle = context.getString(R.string.settings_no_folders_yet_desc),
+                                mainIcon = if (currentMode == MediaScanMode.BLACKLIST) {
+                                    MaterialSymbolIcon("folder_off", filled = true)
+                                } else {
+                                    RhythmIcons.Folder
                                 },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 4.dp),
-                                colors = CardDefaults.cardColors(
-                                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
-                                ),
-                                shape = RoundedCornerShape(16.dp)
-                            ) {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(16.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(48.dp)
-                                            .clip(CircleShape)
-                                            .background(
-                                                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
-                                            ),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Icon(
-                                            imageVector = MaterialSymbolIcon("create_new_folder"),
-                                            contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.primary,
-                                            modifier = Modifier.size(24.dp)
-                                        )
-                                    }
-
-                                    Spacer(modifier = Modifier.width(16.dp))
-
-                                    Column(modifier = Modifier.weight(1f)) {
-                                        Text(
-                                            text = File(folder).name.ifEmpty { folder },
-                                            style = MaterialTheme.typography.titleMedium,
-                                            fontWeight = FontWeight.SemiBold,
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis
-                                        )
-                                        Spacer(modifier = Modifier.height(2.dp))
-                                        Text(
-                                            text = folder,
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis
-                                        )
-                                    }
-
-                                    Icon(
-                                        imageVector = RhythmIcons.Add,
-                                        contentDescription = context.getString(R.string.settings_add_folder),
-                                        tint = MaterialTheme.colorScheme.primary
+                                accentIcon = RhythmIcons.MusicNote,
+                                containerColor = if (currentMode == MediaScanMode.BLACKLIST) {
+                                    MaterialTheme.colorScheme.errorContainer
+                                } else {
+                                    MaterialTheme.colorScheme.primaryContainer
+                                },
+                                contentColor = if (currentMode == MediaScanMode.BLACKLIST) {
+                                    MaterialTheme.colorScheme.onErrorContainer
+                                } else {
+                                    MaterialTheme.colorScheme.onPrimaryContainer
+                                }
+                            )
+                        } else {
+                            Material3SettingsGroup(
+                                title = if (currentMode == MediaScanMode.BLACKLIST) {
+                                    context.getString(R.string.settings_blocked_folders)
+                                } else {
+                                    context.getString(R.string.settings_whitelisted_folders)
+                                },
+                                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                items = filteredFoldersList.map { folder ->
+                                    Material3SettingsItem(
+                                        icon = RhythmIcons.Folder,
+                                        title = {
+                                            Text(
+                                                text = File(folder).name.ifEmpty { context.getString(R.string.settings_root) },
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
+                                        },
+                                        description = {
+                                            Text(
+                                                text = folder,
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
+                                        },
+                                        trailingContent = {
+                                            FilledIconButton(
+                                                onClick = { removeFolder(folder) },
+                                                shape = CircleShape,
+                                                modifier = Modifier.size(40.dp),
+                                                colors = IconButtonDefaults.filledIconButtonColors(
+                                                    containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                            ) {
+                                                Icon(
+                                                    imageVector = RhythmIcons.Close,
+                                                    contentDescription = context.getString(R.string.cd_remove),
+                                                    modifier = Modifier.size(20.dp)
+                                                )
+                                            }
+                                        }
                                     )
                                 }
-                            }
+                            )
+                        }
+
+                        if (suggestedFolders.isNotEmpty()) {
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Material3SettingsGroup(
+                                title = context.getString(R.string.media_suggested_folders),
+                                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                items = suggestedFolders.map { folder ->
+                                    Material3SettingsItem(
+                                        icon = MaterialSymbolIcon("create_new_folder"),
+                                        title = {
+                                            Text(
+                                                text = File(folder).name.ifEmpty { folder },
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
+                                        },
+                                        description = {
+                                            Text(
+                                                text = folder,
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
+                                        },
+                                        onClick = { addFolder(folder) },
+                                        trailingContent = {
+                                            FilledTonalIconButton(
+                                                onClick = { addFolder(folder) },
+                                                shape = CircleShape,
+                                                modifier = Modifier.size(40.dp)
+                                            ) {
+                                                Icon(
+                                                    imageVector = RhythmIcons.Add,
+                                                    contentDescription = context.getString(R.string.settings_add_folder),
+                                                    modifier = Modifier.size(20.dp)
+                                                )
+                                            }
+                                        }
+                                    )
+                                }
+                            )
                         }
                     }
+                }
 
-                    // Action buttons at bottom
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp, vertical = 16.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    HorizontalFloatingToolbar(
+                        expanded = true,
+                        colors = FloatingToolbarDefaults.standardFloatingToolbarColors()
                     ) {
-                        Button(
-                            onClick = {
-                                HapticUtils.performHapticFeedback(context, haptic, HapticType.HEAVY)
-                                try {
-                                    val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)
-                                    folderPickerLauncher.launch(intent)
-                                } catch (e: ActivityNotFoundException) {
-                                    Toast.makeText(context, context.getString(R.string.error_no_document_app), Toast.LENGTH_LONG).show()
-                                }
-                            },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.primary
-                            ),
-                            modifier = Modifier.weight(1f)
+                        RhythmGroupedButton(
+                            modifier = Modifier.fillMaxWidth(),
+                            size = RhythmButtonSize.Medium
                         ) {
-                            Icon(
-                                imageVector = RhythmIcons.Add,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(context.getString(R.string.settings_add_folder_button))
-                        }
-
-                        if (filteredFoldersList.isNotEmpty()) {
-                            OutlinedButton(
+                            RhythmButtonWeighted(
                                 onClick = {
                                     HapticUtils.performHapticFeedback(context, haptic, HapticType.HEAVY)
-                                    if (currentMode == MediaScanMode.BLACKLIST) {
-                                        appSettings.clearFolderBlacklist()
-                                    } else {
-                                        appSettings.clearFolderWhitelist()
+                                    try {
+                                        folderPickerLauncher.launch(Intent(Intent.ACTION_OPEN_DOCUMENT_TREE))
+                                    } catch (e: ActivityNotFoundException) {
+                                        Toast.makeText(context, context.getString(R.string.error_no_document_app), Toast.LENGTH_LONG).show()
                                     }
-                                    showFoldersBottomSheet = false
                                 },
-                                border = BorderStroke(2.dp, if (currentMode == MediaScanMode.BLACKLIST)
-                                    MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary),
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Icon(
-                                    imageVector = MaterialSymbolIcon("delete_sweep", filled = true),
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp)
+                                weight = 1f,
+                                isFirst = true,
+                                isLast = filteredFoldersList.isEmpty(),
+                                type = RhythmButtonType.Filled,
+                                icon = RhythmIcons.Add,
+                                text = context.getString(R.string.settings_add_folder)
+                            )
+                            if (filteredFoldersList.isNotEmpty()) {
+                                RhythmButtonWeighted(
+                                    onClick = {
+                                        HapticUtils.performHapticFeedback(context, haptic, HapticType.HEAVY)
+                                        if (currentMode == MediaScanMode.BLACKLIST) {
+                                            appSettings.clearFolderBlacklist()
+                                        } else {
+                                            appSettings.clearFolderWhitelist()
+                                        }
+                                        showFoldersBottomSheet = false
+                                    },
+                                    weight = 1f,
+                                    isFirst = false,
+                                    isLast = true,
+                                    type = RhythmButtonType.Tonal,
+                                    icon = MaterialSymbolIcon("delete_sweep", filled = true),
+                                    text = context.getString(R.string.settings_clear_all_button_short)
                                 )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(context.getString(R.string.settings_clear_all_button_short))
                             }
                         }
                     }
                 }
             }
+
         }
     }
 

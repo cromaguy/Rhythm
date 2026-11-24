@@ -294,6 +294,8 @@
     <string name="settings_add_folder_button">Add Folder</string>
     <string name="settings_clear_all_button_short">Clear All</string>
     <string name="settings_root">Root</string>
+    <string name="settings_no_folders_yet">No folders yet</string>
+    <string name="settings_no_folders_yet_desc">Folders you add will appear here.</string>
     <string name="folder_blocked_success">Blocked folder: %1$s</string>
     <string name="folder_whitelisted_success">Whitelisted folder: %1$s</string>
     <string name="error_folder_add_failed">Could not resolve folder path. Please select a valid folder.</string>
