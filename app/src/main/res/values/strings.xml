@@ -3038,6 +3038,15 @@
     <string name="eq_reorder">Reorder</string>
 
     <!-- ViPER4Android DSP Engine -->
+    <string name="viper_section_output">Output &amp; Engine</string>
+    <string name="viper_section_tone">Tone</string>
+    <string name="viper_section_bass">Bass &amp; Low-End</string>
+    <string name="viper_section_clarity">Clarity &amp; Harmonics</string>
+    <string name="viper_section_correction">Headphone Correction</string>
+    <string name="viper_section_soundstage">Soundstage &amp; Spatial</string>
+    <string name="viper_section_dynamics">Dynamics &amp; Loudness</string>
+    <string name="viper_section_limiter">Output &amp; Limiter</string>
+    <string name="viper_master_gate_title">Master Gate &amp; Limiter</string>
     <string name="viper_output_device_title">Active Audio Target</string>
     <string name="viper_auto_device_profile">Auto-Switch Target Profile</string>
     <string name="viper_auto_device_profile_desc">Automatically load profile when audio device changes</string>

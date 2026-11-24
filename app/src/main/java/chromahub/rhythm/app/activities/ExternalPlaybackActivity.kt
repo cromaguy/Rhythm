@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
+import androidx.compose.material3.SliderState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -331,6 +332,26 @@ fun ExternalPlaybackBottomSheet(
     var isScrubbing by remember { mutableStateOf(false) }
     var scrubProgress by remember { mutableFloatStateOf(0f) }
 
+    val sheetState = rememberBottomSheetState(
+        initialValue = SheetValue.Hidden,
+        enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded)
+    )
+    val scope = rememberCoroutineScope()
+    var isDismissing by remember { mutableStateOf(false) }
+
+    val dismissSmoothly: () -> Unit = {
+        if (!isDismissing) {
+            isDismissing = true
+            scope.launch {
+                try {
+                    sheetState.hide()
+                } finally {
+                    onDismiss()
+                }
+            }
+        }
+    }
+
     LaunchedEffect(Unit) {
         delay(100)
         showContent = true
@@ -344,7 +365,7 @@ fun ExternalPlaybackBottomSheet(
 
     LaunchedEffect(progress, isPlaying, autoCloseOnFinish) {
         if (autoCloseOnFinish && progress >= 0.995f && !isPlaying && !isScrubbing) {
-            onDismiss()
+            dismissSmoothly()
         }
     }
 
@@ -358,16 +379,13 @@ fun ExternalPlaybackBottomSheet(
             // Avoid dismissing on transient nulls during controller/service churn.
             delay(1200)
             if (currentSong == null && !isBuffering && !isSeeking) {
-                onDismiss()
+                dismissSmoothly()
             }
         }
     }
     RhythmAdaptiveModalSheet(
         onDismissRequest = onDismiss,
-        sheetState = rememberBottomSheetState(
-            initialValue = SheetValue.Expanded,
-            enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded)
-        ),
+        sheetState = sheetState,
         containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
     ) {
         Box {
@@ -616,8 +634,10 @@ fun ExternalPlaybackBottomSheet(
                                     isPlaying = isPlaying
                                 )
                             } else {
+                                val seekSliderState = remember { SliderState(value = displayedProgress) }
+                                seekSliderState.value = displayedProgress
                                 Slider(
-                                    value = displayedProgress,
+                                    state = seekSliderState,
                                     onValueChange = { newProgress ->
                                         isScrubbing = true
                                         scrubProgress = newProgress.coerceIn(0f, 1f)
@@ -701,7 +721,7 @@ fun ExternalPlaybackBottomSheet(
                     isLoading = isBuffering,
                     showContainer = false,
                     sizeScale = 1.15f,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.padding(horizontal = 20.dp)
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -736,7 +756,7 @@ fun ExternalPlaybackBottomSheet(
                             if (hapticEnabled) {
                                 HapticUtils.performHapticFeedback(context, haptics, HapticType.LIGHT)
                             }
-                            onDismiss()
+                            dismissSmoothly()
                         },
                         weight = 1f,
                         height = 52.dp,
