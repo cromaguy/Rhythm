@@ -372,7 +372,7 @@ fun OnboardingScreen(
                     .fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
-                Column(
+                Box(
                     modifier = Modifier
                         .let {
                             if (isTablet) {
@@ -398,7 +398,7 @@ fun OnboardingScreen(
                     OnboardingCard(
                         isTablet = isTablet,
                         containerColor = androidx.compose.ui.graphics.Color.Transparent,
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.fillMaxSize()
                     ) {
                 HorizontalPager(
                     state = pagerState,
@@ -418,8 +418,8 @@ fun OnboardingScreen(
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .statusBarsPadding()
-                            .padding(top = 30.dp, start = horizontalPadding, end = horizontalPadding, bottom = 0.dp)
+                            .let { if (!isTablet) it.statusBarsPadding() else it }
+                            .padding(top = if (isTablet) 0.dp else 8.dp, start = horizontalPadding, end = horizontalPadding, bottom = 0.dp)
                             .graphicsLayer {
                                 val absOffset = kotlin.math.abs(pageOffset).coerceIn(0f, 1f)
                                 alpha = 1f - absOffset
@@ -428,19 +428,7 @@ fun OnboardingScreen(
                             },
                         contentAlignment = Alignment.TopCenter
                     )    {
-                        val hasBackButton = stepIndex > 0
-                        val isAlone = currentStep == OnboardingStep.FULL_TOUR_PROMPT
-                        val tabletBackButton: (@Composable () -> Unit)? = if (hasBackButton) {
-                            {
-                                OnboardingBackButton(
-                                    onClick = onPrevStep,
-                                    height = 48.dp,
-                                    modifier = Modifier.height(48.dp),
-                                    isFirst = true,
-                                    isLast = isAlone
-                                )
-                            }
-                        } else null
+                        val tabletBackButton: (@Composable () -> Unit)? = null
 
                         val tabletNextButton: @Composable () -> Unit = {
                             OnboardingNextButton(
@@ -491,7 +479,7 @@ fun OnboardingScreen(
                                     else -> RhythmIcons.Forward
                                 },
                                 isError = currentStep == OnboardingStep.PERMISSIONS && permissionScreenState == PermissionScreenState.RedirectToSettings,
-                                isFirst = !hasBackButton,
+                                isFirst = true,
                                 isLast = true,
                                 height = 48.dp,
                                 modifier = Modifier.height(48.dp)
@@ -689,65 +677,83 @@ fun OnboardingScreen(
                                 Box(modifier = Modifier.fillMaxSize())
                             }
                         }
+
+                        if (isTablet && page > 0 && step != OnboardingStep.WELCOME && step != OnboardingStep.FULL_TOUR_PROMPT) {
+                            OnboardingStepHeader(
+                                showBack = true,
+                                onBack = onPrevStep,
+                                applyStatusBarInset = false,
+                                modifier = Modifier.align(Alignment.TopStart)
+                            )
+                        }
                     }
                 }
             }
         }
 
+
+        }
+    }
+    }
+    
+        if (currentStep != OnboardingStep.WELCOME && currentStep != OnboardingStep.FULL_TOUR_PROMPT && !isTablet) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .fillMaxWidth()
+                    .statusBarsPadding()
+                    .height(24.dp)
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(
+                                MaterialTheme.colorScheme.surfaceHigh,
+                                MaterialTheme.colorScheme.surfaceHigh.copy(alpha = 0.75f),
+                                MaterialTheme.colorScheme.surfaceHigh.copy(alpha = 0.35f),
+                                MaterialTheme.colorScheme.surfaceHigh.copy(alpha = 0f)
+                            )
+                        )
+                    )
+            )
+
+            OnboardingStepHeader(
+                showBack = stepIndex > 0,
+                onBack = onPrevStep,
+                applyStatusBarInset = true
+            )
+        }
+
         // Bottom navigation bar
         AnimatedVisibility(
             visible = currentStep != OnboardingStep.WELCOME && currentStep != OnboardingStep.FULL_TOUR_PROMPT && !isTablet,
+            modifier = Modifier.align(Alignment.BottomCenter),
             enter = fadeIn() + slideInVertically(initialOffsetY = { it }),
             exit = fadeOut() + slideOutVertically(targetOffsetY = { it })
         ) {
-            Surface(
-                color = MaterialTheme.colorScheme.surfaceHigh,
-                tonalElevation = 0.dp
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(
+                                MaterialTheme.colorScheme.surfaceHigh.copy(alpha = 0f),
+                                MaterialTheme.colorScheme.surfaceHigh.copy(alpha = 0.55f),
+                                MaterialTheme.colorScheme.surfaceHigh.copy(alpha = 0.88f),
+                                MaterialTheme.colorScheme.surfaceHigh
+                            )
+                        )
+                    )
+                    .padding(top = 10.dp)
             ) {
-                Row(
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .navigationBarsPadding()
-                        .padding(horizontal = if (isTablet) 48.dp else 24.dp, vertical = 16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                        .padding(horizontal = 24.dp, vertical = 8.dp)
                 ) {
-                    // Back button with spring animation
-                    AnimatedVisibility(
-                        visible = stepIndex > 0,
-                        enter = fadeIn(
-                            animationSpec = spring(
-                                dampingRatio = Spring.DampingRatioMediumBouncy,
-                                stiffness = Spring.StiffnessMedium
-                            )
-                        ) + expandHorizontally(
-                            animationSpec = spring(
-                                dampingRatio = Spring.DampingRatioMediumBouncy,
-                                stiffness = Spring.StiffnessMedium
-                            )
-                        ),
-                        exit = fadeOut(
-                            animationSpec = spring(
-                                dampingRatio = Spring.DampingRatioMediumBouncy,
-                                stiffness = Spring.StiffnessMedium
-                            )
-                        ) + shrinkHorizontally(
-                            animationSpec = spring(
-                                dampingRatio = Spring.DampingRatioMediumBouncy,
-                                stiffness = Spring.StiffnessMedium
-                            )
-                        )
-                    ) {
-                        OnboardingBackButton(
-                            onClick = onPrevStep,
-                            modifier = Modifier.height(48.dp)
-                        )
-                    }
-
-                    // App logo and step count - centered between back and next buttons
                     Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
+                        horizontalAlignment = Alignment.Start,
+                        verticalArrangement = Arrangement.Center,
+                        modifier = Modifier.align(Alignment.CenterStart)
                     ) {
                         Image(
                             painter = painterResource(id = R.drawable.rhythm_splash_logo),
@@ -819,15 +825,14 @@ fun OnboardingScreen(
                             else -> RhythmIcons.Forward
                         },
                         isError = currentStep == OnboardingStep.PERMISSIONS && permissionScreenState == PermissionScreenState.RedirectToSettings,
-                        modifier = Modifier.height(48.dp)
+                        modifier = Modifier
+                            .align(Alignment.CenterEnd)
+                            .height(48.dp)
                     )
                 }
             }
         }
-        }
-    }
-    }
-    }
+}
 
     // Bottom sheets for advanced configuration
     if (showLibraryTabOrderBottomSheet) {
@@ -5738,10 +5743,52 @@ fun SettingsDropdownItem(
 }
 
 @Composable
+private fun OnboardingStepHeader(
+    showBack: Boolean,
+    onBack: () -> Unit,
+    modifier: Modifier = Modifier,
+    applyStatusBarInset: Boolean = true
+) {
+    Box(
+        modifier = modifier
+            .let { if (applyStatusBarInset) it.fillMaxWidth().statusBarsPadding() else it }
+            .padding(
+                start = if (applyStatusBarInset) 24.dp else 0.dp,
+                top = if (applyStatusBarInset) 16.dp else 44.dp
+            )
+    ) {
+        androidx.compose.animation.AnimatedVisibility(
+            visible = showBack,
+            enter = fadeIn(),
+            exit = fadeOut(),
+            modifier = Modifier.align(Alignment.CenterStart)
+        ) {
+            IconButton(onClick = onBack) {
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(RoundedCornerShape(50))
+                        .background(MaterialTheme.colorScheme.surfaceContainerHigh),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = RhythmIcons.Back,
+                        contentDescription = stringResource(R.string.cd_back),
+                        tint = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.size(25.dp)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
 fun OnboardingProgressIndicator(
     currentStep: Int,
     totalSteps: Int,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    showCounter: Boolean = true
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -5749,7 +5796,7 @@ fun OnboardingProgressIndicator(
     ) {
         // Step indicator dots with enhanced animations
         Row(
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             repeat(totalSteps) { index ->
@@ -5838,26 +5885,27 @@ fun OnboardingProgressIndicator(
             }
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
+        if (showCounter) {
+            Spacer(modifier = Modifier.height(12.dp))
 
-        // Animated progress text with smooth transitions
-        androidx.compose.animation.AnimatedContent(
-            targetState = currentStep,
-            transitionSpec = {
-                (slideInVertically { height -> height / 2 } + fadeIn()).togetherWith(
-                    slideOutVertically { height -> -height / 2 } + fadeOut()
+            androidx.compose.animation.AnimatedContent(
+                targetState = currentStep,
+                transitionSpec = {
+                    (slideInVertically { height -> height / 2 } + fadeIn()).togetherWith(
+                        slideOutVertically { height -> -height / 2 } + fadeOut()
+                    )
+                },
+                label = "progressText"
+            ) { step ->
+                Text(
+                    text = stringResource(R.string.onboarding_step_counter, step + 1, totalSteps),
+                    style = MaterialTheme.typography.labelLarge.copy(
+                        fontWeight = FontWeight.Medium,
+                        letterSpacing = 0.5.sp
+                    ),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-            },
-            label = "progressText"
-        ) { step ->
-            Text(
-                text = stringResource(R.string.onboarding_step_counter, step + 1, totalSteps),
-                style = MaterialTheme.typography.labelLarge.copy(
-                    fontWeight = FontWeight.Medium,
-                    letterSpacing = 0.5.sp
-                ),
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            }
         }
     }
 }
@@ -9415,8 +9463,8 @@ private fun AppModeChoiceHeader(
         val containerWidth = constraints.maxWidth
 
         layout(containerWidth, totalHeight) {
-            val shiftAmountPx = if (isTablet) 0f else (goPlaceable.width + spacingPx) / 2f
-            val baseLogoX = if (isTablet) 0 else (containerWidth - logoPlaceable.width) / 2
+            val shiftAmountPx = (goPlaceable.width + spacingPx) / 2f
+            val baseLogoX = (containerWidth - logoPlaceable.width) / 2
             val baseGoX = baseLogoX + logoPlaceable.width + spacingPx
 
             val logoY = (totalHeight - logoPlaceable.height) / 2
