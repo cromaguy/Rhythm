@@ -1,0 +1,12 @@
+Rhythm v5.6 - Stable Update
+
+• Rootless ViPER4Android DSP: Clarity, DDC & Convolver
+• Revamped miniplayer with M3 motion & carousel gestures
+• 'Download All' for Subsonic/Jellyfin playlists & albums
+• Offline badges and cached server playlist support
+• Multi-disc album grouping & folder playback fixes
+• Jitter-free synchronized lyrics & embedded tags
+• Audio buffer & transition optimizations
+• Playback queue, widget, and gesture fixes
+
+Thanks for using Rhythm ;)

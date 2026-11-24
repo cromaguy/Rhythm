@@ -10,6 +10,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - 
 
+## [5.6.506.1360] - 2026-11-24
+
+### Added
+- **Rootless ViPER4Android DSP Engine**: Integrated the ViPER4Android audio engine directly into Rhythm's 32-bit floating-point audio pipeline without requiring root privileges ([#704](https://github.com/cromaguy/Rhythm/pull/704)).
+  - **ViPER Clarity**: Real-time high-frequency reconstruction, dynamic range enhancement, and punchy bass control.
+  - **ViPER-DDC**: Digital Dynamic Correction providing precise frequency response correction profiles for hundreds of popular headphone models.
+  - **Convolver**: Impulse Response (IRS) audio processing for realistic acoustic environments, studio spaces, and analog audio hardware simulation.
+  - **Dedicated ViPER Settings**: Brand-new equalizer screen with grouped control sections, profile import/export, and real-time DSP telemetry.
+- **Revamped Miniplayer & Motion**: Redesigned the miniplayer with Material 3 expressive motion tokens, smooth morphing play/pause buttons, and intuitive carousel swipe gestures for switching tracks.
+- **External Playback Screen**: Remote and external playback sessions (Bluetooth, Cast) now open in an interactive bottom sheet with synchronized lyrics, playback controls, button groups, and tactile haptic feedback.
+- **Server "Download All" for Rhythm Go**: Added a one-tap action to download entire server playlists and albums from Subsonic and Jellyfin servers ([#696](https://github.com/cromaguy/Rhythm/pull/696)).
+- **Offline Badges & Audio Format Chips**: Go playlists now display offline download status badges and format badges (FLAC, MP3, AAC, Opus) ([#698](https://github.com/cromaguy/Rhythm/pull/698)).
+- **Embedded Tag Lyrics Extraction**: Added support for reading and parsing embedded synchronized and unsynchronized lyrics from Vorbis comments (FLAC, Ogg) and MP4 atoms (M4A) ([#687](https://github.com/cromaguy/Rhythm/issues/687)).
+- **Android 17+ Local Network Support**: Added automated local network permission handling and resolved discovery popups/timeouts when searching for local streaming servers on Android 17+.
+- **Standard Media Intent Filters**: Registered standard music player and media view intent filters to open and play audio files directly from external file managers ([#678](https://github.com/cromaguy/Rhythm/issues/678)).
+- **Manage Folders Grouping**: Rebuilt the folder management sheet with structured settings groups and cleaner whitelist navigation.
+
+### Changed
+- **Action Buttons Unification**: Replaced inconsistent action rows with unified `RhythmDetailActionButton` components across album and playlist views.
+- **Ambient Lighting & Empty States**: Adjusted default player ambient intensity to 60% and properly centered empty playlist placeholders.
+- **Responsive Tablet & Foldable UI**: Restored the action row on portrait tablets and unfolded foldable displays.
+- **Language Picker Completion**: Updated language switcher to dynamically show live translation completion percentages for all locales.
+- **Translations**: Updated community translations across multiple languages including Russian, Greek, Armenian, Chinese, Japanese, and Spanish.
+
+### Fixed
+- **Multi-Disc Album Grouping**: Unified folder and multi-disc grouping logic to prevent split discs from generating duplicate album entries ([#692](https://github.com/cromaguy/Rhythm/issues/692)).
+- **File Explorer Playback**: Clicking an audio file in folder view now plays within its folder context instead of auto-enqueuing an entire album ([#708](https://github.com/cromaguy/Rhythm/issues/708)).
+- **File Explorer Traversal Lag**: Pruned non-whitelisted storage directories during navigation, eliminating path resolution lag and freezes ([#710](https://github.com/cromaguy/Rhythm/issues/710)).
+- **Synchronized Lyrics Jitter**: Enforced monotonic playback progress tracking to prevent lyric highlights from jittering or jumping during playback ([#685](https://github.com/cromaguy/Rhythm/issues/685)).
+- **Filtered Playback Scoping**: Tapping play on search results or genre filtered lists now strictly scopes playback to matching songs rather than the entire library ([#684](https://github.com/cromaguy/Rhythm/issues/684)).
+- **Repeat Mode & Notification Sync**: Corrected repeat mode icon mapping, eliminated repeat-one queue flickering, and synchronized MediaSession notification repeat states ([#671](https://github.com/cromaguy/Rhythm/issues/671), [#672](https://github.com/cromaguy/Rhythm/issues/672), [#674](https://github.com/cromaguy/Rhythm/issues/674)).
+- **Artwork Gestures & Collisions**: Restored swipe and tap gestures on player artwork ([#615](https://github.com/cromaguy/Rhythm/issues/615)), prevented artist artwork collisions on collaboration tracks ([#670](https://github.com/cromaguy/Rhythm/issues/670)), and resolved double URI decoding for paths containing percent signs ([#706](https://github.com/cromaguy/Rhythm/issues/706)).
+- **Offline Playlist & Download Persistence**: Cached server playlists now remain visible offline and are protected against being overwritten by empty lists ([#693](https://github.com/cromaguy/Rhythm/pull/693)); non-MP3 downloaded tracks persist properly across restarts ([#700](https://github.com/cromaguy/Rhythm/pull/700)).
+- **Playlist Concurrency & Emojis**: Fixed playlist clobbering during rapid modifications or creation race conditions ([#414](https://github.com/cromaguy/Rhythm/issues/414)) and added full emoji support in playlist names ([#638](https://github.com/cromaguy/Rhythm/issues/638), [#660](https://github.com/cromaguy/Rhythm/issues/660)).
+- **Search Query Persistence**: Preserved search bar queries and filter states across device rotation ([#688](https://github.com/cromaguy/Rhythm/issues/688)).
+- **Widget Control Clipping**: Constrained responsive widget scaling by height to prevent playback buttons from being clipped on compact home screen grids ([#541](https://github.com/cromaguy/Rhythm/issues/541)).
+- **Network Boundaries & Data Restrictions**: Enforced local-only restrictions, respected metered network policies, and added circuit breakers to prevent runaway artwork and lyrics fetching ([#656](https://github.com/cromaguy/Rhythm/issues/656)).
+- **Media Scanner Whitelist**: Enforced strict folder boundary matching to prevent unauthorized directory indexing ([#703](https://github.com/cromaguy/Rhythm/issues/703)).
+
+### Performance
+- **Audio Buffer Pooling & Track Transitions**: Refactored internal audio buffer pooling and logging to resolve ExoPlayer reallocation memory leaks and crashes during rapid track changes ([#686](https://github.com/cromaguy/Rhythm/issues/686), [#697](https://github.com/cromaguy/Rhythm/pull/697)).
+- **Eliminated Transition Stutter & ANRs**: Removed main-thread lock contention when collecting playback stats on track transitions, eliminating UI freezes and ANR errors ([#701](https://github.com/cromaguy/Rhythm/issues/701)).
+- **Debounced MediaStore Observer**: Debounced system media observer events behind a staleness check to prevent scanning storms during large file transfers ([#646](https://github.com/cromaguy/Rhythm/issues/646)).
+
 ## [5.5.499.1302] - 2026-10-13
 
 ### Fixed
