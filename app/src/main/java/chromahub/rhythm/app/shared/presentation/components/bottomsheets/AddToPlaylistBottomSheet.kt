@@ -153,7 +153,6 @@ fun AddToPlaylistBottomSheet(
                 .fillMaxHeight()
                 .padding(bottom = 24.dp)
         ) {
-            // Header with title and song info
             AddToPlaylistHeader(
                 song = song,
                 totalPlaylists = playlists.size,
@@ -161,7 +160,6 @@ fun AddToPlaylistBottomSheet(
             )
 
             if (playlists.isNotEmpty()) {
-                // Playlists section
                 AdaptiveSheetScrollContainer(
                     lazyListState = playlistListState,
                     modifier = Modifier
@@ -201,13 +199,18 @@ fun AddToPlaylistBottomSheet(
             } else {
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Empty state
-                EmptyPlaylistsState()
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                    contentAlignment = Alignment.Center
+                ) {
+                    EmptyPlaylistsState()
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Bottom action: create a new playlist
             RhythmGroupedButton(
                 modifier = Modifier
                     .fillMaxWidth()

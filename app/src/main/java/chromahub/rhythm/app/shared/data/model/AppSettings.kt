@@ -5814,7 +5814,7 @@ private val _autoCheckForUpdates = MutableStateFlow(prefs.getBoolean(KEY_AUTO_CH
         _playerLyricsOverlayIntensity.value = prefs.getFloat(KEY_PLAYER_LYRICS_OVERLAY_INTENSITY, 0.1f)
         _playerLyricsTransition.value = prefs.getInt(KEY_PLAYER_LYRICS_TRANSITION, 2) // 2 = Scale
         _playerAmbientBackdropEnabled.value = prefs.getBoolean(KEY_PLAYER_AMBIENT_BACKDROP_ENABLED, false)
-        _playerAmbientBackdropIntensity.value = prefs.getFloat(KEY_PLAYER_AMBIENT_BACKDROP_INTENSITY, 0.85f)
+        _playerAmbientBackdropIntensity.value = prefs.getFloat(KEY_PLAYER_AMBIENT_BACKDROP_INTENSITY, 0.6f)
         _playerAmbientInfiniteZoom.value = prefs.getBoolean(KEY_PLAYER_AMBIENT_INFINITE_ZOOM, true)
         _playerAccentBackgroundEnabled.value = prefs.getBoolean(KEY_PLAYER_ACCENT_BACKGROUND_ENABLED, true)
         // Normalize legacy state: ambient and accent cannot both be on — ambient wins.
@@ -6291,7 +6291,7 @@ private val _autoCheckForUpdates = MutableStateFlow(prefs.getBoolean(KEY_AUTO_CH
         _playerMergeControlsToBottom.value = enabled
     }
 
-    private val _playerAmbientBackdropIntensity = MutableStateFlow(prefs.getFloat(KEY_PLAYER_AMBIENT_BACKDROP_INTENSITY, 0.85f))
+    private val _playerAmbientBackdropIntensity = MutableStateFlow(prefs.getFloat(KEY_PLAYER_AMBIENT_BACKDROP_INTENSITY, 0.6f))
     val playerAmbientBackdropIntensity: StateFlow<Float> = _playerAmbientBackdropIntensity.asStateFlow()
     fun setPlayerAmbientBackdropIntensity(value: Float) {
         _playerAmbientBackdropIntensity.value = value.coerceIn(0f, 1f)
