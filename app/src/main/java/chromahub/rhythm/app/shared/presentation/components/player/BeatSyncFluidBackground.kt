@@ -54,17 +54,17 @@ float2 rotateAt(float2 p, float2 c, float a) {
     return float2(co * p.x + s * p.y, -s * p.x + co * p.y) + c;
 }
 
-half3 sampleArt(shader art, float2 artSize, float2 uv, float q) {
-    float2 cropped = uv * 0.5 + (q < 1.5 ? float2(0.0, 0.0) : float2(0.5, 0.5));
-    if (q < 0.5) cropped = uv;
-    return art.eval(clamp(cropped * artSize, float2(0.5), artSize - 0.5)).rgb;
+float2 cropQuadUv(float2 uv, float q) {
+    if (q < 0.5) return uv;
+    return uv * 0.5 + (q < 1.5 ? float2(0.0, 0.0) : float2(0.5, 0.5));
 }
 
 half3 blendCovers(float2 uv, float q) {
-    half3 a = sampleArt(curArt, curSize, uv, q);
+    float2 cropped = cropQuadUv(uv, q);
+    half3 a = curArt.eval(clamp(cropped * curSize, float2(0.5), curSize - 0.5)).rgb;
     if (morph >= 0.999) return a;
-    half3 b = sampleArt(prevArt, prevSize, uv, q);
-    return mix(b, a, morph);
+    half3 b = prevArt.eval(clamp(cropped * prevSize, float2(0.5), prevSize - 0.5)).rgb;
+    return mix(b, a, half(morph));
 }
 
 half4 main(float2 fragCoord) {
@@ -84,13 +84,13 @@ half4 main(float2 fragCoord) {
     float2 pBot = (pr - center * float2(1.35, 1.4)) / (side * 0.65) + 0.5;
     half3 top = blendCovers(clamp(pTop, 0.0, 1.0), 1.0);
     half3 bot = blendCovers(clamp(pBot, 0.0, 1.0), 2.0);
-    half3 col = mix(base, top, 0.45);
-    col = mix(col, bot, 0.45);
+    half3 col = mix(base, top, half(0.45));
+    col = mix(col, bot, half(0.45));
 
     half lum = dot(col, half3(0.299, 0.587, 0.114));
-    col = clamp(mix(half3(lum), col, tone.y), 0.0, 1.0);
-    col = clamp(col * tone.x * dim, 0.0, 1.0);
-    return half4(col, 1.0);
+    col = clamp(mix(half3(lum), col, half(tone.y)), half(0.0), half(1.0));
+    col = clamp(col * half(tone.x * dim), half(0.0), half(1.0));
+    return half4(col, half(1.0));
 }
 """
 
@@ -106,13 +106,17 @@ fun BeatSyncFluidBackground(
     dimAlpha: Float = 0.68f,
     modifier: Modifier = Modifier
 ) {
-    if (coverBitmap == null) {
+    if (coverBitmap == null || coverBitmap.isRecycled) {
         Box(modifier = modifier.fillMaxSize())
         return
     }
 
-    val shader = remember { RuntimeShader(FLOW_AGSL) }
-    val paint = remember { Paint().apply { this.shader = shader } }
+    val shader = remember { runCatching { RuntimeShader(FLOW_AGSL) }.getOrNull() }
+    if (shader == null) {
+        Box(modifier = modifier.fillMaxSize())
+        return
+    }
+    val paint = remember(shader) { Paint().apply { this.shader = shader } }
     var previousBitmap by remember { mutableStateOf(coverBitmap) }
     var morph by remember { mutableStateOf(1f) }
     var phaseTime by remember { mutableDoubleStateOf(0.0) }
@@ -121,6 +125,11 @@ fun BeatSyncFluidBackground(
 
     LaunchedEffect(coverBitmap) {
         if (coverBitmap !== previousBitmap) {
+            if (previousBitmap.isRecycled) {
+                previousBitmap = coverBitmap
+                morph = 1f
+                return@LaunchedEffect
+            }
             morph = 0f
             val startNanos = System.nanoTime()
             while (morph < 1f) {
@@ -149,6 +158,14 @@ fun BeatSyncFluidBackground(
         }
     }
 
+    val safePrevBitmap = if (previousBitmap.isRecycled) coverBitmap else previousBitmap
+    val curBitmapShader = remember(coverBitmap) {
+        BitmapShader(coverBitmap, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP)
+    }
+    val prevBitmapShader = remember(safePrevBitmap) {
+        BitmapShader(safePrevBitmap, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP)
+    }
+
     val blurEffect = remember {
         RenderEffect.createBlurEffect(48f, 48f, Shader.TileMode.CLAMP).asComposeRenderEffect()
     }
@@ -158,19 +175,14 @@ fun BeatSyncFluidBackground(
             .fillMaxSize()
             .graphicsLayer { renderEffect = blurEffect }
     ) {
+        if (coverBitmap.isRecycled || safePrevBitmap.isRecycled) return@Canvas
         val curW = coverBitmap.width.coerceAtLeast(2).toFloat()
         val curH = coverBitmap.height.coerceAtLeast(2).toFloat()
-        val prevW = previousBitmap.width.coerceAtLeast(2).toFloat()
-        val prevH = previousBitmap.height.coerceAtLeast(2).toFloat()
+        val prevW = safePrevBitmap.width.coerceAtLeast(2).toFloat()
+        val prevH = safePrevBitmap.height.coerceAtLeast(2).toFloat()
 
-        shader.setInputShader(
-            "curArt",
-            BitmapShader(coverBitmap, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP)
-        )
-        shader.setInputShader(
-            "prevArt",
-            BitmapShader(previousBitmap, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP)
-        )
+        shader.setInputShader("curArt", curBitmapShader)
+        shader.setInputShader("prevArt", prevBitmapShader)
         shader.setFloatUniform("curSize", curW, curH)
         shader.setFloatUniform("prevSize", prevW, prevH)
         shader.setFloatUniform("viewSize", size.width.coerceAtLeast(1f), size.height.coerceAtLeast(1f))

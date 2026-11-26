@@ -232,9 +232,14 @@ abstract class RhythmAudioProcessor : AudioProcessor {
         return inputEnded && outputBuffer === AudioProcessor.EMPTY_BUFFER
     }
 
+    @Suppress("OVERRIDE_DEPRECATION")
     override fun flush() {
         outputBuffer = AudioProcessor.EMPTY_BUFFER
         inputEnded = false
+    }
+
+    override fun flush(streamMetadata: AudioProcessor.StreamMetadata) {
+        flush()
     }
 
     override fun reset() {

@@ -6,13 +6,16 @@
 package chromahub.rhythm.app.audio
 
 import androidx.media3.common.C
+import androidx.media3.common.audio.AudioProcessingPipeline
 import androidx.media3.common.audio.AudioProcessor
+import androidx.media3.exoplayer.audio.SilenceSkippingAudioProcessor
 import androidx.media3.extractor.Extractor
 import androidx.media3.extractor.ExtractorInput
 import androidx.media3.extractor.ExtractorOutput
 import androidx.media3.extractor.PositionHolder
 import androidx.media3.extractor.SeekMap
 import androidx.media3.extractor.TrackOutput
+import chromahub.rhythm.app.infrastructure.audio.RhythmMonoAudioProcessor
 import chromahub.rhythm.app.infrastructure.audio.SignalPathEvaluator
 import chromahub.rhythm.app.infrastructure.audio.SignalPathInput
 import chromahub.rhythm.app.infrastructure.audio.StreamHealthTracker
@@ -22,6 +25,8 @@ import chromahub.rhythm.app.infrastructure.audio.dsp.SurroundDownmixAudioProcess
 import chromahub.rhythm.app.infrastructure.audio.usb.MixerFormat
 import chromahub.rhythm.app.infrastructure.audio.usb.selectBitPerfectMixerFormat
 import chromahub.rhythm.app.infrastructure.service.player.AudioDecoderPolicy
+import chromahub.rhythm.app.infrastructure.service.player.SafeSilenceSkippingAudioProcessor
+import com.google.common.collect.ImmutableList
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -245,5 +250,25 @@ class AudioOutputAndCodecTest {
         override fun getPosition(): Long = pos.toLong()
         override fun getLength(): Long = data.size.toLong()
         override fun <E : Throwable?> setRetryPosition(position: Long, e: E) { pos = position.toInt() }
+    }
+
+    @Test
+    fun safeSilenceSkippingAndRhythmProcessors_supportMedia3FlushOverloadsAcrossFormatSwitches() {
+        val silenceDelegate = SilenceSkippingAudioProcessor().apply { setEnabled(true) }
+        val safeSilence = SafeSilenceSkippingAudioProcessor(silenceDelegate)
+        val mono = RhythmMonoAudioProcessor()
+        val pipeline = AudioProcessingPipeline(ImmutableList.of(safeSilence, mono))
+
+        val pcm16 = AudioProcessor.AudioFormat(44_100, 2, C.ENCODING_PCM_16BIT)
+        pipeline.configure(pcm16)
+        pipeline.flush(AudioProcessor.StreamMetadata.DEFAULT)
+        assertTrue(safeSilence.isActive())
+        assertTrue(pipeline.isOperational())
+
+        val pcmFloat = AudioProcessor.AudioFormat(96_000, 2, C.ENCODING_PCM_FLOAT)
+        pipeline.configure(pcmFloat)
+        pipeline.flush(AudioProcessor.StreamMetadata.DEFAULT)
+        assertFalse(safeSilence.isActive())
+        assertTrue(mono.isActive())
     }
 }

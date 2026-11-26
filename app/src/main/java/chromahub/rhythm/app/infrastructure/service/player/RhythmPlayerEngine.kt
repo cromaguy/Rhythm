@@ -576,15 +576,7 @@ class RhythmPlayerEngine(
                     /* minVolumeToKeepPercentageWhenMuting = */ 5,
                     /* silenceThresholdLevel = */ 40.toShort()
                 )
-                val safeSilenceSkippingProcessor = object : androidx.media3.common.audio.AudioProcessor by silenceSkippingDelegate {
-                    override fun configure(inputAudioFormat: androidx.media3.common.audio.AudioProcessor.AudioFormat): androidx.media3.common.audio.AudioProcessor.AudioFormat {
-                        return if (inputAudioFormat.encoding == C.ENCODING_PCM_16BIT) {
-                            silenceSkippingDelegate.configure(inputAudioFormat)
-                        } else {
-                            androidx.media3.common.audio.AudioProcessor.AudioFormat.NOT_SET
-                        }
-                    }
-                }
+                val safeSilenceSkippingProcessor = SafeSilenceSkippingAudioProcessor(silenceSkippingDelegate)
                 val sonicAudioProcessor = SonicAudioProcessor()
                 val allProcessors: Array<androidx.media3.common.audio.AudioProcessor> =
                     (listOf(safeSilenceSkippingProcessor) + processors + sonicAudioProcessor).toTypedArray()
@@ -1367,6 +1359,65 @@ data class EngineAudioFormat(
     val decoderName: String = "",
     val timestamp: Long = System.currentTimeMillis()
 )
+
+/**
+ * Wraps Media3's [androidx.media3.exoplayer.audio.SilenceSkippingAudioProcessor] so non-16-bit
+ * streams (24-bit, 32-bit, float) bypass cleanly without throws while explicitly forwarding every
+ * Media3 [AudioProcessor] method, including Java interface default methods (`flush(StreamMetadata)`,
+ * `getDurationAfterProcessorApplied`) omitted by Kotlin interface delegation.
+ */
+@OptIn(UnstableApi::class)
+@Suppress("OVERRIDE_DEPRECATION")
+internal class SafeSilenceSkippingAudioProcessor(
+    private val delegate: androidx.media3.exoplayer.audio.SilenceSkippingAudioProcessor
+) : androidx.media3.common.audio.AudioProcessor {
+
+    private var bypassNon16Bit = false
+
+    override fun getDurationAfterProcessorApplied(durationUs: Long): Long =
+        if (bypassNon16Bit) durationUs else delegate.getDurationAfterProcessorApplied(durationUs)
+
+    override fun configure(
+        inputAudioFormat: androidx.media3.common.audio.AudioProcessor.AudioFormat
+    ): androidx.media3.common.audio.AudioProcessor.AudioFormat {
+        return if (inputAudioFormat.encoding == C.ENCODING_PCM_16BIT) {
+            bypassNon16Bit = false
+            delegate.configure(inputAudioFormat)
+        } else {
+            bypassNon16Bit = true
+            delegate.reset()
+            androidx.media3.common.audio.AudioProcessor.AudioFormat.NOT_SET
+        }
+    }
+
+    override fun isActive(): Boolean = !bypassNon16Bit && delegate.isActive
+
+    override fun queueInput(inputBuffer: java.nio.ByteBuffer) {
+        if (!bypassNon16Bit) delegate.queueInput(inputBuffer)
+    }
+
+    override fun queueEndOfStream() {
+        if (!bypassNon16Bit) delegate.queueEndOfStream()
+    }
+
+    override fun getOutput(): java.nio.ByteBuffer =
+        if (bypassNon16Bit) androidx.media3.common.audio.AudioProcessor.EMPTY_BUFFER else delegate.output
+
+    override fun isEnded(): Boolean = bypassNon16Bit || delegate.isEnded
+
+    override fun flush() {
+        delegate.flush(androidx.media3.common.audio.AudioProcessor.StreamMetadata.DEFAULT)
+    }
+
+    override fun flush(streamMetadata: androidx.media3.common.audio.AudioProcessor.StreamMetadata) {
+        delegate.flush(streamMetadata)
+    }
+
+    override fun reset() {
+        bypassNon16Bit = false
+        delegate.reset()
+    }
+}
 
 private fun androidx.media3.common.Tracks.getFirstSelectedTrackFormatByType(trackType: Int): androidx.media3.common.Format? {
     for (group in groups) {
