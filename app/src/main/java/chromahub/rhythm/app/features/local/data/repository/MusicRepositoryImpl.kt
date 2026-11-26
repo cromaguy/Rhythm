@@ -191,41 +191,17 @@ class MusicRepository(context: Context) {
     private val roomDb by lazy { RhythmDatabase.getInstance(context) }
     val songDao by lazy { roomDb.songDao() }
     val playlistDao by lazy { roomDb.playlistDao() }
-    
-    fun getPaginatedSongs(): kotlinx.coroutines.flow.Flow<PagingData<Song>> {
-        return Pager(
-            config = PagingConfig(pageSize = 50, enablePlaceholders = true),
-            pagingSourceFactory = { songDao.getSongsPagingSource() }
-        ).flow.map { pagingData ->
-            pagingData.map { entity -> entity.toSong() }
-        }
-    }
+    private val queryDelegate by lazy { LibraryQueryDelegate(songDao, roomDb.artistDao()) }
+    private val lyricsDelegate by lazy { LyricsRepositoryDelegate(context, MAX_LYRICS_CACHE_SIZE) }
 
-    fun getPaginatedSongsSearch(query: String): kotlinx.coroutines.flow.Flow<PagingData<Song>> {
-        val trimmedQuery = query.trim()
-        val ftsQuery = FtsQuerySanitizer.buildPrefixMatchQuery(trimmedQuery)
-        return Pager(
-            config = PagingConfig(pageSize = 50, enablePlaceholders = true),
-            pagingSourceFactory = {
-                when {
-                    trimmedQuery.isEmpty() -> songDao.getSongsPagingSource()
-                    ftsQuery.isNotEmpty() -> songDao.getSongsPagingSourceFtsSearch(ftsQuery)
-                    else -> songDao.getSongsPagingSourceSearch(trimmedQuery)
-                }
-            }
-        ).flow.map { pagingData ->
-            pagingData.map { entity -> entity.toSong() }
-        }
-    }
+    fun getPaginatedSongs(): kotlinx.coroutines.flow.Flow<PagingData<Song>> =
+        queryDelegate.getPaginatedSongs()
 
-    fun getPaginatedArtists(groupByAlbumArtist: Boolean): kotlinx.coroutines.flow.Flow<PagingData<Artist>> {
-        return Pager(
-            config = PagingConfig(pageSize = 50, enablePlaceholders = true),
-            pagingSourceFactory = { roomDb.artistDao().getArtistsPagingSource(groupByAlbumArtist) }
-        ).flow.map { pagingData ->
-            pagingData.map { entity -> entity.toArtist() }
-        }
-    }
+    fun getPaginatedSongsSearch(query: String): kotlinx.coroutines.flow.Flow<PagingData<Song>> =
+        queryDelegate.getPaginatedSongsSearch(query)
+
+    fun getPaginatedArtists(groupByAlbumArtist: Boolean): kotlinx.coroutines.flow.Flow<PagingData<Artist>> =
+        queryDelegate.getPaginatedArtists(groupByAlbumArtist)
     
     /**
      * Persists the current in-memory song cache to Room database.
@@ -726,12 +702,6 @@ class MusicRepository(context: Context) {
             return size > MAX_ALBUM_CACHE_SIZE
         }
     })
-    private val lyricsCache = Collections.synchronizedMap(object : LinkedHashMap<String, LyricsData>(50, 0.75f, true) {
-        override fun removeEldestEntry(eldest: Map.Entry<String, LyricsData>?): Boolean {
-            return size > MAX_LYRICS_CACHE_SIZE
-        }
-    })
-    
     // Negative caches (circuit breakers) to avoid repeated remote lookups for assets missing online
     internal val negativeArtistImageCache = Collections.synchronizedSet(LinkedHashSet<String>())
     internal val negativeAlbumImageCache = Collections.synchronizedSet(LinkedHashSet<String>())
@@ -745,105 +715,18 @@ class MusicRepository(context: Context) {
         private const val MAX_ARTIST_CACHE_SIZE = 100
         private const val MAX_ALBUM_CACHE_SIZE = 200
         private const val MAX_LYRICS_CACHE_SIZE = 150
-        
-        // Precompiled regex for primary artist extraction
-        private val PRIMARY_ARTIST_REGEX = Regex("""(?i)\s+(feat\.|ft\.|featuring|with|and|&)\s+.*""")
-        private val DISC_FOLDER_REGEX = Regex("""/(?:cd|disc|disk)\s*\d+$""", RegexOption.IGNORE_CASE)
-        private val GENERIC_DIRECTORY_NAMES = setOf(
-            "download",
-            "downloads",
-            "music",
-            "audio",
-            "media",
-            "bluetooth",
-            "internal storage",
-            "sdcard",
-            "0",
-            "emulated"
-        )
 
-        internal fun getRootAlbumFolder(path: String?): String? {
-            if (path.isNullOrBlank()) return null
-            val parent = path.substringBeforeLast('/', "")
-            if (parent.isBlank()) return null
-            val normalized = DISC_FOLDER_REGEX.replace(parent, "")
-            return normalized.lowercase(Locale.ROOT).takeIf { it.isNotBlank() }
-        }
+        internal fun getRootAlbumFolder(path: String?): String? =
+            LibraryQueryDelegate.getRootAlbumFolder(path)
 
-        internal fun isGenericRootDirectory(folderPath: String): Boolean {
-            val trimmed = folderPath.trimEnd('/').lowercase(Locale.ROOT)
-            if (trimmed == "/storage/emulated/0" ||
-                trimmed == "/storage/emulated" ||
-                trimmed == "/storage" ||
-                trimmed == "/sdcard" ||
-                trimmed == "/mnt/sdcard") {
-                return true
-            }
+        internal fun isGenericRootDirectory(folderPath: String): Boolean =
+            LibraryQueryDelegate.isGenericRootDirectory(folderPath)
 
-            val rootPrefixes = listOf(
-                "/storage/emulated/0/",
-                "/sdcard/",
-                "/mnt/sdcard/"
-            )
-            for (prefix in rootPrefixes) {
-                if (trimmed.startsWith(prefix)) {
-                    val rel = trimmed.removePrefix(prefix)
-                    if (!rel.contains('/') && rel in GENERIC_DIRECTORY_NAMES) {
-                        return true
-                    }
-                }
-            }
+        internal fun extractPrimaryArtist(artistStr: String): String =
+            LibraryQueryDelegate.extractPrimaryArtist(artistStr)
 
-            if (trimmed.startsWith("/storage/")) {
-                val parts = trimmed.removePrefix("/storage/").split('/')
-                if (parts.size == 1) return true
-                if (parts.size == 2 && parts[1] in GENERIC_DIRECTORY_NAMES) return true
-            }
-
-            return false
-        }
-
-        internal fun extractPrimaryArtist(artistStr: String): String {
-            val trimmed = artistStr.trim()
-            if (trimmed.isBlank() || trimmed.equals("<unknown>", ignoreCase = true)) return "Unknown Artist"
-            val main = trimmed.replace(PRIMARY_ARTIST_REGEX, "").trim()
-            return if (main.isNotBlank()) main else trimmed
-        }
-
-        internal fun getAlbumGroupingKey(song: Song): String {
-            val normAlbum = song.album.trim().lowercase(Locale.ROOT).ifBlank { "unknown album" }
-
-            val rootAlbumFolder = getRootAlbumFolder(song.path)
-            val isGeneric = rootAlbumFolder != null && isGenericRootDirectory(rootAlbumFolder)
-
-            if (rootAlbumFolder != null && !isGeneric) {
-                return "folder_${rootAlbumFolder}|${normAlbum}"
-            }
-
-            val normAlbumArtist = song.albumArtist?.trim()
-                ?.takeIf { it.isNotBlank() && !it.equals("<unknown>", ignoreCase = true) }
-                ?.lowercase(Locale.ROOT)
-
-            if (normAlbumArtist != null) {
-                return "albumartist_${normAlbumArtist}|${normAlbum}"
-            }
-
-            val primaryArtist = extractPrimaryArtist(song.artist).lowercase(Locale.ROOT)
-            if (primaryArtist.isNotBlank() && primaryArtist != "unknown artist") {
-                return "artist_${primaryArtist}|${normAlbum}"
-            }
-
-            val normAlbumId = song.albumId.trim().takeIf { it.isNotBlank() && it != "0" && it != "-1" }
-            if (normAlbumId != null && normAlbumId.all { it.isDigit() }) {
-                return "mediastore_${normAlbumId}|${normAlbum}"
-            }
-
-            if (rootAlbumFolder != null) {
-                return "folder_${rootAlbumFolder}|${normAlbum}"
-            }
-
-            return "artist_${primaryArtist}|${normAlbum}"
-        }
+        internal fun getAlbumGroupingKey(song: Song): String =
+            LibraryQueryDelegate.getAlbumGroupingKey(song)
         
         // API rate limiting constants
         private const val DEEZER_MIN_DELAY = 200L
@@ -4600,11 +4483,11 @@ class MusicRepository(context: Context) {
             "$artist:$title".lowercase()
         }
         
-        Log.d(TAG, "===== Cache key: $cacheKey, Cache size: ${lyricsCache.size} =====")
+        Log.d(TAG, "===== Cache key: $cacheKey, Cache size: ${lyricsDelegate.size} =====")
         
         // Check cache unless force refresh is requested
         if (!forceRefresh) {
-            lyricsCache[cacheKey]?.let { cached ->
+            lyricsDelegate.getCached(cacheKey)?.let { cached ->
                 val lyricLength = cached.plainLyrics?.length ?: cached.syncedLyrics?.length ?: 0
                 Log.d(TAG, "===== RETURNING IN-MEMORY CACHED LYRICS ($lyricLength chars) =====")
                 return@withContext cached
@@ -4691,7 +4574,7 @@ class MusicRepository(context: Context) {
                         lyrics
                     }
                     
-                    lyricsCache[cacheKey] = lyricsWithSource
+                    lyricsDelegate.putCached(cacheKey, lyricsWithSource)
                     if (sourceName == "API") {
                         // Only save API-fetched lyrics to local cache
                         saveLocalLyrics(artist, title, lyricsWithSource)
@@ -4707,7 +4590,7 @@ class MusicRepository(context: Context) {
         // No lyrics found from any source
         Log.d(TAG, "No lyrics found from any source for: $artist - $title")
         val notFoundLyrics = LyricsData("No lyrics found for this song", null, null)
-        lyricsCache[cacheKey] = notFoundLyrics
+        lyricsDelegate.putCached(cacheKey, notFoundLyrics)
         return@withContext notFoundLyrics
     }
 
@@ -5455,18 +5338,7 @@ class MusicRepository(context: Context) {
      * Saves lyrics to a local file
      */
     private fun saveLocalLyrics(artist: String, title: String, lyricsData: LyricsData) {
-        try {
-            val fileName = "${artist}_${title}.json".replace(Regex("[^a-zA-Z0-9._-]"), "_")
-            val lyricsDir = File(context.filesDir, "lyrics")
-            lyricsDir.mkdirs()
-
-            val file = File(lyricsDir, fileName)
-            val json = Gson().toJson(lyricsData)
-            file.writeText(json)
-            Log.d(TAG, "Saved lyrics to local file: ${file.absolutePath}")
-        } catch (e: Exception) {
-            Log.e(TAG, "Error saving lyrics to local file: ${e.message}", e)
-        }
+        lyricsDelegate.saveToDisk(artist, title, lyricsData)
     }
 
     /**
@@ -6188,9 +6060,7 @@ class MusicRepository(context: Context) {
             synchronized(albumImageCache) {
                 albumImageCache.clear()
             }
-            synchronized(lyricsCache) {
-                lyricsCache.clear()
-            }
+            lyricsDelegate.clearAll()
             negativeArtistImageCache.clear()
             negativeAlbumImageCache.clear()
             negativeTrackArtworkCache.clear()
@@ -6368,80 +6238,21 @@ class MusicRepository(context: Context) {
      * Clears only the lyrics cache
      */
     fun clearLyricsCache() {
-        try {
-            synchronized(lyricsCache) {
-                val count = lyricsCache.size
-                lyricsCache.clear()
-                Log.d(TAG, "===== CLEARED IN-MEMORY LYRICS CACHE ($count entries) =====")
-            }
-            
-            // Also delete all saved local lyrics files
-            try {
-                val lyricsDir = File(context.filesDir, "lyrics")
-                if (lyricsDir.exists() && lyricsDir.isDirectory) {
-                    val files = lyricsDir.listFiles()
-                    val deletedCount = files?.count { it.delete() } ?: 0
-                    Log.d(TAG, "===== DELETED $deletedCount SAVED LYRICS FILES FROM DISK =====")
-                } else {
-                    Log.d(TAG, "===== NO LYRICS DIRECTORY FOUND ON DISK =====")
-                }
-            } catch (e: Exception) {
-                Log.w(TAG, "Error deleting saved lyrics files: ${e.message}")
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error clearing lyrics cache", e)
-        }
+        lyricsDelegate.clearAll()
     }
 
     /**
      * Clears cached lyrics for a specific song (both in-memory and on-disk)
      */
     fun clearLyricsCacheForSong(artist: String, title: String, songId: String?) {
-        try {
-            val keysToRemove = mutableListOf<String>()
-            if (songId != null) {
-                keysToRemove.add("$songId:$artist:$title".lowercase())
-            }
-            keysToRemove.add("$artist:$title".lowercase())
-
-            synchronized(lyricsCache) {
-                for (key in keysToRemove) {
-                    lyricsCache.remove(key)
-                }
-                Log.d(TAG, "===== REMOVED SONG FROM IN-MEMORY LYRICS CACHE ($artist - $title) =====")
-            }
-
-            try {
-                val fileName = "${artist}_${title}.json".replace(Regex("[^a-zA-Z0-9._-]"), "_")
-                val lyricsDir = File(context.filesDir, "lyrics")
-                val file = File(lyricsDir, fileName)
-                if (file.exists()) {
-                    val deleted = file.delete()
-                    Log.d(TAG, "===== DELETED SAVED LYRICS FILE ($fileName): $deleted =====")
-                }
-            } catch (e: Exception) {
-                Log.w(TAG, "Error deleting saved lyrics file for $artist - $title: ${e.message}")
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error clearing lyrics cache for song $artist - $title", e)
-        }
+        lyricsDelegate.clearSong(artist, title, songId)
     }
 
     /**
      * Updates the in-memory lyrics cache for a specific song
      */
     fun updateLyricsCache(artist: String, title: String, songId: String?, lyrics: LyricsData) {
-        try {
-            synchronized(lyricsCache) {
-                if (songId != null) {
-                    lyricsCache["$songId:$artist:$title".lowercase()] = lyrics
-                }
-                lyricsCache["$artist:$title".lowercase()] = lyrics
-                Log.d(TAG, "===== UPDATED IN-MEMORY LYRICS CACHE FOR: $artist - $title =====")
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error updating in-memory lyrics cache for $artist - $title", e)
-        }
+        lyricsDelegate.updateForSong(artist, title, songId, lyrics)
     }
     
     /**
@@ -6471,7 +6282,7 @@ class MusicRepository(context: Context) {
             // Optimize in-memory caches
             val initialArtistCacheSize = artistImageCache.size
             val initialAlbumCacheSize = albumImageCache.size
-            val initialLyricsCacheSize = lyricsCache.size
+            val initialLyricsCacheSize = lyricsDelegate.size
             
             // The LinkedHashMap LRU implementation will automatically evict oldest entries
             // when new entries are added and the cache exceeds its limit
@@ -6494,7 +6305,7 @@ class MusicRepository(context: Context) {
         return mapOf(
             "artistImageCache" to artistImageCache.size,
             "albumImageCache" to albumImageCache.size,
-            "lyricsCache" to lyricsCache.size
+            "lyricsCache" to lyricsDelegate.size
         )
     }
     
@@ -6789,7 +6600,7 @@ class MusicRepository(context: Context) {
         // Clear all caches
         artistImageCache.clear()
         albumImageCache.clear()
-        lyricsCache.clear()
+        lyricsDelegate.clearAll()
         
         // Clear rate limiting maps
         lastApiCalls.clear()

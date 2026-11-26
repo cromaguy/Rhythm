@@ -137,6 +137,7 @@ class AppSettings private constructor(context: Context) {
         private const val KEY_REPLAY_GAIN_PREAMP_UNTAGGED = "replay_gain_preamp_untagged"
         private const val KEY_SKIP_SILENCE = "skip_silence_enabled"
         private const val KEY_AUDIO_ROUTING_MODE = "audio_routing_mode" // "default", "app", "system"
+        private const val KEY_USB_BIT_PERFECT_MIGRATED = "usb_bit_perfect_migrated"
         private const val KEY_RESUME_ON_DEVICE_RECONNECT = "resume_on_device_reconnect"
         private const val KEY_AUDIO_OFFLOAD_ENABLED = "audio_offload_enabled"
 
@@ -686,6 +687,14 @@ class AppSettings private constructor(context: Context) {
     private val context: Context = context.applicationContext
     val prefs: SharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
+    val playbackPrefs by lazy { chromahub.rhythm.app.shared.data.model.settings.PlaybackPreferencesStore(prefs) }
+    val uiPrefs by lazy { chromahub.rhythm.app.shared.data.model.settings.UiPreferencesStore(prefs) }
+    val libraryPrefs by lazy { chromahub.rhythm.app.shared.data.model.settings.LibraryPreferencesStore(prefs) }
+    val streamingPrefs by lazy { chromahub.rhythm.app.shared.data.model.settings.StreamingPreferencesStore(prefs) }
+    val rhythmGuardPrefs by lazy { chromahub.rhythm.app.shared.data.model.settings.RhythmGuardPreferencesStore(prefs) }
+    val diagnosticsPrefs by lazy { chromahub.rhythm.app.shared.data.model.settings.DiagnosticsPreferencesStore(prefs) }
+    val presetsPrefs by lazy { chromahub.rhythm.app.shared.data.model.settings.PresetsPreferencesStore(prefs) }
+
     private val _pendingTopLevelRoute = MutableStateFlow<String?>(null)
     val pendingTopLevelRoute: StateFlow<String?> = _pendingTopLevelRoute.asStateFlow()
 
@@ -768,7 +777,25 @@ class AppSettings private constructor(context: Context) {
     private val _skipSilenceEnabled = MutableStateFlow(prefs.getBoolean(KEY_SKIP_SILENCE, false))
     val skipSilenceEnabled: StateFlow<Boolean> = _skipSilenceEnabled.asStateFlow()
     
-    private val _audioRoutingMode = MutableStateFlow(prefs.getString(KEY_AUDIO_ROUTING_MODE, "default") ?: "default")
+    private val _audioRoutingMode = MutableStateFlow(
+        run {
+            val savedMode = prefs.getString(KEY_AUDIO_ROUTING_MODE, "default") ?: "default"
+            if (!prefs.getBoolean(KEY_USB_BIT_PERFECT_MIGRATED, false)) {
+                val legacyBitPerfectUsb = prefs.getBoolean("usb_bit_perfect_enabled", false)
+                val migratedMode = if (legacyBitPerfectUsb && savedMode == "default") "app" else savedMode
+                prefs.edit {
+                    if (migratedMode != savedMode) {
+                        putString(KEY_AUDIO_ROUTING_MODE, migratedMode)
+                    }
+                    remove("usb_bit_perfect_enabled")
+                    putBoolean(KEY_USB_BIT_PERFECT_MIGRATED, true)
+                }
+                migratedMode
+            } else {
+                savedMode
+            }
+        }
+    )
     val audioRoutingMode: StateFlow<String> = _audioRoutingMode.asStateFlow()
 
     private val _audioEngineSoftwareEnabled = MutableStateFlow(prefs.getBoolean(KEY_AUDIO_ENGINE_SOFTWARE_ENABLED, true))
@@ -5571,6 +5598,7 @@ private val _autoCheckForUpdates = MutableStateFlow(prefs.getBoolean(KEY_AUTO_CH
         _replayGainPreampUntagged.value = prefs.getFloat(KEY_REPLAY_GAIN_PREAMP_UNTAGGED, 0f)
         _audioOffloadEnabled.value = prefs.getBoolean(KEY_AUDIO_OFFLOAD_ENABLED, false)
         _skipSilenceEnabled.value = prefs.getBoolean(KEY_SKIP_SILENCE, false)
+        _audioRoutingMode.value = prefs.getString(KEY_AUDIO_ROUTING_MODE, "default") ?: "default"
         _batterySaverEnabled.value = prefs.getBoolean(KEY_BATTERY_SAVER_ENABLED, false)
         _batterySaverMode.value = prefs.getString(KEY_BATTERY_SAVER_MODE, "auto") ?: "auto"
         _batterySaverDisableHaptics.value = prefs.getBoolean(KEY_BATTERY_SAVER_DISABLE_HAPTICS, true)

@@ -3218,21 +3218,7 @@ object MediaUtils {
         height: Int,
         requestedWidth: Int,
         requestedHeight: Int
-    ): Int {
-        if (width <= 0 || height <= 0) return 1
-
-        var inSampleSize = 1
-        var halfWidth = width / 2
-        var halfHeight = height / 2
-
-        while ((halfWidth / inSampleSize) >= requestedWidth &&
-            (halfHeight / inSampleSize) >= requestedHeight
-        ) {
-            inSampleSize *= 2
-        }
-
-        return inSampleSize.coerceAtLeast(1)
-    }
+    ): Int = ArtworkMediaUtils.calculateInSampleSize(width, height, requestedWidth, requestedHeight)
 
     private fun detectArtworkExtension(data: ByteArray): String {
         if (data.size >= 2 &&
@@ -3464,40 +3450,8 @@ object MediaUtils {
         }
     }
 
-    fun getSpecificVolumeUri(context: Context, songId: Long): Uri? {
-        if (songId <= 0) return null
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            val volumeName = try {
-                val projection = arrayOf(MediaStore.Audio.Media.VOLUME_NAME)
-                val selection = "${MediaStore.Audio.Media._ID} = ?"
-                val selectionArgs = arrayOf(songId.toString())
-                context.contentResolver.query(
-                    MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
-                    projection,
-                    selection,
-                    selectionArgs,
-                    null
-                )?.use { cursor ->
-                    if (cursor.moveToFirst()) {
-                        cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.VOLUME_NAME))
-                    } else {
-                        null
-                    }
-                }
-            } catch (e: Exception) {
-                null
-            }
-
-            val targetVolume = if (volumeName != null && volumeName != MediaStore.VOLUME_EXTERNAL) {
-                volumeName
-            } else {
-                MediaStore.VOLUME_EXTERNAL_PRIMARY
-            }
-            MediaStore.Audio.Media.getContentUri(targetVolume, songId)
-        } else {
-            ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, songId)
-        }
-    }
+    fun getSpecificVolumeUri(context: Context, songId: Long): Uri? =
+        UriMetadataUtils.getSpecificVolumeUri(context, songId)
 
     private fun updateFileMetadataWithTagLib(
         context: Context,

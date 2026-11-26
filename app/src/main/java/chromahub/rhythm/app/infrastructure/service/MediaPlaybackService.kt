@@ -71,6 +71,9 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import chromahub.rhythm.app.shared.data.repository.PlaybackStatsRepository
 import chromahub.rhythm.app.shared.data.repository.StatsTimeRange
+import chromahub.rhythm.app.infrastructure.service.coordinator.AudioEffectsCoordinator
+import chromahub.rhythm.app.infrastructure.service.coordinator.NotificationActionHelper
+import chromahub.rhythm.app.infrastructure.service.coordinator.RhythmGuardController
 import chromahub.rhythm.app.shared.presentation.screens.settings.rhythmGuardFormatDurationFromMinutes
 import chromahub.rhythm.app.activities.RhythmGuardTimeoutActivity
 import androidx.core.net.toUri
@@ -297,153 +300,27 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
         }
     }
 
+    private val rhythmGuardController by lazy { RhythmGuardController(this, appSettings) }
+
     private fun checkAndClampVolumeForRhythmGuard() {
-        try {
-            if (!::appSettings.isInitialized) return
-            val mode = appSettings.rhythmGuardMode.value
-            if (mode == AppSettings.RHYTHM_GUARD_MODE_AUTO) {
-                val age = appSettings.rhythmGuardAge.value
-                val policy = appSettings.getRhythmGuardPolicy(age)
-                val activeThreshold = policy.maxVolumeThreshold
-                
-                val audioManager = getSystemService(Context.AUDIO_SERVICE) as? AudioManager ?: return
-                val isSpeaker = isSpeakerOutputActive(audioManager)
-                val applyVolumeLimitOnSpeaker = appSettings.rhythmGuardApplyVolumeLimitOnSpeaker.value
-                val shouldApply = applyVolumeLimitOnSpeaker || !isSpeaker
-                
-                if (shouldApply) {
-                    val currentVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
-                    val maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
-                    val currentVolumeFraction = if (maxVolume > 0) currentVolume.toFloat() / maxVolume.toFloat() else 0f
-                    
-                    val volumeOvershoot = currentVolumeFraction - activeThreshold
-                    if (volumeOvershoot > 0.01f) {
-                        val targetVolume = Math.round(activeThreshold * maxVolume).coerceIn(0, maxVolume)
-                        audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, targetVolume, 0)
-                        Log.d(TAG, "Rhythm Guard Auto: clamped system volume from $currentVolumeFraction to $activeThreshold")
-                    }
-                }
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error clamping volume in background", e)
+        if (::appSettings.isInitialized) {
+            rhythmGuardController.checkAndClampVolumeIfEnabled()
         }
     }
 
-    private fun isSpeakerOutputActive(audioManager: AudioManager): Boolean {
-        val devices = audioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS)
-        return devices.any { it.type == AudioDeviceInfo.TYPE_BUILTIN_SPEAKER } &&
-                !devices.any {
-                    (it.type == AudioDeviceInfo.TYPE_BLUETOOTH_A2DP ||
-                     it.type == AudioDeviceInfo.TYPE_BLUETOOTH_SCO ||
-                     it.type == AudioDeviceInfo.TYPE_WIRED_HEADSET ||
-                     it.type == AudioDeviceInfo.TYPE_WIRED_HEADPHONES ||
-                     it.type == AudioDeviceInfo.TYPE_USB_DEVICE ||
-                     it.type == AudioDeviceInfo.TYPE_USB_HEADSET) &&
-                    it.isSink
-                }
-    }
+    private fun isSpeakerOutputActive(audioManager: AudioManager): Boolean =
+        rhythmGuardController.isSpeakerOutputActive(audioManager)
 
     private fun showRhythmGuardAlertNotification(title: String, text: String, riskLevel: String) {
-        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        ensureRhythmGuardNotificationChannels(notificationManager)
-
-        val openAppIntent = Intent(this, MainActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-            putExtra("open_player", true)
-        }
-
-        val pendingIntent = PendingIntent.getActivity(
-            this,
-            8101,
-            openAppIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-
-        val priority = when (riskLevel) {
-            "SEVERE", "HIGH" -> NotificationCompat.PRIORITY_HIGH
-            "MODERATE" -> NotificationCompat.PRIORITY_DEFAULT
-            else -> NotificationCompat.PRIORITY_LOW
-        }
-
-        val notification = NotificationCompat.Builder(this, "rhythm_guard_alerts")
-            .setSmallIcon(chromahub.rhythm.app.R.drawable.ic_notification)
-            .setContentTitle(title)
-            .setContentText(text)
-            .setStyle(NotificationCompat.BigTextStyle().bigText(text))
-            .setCategory(NotificationCompat.CATEGORY_ALARM)
-            .setPriority(priority)
-            .setAutoCancel(true)
-            .setOnlyAlertOnce(true)
-            .setContentIntent(pendingIntent)
-            .build()
-
-        notificationManager.notify(1301, notification)
+        rhythmGuardController.showAlertNotification(title, text, riskLevel)
     }
 
     private fun showRhythmGuardTimerNotification(title: String, text: String, remainingSeconds: Long, totalSeconds: Long) {
-        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        ensureRhythmGuardNotificationChannels(notificationManager)
-
-        val safeTotal = totalSeconds.coerceAtLeast(1L).coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
-        val safeRemaining = remainingSeconds.coerceIn(0L, safeTotal.toLong()).toInt()
-        val completed = (safeTotal - safeRemaining).coerceIn(0, safeTotal)
-
-        val openAppIntent = Intent(this, MainActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-            putExtra("open_player", true)
-        }
-
-        val pendingIntent = PendingIntent.getActivity(
-            this,
-            8102,
-            openAppIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-
-        val notification = NotificationCompat.Builder(this, "rhythm_guard_timers")
-            .setSmallIcon(chromahub.rhythm.app.R.drawable.ic_notification)
-            .setContentTitle(title)
-            .setContentText(text)
-            .setStyle(
-                NotificationCompat.BigTextStyle().bigText(
-                    "$text\n${getString(chromahub.rhythm.app.R.string.settings_rhythm_guard_notification_tap_open)}"
-                )
-            )
-            .setProgress(safeTotal, completed, false)
-            .setCategory(NotificationCompat.CATEGORY_REMINDER)
-            .setPriority(NotificationCompat.PRIORITY_LOW)
-            .setAutoCancel(true)
-            .setOnlyAlertOnce(true)
-            .setSilent(true)
-            .setContentIntent(pendingIntent)
-            .build()
-
-        notificationManager.notify(1302, notification)
+        rhythmGuardController.showTimerNotification(title, text, remainingSeconds, totalSeconds)
     }
 
     private fun ensureRhythmGuardNotificationChannels(notificationManager: NotificationManager) {
-
-        val alertChannel = NotificationChannel(
-            "rhythm_guard_alerts",
-            getString(chromahub.rhythm.app.R.string.service_rhythm_guard_alerts),
-            NotificationManager.IMPORTANCE_HIGH
-        ).apply {
-            description = getString(chromahub.rhythm.app.R.string.service_rhythm_guard_alerts_desc)
-            enableVibration(true)
-        }
-
-        val timerChannel = NotificationChannel(
-            "rhythm_guard_timers",
-            getString(chromahub.rhythm.app.R.string.service_rhythm_guard_timers),
-            NotificationManager.IMPORTANCE_DEFAULT
-        ).apply {
-            description = getString(chromahub.rhythm.app.R.string.service_rhythm_guard_timers_desc)
-            enableVibration(false)
-            setShowBadge(false)
-        }
-
-        notificationManager.createNotificationChannel(alertChannel)
-        notificationManager.createNotificationChannel(timerChannel)
+        rhythmGuardController.ensureChannels(notificationManager)
     }
 
     private fun cancelRhythmGuardTimerNotification() {
@@ -2617,22 +2494,12 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
             return Futures.immediateFuture(
                 when (customCommand.customAction) {
                     "UPDATE_LYRICS_DATA" -> {
-                        val texts = args.getStringArrayList("lyric_texts")
-                        val translations = args.getStringArrayList("lyric_translations")
-                        val romanizations = args.getStringArrayList("lyric_romanizations")
-                        val timestamps = args.getLongArray("lyric_timestamps")
-                        currentLyricTexts = texts ?: emptyList()
-                        currentLyricTranslations = translations ?: emptyList()
-                        currentLyricRomanizations = romanizations ?: emptyList()
-                        currentLyricTimestamps = timestamps ?: longArrayOf()
-                        
-                        val plainLyrics = args.getString("plain_lyrics")
-                        currentPlainLyricsLines = if (!plainLyrics.isNullOrBlank()) {
-                            plainLyrics.split("\n").map { it.trim() }.filter { it.isNotEmpty() }
-                        } else {
-                            emptyList()
-                        }
-                        
+                        val payload = NotificationActionHelper.parseLyricsDataBundle(args)
+                        currentLyricTexts = payload.texts
+                        currentLyricTranslations = payload.translations
+                        currentLyricRomanizations = payload.romanizations
+                        currentLyricTimestamps = payload.timestamps
+                        currentPlainLyricsLines = payload.plainLyricsLines
                         currentLyricIndex = -1
                         chromahub.rhythm.app.infrastructure.widget.glance.GlanceWidgetUpdater.updateLyrics(this@MediaPlaybackService, getProcessedLyricTexts(), -1)
                         SessionResult(SessionResult.RESULT_SUCCESS)
@@ -3915,63 +3782,10 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
      * Standard 10-band frequencies: 31Hz, 62Hz, 125Hz, 250Hz, 500Hz, 1kHz, 2kHz, 4kHz, 8kHz, 16kHz
      */
     private fun interpolateBands(inputLevels: FloatArray, outputBands: Int, eq: android.media.audiofx.Equalizer? = null): FloatArray {
-        if (outputBands <= 0 || inputLevels.isEmpty()) return FloatArray(outputBands.coerceAtLeast(0))
-        if (outputBands == 1) {
-            return FloatArray(1) { inputLevels.average().toFloat() }
-        }
-        
-        val result = FloatArray(outputBands)
-        val inputBands = inputLevels.size
-        val standard10Freqs = floatArrayOf(31f, 62f, 125f, 250f, 500f, 1000f, 2000f, 4000f, 8000f, 16000f)
-
-        if (inputBands == 10 && eq != null) {
-            try {
-                val hwFreqs = FloatArray(outputBands) { b ->
-                    (eq.getCenterFreq(b.toShort()) / 1000f).coerceAtLeast(20f)
-                }
-                for (i in 0 until outputBands) {
-                    val targetFreq = hwFreqs[i]
-                    val logTarget = kotlin.math.ln(targetFreq.toDouble())
-                    if (targetFreq <= standard10Freqs.first()) {
-                        result[i] = inputLevels.first()
-                    } else if (targetFreq >= standard10Freqs.last()) {
-                        result[i] = inputLevels.last()
-                    } else {
-                        var idx = 0
-                        while (idx < standard10Freqs.size - 1 && standard10Freqs[idx + 1] < targetFreq) {
-                            idx++
-                        }
-                        val logLow = kotlin.math.ln(standard10Freqs[idx].toDouble())
-                        val logHigh = kotlin.math.ln(standard10Freqs[idx + 1].toDouble())
-                        val fraction = ((logTarget - logLow) / (logHigh - logLow)).toFloat().coerceIn(0f, 1f)
-                        result[i] = inputLevels[idx] * (1f - fraction) + inputLevels[idx + 1] * fraction
-                    }
-                }
-                return result
-            } catch (e: Exception) {
-                Log.w(TAG, "Failed to query hardware center frequencies, falling back to heuristic interpolation", e)
-            }
-        }
-        
-        if (outputBands == 5 && inputBands == 10) {
-            result[0] = (inputLevels[0] * 0.25f + inputLevels[1] * 0.5f + inputLevels[2] * 0.25f)
-            result[1] = (inputLevels[3] * 0.5f + inputLevels[4] * 0.5f)
-            result[2] = (inputLevels[5] * 0.5f + inputLevels[6] * 0.5f)
-            result[3] = (inputLevels[7] * 0.5f + inputLevels[8] * 0.5f)
-            result[4] = (inputLevels[8] * 0.25f + inputLevels[9] * 0.75f)
-        } else {
-            // General linear interpolation for other cases
-            val ratio = (inputBands - 1).toFloat() / (outputBands - 1).toFloat()
-            for (i in 0 until outputBands) {
-                val srcPos = i * ratio
-                val lowerIndex = srcPos.toInt().coerceIn(0, inputBands - 1)
-                val upperIndex = (lowerIndex + 1).coerceIn(0, inputBands - 1)
-                val fraction = srcPos - lowerIndex
-                result[i] = inputLevels[lowerIndex] * (1 - fraction) + inputLevels[upperIndex] * fraction
-            }
-        }
-        
-        return result
+        val hwFreqs = if (eq != null && outputBands > 0) {
+            runCatching { FloatArray(outputBands) { b -> eq.getCenterFreq(b.toShort()) / 1000f } }.getOrNull()
+        } else null
+        return AudioEffectsCoordinator.interpolateBands(inputLevels, outputBands, hwFreqs)
     }
     
     fun setBassBoostEnabled(enabled: Boolean) {

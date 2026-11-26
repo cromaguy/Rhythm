@@ -6127,22 +6127,8 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                 val isManualShuffle = enableShuffle == true && !useExoPlayerShuffle
                 val shouldPinStart = pinStartIndex || (enableShuffle == true && validStartIndex > 0)
 
-                // If manual shuffle is requested, pre-shuffle the list
                 val finalSongs = if (isManualShuffle) {
-                    val listToShuffle = songs.toMutableList()
-                    if (shouldPinStart) {
-                        val startingSong = listToShuffle.getOrNull(validStartIndex)
-                        if (startingSong != null) {
-                            listToShuffle.removeAt(validStartIndex)
-                            listToShuffle.shuffle()
-                            listToShuffle.add(0, startingSong)
-                        } else {
-                            listToShuffle.shuffle()
-                        }
-                    } else {
-                        listToShuffle.shuffle()
-                    }
-                    listToShuffle
+                    QueueBoard.buildShuffledQueue(songs, validStartIndex, shouldPinStart).songs
                 } else {
                     songs
                 }
@@ -9010,20 +8996,11 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                         syncQueueWithMediaController()
                     }
                 } else {
-                    // When shuffle is disabled, we can safely update the queue manually
-                    val currentQueueSongs = _currentQueue.value.songs.toMutableList()
-                    val currentQueueIndex = controller.currentMediaItemIndex.coerceAtLeast(0) // Use MediaController index
-                    val queueInsertIndex = if (currentQueueIndex >= 0 && currentQueueIndex < currentQueueSongs.size) {
-                        currentQueueIndex + 1
-                    } else {
-                        0
-                    }
-                    currentQueueSongs.add(queueInsertIndex, song)
-                    
-                    // Keep current index pointing to the currently playing song
-                    _currentQueue.value = Queue(currentQueueSongs, currentQueueIndex)
-                    
-                    Log.d(TAG, "Successfully added '${song.title}' to play next at position $queueInsertIndex. Queue now has ${currentQueueSongs.size} songs, current index: $currentQueueIndex")
+                    val currentQueueIndex = controller.currentMediaItemIndex.coerceAtLeast(0)
+                    val update = QueueBoard.insertPlayNext(_currentQueue.value.songs, currentQueueIndex, song)
+                    _currentQueue.value = Queue(update.songs, currentQueueIndex.coerceAtMost(update.songs.lastIndex.coerceAtLeast(0)))
+
+                    Log.d(TAG, "Successfully added '${song.title}' to play next at position ${update.targetIndex}. Queue now has ${update.songs.size} songs, current index: $currentQueueIndex")
                 }
                 
                 // Verify queue sync
@@ -9120,18 +9097,10 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                     throw IndexOutOfBoundsException("Media item index out of bounds: $controllerIndex, controller has ${controller.mediaItemCount} items")
                 }
                 
-                // Update the local queue state - this ensures UI is still updated even if controller fails
-                val updatedSongs = currentQueue.songs.toMutableList().apply {
-                    removeAt(songIndex)
-                }
-                
-                // Adjust current index if needed
-                val newIndex = when {
-                    songIndex < currentQueue.currentIndex -> currentQueue.currentIndex - 1
-                    songIndex == currentQueue.currentIndex -> currentQueue.currentIndex // Should not happen (can't remove current)
-                    else -> currentQueue.currentIndex
-                }.coerceIn(0, updatedSongs.size - 1)
-                
+                val removeUpdate = QueueBoard.removeAt(currentQueue.songs, songIndex, currentQueue.currentIndex)
+                val updatedSongs = removeUpdate.songs.toMutableList()
+                val newIndex = removeUpdate.targetIndex
+
                 _currentQueue.value = Queue(updatedSongs, newIndex)
                 
                 // Save queue to persistence
@@ -9192,27 +9161,12 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
             // Store original state for rollback
             val originalSongs = songs.toList()
             val originalCurrentIndex = currentQueue.currentIndex
-            
-            // Apply the move in the local queue
-            val song = songs.removeAt(fromIndex)
-            songs.add(toIndex, song)
-            
-            // Calculate new current index with better logic
-            val newCurrentIndex = when {
-                // If we moved the current song
-                fromIndex == currentQueue.currentIndex -> toIndex
-                // If we moved a song from before the current song to after it
-                fromIndex < currentQueue.currentIndex && toIndex >= currentQueue.currentIndex -> 
-                    currentQueue.currentIndex - 1
-                // If we moved a song from after the current song to before it
-                fromIndex > currentQueue.currentIndex && toIndex <= currentQueue.currentIndex -> 
-                    currentQueue.currentIndex + 1
-                // Otherwise, current index doesn't change
-                else -> currentQueue.currentIndex
-            }.coerceIn(0, songs.size - 1) // Ensure index is always valid
-            
+
+            val moveUpdate = QueueBoard.moveItemWithIndex(originalSongs, currentQueue.currentIndex, fromIndex, toIndex)
+            val newCurrentIndex = moveUpdate.targetIndex
+
             // Update local state optimistically
-            _currentQueue.value = Queue(songs, newCurrentIndex)
+            _currentQueue.value = Queue(moveUpdate.songs, newCurrentIndex)
             
             // Save queue to persistence
             saveQueueToPersistence()
