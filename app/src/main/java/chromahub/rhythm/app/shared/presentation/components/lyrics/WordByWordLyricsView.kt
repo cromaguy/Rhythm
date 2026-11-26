@@ -413,50 +413,15 @@ fun WordByWordLyricsView(
                         )
                     }
                     is LyricsItem.Gap -> {
-                        val isCurrentGap = adjustedPlaybackTime >= item.startTime &&
-                            adjustedPlaybackTime < item.startTime + item.duration
-                        
-                        val gapPadding = (item.duration / 1000f).coerceIn(8f, 20f)
-                        val iconAlpha by animateFloatAsState(
-                            targetValue = if (isCurrentGap) 0.85f else 0.3f,
-                            animationSpec = if (lyricNoAnimationVal) snap() else spring(
-                                dampingRatio = Spring.DampingRatioNoBouncy,
-                                stiffness = Spring.StiffnessLow
-                            ),
-                            label = "gapAlpha"
+                        InstrumentalBreakIndicator(
+                            startTimeMs = item.startTime,
+                            durationMs = item.duration,
+                            currentPlaybackTime = adjustedPlaybackTime,
+                            textColor = textColor,
+                            activeColor = activeColor,
+                            noAnimation = lyricNoAnimationVal,
+                            onSeek = handleSeek
                         )
-                        val iconScale by animateFloatAsState(
-                            targetValue = if (isCurrentGap) 1.3f else 1f,
-                            animationSpec = if (lyricNoAnimationVal) snap() else spring<Float>(
-                                dampingRatio = Spring.DampingRatioLowBouncy,
-                                stiffness = Spring.StiffnessVeryLow
-                            ),
-                            label = "iconScale"
-                        )
-                        
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = gapPadding.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Text(
-                                text = "♪",
-                                style = MaterialTheme.typography.titleMedium,
-                                color = (textColor ?: MaterialTheme.colorScheme.onSurface).copy(alpha = iconAlpha),
-                                modifier = Modifier.graphicsLayer {
-                                    scaleX = iconScale
-                                    scaleY = iconScale
-                                }
-                            )
-                            Text(
-                                text = stringResource(R.string.lyrics_instrumental),
-                                style = MaterialTheme.typography.labelMedium,
-                                color = (textColor ?: MaterialTheme.colorScheme.onSurface).copy(
-                                    alpha = if (isCurrentGap) 0.6f else 0.25f
-                                )
-                            )
-                        }
                     }
                 }
             }
@@ -554,114 +519,20 @@ private fun WordByWordLyricLineItem(
         RhythmLyricsParser.isLineWordTimed(line)
     }
 
-    val activeWord = if (isCurrentLine) line.words.getOrNull(activeWordIndex) else null
-    val duration = remember(activeWord) {
-        activeWord?.let { (it.endtime - it.timestamp).toInt() } ?: 0
+    val isVoice2 = line.voiceTag in listOf("v2", "voice2")
+    val isVoice3 = line.voiceTag in listOf("v3", "voice3", "group")
+    val highlightInk = when {
+        isVoice2 -> activeColor ?: MaterialTheme.colorScheme.secondary
+        isVoice3 -> activeColor ?: MaterialTheme.colorScheme.tertiary
+        else -> activeColor ?: MaterialTheme.colorScheme.primary
     }
-    
-    val animatedProgress = remember(activeWord) { Animatable(0f) }
-    LaunchedEffect(activeWord) {
-        if (duration > 0 && !noAnimation && isWordTimed) {
-            animatedProgress.animateTo(
-                targetValue = 1f,
-                animationSpec = tween(durationMillis = duration, easing = LinearEasing)
-            )
-        } else {
-            animatedProgress.snapTo(1f)
-        }
+    val unlitInk = when {
+        isVoice2 || isVoice3 -> if (isCurrentLine) highlightInk.copy(alpha = 0.48f) else highlightInk
+        isCurrentLine -> highlightInk.copy(alpha = 0.45f)
+        else -> textColor ?: MaterialTheme.colorScheme.onSurface
     }
 
-    var textLayoutResult by remember { mutableStateOf<androidx.compose.ui.text.TextLayoutResult?>(null) }
-    
-    val wordRanges = remember(line.words) {
-        val ranges = mutableListOf<IntRange>()
-        var currentPos = 0
-        line.words.forEachIndexed { index, word ->
-            if (index > 0 && !word.isPart) {
-                currentPos += 1 // Space
-            }
-            val start = currentPos
-            val end = currentPos + word.text.length
-            ranges.add(start..end)
-            currentPos = end
-        }
-        ranges
-    }
-
-    val annotatedText = buildAnnotatedString {
-        line.words.forEachIndexed { wordIndex, word ->
-            val isWordActive = isCurrentLine && wordIndex == activeWordIndex
-            
-            val isVoice2 = line.voiceTag in listOf("v2", "voice2")
-            val isVoice3 = line.voiceTag in listOf("v3", "voice3", "group")
-
-            val baseColor = when {
-                isVoice2 -> activeColor ?: MaterialTheme.colorScheme.secondary
-                isVoice3 -> activeColor ?: MaterialTheme.colorScheme.tertiary
-                else -> activeColor ?: MaterialTheme.colorScheme.primary
-            }
-
-            val inactiveWordColor = when {
-                isVoice2 -> if (isCurrentLine) baseColor.copy(alpha = 0.5f) else baseColor
-                isVoice3 -> if (isCurrentLine) baseColor.copy(alpha = 0.5f) else baseColor
-                else -> if (isCurrentLine) baseColor.copy(alpha = 0.5f) else (textColor ?: MaterialTheme.colorScheme.onSurface)
-            }
-
-            val isWordPassed = isCurrentLine && wordIndex < activeWordIndex
-
-            val style = if (isWordActive) {
-                val range = wordRanges.getOrNull(wordIndex)
-                val layout = textLayoutResult
-                val sweepProgress = animatedProgress.value
-                if (isWordTimed && range != null && layout != null && !noAnimation && sweepProgress < 1f) {
-                    val startChar = range.first
-                    val endChar = (range.last).coerceAtMost(layout.layoutInput.text.length - 1)
-                    val startRect = layout.getBoundingBox(startChar)
-                    val endRect = layout.getBoundingBox(endChar)
-                    
-                    val left = startRect.left
-                    val right = endRect.right
-                    
-                    val activeBrush = Brush.linearGradient(
-                        colorStops = arrayOf(
-                            (sweepProgress - 0.15f).coerceIn(0f, 1f) to baseColor,
-                            (sweepProgress + 0.15f).coerceIn(0f, 1f) to inactiveWordColor
-                        ),
-                        start = Offset(left, 0f),
-                        end = Offset(right, 0f)
-                    )
-                    SpanStyle(
-                        brush = activeBrush,
-                        fontWeight = if (lyricBold) FontWeight.Black else FontWeight.Bold
-                    )
-                } else {
-                    SpanStyle(
-                        color = baseColor,
-                        fontWeight = if (lyricBold) FontWeight.Black else FontWeight.Bold
-                    )
-                }
-            } else {
-                SpanStyle(
-                    color = if (isWordPassed || (!isWordTimed && isCurrentLine)) baseColor else inactiveWordColor,
-                    fontWeight = if (isCurrentLine) {
-                        if (lyricBold) FontWeight.ExtraBold else FontWeight.SemiBold
-                    } else {
-                        if (lyricBold) FontWeight.Bold else FontWeight.Normal
-                    }
-                )
-            }
-
-            withStyle(style) {
-                if (wordIndex > 0 && !word.isPart) {
-                    append(" ")
-                }
-                append(word.text)
-            }
-        }
-    }
-
-    val isVoice2Line = line.voiceTag in listOf("v2", "voice2")
-    val lineTextAlignment = if (textAlignment == TextAlign.Start && isVoice2Line) {
+    val lineTextAlignment = if (textAlignment == TextAlign.Start && isVoice2) {
         TextAlign.End
     } else {
         textAlignment
@@ -671,6 +542,7 @@ private fun WordByWordLyricLineItem(
         TextAlign.End -> Alignment.End
         else -> Alignment.CenterHorizontally
     }
+    val backingScale = if (line.background) 0.84f else 1.0f
 
     Column(
         modifier = Modifier
@@ -679,21 +551,40 @@ private fun WordByWordLyricLineItem(
                 onSeek?.invoke(line.lineTimestamp)
                 onTapLyricsView?.invoke()
             }
-            .padding(vertical = 12.dp, horizontal = 16.dp)
+            .padding(
+                vertical = if (line.background) 6.dp else 12.dp,
+                horizontal = if (line.background) 24.dp else 16.dp
+            )
             .graphicsLayer {
                 scaleX = scale
                 scaleY = scale
-                alpha = opacity
+                alpha = if (line.background && !isCurrentLine) opacity * 0.82f else opacity
                 translationY = animatedTranslationY
             },
         horizontalAlignment = columnAlignment
     ) {
-        Text(
-            text = annotatedText,
-            onTextLayout = { textLayoutResult = it },
-            style = MaterialTheme.typography.headlineSmall.copy(
-                fontSize = MaterialTheme.typography.headlineSmall.fontSize * textSizeMultiplier,
-                lineHeight = MaterialTheme.typography.headlineSmall.lineHeight * 1.4f * textSizeMultiplier
+        SpeakerBadgeRow(
+            voiceTag = line.voiceTag,
+            isBackground = line.background,
+            isCurrentLine = isCurrentLine,
+            accentColor = highlightInk,
+            horizontalAlignment = columnAlignment
+        )
+
+        DrawPhaseKaraokeText(
+            words = line.words,
+            lineTimestamp = line.lineTimestamp,
+            lineEndtime = line.lineEndtime,
+            adjustedPlaybackTime = adjustedPlaybackTime,
+            isCurrentLine = isCurrentLine,
+            isWordTimed = isWordTimed,
+            lyricBold = lyricBold,
+            noAnimation = noAnimation,
+            inactiveColor = unlitInk,
+            activeColor = highlightInk,
+            baseStyle = MaterialTheme.typography.headlineSmall.copy(
+                fontSize = MaterialTheme.typography.headlineSmall.fontSize * textSizeMultiplier * backingScale,
+                lineHeight = MaterialTheme.typography.headlineSmall.lineHeight * 1.4f * textSizeMultiplier * backingScale
             ),
             textAlign = lineTextAlignment,
             modifier = Modifier.fillMaxWidth()

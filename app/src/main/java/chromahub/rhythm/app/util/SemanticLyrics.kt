@@ -1303,6 +1303,15 @@ private class TtmlParserState(
 }
 
 fun parseTtml(audioMimeType: String?, lyricText: String): SemanticLyrics? {
+    // Reject oversized payloads and external DTD/entity declarations (XXE / billion-laughs hardening).
+    if (lyricText.isBlank() || lyricText.length > 2_000_000) return null
+    val upperPrefix = lyricText.take(4096).uppercase()
+    if (upperPrefix.contains("<!DOCTYPE") || upperPrefix.contains("<!ENTITY")) {
+        try {
+            Log.w(TAG, "Rejected TTML containing DOCTYPE/ENTITY declaration")
+        } catch (_: Throwable) {}
+        return null
+    }
     val formattedLyricText = lyricText
         .replace(Regex("&(?!#?[a-zA-Z0-9]+;)"), "&amp;")
     val parser = try {
@@ -1316,6 +1325,9 @@ fun parseTtml(audioMimeType: String?, lyricText: String): SemanticLyrics? {
     } ?: return null
     try {
         parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, true)
+    } catch (_: Throwable) {}
+    try {
+        parser.setFeature(XmlPullParser.FEATURE_PROCESS_DOCDECL, false)
     } catch (_: Throwable) {}
     try {
         parser.setInput(StringReader(formattedLyricText))

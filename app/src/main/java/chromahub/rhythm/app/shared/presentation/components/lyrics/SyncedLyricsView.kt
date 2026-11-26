@@ -390,52 +390,14 @@ private fun SyncedVocalGapItem(
     noAnimation: Boolean,
     textColor: Color? = null
 ) {
-    val isCurrentGap = currentPlaybackTime >= item.startTime &&
-        currentPlaybackTime < item.startTime + item.duration
-
-    val gapPadding = (item.duration / 1000f).coerceIn(8f, 20f)
-
-    val iconScale by animateFloatAsState(
-        targetValue = if (isCurrentGap) 1.3f else 1f,
-        animationSpec = if (noAnimation) snap() else spring(
-            dampingRatio = Spring.DampingRatioLowBouncy,
-            stiffness = Spring.StiffnessVeryLow
-        ),
-        label = "syncedGapScale"
+    InstrumentalBreakIndicator(
+        startTimeMs = item.startTime,
+        durationMs = item.duration,
+        currentPlaybackTime = currentPlaybackTime,
+        textColor = textColor,
+        activeColor = null,
+        noAnimation = noAnimation
     )
-
-    val iconAlpha by animateFloatAsState(
-        targetValue = if (isCurrentGap) 0.82f else 0.3f,
-        animationSpec = if (noAnimation) snap() else spring(
-            dampingRatio = Spring.DampingRatioNoBouncy,
-            stiffness = Spring.StiffnessLow
-        ),
-        label = "syncedGapAlpha"
-    )
-
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = gapPadding.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(
-            text = "♪",
-            style = MaterialTheme.typography.titleMedium,
-            color = (textColor ?: MaterialTheme.colorScheme.onSurface).copy(alpha = iconAlpha),
-            modifier = Modifier.graphicsLayer {
-                scaleX = iconScale
-                scaleY = iconScale
-            }
-        )
-        Text(
-            text = stringResource(R.string.lyrics_instrumental),
-            style = MaterialTheme.typography.labelMedium,
-            color = (textColor ?: MaterialTheme.colorScheme.onSurface).copy(
-                alpha = if (isCurrentGap) 0.6f else 0.25f
-            )
-        )
-    }
 }
 
 /**
@@ -575,6 +537,13 @@ private fun SyncedLyricItem(
             .alpha(alpha),
         horizontalAlignment = columnAlignment
     ) {
+        SpeakerBadgeRow(
+            voiceTag = line.voiceTag,
+            isBackground = false,
+            isCurrentLine = isCurrentLine,
+            accentColor = lineColor,
+            horizontalAlignment = columnAlignment
+        )
         // Main lyrics text
         Text(
             text = line.text,

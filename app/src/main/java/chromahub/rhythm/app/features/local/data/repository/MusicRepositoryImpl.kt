@@ -2807,7 +2807,14 @@ class MusicRepository(context: Context) {
         return try {
             Log.d(TAG, "===== GET EMBEDDED LYRICS START: $songUri =====")
             
-            // Primary method: jaudiotagger (supports robust extraction for multiple formats directly)
+            chromahub.rhythm.app.util.LocalContainerLyricsReader.extract(context, songUri.toString())?.let { container ->
+                val parsed = parseLyricsData(container.text)
+                if (parsed != null && parsed.hasLyrics()) {
+                    Log.d(TAG, "===== FOUND LYRICS VIA CONTAINER READER (${container.sourceLabel}) =====")
+                    return parsed.copy(source = parsed.source ?: container.sourceLabel)
+                }
+            }
+
             val filePath = getFilePathFromUri(songUri)
             if (filePath != null) {
                 try {

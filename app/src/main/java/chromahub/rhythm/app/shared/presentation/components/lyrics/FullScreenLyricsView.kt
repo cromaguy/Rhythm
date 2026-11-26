@@ -158,6 +158,7 @@ fun FullScreenLyricsView(
 
     // Local manual sync offset in milliseconds (real-time offset tuning!)
     var manualSyncOffsetMs by remember { mutableLongStateOf(0L) }
+    var showShareCardSheet by remember { mutableStateOf(false) }
 
     // Infinite transition for organic background morphing
     val infiniteTransition = rememberInfiniteTransition(label = "BackgroundAura")
@@ -785,6 +786,22 @@ fun FullScreenLyricsView(
                         Column(
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
+                            if (lyrics?.hasLyrics() == true) {
+                                FilledTonalIconButton(
+                                    onClick = {
+                                        HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
+                                        showShareCardSheet = true
+                                    },
+                                    modifier = Modifier.size(44.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = MaterialSymbolIcon("share"),
+                                        contentDescription = "Share Lyrics Card",
+                                        modifier = Modifier.size(22.dp)
+                                    )
+                                }
+                            }
+
                             // Quick Open Lyrics Editor
                             FilledTonalIconButton(
                                 onClick = {
@@ -1103,6 +1120,22 @@ fun FullScreenLyricsView(
                         Column(
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
+                            if (lyrics?.hasLyrics() == true) {
+                                FilledTonalIconButton(
+                                    onClick = {
+                                        HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
+                                        showShareCardSheet = true
+                                    },
+                                    modifier = Modifier.size(44.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = MaterialSymbolIcon("share"),
+                                        contentDescription = "Share Lyrics Card",
+                                        modifier = Modifier.size(22.dp)
+                                    )
+                                }
+                            }
+
                             // Quick Open Lyrics Editor
                             FilledTonalIconButton(
                                 onClick = {
@@ -1307,6 +1340,15 @@ fun FullScreenLyricsView(
                 }
             }
         }
+    }
+
+    if (showShareCardSheet) {
+        LyricsShareCardSheet(
+            song = song,
+            lyrics = lyrics,
+            currentPositionMs = currentTimeMs + manualSyncOffsetMs,
+            onDismiss = { showShareCardSheet = false }
+        )
     }
 }
 

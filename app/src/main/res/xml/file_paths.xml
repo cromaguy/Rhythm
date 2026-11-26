@@ -10,4 +10,6 @@
     
     <!-- External cache directory -->
     <external-cache-path name="external_cache" path="." />
+
+    <cache-path name="internal_cache" path="." />
 </paths> 
