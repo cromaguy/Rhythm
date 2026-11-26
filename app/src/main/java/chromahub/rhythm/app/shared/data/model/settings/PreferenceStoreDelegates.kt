@@ -158,17 +158,25 @@ class StreamingPreferencesStore(prefs: SharedPreferences) : PreferenceStoreBase(
     private val _libreFmSessionKey = NullableStringPref("scrobble_librefm_session_key")
     private val _malojaServerUrl = NullableStringPref("scrobble_maloja_url")
     private val _malojaToken = NullableStringPref("scrobble_maloja_token")
+    private val _discordRpcEnabled = BooleanPref("discord_rpc_enabled", false)
+    private val _discordRpcApplicationId = StringPref("discord_rpc_app_id", "")
 
     val listenBrainzToken = _listenBrainzToken.state
     val libreFmSessionKey = _libreFmSessionKey.state
     val malojaServerUrl = _malojaServerUrl.state
     val malojaToken = _malojaToken.state
+    val discordRpcEnabled = _discordRpcEnabled.state
+    val discordRpcApplicationId = _discordRpcApplicationId.state
 
     fun setListenBrainzToken(token: String?) = _listenBrainzToken.set(token?.trim()?.takeIf { it.isNotEmpty() })
     fun setLibreFmSessionKey(key: String?) = _libreFmSessionKey.set(key?.trim()?.takeIf { it.isNotEmpty() })
     fun setMalojaConfig(url: String?, token: String?) {
         _malojaServerUrl.set(url?.trim()?.takeIf { it.isNotEmpty() })
         _malojaToken.set(token?.trim()?.takeIf { it.isNotEmpty() })
+    }
+    fun setDiscordRpcConfig(enabled: Boolean, applicationId: String?) {
+        _discordRpcEnabled.set(enabled)
+        _discordRpcApplicationId.set(applicationId?.trim().orEmpty())
     }
 }
 

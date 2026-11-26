@@ -188,10 +188,16 @@ fun ApiManagementSettingsScreen(onBackClick: () -> Unit) {
     val libreFmSessionKey by streamingPrefs.libreFmSessionKey.collectAsState()
     val malojaServerUrl by streamingPrefs.malojaServerUrl.collectAsState()
     val malojaToken by streamingPrefs.malojaToken.collectAsState()
+    val discordRpcEnabled by streamingPrefs.discordRpcEnabled.collectAsState()
+    val discordRpcAppId by streamingPrefs.discordRpcApplicationId.collectAsState()
+    val discordSupported = remember {
+        chromahub.rhythm.app.infrastructure.network.presence.DiscordPresenceFactory.isSupported()
+    }
     val scrobbleScope = rememberCoroutineScope()
     var showListenBrainzDialog by remember { mutableStateOf(false) }
     var showLibreFmDialog by remember { mutableStateOf(false) }
     var showMalojaDialog by remember { mutableStateOf(false) }
+    var showDiscordDialog by remember { mutableStateOf(false) }
 
     CollapsibleHeaderScreen(
         title = context.getString(R.string.settings_api_management),
@@ -456,7 +462,30 @@ fun ApiManagementSettingsScreen(onBackClick: () -> Unit) {
                                 onClick = { showMalojaDialog = true }
                             )
                         )
-                    ),
+                    ) + if (discordSupported) {
+                        listOf(
+                            toMaterial3SettingsItem(
+                                context = context,
+                                hapticFeedback = hapticFeedback,
+                                item = SettingItem(
+                                    icon = MaterialSymbolIcon("sensors"),
+                                    title = "Discord Rich Presence",
+                                    description = when {
+                                        discordRpcEnabled && discordRpcAppId.isNotBlank() -> "Enabled (App ID $discordRpcAppId)"
+                                        discordRpcEnabled -> "Enabled (Tap to set Discord App ID)"
+                                        else -> "Share active track & format to Discord IPC"
+                                    },
+                                    toggleState = discordRpcEnabled,
+                                    onToggleChange = { checked ->
+                                        streamingPrefs.setDiscordRpcConfig(checked, discordRpcAppId)
+                                    },
+                                    onClick = { showDiscordDialog = true }
+                                )
+                            )
+                        )
+                    } else {
+                        emptyList()
+                    },
                     containerColor = MaterialTheme.colorScheme.surfaceContainer
                 )
             }
@@ -627,6 +656,42 @@ fun ApiManagementSettingsScreen(onBackClick: () -> Unit) {
                 },
                 dismissButton = {
                     TextButton(onClick = { showMalojaDialog = false }) { Text("Cancel") }
+                }
+            )
+        }
+
+        if (showDiscordDialog && discordSupported) {
+            var appIdInput by remember(discordRpcAppId) { mutableStateOf(discordRpcAppId) }
+            AlertDialog(
+                onDismissRequest = { showDiscordDialog = false },
+                title = { Text("Discord Rich Presence") },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            text = "Enter your numeric Discord Application ID from the Discord Developer Portal to enable local Android IPC presence.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        OutlinedTextField(
+                            value = appIdInput,
+                            onValueChange = { ch -> appIdInput = ch.filter { it.isDigit() } },
+                            label = { Text("Discord Application ID") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = {
+                        streamingPrefs.setDiscordRpcConfig(
+                            enabled = appIdInput.isNotBlank(),
+                            applicationId = appIdInput
+                        )
+                        showDiscordDialog = false
+                    }) { Text("Save") }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showDiscordDialog = false }) { Text("Cancel") }
                 }
             )
         }

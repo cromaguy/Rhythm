@@ -388,6 +388,7 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
     // Status broadcaster for Tasker, KWGT, and other automation apps
     private lateinit var statusBroadcaster: chromahub.rhythm.app.utils.StatusBroadcaster
     private var statusBarLyricController: StatusBarLyricController? = null
+    private var discordPresenceController: chromahub.rhythm.app.infrastructure.network.presence.DiscordPresenceController? = null
     
     // SharedPreferences keys
     companion object {
@@ -595,6 +596,7 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
         // Initialize status broadcaster for Tasker/KWGT
         statusBroadcaster = chromahub.rhythm.app.utils.StatusBroadcaster(applicationContext)
         statusBarLyricController = StatusBarLyricController(applicationContext, CHANNEL_ID)
+        discordPresenceController = chromahub.rhythm.app.infrastructure.network.presence.DiscordPresenceFactory.create(applicationContext)
 
         // Register BroadcastReceiver for favorite changes
         androidx.core.content.ContextCompat.registerReceiver(
@@ -1124,6 +1126,7 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
                 if (!isPlaying) {
                     statusBarLyricController?.clear()
                 }
+                syncDiscordPresence(isPlaying = isPlaying, mediaItem = player.currentMediaItem)
                 
                 // Broadcast status for Tasker/KWGT/automation apps
                 if (appSettings.broadcastStatusEnabled.value) {
@@ -1207,6 +1210,7 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
                 }
                 
                 // Update widget when media item changes
+                syncDiscordPresence(isPlaying = player.isPlaying, mediaItem = mediaItem)
                 serviceScope.launch {
                     updateWidgetFromMediaItem(mediaItem)
                 }
@@ -4147,11 +4151,38 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
             musicHapticsController = null
             statusBarLyricController?.clear()
             statusBarLyricController = null
+            discordPresenceController?.clear()
+            discordPresenceController = null
             
             Log.d(TAG, "Audio effects released")
         } catch (e: Exception) {
             Log.e(TAG, "Error releasing audio effects", e)
         }
+    }
+
+    private fun syncDiscordPresence(isPlaying: Boolean, mediaItem: MediaItem?) {
+        val controller = discordPresenceController ?: return
+        if (!controller.isSupported) return
+        val enabled = appSettings.streamingPrefs.discordRpcEnabled.value
+        val appId = appSettings.streamingPrefs.discordRpcApplicationId.value
+        if (!enabled || mediaItem == null || !isPlaying) {
+            controller.onPlaybackUpdated(enabled, appId, null)
+            return
+        }
+        val song = convertMediaItemToSong(mediaItem)
+        val state = song?.let {
+            chromahub.rhythm.app.infrastructure.network.presence.DiscordPresenceTrackState(
+                title = it.title,
+                artist = it.artist,
+                album = it.album,
+                durationMs = it.duration,
+                positionMs = if (::player.isInitialized) player.currentPosition else 0L,
+                isPlaying = isPlaying,
+                codecLabel = it.codec,
+                sampleRateHz = it.sampleRate
+            )
+        }
+        controller.onPlaybackUpdated(enabled, appId, state)
     }
     
     /**
