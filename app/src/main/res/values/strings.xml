@@ -1672,6 +1672,8 @@
     <string name="settings_library_combine_discs_desc">Merge multi-disc albums into one continuous sort</string>
     <string name="settings_show_library_bottom_bar_always">Show library bottom bar always</string>
     <string name="settings_show_library_bottom_bar_always_desc">Keep navigation bar visible across all library tabs</string>
+    <string name="settings_unified_library">Unified Library</string>
+    <string name="settings_unified_library_desc">Merge local music and streaming libraries into one view</string>
     <string name="settings_show_keyboard_on_search_open">Auto Focus Search</string>
     <string name="settings_show_keyboard_on_search_open_desc">Show keyboard when Search opens</string>
     <string name="settings_library_group_artwork">Artwork Rendering</string>

@@ -11,6 +11,7 @@ import chromahub.rhythm.app.shared.presentation.components.bottomsheets.SheetAda
 
 import chromahub.rhythm.app.shared.presentation.components.icons.RhythmIcons
 import chromahub.rhythm.app.shared.presentation.components.icons.MaterialSymbolIcon
+import chromahub.rhythm.app.core.domain.library.UnifiedLibraryMerger
 import chromahub.rhythm.app.shared.presentation.components.icons.Icon
 import chromahub.rhythm.app.util.ArtistSeparator
 import chromahub.rhythm.app.util.NaturalSortComparator
@@ -358,7 +359,9 @@ fun LibraryScreen(
     streamingFavoriteSongIds: Set<String> = emptySet(),
     streamingDownloadedSongIds: Set<String> = emptySet(),
     streamingDownloadingSongIds: Set<String> = emptySet(),
-    onStreamingToggleDownload: ((Song) -> Unit)? = null
+    onStreamingToggleDownload: ((Song) -> Unit)? = null,
+    unifiedLibraryEnabled: Boolean = false,
+    streamingSongIds: Set<String> = emptySet()
 ) {
     val context = LocalContext.current
     val appSettings = remember { AppSettings.getInstance(context) }
@@ -367,9 +370,9 @@ fun LibraryScreen(
     val showLibraryBottomBarAlways by appSettings.showLibraryBottomBarAlways.collectAsState()
     val gestureLibrarySwipeTabs by appSettings.gestureLibrarySwipeTabs.collectAsState()
 
-    // Show Album Artists tab by default in Go mode, hidden in local mode
-    val effectiveHiddenTabs = remember(hiddenTabs, isStreamingMode) {
-        if (isStreamingMode) hiddenTabs - "ALBUM_ARTISTS" else hiddenTabs
+    // Show Album Artists tab by default in Go mode or Unified Library, hidden in local-only mode
+    val effectiveHiddenTabs = remember(hiddenTabs, isStreamingMode, unifiedLibraryEnabled) {
+        if (isStreamingMode || unifiedLibraryEnabled) hiddenTabs - "ALBUM_ARTISTS" else hiddenTabs
     }
     
     val allowedStreamingTabs = setOf("SONGS", "LIKED", "PLAYLISTS", "ALBUMS", "ARTISTS", "ALBUM_ARTISTS")
@@ -517,7 +520,13 @@ fun LibraryScreen(
     }
     
     val localFavoriteSongs by musicViewModel.favoriteSongs.collectAsState()
-    val favoriteSongs = if (isStreamingMode) streamingFavoriteSongIds else localFavoriteSongs
+    val favoriteSongs = remember(isStreamingMode, unifiedLibraryEnabled, streamingFavoriteSongIds, localFavoriteSongs) {
+        when {
+            isStreamingMode -> streamingFavoriteSongIds
+            unifiedLibraryEnabled -> localFavoriteSongs + streamingFavoriteSongIds
+            else -> localFavoriteSongs
+        }
+    }
     var selectedCategory by rememberSaveable { mutableStateOf("All") }
     // The Favorites filter chip was replaced by the dedicated Liked tab; reset stale saved state.
     LaunchedEffect(Unit) {
@@ -543,10 +552,10 @@ fun LibraryScreen(
         sortedSongs.distinctBy { "${it.id}_${it.uri}" }
     }
 
-    val categories by rememberOffMain(listOf("All"), preparedSongs, streamingDownloadedSongIds) {
+    val categories by rememberOffMain(listOf("All"), preparedSongs, streamingDownloadedSongIds, isStreamingMode, unifiedLibraryEnabled) {
         calculateSongCategories(
             preparedSongs,
-            hasDownloadedSongs = streamingDownloadedSongIds.isNotEmpty() || (isStreamingMode && preparedSongs.any { it.id in streamingDownloadedSongIds })
+            hasDownloadedSongs = streamingDownloadedSongIds.isNotEmpty() || ((isStreamingMode || unifiedLibraryEnabled) && preparedSongs.any { it.id in streamingDownloadedSongIds })
         )
     }
 
@@ -699,7 +708,8 @@ fun LibraryScreen(
     val currentSelectedSong = selectedSong
     if (showSongInfoSheet && currentSelectedSong != null) {
         val displaySong = songs.find { it.id == currentSelectedSong.id } ?: currentSelectedSong
-        
+        val displaySongIsStreaming = isStreamingMode || (unifiedLibraryEnabled && UnifiedLibraryMerger.isStreamingSong(displaySong, streamingSongIds))
+
         SongInfoBottomSheet(
             song = displaySong,
             onDismiss = {
@@ -707,11 +717,11 @@ fun LibraryScreen(
                 showSongInfoInEditMode = false
             },
             appSettings = appSettings,
-            isStreamingMode = isStreamingMode,
+            isStreamingMode = displaySongIsStreaming,
             startInEditMode = showSongInfoInEditMode,
             isDownloaded = streamingDownloadedSongIds.contains(displaySong.id),
             isDownloading = streamingDownloadingSongIds.contains(displaySong.id),
-            onToggleDownload = if (isStreamingMode) ({
+            onToggleDownload = if (displaySongIsStreaming) ({
                 onStreamingToggleDownload?.invoke(displaySong)
             }) else null,
             onEditSong = { title, artist, album, genre, year, trackNumber, artworkUri, removeArtwork, albumArtist, composer, discNumber, onComplete ->
@@ -904,12 +914,21 @@ fun LibraryScreen(
                 multiSelectionState.clearSelection()
             },
             onAddToQueue = {
-                selectedSongs.forEach { song -> onAddToQueue(song) }
+                selectedSongs.forEach { song ->
+                    val songIsStreaming = isStreamingMode || (unifiedLibraryEnabled && UnifiedLibraryMerger.isStreamingSong(song, streamingSongIds))
+                    if (songIsStreaming) onStreamingAddToQueue?.invoke(song) else onAddToQueue(song)
+                }
                 multiSelectionState.clearSelection()
             },
             onPlayNext = if (isStreamingMode) null else {
                 {
-                    selectedSongs.reversed().forEach { song -> musicViewModel.playNext(song) }
+                    selectedSongs.reversed().forEach { song ->
+                        if (unifiedLibraryEnabled && UnifiedLibraryMerger.isStreamingSong(song, streamingSongIds)) {
+                            onStreamingPlayNext?.invoke(song)
+                        } else {
+                            musicViewModel.playNext(song)
+                        }
+                    }
                     multiSelectionState.clearSelection()
                 }
             },
@@ -918,23 +937,26 @@ fun LibraryScreen(
                 showMultiSelectionSheet = false
                 showAddToPlaylistSheet = true
             },
-            onToggleLikeAll = if (isStreamingMode) ({ shouldLike ->
+            onToggleLikeAll = { shouldLike ->
                 selectedSongs.forEach { song ->
-                    val isLiked = streamingFavoriteSongIds.contains(song.id)
-                    if (shouldLike != isLiked) onStreamingSetFavorite?.invoke(song, shouldLike)
-                }
-            }) else { shouldLike ->
-                selectedSongs.forEach { song ->
-                    val isFavorited = favoriteSongs.contains(song.id)
-                    if (shouldLike != isFavorited) {
-                        musicViewModel.toggleFavorite(song)
+                    val songIsStreaming = isStreamingMode || (unifiedLibraryEnabled && UnifiedLibraryMerger.isStreamingSong(song, streamingSongIds))
+                    if (songIsStreaming) {
+                        val isLiked = streamingFavoriteSongIds.contains(song.id)
+                        if (shouldLike != isLiked) onStreamingSetFavorite?.invoke(song, shouldLike)
+                    } else {
+                        val isFavorited = favoriteSongs.contains(song.id)
+                        if (shouldLike != isFavorited) {
+                            musicViewModel.toggleFavorite(song)
+                        }
                     }
                 }
             },
             onAddToBlacklist = if (isStreamingMode) null else {
                 {
                     selectedSongs.forEach { song ->
-                        appSettings.addToBlacklist(song.id)
+                        if (!unifiedLibraryEnabled || !UnifiedLibraryMerger.isStreamingSong(song, streamingSongIds)) {
+                            appSettings.addToBlacklist(song.id)
+                        }
                     }
                 }
             },
@@ -1663,13 +1685,16 @@ fun LibraryScreen(
                                             showAddToPlaylistSheet = true
                                         },
                                         onAddToQueue = { song ->
-                                            if (isStreamingMode) onStreamingAddToQueue?.invoke(song) else onAddToQueue(song)
+                                            val songIsStreaming = isStreamingMode || (unifiedLibraryEnabled && UnifiedLibraryMerger.isStreamingSong(song, streamingSongIds))
+                                            if (songIsStreaming) onStreamingAddToQueue?.invoke(song) else onAddToQueue(song)
                                         },
                                         onPlayNext = { song ->
-                                            if (isStreamingMode) onStreamingPlayNext?.invoke(song) else musicViewModel.playNext(song)
+                                            val songIsStreaming = isStreamingMode || (unifiedLibraryEnabled && UnifiedLibraryMerger.isStreamingSong(song, streamingSongIds))
+                                            if (songIsStreaming) onStreamingPlayNext?.invoke(song) else musicViewModel.playNext(song)
                                         },
-                                        onToggleFavorite = if (isStreamingMode) onStreamingToggleFavorite else { song ->
-                                            musicViewModel.toggleFavorite(song)
+                                        onToggleFavorite = { song ->
+                                            val songIsStreaming = isStreamingMode || (unifiedLibraryEnabled && UnifiedLibraryMerger.isStreamingSong(song, streamingSongIds))
+                                            if (songIsStreaming) onStreamingToggleFavorite?.invoke(song) else musicViewModel.toggleFavorite(song)
                                         },
                                         favoriteSongs = favoriteSongs,
                                         onGoToArtist = onNavigateToArtist,
@@ -1707,7 +1732,9 @@ fun LibraryScreen(
                                             isStreamingMode = isStreamingMode,
                                             streamingDownloadedSongIds = streamingDownloadedSongIds,
                                             streamingDownloadingSongIds = streamingDownloadingSongIds,
-                                            onStreamingToggleDownload = onStreamingToggleDownload
+                                            onStreamingToggleDownload = onStreamingToggleDownload,
+                                            unifiedLibraryEnabled = unifiedLibraryEnabled,
+                                            streamingSongIds = streamingSongIds
                                         )
                                     }
                                     "LIKED" -> SingleCardSongsContent(
@@ -1722,13 +1749,16 @@ fun LibraryScreen(
                                             showAddToPlaylistSheet = true
                                         },
                                         onAddToQueue = { song ->
-                                            if (isStreamingMode) onStreamingAddToQueue?.invoke(song) else onAddToQueue(song)
+                                            val songIsStreaming = isStreamingMode || (unifiedLibraryEnabled && UnifiedLibraryMerger.isStreamingSong(song, streamingSongIds))
+                                            if (songIsStreaming) onStreamingAddToQueue?.invoke(song) else onAddToQueue(song)
                                         },
                                         onPlayNext = { song ->
-                                            if (isStreamingMode) onStreamingPlayNext?.invoke(song) else musicViewModel.playNext(song)
+                                            val songIsStreaming = isStreamingMode || (unifiedLibraryEnabled && UnifiedLibraryMerger.isStreamingSong(song, streamingSongIds))
+                                            if (songIsStreaming) onStreamingPlayNext?.invoke(song) else musicViewModel.playNext(song)
                                         },
-                                        onToggleFavorite = if (isStreamingMode) onStreamingToggleFavorite else { song ->
-                                            musicViewModel.toggleFavorite(song)
+                                        onToggleFavorite = { song ->
+                                            val songIsStreaming = isStreamingMode || (unifiedLibraryEnabled && UnifiedLibraryMerger.isStreamingSong(song, streamingSongIds))
+                                            if (songIsStreaming) onStreamingToggleFavorite?.invoke(song) else musicViewModel.toggleFavorite(song)
                                         },
                                         favoriteSongs = favoriteSongs,
                                         onGoToArtist = onNavigateToArtist,
@@ -1769,7 +1799,9 @@ fun LibraryScreen(
                                             isStreamingMode = isStreamingMode,
                                             streamingDownloadedSongIds = streamingDownloadedSongIds,
                                             streamingDownloadingSongIds = streamingDownloadingSongIds,
-                                            onStreamingToggleDownload = onStreamingToggleDownload
+                                            onStreamingToggleDownload = onStreamingToggleDownload,
+                                            unifiedLibraryEnabled = unifiedLibraryEnabled,
+                                            streamingSongIds = streamingSongIds
                                         )
                                     "PLAYLISTS" -> SingleCardPlaylistsContent(
                                         playlists = playlists,
@@ -1783,7 +1815,7 @@ fun LibraryScreen(
                                         appSettings = appSettings,
                                         onRefreshClick = onRefreshClick,
                                         bottomPadding = baseLibraryBottomPadding,
-                                        downloadedSongIds = if (isStreamingMode) streamingDownloadedSongIds else emptySet()
+                                        downloadedSongIds = if (isStreamingMode || unifiedLibraryEnabled) streamingDownloadedSongIds else emptySet()
                                     )
                                     "ALBUMS" -> {
                                         SingleCardAlbumsContent(
@@ -1841,10 +1873,19 @@ fun LibraryScreen(
                                         songsToAddToPlaylist = listOf(song)
                                         showAddToPlaylistSheet = true
                                     },
-                                    onAddToQueue = onAddToQueue,
-                                    onPlayNext = { song -> musicViewModel.playNext(song) },
-                                    onToggleFavorite = { song -> musicViewModel.toggleFavorite(song) },
-                                    favoriteSongs = musicViewModel.favoriteSongs.collectAsState().value,
+                                    onAddToQueue = { song ->
+                                        val songIsStreaming = isStreamingMode || (unifiedLibraryEnabled && UnifiedLibraryMerger.isStreamingSong(song, streamingSongIds))
+                                        if (songIsStreaming) onStreamingAddToQueue?.invoke(song) else onAddToQueue(song)
+                                    },
+                                    onPlayNext = { song ->
+                                        val songIsStreaming = isStreamingMode || (unifiedLibraryEnabled && UnifiedLibraryMerger.isStreamingSong(song, streamingSongIds))
+                                        if (songIsStreaming) onStreamingPlayNext?.invoke(song) else musicViewModel.playNext(song)
+                                    },
+                                    onToggleFavorite = { song ->
+                                        val songIsStreaming = isStreamingMode || (unifiedLibraryEnabled && UnifiedLibraryMerger.isStreamingSong(song, streamingSongIds))
+                                        if (songIsStreaming) onStreamingToggleFavorite?.invoke(song) else musicViewModel.toggleFavorite(song)
+                                    },
+                                    favoriteSongs = favoriteSongs,
                                     onGoToArtist = onNavigateToArtist,
                                     onGoToAlbum = onAlbumBottomSheetClick,
                                     onShowSongInfo = { song ->
@@ -1878,7 +1919,9 @@ fun LibraryScreen(
                                         isStreamingMode = isStreamingMode,
                                         streamingDownloadedSongIds = streamingDownloadedSongIds,
                                         streamingDownloadingSongIds = streamingDownloadingSongIds,
-                                        onStreamingToggleDownload = onStreamingToggleDownload
+                                        onStreamingToggleDownload = onStreamingToggleDownload,
+                                        unifiedLibraryEnabled = unifiedLibraryEnabled,
+                                        streamingSongIds = streamingSongIds
                                     )
                                     "EXPLORER" -> SingleCardExplorerContent(
                                         songs = songs,
@@ -2332,7 +2375,9 @@ fun SingleCardSongsContent(
     isStreamingMode: Boolean = false,
     streamingDownloadedSongIds: Set<String> = emptySet(),
     streamingDownloadingSongIds: Set<String> = emptySet(),
-    onStreamingToggleDownload: ((Song) -> Unit)? = null
+    onStreamingToggleDownload: ((Song) -> Unit)? = null,
+    unifiedLibraryEnabled: Boolean = false,
+    streamingSongIds: Set<String> = emptySet()
 ) {
     val context = LocalContext.current
     val appSettings = remember { AppSettings.getInstance(context) }
@@ -2551,9 +2596,9 @@ fun SingleCardSongsContent(
                             customMenuContent = songMenuContent?.let { menuBuilder ->
                                 { dismissMenu -> menuBuilder(song, dismissMenu) }
                             },
-                            isDownloaded = isStreamingMode && streamingDownloadedSongIds.contains(song.id),
-                            isDownloading = isStreamingMode && streamingDownloadingSongIds.contains(song.id),
-                            onToggleDownload = if (isStreamingMode) ({ onStreamingToggleDownload?.invoke(song) }) else null,
+                            isDownloaded = (isStreamingMode || (unifiedLibraryEnabled && UnifiedLibraryMerger.isStreamingSong(song, streamingSongIds))) && streamingDownloadedSongIds.contains(song.id),
+                            isDownloading = (isStreamingMode || (unifiedLibraryEnabled && UnifiedLibraryMerger.isStreamingSong(song, streamingSongIds))) && streamingDownloadingSongIds.contains(song.id),
+                            onToggleDownload = if (isStreamingMode || (unifiedLibraryEnabled && UnifiedLibraryMerger.isStreamingSong(song, streamingSongIds))) ({ onStreamingToggleDownload?.invoke(song) }) else null,
                             onOverflowClick = { songForOverflow = song }
                         )
                     }
@@ -2582,6 +2627,7 @@ fun SingleCardSongsContent(
 
     if (songForOverflow != null) {
         val targetSong = songForOverflow!!
+        val targetIsStreaming = isStreamingMode || (unifiedLibraryEnabled && UnifiedLibraryMerger.isStreamingSong(targetSong, streamingSongIds))
         SongOverflowBottomSheet(
             song = targetSong,
             onDismiss = { songForOverflow = null },
@@ -2635,13 +2681,13 @@ fun SingleCardSongsContent(
                 resolvedArtist?.let { onGoToArtist(it) }
             },
             onShowSongInfo = { onShowSongInfo(targetSong) },
-            onEditSong = onEditSong?.let { fn -> { fn(targetSong) } },
-            onAddToBlacklist = onAddToBlacklist?.let { fn -> { fn(targetSong) } },
-            onDeleteSong = onDeleteSong?.let { fn -> { fn(targetSong) } },
-            isDownloaded = isStreamingMode && streamingDownloadedSongIds.contains(targetSong.id),
-            isDownloading = isStreamingMode && streamingDownloadingSongIds.contains(targetSong.id),
-            onToggleDownload = if (isStreamingMode) ({ onStreamingToggleDownload?.invoke(targetSong) }) else null,
-            isStreaming = isStreamingMode
+            onEditSong = if (!targetIsStreaming) onEditSong?.let { fn -> { fn(targetSong) } } else null,
+            onAddToBlacklist = if (!targetIsStreaming) onAddToBlacklist?.let { fn -> { fn(targetSong) } } else null,
+            onDeleteSong = if (!targetIsStreaming) onDeleteSong?.let { fn -> { fn(targetSong) } } else null,
+            isDownloaded = targetIsStreaming && streamingDownloadedSongIds.contains(targetSong.id),
+            isDownloading = targetIsStreaming && streamingDownloadingSongIds.contains(targetSong.id),
+            onToggleDownload = if (targetIsStreaming) ({ onStreamingToggleDownload?.invoke(targetSong) }) else null,
+            isStreaming = targetIsStreaming
         )
     }
 }
@@ -6699,7 +6745,9 @@ fun YearGroupedSongsContent(
     isStreamingMode: Boolean = false,
     streamingDownloadedSongIds: Set<String> = emptySet(),
     streamingDownloadingSongIds: Set<String> = emptySet(),
-    onStreamingToggleDownload: ((Song) -> Unit)? = null
+    onStreamingToggleDownload: ((Song) -> Unit)? = null,
+    unifiedLibraryEnabled: Boolean = false,
+    streamingSongIds: Set<String> = emptySet()
 ) {
     val context = LocalContext.current
     var songForOverflow by remember { mutableStateOf<Song?>(null) }
@@ -6820,9 +6868,9 @@ fun YearGroupedSongsContent(
                             isSelectionMode = isSelectionMode,
                             selectionIndex = selectionIndex,
                             onLongPress = { onSongLongPress(song) },
-                            isDownloaded = isStreamingMode && streamingDownloadedSongIds.contains(song.id),
-                            isDownloading = isStreamingMode && streamingDownloadingSongIds.contains(song.id),
-                            onToggleDownload = if (isStreamingMode) ({ onStreamingToggleDownload?.invoke(song) }) else null,
+                            isDownloaded = (isStreamingMode || (unifiedLibraryEnabled && UnifiedLibraryMerger.isStreamingSong(song, streamingSongIds))) && streamingDownloadedSongIds.contains(song.id),
+                            isDownloading = (isStreamingMode || (unifiedLibraryEnabled && UnifiedLibraryMerger.isStreamingSong(song, streamingSongIds))) && streamingDownloadingSongIds.contains(song.id),
+                            onToggleDownload = if (isStreamingMode || (unifiedLibraryEnabled && UnifiedLibraryMerger.isStreamingSong(song, streamingSongIds))) ({ onStreamingToggleDownload?.invoke(song) }) else null,
                             onOverflowClick = { songForOverflow = song }
                         )
                     }
@@ -6846,6 +6894,7 @@ fun YearGroupedSongsContent(
 
     if (songForOverflow != null) {
         val targetSong = songForOverflow!!
+        val targetIsStreaming = isStreamingMode || (unifiedLibraryEnabled && UnifiedLibraryMerger.isStreamingSong(targetSong, streamingSongIds))
         SongOverflowBottomSheet(
             song = targetSong,
             onDismiss = { songForOverflow = null },
@@ -6871,13 +6920,13 @@ fun YearGroupedSongsContent(
                 onGoToArtist(Artist(id = targetSong.artist.trim(), name = targetSong.artist.trim()))
             },
             onShowSongInfo = { onShowSongInfo(targetSong) },
-            onEditSong = onEditSong?.let { fn -> { fn(targetSong) } },
-            onAddToBlacklist = if (!isStreamingMode) { { onAddToBlacklist(targetSong) } } else null,
-            onDeleteSong = if (!isStreamingMode) { { onDeleteSong(targetSong) } } else null,
-            isDownloaded = isStreamingMode && streamingDownloadedSongIds.contains(targetSong.id),
-            isDownloading = isStreamingMode && streamingDownloadingSongIds.contains(targetSong.id),
-            onToggleDownload = if (isStreamingMode) ({ onStreamingToggleDownload?.invoke(targetSong) }) else null,
-            isStreaming = isStreamingMode
+            onEditSong = if (!targetIsStreaming) onEditSong?.let { fn -> { fn(targetSong) } } else null,
+            onAddToBlacklist = if (!targetIsStreaming) { { onAddToBlacklist(targetSong) } } else null,
+            onDeleteSong = if (!targetIsStreaming) { { onDeleteSong(targetSong) } } else null,
+            isDownloaded = targetIsStreaming && streamingDownloadedSongIds.contains(targetSong.id),
+            isDownloading = targetIsStreaming && streamingDownloadingSongIds.contains(targetSong.id),
+            onToggleDownload = if (targetIsStreaming) ({ onStreamingToggleDownload?.invoke(targetSong) }) else null,
+            isStreaming = targetIsStreaming
         )
     }
 }

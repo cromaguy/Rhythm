@@ -12,6 +12,8 @@ import chromahub.rhythm.app.core.domain.model.SourceType
 import chromahub.rhythm.app.core.domain.model.StreamingConfig
 import chromahub.rhythm.app.core.domain.model.StreamingQuality
 import chromahub.rhythm.app.core.utils.NetworkUtils
+import chromahub.rhythm.app.features.streaming.data.offline.CloudOfflineRepository
+import chromahub.rhythm.app.features.streaming.data.offline.OfflineDownloadStatus
 import chromahub.rhythm.app.features.streaming.data.repository.StreamingMusicRepositoryImpl
 import chromahub.rhythm.app.features.streaming.data.repository.StreamingServiceSession
 import chromahub.rhythm.app.features.streaming.data.repository.StreamingServiceSessionRepository
@@ -348,6 +350,19 @@ class StreamingMusicViewModel(application: Application) : AndroidViewModel(appli
                 _downloadedArtists.value = deriveArtistsFromSongs(downloaded, limit = 500)
             }
         }
+        viewModelScope.launch {
+            var prevWorkActive = emptySet<String>()
+            CloudOfflineRepository.getInstance(getApplication()).observeAll().collect { offlineEntities ->
+                val workActive = offlineEntities
+                    .filter { it.status == OfflineDownloadStatus.QUEUED || it.status == OfflineDownloadStatus.DOWNLOADING }
+                    .mapTo(HashSet()) { it.songId }
+                val finishedWorkIds = prevWorkActive - workActive
+                prevWorkActive = workActive
+                if (finishedWorkIds.isNotEmpty() || workActive.isNotEmpty()) {
+                    _downloadingSongIds.value = (_downloadingSongIds.value - finishedWorkIds) + workActive
+                }
+            }
+        }
         // React immediately to offline mode toggles
         viewModelScope.launch {
             appSettings.offlineMode.drop(1).collect { isOffline ->
@@ -389,6 +404,22 @@ class StreamingMusicViewModel(application: Application) : AndroidViewModel(appli
                     }
                 } else {
                     notificationManager.cancelSyncNotification()
+                }
+            }
+        }
+
+        viewModelScope.launch {
+            appSettings.unifiedLibraryEnabled.collect { unified ->
+                if (unified && appSettings.appMode.value != "STREAMING" &&
+                    NetworkUtils.isNetworkAvailable(getApplication()) && !appSettings.offlineMode.value
+                ) {
+                    val serviceId = appSettings.streamingService.value
+                    if (serviceSessionRepository.isConnected(serviceId)) {
+                        val connected = checkAndSyncAuthentication(serviceId, forceCheck = false)
+                        if (connected && _allSongs.value.isEmpty()) {
+                            loadLibrary()
+                        }
+                    }
                 }
             }
         }
@@ -1536,7 +1567,13 @@ class StreamingMusicViewModel(application: Application) : AndroidViewModel(appli
             return
         }
         viewModelScope.launch {
-            downloadSongInternal(song, quiet = false)
+            if (_downloadingSongIds.value.contains(song.id)) return@launch
+            val scheduled = CloudOfflineRepository.getInstance(getApplication()).enqueueDownload(song)
+            if (scheduled) {
+                showToast("Downloading ${song.title}...")
+            } else {
+                downloadSongInternal(song, quiet = false)
+            }
         }
     }
 
@@ -1598,6 +1635,12 @@ class StreamingMusicViewModel(application: Application) : AndroidViewModel(appli
         } else {
             viewModelScope.launch {
                 if (_downloadingSongIds.value.contains(songId)) return@launch
+                val scheduled = CloudOfflineRepository.getInstance(getApplication())
+                    .enqueueById(songId, currentService.value.name)
+                if (scheduled) {
+                    showToast("Downloading track...")
+                    return@launch
+                }
                 _downloadingSongIds.value = _downloadingSongIds.value + songId
                 showToast("Downloading track...")
                 try {

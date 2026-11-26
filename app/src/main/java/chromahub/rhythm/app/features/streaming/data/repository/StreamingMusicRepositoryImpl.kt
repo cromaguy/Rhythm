@@ -13,6 +13,7 @@ import chromahub.rhythm.app.core.domain.model.PlayableItem
 import chromahub.rhythm.app.core.domain.model.PlaylistItem
 import chromahub.rhythm.app.core.domain.model.SourceType
 import chromahub.rhythm.app.core.utils.NetworkUtils
+import chromahub.rhythm.app.features.streaming.data.offline.CloudOfflineRepository
 import chromahub.rhythm.app.features.streaming.data.provider.JellyfinApiClient
 import chromahub.rhythm.app.features.streaming.data.provider.ProviderConnectionResult
 import chromahub.rhythm.app.features.streaming.data.provider.ProviderAlbum
@@ -164,6 +165,9 @@ class StreamingMusicRepositoryImpl(
         // Started here, once the fields the load uses are initialized.
         initialCatalogLoad = BackgroundLoad(repositoryScope) { loadCatalogCacheForActiveService() }
         repositoryScope.launch {
+            runCatching {
+                CloudOfflineRepository.getInstance(context).syncCompletedIndex(downloadedSongsFlow.value)
+            }
             initialCatalogLoad.await()
             // The current service was just loaded; reload only when it changes.
             appSettings.streamingService.drop(1).collect { serviceId ->
@@ -1275,9 +1279,15 @@ class StreamingMusicRepositoryImpl(
                 downloadedSongsMap[songId] = downloadedSong
                 saveDownloadedSongsIndex()
             }
+            CloudOfflineRepository.getInstance(context).markCompleted(
+                song = downloadedSong,
+                localFilePath = localSongUrl,
+                fileSizeBytes = file.length()
+            )
             true
         } catch (e: Exception) {
             Log.e("StreamingMusicRepo", "Error downloading song $songId", e)
+            runCatching { CloudOfflineRepository.getInstance(context).markFailed(songId, e.message) }
             downloadedFile?.let { if (it.exists()) it.delete() }
             false
         }
@@ -1304,6 +1314,7 @@ class StreamingMusicRepositoryImpl(
         val removedSong = synchronized(downloadedSongsMap) {
             downloadedSongsMap.remove(songId)?.also { saveDownloadedSongsIndex() }
         }
+        CloudOfflineRepository.getInstance(context).remove(songId)
         if (removedSong != null) {
             val safeAlbumKey = (removedSong.albumId ?: "${removedSong.artist}_${removedSong.album}")
                 .replace(":", "_").replace("/", "_").replace("\\", "_").replace(" ", "_").lowercase()

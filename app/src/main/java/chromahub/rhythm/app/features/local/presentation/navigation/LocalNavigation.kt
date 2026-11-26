@@ -5,6 +5,7 @@
 
 package chromahub.rhythm.app.features.local.presentation.navigation
 
+import chromahub.rhythm.app.core.domain.library.UnifiedLibraryMerger
 import chromahub.rhythm.app.shared.presentation.components.icons.RhythmIcons
 import chromahub.rhythm.app.shared.presentation.components.icons.MaterialSymbolIcon
 import chromahub.rhythm.app.shared.presentation.components.icons.Icon
@@ -962,6 +963,7 @@ private fun LocalNavigationContent(
 
     val appMode by appSettings.appMode.collectAsState()
     val isStreamingMode = appMode == "STREAMING"
+    val unifiedLibraryEnabled by appSettings.unifiedLibraryEnabled.collectAsState()
     val floatingNavigationBar by appSettings.floatingNavigationBar.collectAsState()
     val streamingSessions by streamingMusicViewModel.serviceSessions.collectAsState()
     val streamingLikedSongs by streamingMusicViewModel.likedSongs.collectAsState()
@@ -1078,6 +1080,30 @@ private fun LocalNavigationContent(
     // service counted as not connected, so offline the Playlists tab read "No playlists yet".
     val streamingMappedPlaylists = remember(streamingSavedPlaylists) {
         streamingSavedPlaylists.map { it.toLibraryPlaylist(context) }
+    }
+
+    LaunchedEffect(unifiedLibraryEnabled, streamingServiceConnected) {
+        if (unifiedLibraryEnabled && streamingServiceConnected && streamingAllSongs.isEmpty() && !streamingIsLoading) {
+            streamingMusicViewModel.loadLibrary()
+        }
+    }
+
+    val streamingSongIds = remember(streamingMappedSongs) { streamingMappedSongs.mapTo(HashSet()) { it.id } }
+    val streamingAlbumIds = remember(streamingMappedAlbums) { streamingMappedAlbums.mapTo(HashSet()) { it.id } }
+    val streamingArtistIds = remember(streamingMappedArtists) { streamingMappedArtists.mapTo(HashSet()) { it.id } }
+    val streamingPlaylistIds = remember(streamingMappedPlaylists) { streamingMappedPlaylists.mapTo(HashSet()) { it.id } }
+
+    val displaySongs = remember(songs, streamingMappedSongs, unifiedLibraryEnabled, isStreamingMode) {
+        UnifiedLibraryMerger.mergeSongs(songs, streamingMappedSongs, unifiedLibraryEnabled, isStreamingMode)
+    }
+    val displayAlbums = remember(albums, streamingMappedAlbums, unifiedLibraryEnabled, isStreamingMode) {
+        UnifiedLibraryMerger.mergeAlbums(albums, streamingMappedAlbums, unifiedLibraryEnabled, isStreamingMode)
+    }
+    val displayArtists = remember(artists, streamingMappedArtists, unifiedLibraryEnabled, isStreamingMode) {
+        UnifiedLibraryMerger.mergeArtists(artists, streamingMappedArtists, unifiedLibraryEnabled, isStreamingMode)
+    }
+    val displayPlaylists = remember(playlists, streamingMappedPlaylists, unifiedLibraryEnabled, isStreamingMode) {
+        UnifiedLibraryMerger.mergePlaylists(playlists, streamingMappedPlaylists, unifiedLibraryEnabled, isStreamingMode)
     }
 
     // Route streaming playback through the shared local player (streaming songs map to local songs).
@@ -1343,10 +1369,14 @@ private fun LocalNavigationContent(
                         },
                         isShuffleEnabled = isShuffleEnabled,
                         repeatMode = repeatMode,
-                        isFavorite = if (isStreamingMode) streamingCurrentSong?.let { streamingLikedSongIds.contains(it.id) } ?: false else isFavorite,
-                        onToggleFavorite = if (isStreamingMode) {
+                        isFavorite = if (isStreamingMode || (unifiedLibraryEnabled && UnifiedLibraryMerger.isStreamingSong(currentSong, streamingSongIds))) {
+                            (streamingSongById[currentSong.id] ?: streamingCurrentSong)?.let {
+                                streamingLikedSongIds.contains(it.id)
+                            } ?: streamingLikedSongIds.contains(currentSong.id)
+                        } else isFavorite,
+                        onToggleFavorite = if (isStreamingMode || (unifiedLibraryEnabled && UnifiedLibraryMerger.isStreamingSong(currentSong, streamingSongIds))) {
                             {
-                                val s = streamingCurrentSong
+                                val s = streamingSongById[currentSong.id] ?: streamingCurrentSong
                                 if (s != null) {
                                     val isLiked = streamingLikedSongIds.contains(s.id)
                                     if (isLiked) streamingMusicViewModel.unlikeSong(s)
@@ -1385,7 +1415,7 @@ private fun LocalNavigationContent(
                         onMaxVolume = {
                             viewModel.maxVolume()
                         },
-                        playlists = if (isStreamingMode) streamingMappedPlaylists else playlists,
+                        playlists = displayPlaylists,
                         queue = viewModel.currentQueue.collectAsState().value.songs,
                         onSongClick = { song ->
                             viewModel.playSong(song)
@@ -1417,7 +1447,7 @@ private fun LocalNavigationContent(
                             viewModel.clearSelectedSongForPlaylist()
                         },
                         onAddSongToPlaylist = { song, playlistId ->
-                            if (isStreamingMode) {
+                            if (isStreamingMode || playlistId.startsWith("subsonic::") || playlistId.startsWith("jellyfin::")) {
                                 val streamingSong = streamingSongById[song.id] ?: streamingCurrentSong
                                 if (streamingSong != null) {
                                     streamingMusicViewModel.addSongToPlaylist(playlistId, streamingSong)
@@ -1449,9 +1479,9 @@ private fun LocalNavigationContent(
                         },
                         isMediaLoading = viewModel.isBuffering.collectAsState().value,
                         isSeeking = viewModel.isSeeking.collectAsState().value,
-                        songs = viewModel.filteredSongs.collectAsState().value,
-                        albums = viewModel.albums.collectAsState().value,
-                        artists = viewModel.artists.collectAsState().value,
+                        songs = if (unifiedLibraryEnabled) displaySongs else viewModel.filteredSongs.collectAsState().value,
+                        albums = if (unifiedLibraryEnabled) displayAlbums else viewModel.albums.collectAsState().value,
+                        artists = if (unifiedLibraryEnabled) displayArtists else viewModel.artists.collectAsState().value,
                         onPlayAlbumSongs = { songs -> viewModel.playSongs(songs) },
                         onShuffleAlbumSongs = { songs -> viewModel.playShuffled(songs) },
                         onPlayArtistSongs = { songs -> viewModel.playSongs(songs) },
@@ -1998,17 +2028,44 @@ private fun LocalNavigationContent(
                 ) {
                     HomeScreen(
                             musicViewModel = viewModel,
-                            songs = songs,
-                            albums = albums,
-                            artists = artists,
+                            songs = displaySongs,
+                            albums = displayAlbums,
+                            artists = displayArtists,
                             recentlyPlayed = recentlyPlayed,
                             currentSong = currentSong,
                             isPlaying = isPlaying,
-                            onSongClick = onPlaySong,
-                            onAlbumClick = { album ->
-                                navController.navigate(Screen.AlbumDetail.createRoute(album.id, album.title))
+                            onSongClick = { song ->
+                                if (unifiedLibraryEnabled) {
+                                    val keepShuffle = appSettings.keepShuffleOnSelection.value && isShuffleEnabled
+                                    val idx = displaySongs.indexOfFirst { it.id == song.id }.coerceAtLeast(0)
+                                    viewModel.playQueue(
+                                        songs = displaySongs,
+                                        enableShuffle = keepShuffle,
+                                        startIndex = idx,
+                                        pinStartIndex = keepShuffle
+                                    )
+                                } else {
+                                    onPlaySong(song)
+                                }
                             },
-                            onArtistClick = onPlayArtist,
+                            onAlbumClick = { album ->
+                                if (unifiedLibraryEnabled && UnifiedLibraryMerger.isStreamingAlbum(album, streamingAlbumIds, streamingSongIds)) {
+                                    navController.navigate(StreamingRoutes.album(album.id, album.title)) {
+                                        launchSingleTop = true
+                                    }
+                                } else {
+                                    navController.navigate(Screen.AlbumDetail.createRoute(album.id, album.title))
+                                }
+                            },
+                            onArtistClick = { artist ->
+                                if (unifiedLibraryEnabled && UnifiedLibraryMerger.isStreamingArtist(artist, streamingArtistIds)) {
+                                    navController.navigate(StreamingRoutes.artist(artist.id, artist.name)) {
+                                        launchSingleTop = true
+                                    }
+                                } else {
+                                    onPlayArtist(artist)
+                                }
+                            },
                             onPlayPause = onPlayPause,
                             onPlayerClick = {
                                 navController.navigate(Screen.Player.route)
@@ -2080,9 +2137,17 @@ private fun LocalNavigationContent(
                                 navController.navigate(Screen.TunerRhythmGuard.route)
                             },
                             onNavigateToArtist = { artist ->
-                                navController.navigate(Screen.ArtistDetail.createRoute(artist.name))
+                                if (unifiedLibraryEnabled && UnifiedLibraryMerger.isStreamingArtist(artist, streamingArtistIds)) {
+                                    navController.navigate(StreamingRoutes.artist(artist.id, artist.name)) {
+                                        launchSingleTop = true
+                                    }
+                                } else {
+                                    navController.navigate(Screen.ArtistDetail.createRoute(artist.name))
+                                }
                             },
                             isStreamingMode = isStreamingMode,
+                            unifiedLibraryEnabled = unifiedLibraryEnabled,
+                            streamingSongIds = streamingSongIds,
                             streamingViewModel = streamingMusicViewModel,
                             streamingSongs = streamingMappedSongs,
                             streamingAlbums = streamingMappedAlbums,
@@ -3547,14 +3612,23 @@ private fun LocalNavigationContent(
                     }
 
                     LibraryScreen(
-                        songs = if (isStreamingMode) streamingMappedSongs else songs,
-                        albums = if (isStreamingMode) streamingMappedAlbums else albums,
-                        playlists = if (isStreamingMode) streamingMappedPlaylists else playlists,
-                        artists = if (isStreamingMode) streamingMappedArtists else artists,
+                        songs = displaySongs,
+                        albums = displayAlbums,
+                        playlists = displayPlaylists,
+                        artists = displayArtists,
                         currentSong = currentSong,
                         isPlaying = isPlaying,
                         onSongClick = { song ->
-                            if (isStreamingMode) {
+                            if (unifiedLibraryEnabled) {
+                                val keepShuffle = appSettings.keepShuffleOnSelection.value && isShuffleEnabled
+                                val idx = displaySongs.indexOfFirst { it.id == song.id }.coerceAtLeast(0)
+                                viewModel.playQueue(
+                                    songs = displaySongs,
+                                    enableShuffle = keepShuffle,
+                                    startIndex = idx,
+                                    pinStartIndex = keepShuffle
+                                )
+                            } else if (isStreamingMode) {
                                 val keepShuffle = appSettings.keepShuffleOnSelection.value && isShuffleEnabled
                                 if (respectAlbumOnPlay) {
                                     val index = streamingMappedSongs.indexOfFirst { it.id == song.id }.coerceAtLeast(0)
@@ -3571,7 +3645,7 @@ private fun LocalNavigationContent(
                             navController.navigate(Screen.Player.route)
                         },
                         onPlaylistClick = { playlist ->
-                            if (isStreamingMode) {
+                            if (isStreamingMode || (unifiedLibraryEnabled && UnifiedLibraryMerger.isStreamingPlaylist(playlist, streamingPlaylistIds))) {
                                 navController.navigate(StreamingRoutes.playlist(playlist.id)) {
                                     launchSingleTop = true
                                 }
@@ -3583,7 +3657,7 @@ private fun LocalNavigationContent(
                             // This is now handled internally with the dialog
                         },
                         onAlbumClick = { album ->
-                            if (isStreamingMode) {
+                            if (isStreamingMode || (unifiedLibraryEnabled && UnifiedLibraryMerger.isStreamingAlbum(album, streamingAlbumIds, streamingSongIds))) {
                                 navController.navigate(StreamingRoutes.album(album.id, album.title)) {
                                     launchSingleTop = true
                                 }
@@ -3592,7 +3666,7 @@ private fun LocalNavigationContent(
                             }
                         },
                         onArtistClick = { artist ->
-                            if (isStreamingMode) {
+                            if (isStreamingMode || (unifiedLibraryEnabled && UnifiedLibraryMerger.isStreamingArtist(artist, streamingArtistIds))) {
                                 navController.navigate(StreamingRoutes.artist(artist.id, artist.name)) {
                                     launchSingleTop = true
                                 }
@@ -3601,14 +3675,14 @@ private fun LocalNavigationContent(
                             }
                         },
                         onAlbumShufflePlay = { album ->
-                            if (isStreamingMode) {
+                            if (isStreamingMode || (unifiedLibraryEnabled && UnifiedLibraryMerger.isStreamingAlbum(album, streamingAlbumIds, streamingSongIds))) {
                                 playStreamingMappedQueue(album.songs, 0, true)
                             } else {
                                 onPlayAlbumShuffled(album)
                             }
                         },
                         onPlayQueue = { queue ->
-                            if (isStreamingMode) {
+                            if (isStreamingMode && !unifiedLibraryEnabled) {
                                 playStreamingMappedQueue(queue, 0, false)
                             } else {
                                 viewModel.playSongs(queue)
@@ -3616,7 +3690,7 @@ private fun LocalNavigationContent(
                         },
                         onPlayQueueFromIndex = { queue, startIndex ->
                             val keepShuffle = appSettings.keepShuffleOnSelection.value && isShuffleEnabled
-                            if (isStreamingMode) {
+                            if (isStreamingMode && !unifiedLibraryEnabled) {
                                 playStreamingMappedQueue(queue, startIndex, keepShuffle)
                             } else {
                                 viewModel.playQueue(
@@ -3628,14 +3702,14 @@ private fun LocalNavigationContent(
                             }
                         },
                         onShuffleQueue = { queue ->
-                            if (isStreamingMode) {
+                            if (isStreamingMode && !unifiedLibraryEnabled) {
                                 playStreamingMappedQueue(queue, 0, true)
                             } else {
                                 viewModel.playShuffled(queue)
                             }
                         },
                         onAlbumBottomSheetClick = { album ->
-                            if (isStreamingMode) {
+                            if (isStreamingMode || (unifiedLibraryEnabled && UnifiedLibraryMerger.isStreamingAlbum(album, streamingAlbumIds, streamingSongIds))) {
                                 navController.navigate(StreamingRoutes.album(album.id, album.title)) {
                                     launchSingleTop = true
                                 }
@@ -3648,8 +3722,15 @@ private fun LocalNavigationContent(
                             viewModel.sortLibrary()
                         },
                         onAddSongToPlaylist = { song, playlistId ->
-                            if (isStreamingMode) {
-                                streamingSongById[song.id]?.let { onStreamingAddSongToPlaylist(it) }
+                            if (isStreamingMode || playlistId.startsWith("subsonic::") || playlistId.startsWith("jellyfin::")) {
+                                val resolved = streamingSongById[song.id]
+                                if (resolved != null) {
+                                    onStreamingAddSongToPlaylist(resolved)
+                                } else {
+                                    viewModel.addSongToPlaylist(song, playlistId) { message ->
+                                        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                                    }
+                                }
                             } else {
                                 viewModel.addSongToPlaylist(song, playlistId) { message ->
                                     Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
@@ -3665,6 +3746,9 @@ private fun LocalNavigationContent(
                         },
                         onRefreshClick = {
                             if (isStreamingMode) {
+                                streamingMusicViewModel.loadLibrary()
+                            } else if (unifiedLibraryEnabled && streamingServiceConnected) {
+                                viewModel.refreshLibrary(showMediaScanLoader = false)
                                 streamingMusicViewModel.loadLibrary()
                             } else {
                                 viewModel.refreshLibrary(showMediaScanLoader = false)
@@ -3717,7 +3801,7 @@ private fun LocalNavigationContent(
                             viewModel.restartApp()
                         },
                             onNavigateToArtist = { artist ->
-                                if (isStreamingMode) {
+                                if (isStreamingMode || (unifiedLibraryEnabled && UnifiedLibraryMerger.isStreamingArtist(artist, streamingArtistIds))) {
                                     navController.navigate(StreamingRoutes.artist(artist.id, artist.name)) {
                                         launchSingleTop = true
                                     }
@@ -3726,6 +3810,8 @@ private fun LocalNavigationContent(
                                 }
                             },
                         isStreamingMode = isStreamingMode,
+                        unifiedLibraryEnabled = unifiedLibraryEnabled,
+                        streamingSongIds = streamingSongIds,
                         streamingServiceName = streamingServiceName,
                         streamingServiceConnected = streamingServiceConnected,
                         streamingIsLoading = streamingIsLoading,

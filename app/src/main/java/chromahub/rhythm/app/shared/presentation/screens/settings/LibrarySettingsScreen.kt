@@ -172,6 +172,7 @@ fun LibrarySettingsScreen(onBackClick: () -> Unit) {
 
     val libraryCombineDiscs by appSettings.libraryCombineDiscs.collectAsState()
     val showLibraryBottomBarAlways by appSettings.showLibraryBottomBarAlways.collectAsState()
+    val unifiedLibraryEnabled by appSettings.unifiedLibraryEnabled.collectAsState()
     val preferSongArtwork by appSettings.preferSongArtwork.collectAsState()
     val losslessArtwork by appSettings.losslessArtwork.collectAsState()
     val albumBottomSheetGradientBlur by appSettings.albumBottomSheetGradientBlur.collectAsState()
@@ -218,6 +219,13 @@ fun LibrarySettingsScreen(onBackClick: () -> Unit) {
                         context.getString(R.string.settings_show_library_bottom_bar_always_desc),
                         toggleState = showLibraryBottomBarAlways,
                         onToggleChange = { appSettings.setShowLibraryBottomBarAlways(it) }
+                    ),
+                    SettingItem(
+                        MaterialSymbolIcon("layers"),
+                        context.getString(R.string.settings_unified_library),
+                        context.getString(R.string.settings_unified_library_desc),
+                        toggleState = unifiedLibraryEnabled,
+                        onToggleChange = { appSettings.setUnifiedLibraryEnabled(it) }
                     )
                 )
             ),

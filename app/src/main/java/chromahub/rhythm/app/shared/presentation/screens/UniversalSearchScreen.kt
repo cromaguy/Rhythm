@@ -241,7 +241,8 @@ fun UniversalSearchScreen(
 
     val streamingSessions by streamingViewModel.serviceSessions.collectAsState()
     val isGoModeConfigured = remember(streamingSessions) { streamingViewModel.isConfigured() }
-    val isGoModeActive = appMode == "STREAMING" && isGoModeConfigured
+    val unifiedLibraryEnabled by appSettings.unifiedLibraryEnabled.collectAsState()
+    val isGoModeActive = isGoModeConfigured && (appMode == "STREAMING" || unifiedLibraryEnabled)
 
     val streamingQuery by streamingViewModel.searchQuery.collectAsState()
     val streamingResults by streamingViewModel.searchResults.collectAsState()
@@ -323,7 +324,7 @@ fun UniversalSearchScreen(
             matchedLocalPlaylists.isNotEmpty() || matchedStreamingPlaylists.isNotEmpty()
 
     val handleAction = { itemMode: String, action: () -> Unit ->
-        if (itemMode == appMode) {
+        if (itemMode == appMode || unifiedLibraryEnabled) {
             action()
         } else {
             targetModeForPendingAction = itemMode

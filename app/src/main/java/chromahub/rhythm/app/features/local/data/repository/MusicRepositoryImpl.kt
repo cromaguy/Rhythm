@@ -56,6 +56,7 @@ import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import androidx.paging.map
+import chromahub.rhythm.app.features.local.data.database.FtsQuerySanitizer
 import chromahub.rhythm.app.features.local.data.database.entity.toSong
 import chromahub.rhythm.app.features.local.data.database.entity.toArtist
 import kotlinx.coroutines.flow.map
@@ -201,11 +202,16 @@ class MusicRepository(context: Context) {
     }
 
     fun getPaginatedSongsSearch(query: String): kotlinx.coroutines.flow.Flow<PagingData<Song>> {
+        val trimmedQuery = query.trim()
+        val ftsQuery = FtsQuerySanitizer.buildPrefixMatchQuery(trimmedQuery)
         return Pager(
             config = PagingConfig(pageSize = 50, enablePlaceholders = true),
-            pagingSourceFactory = { 
-                if (query.isBlank()) songDao.getSongsPagingSource() 
-                else songDao.getSongsPagingSourceSearch(query) 
+            pagingSourceFactory = {
+                when {
+                    trimmedQuery.isEmpty() -> songDao.getSongsPagingSource()
+                    ftsQuery.isNotEmpty() -> songDao.getSongsPagingSourceFtsSearch(ftsQuery)
+                    else -> songDao.getSongsPagingSourceSearch(trimmedQuery)
+                }
             }
         ).flow.map { pagingData ->
             pagingData.map { entity -> entity.toSong() }

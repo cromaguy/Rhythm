@@ -845,6 +845,16 @@ fun buildSettingsSearchIndex(context: Context): List<SearchableSettingItem> {
             settingKey = "showLibraryBottomBarAlways"
         ))
         add(SearchableSettingItem(
+            id = "unified_library_enabled",
+            title = context.getString(R.string.settings_unified_library),
+            description = context.getString(R.string.settings_unified_library_desc),
+            keywords = listOf("unified", "library", "combine", "merge", "local", "streaming", "go mode", "subsonic", "jellyfin"),
+            icon = MaterialSymbolIcon("layers"),
+            route = SettingsRoutes.LIBRARY_SETTINGS,
+            parentScreen = context.getString(R.string.settings_library_settings),
+            settingKey = "unifiedLibraryEnabled"
+        ))
+        add(SearchableSettingItem(
             id = "auto_fetch_artwork",
             title = context.getString(R.string.librarysettingsscreen_autofetch_artwork),
             description = context.getString(R.string.library_auto_fetch_artwork_desc),

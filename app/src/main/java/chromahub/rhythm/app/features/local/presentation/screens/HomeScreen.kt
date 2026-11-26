@@ -77,6 +77,7 @@ import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
+import chromahub.rhythm.app.core.domain.library.UnifiedLibraryMerger
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -273,6 +274,8 @@ fun HomeScreen(
     onNavigateToRhythmGuard: () -> Unit = {},
     onNavigateToArtist: (Artist) -> Unit = {},
     isStreamingMode: Boolean = false,
+    unifiedLibraryEnabled: Boolean = false,
+    streamingSongIds: Set<String> = emptySet(),
     streamingViewModel: chromahub.rhythm.app.features.streaming.presentation.viewmodel.StreamingMusicViewModel? = null,
     streamingSongs: List<Song> = emptyList(),
     streamingAlbums: List<Album> = emptyList(),
@@ -417,14 +420,15 @@ fun HomeScreen(
     // Song info bottom sheet
     if (showSongInfoSheet && selectedSongForPlaylist != null) {
         val songForInfo = selectedSongForPlaylist!!
+        val songIsStreaming = isStreamingMode || (unifiedLibraryEnabled && UnifiedLibraryMerger.isStreamingSong(songForInfo, streamingSongIds))
         SongInfoBottomSheet(
             song = songForInfo,
             onDismiss = { showSongInfoSheet = false },
             appSettings = AppSettings.getInstance(context),
-            isStreamingMode = isStreamingMode,
+            isStreamingMode = songIsStreaming,
             isDownloaded = homeDownloadedSongIds.contains(songForInfo.id),
             isDownloading = homeDownloadingSongIds.contains(songForInfo.id),
-            onToggleDownload = if (isStreamingMode && streamingViewModel != null) ({
+            onToggleDownload = if (songIsStreaming && streamingViewModel != null) ({
                 if (homeDownloadedSongIds.contains(songForInfo.id)) {
                     streamingViewModel.removeDownload(songForInfo.id)
                 } else {
