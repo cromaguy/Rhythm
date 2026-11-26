@@ -48,7 +48,8 @@ object GlanceWidgetUpdater {
         hasNext: Boolean = false,
         isFavorite: Boolean = false,
         isShuffleEnabled: Boolean = false,
-        repeatMode: Int = 0
+        repeatMode: Int = 0,
+        upNextItems: List<String> = emptyList()
     ) {
         // Use the application context for every widget/state API so short-lived
         // contexts (e.g. the playback service) are never retained by Glance's
@@ -80,6 +81,7 @@ object GlanceWidgetUpdater {
             putBoolean(RhythmMusicWidget.KEY_IS_FAVORITE, isFavorite)
             putBoolean("is_shuffle", isShuffleEnabled)
             putInt("repeat_mode", repeatMode)
+            putString(RhythmMusicWidget.KEY_UP_NEXT_QUEUE, RhythmMusicWidget.serializeUpNext(upNextItems))
         }
         
         // Update Glance widget state directly using Glance state system
@@ -131,6 +133,8 @@ object GlanceWidgetUpdater {
                     mutablePrefs[booleanPreferencesKey(RhythmMusicWidget.KEY_IS_FAVORITE)] = isFavorite
                     mutablePrefs[booleanPreferencesKey("is_shuffle")] = isShuffleEnabled
                     mutablePrefs[intPreferencesKey("repeat_mode")] = repeatMode
+                    mutablePrefs[stringPreferencesKey(RhythmMusicWidget.KEY_UP_NEXT_QUEUE)] =
+                        RhythmMusicWidget.serializeUpNext(upNextItems)
                 }
 
                 // 1. RhythmMusicWidget

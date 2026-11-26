@@ -135,6 +135,44 @@ class MultiSelectionStateHolder {
     }
 
     /**
+     * Applies a contiguous drag-to-select range update while preserving baseline selections
+     * from before the drag began.
+     */
+    fun applyDragRange(
+        items: List<Song>,
+        range: IntRange,
+        select: Boolean,
+        baselineIds: Set<String>
+    ) {
+        val rangeIds = buildSet {
+            for (i in range) {
+                items.getOrNull(i)?.id?.let(::add)
+            }
+        }
+        val targetIds = if (select) baselineIds + rangeIds else baselineIds - rangeIds
+        val existingById = _selectedSongs.value.associateBy { it.id }
+        val catalogById = items.associateBy { it.id }
+        val orderedList = ArrayList<Song>(targetIds.size)
+        for (song in _selectedSongs.value) {
+            if (song.id in targetIds) orderedList.add(song)
+        }
+        val already = orderedList.mapTo(HashSet()) { it.id }
+        for (i in range) {
+            val s = items.getOrNull(i) ?: continue
+            if (s.id in targetIds && s.id !in already) {
+                orderedList.add(s)
+                already.add(s.id)
+            }
+        }
+        for (id in targetIds) {
+            if (id !in already) {
+                (existingById[id] ?: catalogById[id])?.let(orderedList::add)
+            }
+        }
+        updateState(orderedList, targetIds)
+    }
+
+    /**
      * Updates all state flows atomically.
      */
     private fun updateState(songs: List<Song>, ids: Set<String>) {

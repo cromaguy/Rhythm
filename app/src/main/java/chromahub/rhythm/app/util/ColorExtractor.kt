@@ -483,10 +483,13 @@ object ColorExtractor {
         if (totalPopulation <= 0.0) return false
 
         val neutralRatio = neutralPopulation / totalPopulation
+        val chromaticRatio = (totalPopulation - neutralPopulation) / totalPopulation
         val highChromaRatio = highChromaPopulation / totalPopulation
         val meanChroma = weightedChroma / totalPopulation
 
-        return neutralRatio >= 0.82 || (meanChroma <= 8.0 && highChromaRatio <= 0.04)
+        // Covers with < 10% real chromatic pixels (e.g. B&W art with a small colored label)
+        // stay true monochrome instead of letting a tiny badge tint the entire theme.
+        return chromaticRatio < 0.10 || neutralRatio >= 0.80 || (meanChroma <= 8.0 && highChromaRatio <= 0.04)
     }
 
     /**

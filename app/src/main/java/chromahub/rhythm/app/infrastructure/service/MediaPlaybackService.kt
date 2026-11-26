@@ -3127,6 +3127,19 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
                 val hasNext = player.hasNextMediaItem()
                 val isShuffleEnabled = player.shuffleModeEnabled
                 val repeatMode = player.repeatMode
+                val upNext = buildList {
+                    val curIdx = player.currentMediaItemIndex
+                    val total = player.mediaItemCount
+                    for (offset in 1..3) {
+                        val nextIdx = curIdx + offset
+                        if (nextIdx in 0 until total) {
+                            val meta = player.getMediaItemAt(nextIdx).mediaMetadata
+                            val t = meta.title?.toString()?.trim().orEmpty()
+                            val a = meta.artist?.toString()?.trim().orEmpty()
+                            if (t.isNotBlank()) add(if (a.isNotBlank()) "$t — $a" else t)
+                        }
+                    }
+                }
                 val snapshotKey = buildString {
                     append(song.id)
                     append('|')
@@ -3141,6 +3154,8 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
                     append(isShuffleEnabled)
                     append('|')
                     append(repeatMode)
+                    append('|')
+                    append(upNext.joinToString(";"))
                 }
 
                 if (snapshotKey == lastWidgetSnapshotKey) {
@@ -3148,7 +3163,7 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
                 }
                 lastWidgetSnapshotKey = snapshotKey
 
-                WidgetUpdater.updateWidget(this, song, player.isPlaying, hasPrevious, hasNext, isFavorite, isShuffleEnabled, repeatMode)
+                WidgetUpdater.updateWidget(this, song, player.isPlaying, hasPrevious, hasNext, isFavorite, isShuffleEnabled, repeatMode, upNext)
             } else {
                 if (lastWidgetSnapshotKey == "empty|false") {
                     return

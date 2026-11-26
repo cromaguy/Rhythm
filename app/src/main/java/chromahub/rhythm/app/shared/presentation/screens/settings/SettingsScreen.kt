@@ -465,6 +465,7 @@ fun SettingsScreen(
         if (isSearchActive) {
             SettingsSearchResults(
                 results = searchResults,
+                query = searchQuery,
                 onResultClick = { result ->
                     if (result.route != null) {
                         onNavigateTo(result.route)

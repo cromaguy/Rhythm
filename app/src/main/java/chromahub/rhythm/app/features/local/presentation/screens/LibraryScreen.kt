@@ -8,6 +8,7 @@ package chromahub.rhythm.app.features.local.presentation.screens
 
 import chromahub.rhythm.app.shared.presentation.components.bottomsheets.RhythmAdaptiveModalSheet
 import chromahub.rhythm.app.shared.presentation.components.bottomsheets.SheetAdaptiveType
+import chromahub.rhythm.app.shared.presentation.components.common.dragToSelect
 
 import chromahub.rhythm.app.shared.presentation.components.icons.RhythmIcons
 import chromahub.rhythm.app.shared.presentation.components.icons.MaterialSymbolIcon
@@ -2507,9 +2508,40 @@ fun SingleCardSongsContent(
                 targetValue = if (canScroll) 36.dp else 16.dp,
                 animationSpec = tween(durationMillis = 200)
             )
+            chromahub.rhythm.app.shared.presentation.components.common.KeepUnscrolledListAtTop(
+                listState = listState,
+                rows = preparedSongs
+            )
+            val dragToSelectState = chromahub.rhythm.app.shared.presentation.components.common.rememberDragToSelectState<Song>()
+            var dragBaselineIds by remember { mutableStateOf(selectedSongIds) }
+            LaunchedEffect(selectedSongIds, dragToSelectState.isPointerDown) {
+                if (!dragToSelectState.isPointerDown) {
+                    dragBaselineIds = selectedSongIds
+                }
+            }
+
             LazyColumn(
                 state = listState,
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .let { m ->
+                        if (multiSelectionState != null) {
+                            m.dragToSelect(
+                                listState = listState,
+                                state = dragToSelectState,
+                                itemCount = preparedSongs.size,
+                                itemAt = { idx -> preparedSongs.getOrNull(idx) },
+                                onDragRange = { range, select ->
+                                    multiSelectionState.applyDragRange(
+                                        items = preparedSongs,
+                                        range = range,
+                                        select = select,
+                                        baselineIds = dragBaselineIds
+                                    )
+                                }
+                            )
+                        } else m
+                    },
                 contentPadding = PaddingValues(
                     start = 16.dp,
                     end = animatedEndPadding,
@@ -2527,6 +2559,12 @@ fun SingleCardSongsContent(
                         val isSelected = selectedSongIds.contains(song.id)
                         val selectionIndex = multiSelectionState?.getSelectionIndex(song.id)
                         
+                        chromahub.rhythm.app.shared.presentation.components.common.SwipeToQueueBox(
+                            onSwipe = if (!isSelectionMode) {
+                                { onAddToQueue(song) }
+                            } else null
+                        ) { swipeModifier ->
+                        Box(modifier = swipeModifier) {
                         LibrarySongItemWrapper(
                             song = song,
                             onClick = {
@@ -2592,7 +2630,12 @@ fun SingleCardSongsContent(
                             isSelected = isSelected,
                             isSelectionMode = isSelectionMode,
                             selectionIndex = selectionIndex,
-                            onLongPress = { onSongLongPress(song) },
+                            onLongPress = {
+                                val nextSelected = !isSelected
+                                dragBaselineIds = if (nextSelected) selectedSongIds + song.id else selectedSongIds - song.id
+                                onSongLongPress(song)
+                                dragToSelectState.onItemLongPressed(index, song, nextSelected)
+                            },
                             customMenuContent = songMenuContent?.let { menuBuilder ->
                                 { dismissMenu -> menuBuilder(song, dismissMenu) }
                             },
@@ -2601,6 +2644,8 @@ fun SingleCardSongsContent(
                             onToggleDownload = if (isStreamingMode || (unifiedLibraryEnabled && UnifiedLibraryMerger.isStreamingSong(song, streamingSongIds))) ({ onStreamingToggleDownload?.invoke(song) }) else null,
                             onOverflowClick = { songForOverflow = song }
                         )
+                        }
+                        }
                     }
                 }
             }

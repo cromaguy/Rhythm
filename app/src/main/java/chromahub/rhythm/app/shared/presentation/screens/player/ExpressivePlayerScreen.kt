@@ -329,6 +329,7 @@ fun ExpressivePlayerScreen(
     val playerAmbientBackdropEnabled by appSettings.playerAmbientBackdropEnabled.collectAsState()
     val playerAmbientBackdropIntensity by appSettings.playerAmbientBackdropIntensity.collectAsState()
     val playerAmbientInfiniteZoom by appSettings.playerAmbientInfiniteZoom.collectAsState()
+    val agslFluidBackdropEnabled by appSettings.uiPrefs.agslFluidBackdropEnabled.collectAsState()
     val playerAccentBackgroundEnabled by appSettings.playerAccentBackgroundEnabled.collectAsState()
     val playerMergeControlsToBottom by appSettings.playerMergeControlsToBottom.collectAsState()
     val playerShowAudioQualityBadges by appSettings.playerShowAudioQualityBadges.collectAsState()
@@ -1036,11 +1037,30 @@ fun ExpressivePlayerScreen(
                     label = "canvasArtworkTransition"
                 ) { artworkUri ->
                     Box(modifier = modifier.fillMaxSize()) {
-                        AsyncImage(
-                            model = ImageRequest.Builder(context).data(artworkUri).size(128, 128).build(),
-                            contentDescription = null, contentScale = ContentScale.Crop,
-                            modifier = Modifier.fillMaxSize().blur(150.dp)
-                        )
+                        val useAgslFluid = android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU &&
+                            agslFluidBackdropEnabled
+                        val agslCoverBitmap = if (useAgslFluid && artworkUri != null) {
+                            produceState<android.graphics.Bitmap?>(null, artworkUri) {
+                                value = withContext(Dispatchers.IO) {
+                                    runCatching { loadArtworkBitmap(context, artworkUri, 128) }.getOrNull()
+                                }
+                            }.value
+                        } else null
+
+                        if (useAgslFluid && agslCoverBitmap != null && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                            chromahub.rhythm.app.shared.presentation.components.player.BeatSyncFluidBackground(
+                                coverBitmap = agslCoverBitmap,
+                                isPlaying = isPlaying,
+                                dimAlpha = 0.72f,
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        } else {
+                            AsyncImage(
+                                model = ImageRequest.Builder(context).data(artworkUri).size(128, 128).build(),
+                                contentDescription = null, contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxSize().blur(150.dp)
+                            )
+                        }
                         val useHorizontalBackdrop = isLandscapeTablet || isTabletImmersiveLyrics
                         Box(
                             modifier = (if (useHorizontalBackdrop) Modifier.fillMaxWidth(0.5f).fillMaxHeight()

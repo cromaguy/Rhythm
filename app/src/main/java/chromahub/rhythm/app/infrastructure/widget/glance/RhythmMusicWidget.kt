@@ -95,6 +95,13 @@ class RhythmMusicWidget : GlanceAppWidget() {
         const val KEY_HAS_PREVIOUS = "has_previous"
         const val KEY_HAS_NEXT = "has_next"
         const val KEY_IS_FAVORITE = "is_favorite"
+        const val KEY_UP_NEXT_QUEUE = "up_next_queue"
+
+        fun serializeUpNext(items: List<String>): String =
+            items.asSequence().map { it.trim().replace('\n', ' ') }.filter { it.isNotEmpty() }.take(3).joinToString("\n")
+
+        fun parseUpNext(raw: String?): List<String> =
+            raw?.lineSequence()?.map { it.trim() }?.filter { it.isNotEmpty() }?.take(3)?.toList().orEmpty()
 
         // Layout size breakpoints for responsive widget sizing
         private val VERY_THIN_SIZE = DpSize(200.dp, 60.dp)
@@ -1082,6 +1089,34 @@ class RhythmMusicWidget : GlanceAppWidget() {
                     )
                 }
 
+                if (size.height >= 260.dp && data.upNextQueue.isNotEmpty()) {
+                    Spacer(GlanceModifier.height((10 * scale).dp))
+                    Column(
+                        modifier = GlanceModifier.fillMaxWidth().padding(horizontal = 4.dp)
+                    ) {
+                        Text(
+                            text = "Up Next",
+                            style = TextStyle(
+                                fontSize = (11 * scale).coerceAtLeast(10f).sp,
+                                fontWeight = FontWeight.Bold,
+                                color = textColor
+                            ),
+                            maxLines = 1
+                        )
+                        data.upNextQueue.take(if (size.height >= 310.dp) 3 else 2).forEach { line ->
+                            Spacer(GlanceModifier.height(2.dp))
+                            Text(
+                                text = "• $line",
+                                style = TextStyle(
+                                    fontSize = (11 * scale).coerceAtLeast(10f).sp,
+                                    color = subtextColor
+                                ),
+                                maxLines = 1
+                            )
+                        }
+                    }
+                }
+
                 Spacer(GlanceModifier.defaultWeight())
             }
         }
@@ -1318,7 +1353,8 @@ class RhythmMusicWidget : GlanceAppWidget() {
                 showAlbum = appSettings?.widgetShowAlbum?.value ?: false,
                 showFavoriteButton = appSettings?.widgetShowFavoriteButton?.value ?: true,
                 cornerRadius = appSettings?.widgetCornerRadius?.value ?: 28,
-                widgetTheme = appSettings?.widgetTheme?.value ?: 0
+                widgetTheme = appSettings?.widgetTheme?.value ?: 0,
+                upNextQueue = parseUpNext(prefs[stringPreferencesKey(KEY_UP_NEXT_QUEUE)])
             )
         } catch (e: Exception) {
             android.util.Log.e("RhythmMusicWidget", "Error getting widget data", e)
@@ -1360,5 +1396,6 @@ data class WidgetData(
     val isShuffle: Boolean = false,
     val repeatMode: Int = 0,
     val cookieBottomLeft: Int = 0,
-    val cookieBottomRight: Int = 0
+    val cookieBottomRight: Int = 0,
+    val upNextQueue: List<String> = emptyList()
 )

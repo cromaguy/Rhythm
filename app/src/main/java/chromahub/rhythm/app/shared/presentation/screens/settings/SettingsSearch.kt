@@ -2839,37 +2839,10 @@ fun buildSettingsSearchIndex(context: Context): List<SearchableSettingItem> {
 }
 
 /**
- * Performs search on the settings index
+ * Performs Settings Search 2.0 fuzzy matching on the settings index.
  */
 fun searchSettings(query: String, index: List<SearchableSettingItem>): List<SearchableSettingItem> {
-    if (query.isBlank()) return emptyList()
-    
-    val normalizedQuery = query.lowercase().trim()
-    val queryWords = normalizedQuery.split(" ").filter { it.isNotBlank() }
-    
-    return index.filter { item ->
-        val titleMatch = item.title.lowercase().contains(normalizedQuery)
-        val descMatch = item.description.lowercase().contains(normalizedQuery)
-        val keywordMatch = item.keywords.any { keyword ->
-            keyword.lowercase().contains(normalizedQuery) ||
-            queryWords.any { word -> keyword.lowercase().contains(word) }
-        }
-        val parentMatch = item.parentScreen.lowercase().contains(normalizedQuery)
-        
-        titleMatch || descMatch || keywordMatch || parentMatch
-    }.sortedByDescending { item ->
-        // Prioritize exact title matches, then keyword matches
-        when {
-            item.title.lowercase() == normalizedQuery -> 100
-            item.title.lowercase().startsWith(normalizedQuery) -> 90
-            item.title.lowercase().contains(normalizedQuery) -> 80
-            item.keywords.any { it.lowercase() == normalizedQuery } -> 70
-            item.keywords.any { it.lowercase().startsWith(normalizedQuery) } -> 60
-            item.keywords.any { it.lowercase().contains(normalizedQuery) } -> 50
-            item.description.lowercase().contains(normalizedQuery) -> 40
-            else -> 30
-        }
-    }
+    return SettingsFuzzyMatcher.search(query, index).map { it.item }
 }
 
 /**
@@ -2987,10 +2960,16 @@ fun SettingsSearchBar(
 fun SettingsSearchResults(
     results: List<SearchableSettingItem>,
     onResultClick: (SearchableSettingItem) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    query: String = ""
 ) {
     val context = LocalContext.current
     val haptic = LocalHapticFeedback.current
+    val highlightColor = MaterialTheme.colorScheme.primary
+    val matchById = remember(results, query) {
+        if (query.isBlank()) emptyMap()
+        else SettingsFuzzyMatcher.search(query, results).associateBy { it.item.id }
+    }
     
     LazyColumn(
             contentPadding = PaddingValues(bottom = 24.dp + LocalMiniPlayerPadding.current.calculateBottomPadding()),
@@ -3020,10 +2999,27 @@ fun SettingsSearchResults(
                     Spacer(modifier = Modifier.height(16.dp))
 
                     val materialItems = items.map { setting ->
+                        val match = matchById[setting.id]
                         Material3SettingsItem(
                             icon = setting.icon,
-                            title = { Text(setting.title) },
-                            description = { Text(setting.description) },
+                            title = {
+                                Text(
+                                    SettingsFuzzyMatcher.highlightMatchedText(
+                                        setting.title,
+                                        match?.titleMatchedRanges.orEmpty(),
+                                        highlightColor
+                                    )
+                                )
+                            },
+                            description = {
+                                Text(
+                                    SettingsFuzzyMatcher.highlightMatchedText(
+                                        setting.description,
+                                        match?.descriptionMatchedRanges.orEmpty(),
+                                        highlightColor
+                                    )
+                                )
+                            },
                             trailingContent = {
                                 Icon(
                                     imageVector = MaterialSymbolIcon("arrow_forward_ios", filled = true),

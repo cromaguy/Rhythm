@@ -27,7 +27,8 @@ object WidgetUpdater {
         hasNext: Boolean = false,
         isFavorite: Boolean = false,
         isShuffleEnabled: Boolean = false,
-        repeatMode: Int = 0
+        repeatMode: Int = 0,
+        upNextItems: List<String> = emptyList()
     ) {
         GlanceWidgetUpdater.updateWidget(
             context = context,
@@ -37,7 +38,8 @@ object WidgetUpdater {
             hasNext = hasNext,
             isFavorite = isFavorite,
             isShuffleEnabled = isShuffleEnabled,
-            repeatMode = repeatMode
+            repeatMode = repeatMode,
+            upNextItems = upNextItems
         )
     }
 
