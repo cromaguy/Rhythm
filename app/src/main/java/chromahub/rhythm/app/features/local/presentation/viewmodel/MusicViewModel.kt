@@ -9432,10 +9432,24 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
     }
     
     /**
+     * Resolves lyrics cleanly on IO without attaching to [MediaPlaybackService] for isolated external previews.
+     */
+    suspend fun fetchLyricsForPreviewSong(song: Song): LyricsData? = withContext(Dispatchers.IO) {
+        repository.fetchLyrics(
+            artist = song.artist,
+            title = song.title,
+            songId = song.id,
+            songUri = song.uri,
+            sourcePreference = appSettings.lyricsSourcePreference.value,
+            forceRefresh = false
+        )
+    }
+
+    /**
      * Plays an external audio file that was opened from outside the app
      */
-    fun playExternalAudioFile(song: Song) {
-        Log.d(TAG, "Playing external audio file: ${song.title}, URI: ${song.uri}")
+    fun playExternalAudioFile(song: Song, startPositionMs: Long = 0L) {
+        Log.d(TAG, "Playing external audio file: ${song.title}, URI: ${song.uri}, startPos=$startPositionMs")
         
         // Add to recently played list
         updateRecentlyPlayed(song)
@@ -9471,7 +9485,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                 }
                 
                 if (mediaController != null) {
-                    actuallyPlayExternalFile(mediaController!!, mediaItem, song)
+                    actuallyPlayExternalFile(mediaController!!, mediaItem, song, startPositionMs)
                 } else {
                     Log.e(TAG, "Failed to obtain media controller after $maxAttempts attempts")
                     // Update UI state to reflect that we have a song but it's not playing
@@ -9482,20 +9496,29 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
             }
         } else {
             // We have a controller, use it directly
-            actuallyPlayExternalFile(mediaController!!, mediaItem, song)
+            actuallyPlayExternalFile(mediaController!!, mediaItem, song, startPositionMs)
         }
     }
     
     /**
      * Helper method to actually play the external file once we have a valid controller
      */
-    private fun actuallyPlayExternalFile(controller: MediaController, mediaItem: MediaItem, song: Song) {
-        Log.d(TAG, "Using controller to play: ${song.title}")
+    private fun actuallyPlayExternalFile(
+        controller: MediaController,
+        mediaItem: MediaItem,
+        song: Song,
+        startPositionMs: Long = 0L
+    ) {
+        Log.d(TAG, "Using controller to play: ${song.title} at ${startPositionMs}ms")
         
         try {
             // Clear existing queue to avoid conflicts
             controller.clearMediaItems()
-            controller.setMediaItem(mediaItem)
+            if (startPositionMs > 0L) {
+                controller.setMediaItem(mediaItem, startPositionMs)
+            } else {
+                controller.setMediaItem(mediaItem)
+            }
             controller.prepare()
             if (!canStartPlayback("playExternalAudioFile")) {
                 _isPlaying.value = false
