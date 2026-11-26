@@ -461,6 +461,18 @@ class MediaScanEngine(
             Log.d(TAG, "Scan completed: ${scannedSongs.size} songs processed in ${totalDuration}ms")
             _scanProgress.value = ScanProgress(scannedSongs.size, scannedSongs.size, ScanPhase.Complete, totalDuration)
 
+            if (scannedSongs.isNotEmpty()) {
+                runCatching {
+                    val lyricsDir = File(context.filesDir, "lyrics")
+                    val activePairs = scannedSongs.map { it.artist to it.title }
+                    val pruned = chromahub.rhythm.app.util.OrphanedLyricsCleaner
+                        .pruneOrphanedAppLyricsCache(lyricsDir, activePairs)
+                    if (pruned > 0) {
+                        Log.d(TAG, "Pruned $pruned orphaned lyric cache files")
+                    }
+                }
+            }
+
             scannedSongs.map { entity ->
                 Song(
                     id = entity.id,

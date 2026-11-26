@@ -55,8 +55,12 @@ class BackupWorker(
                 return@withContext Result.success()
             }
 
-            // Create backup JSON
-            val backupJson = appSettings.createBackup()
+            val backupManager = chromahub.rhythm.app.core.domain.backup.BackupRestoreManager(
+                applicationContext,
+                appSettings,
+                chromahub.rhythm.app.features.local.data.database.RhythmDatabase.getInstance(applicationContext)
+            )
+            val backupJson = backupManager.createBackupPayload()
             
             // Get or create backup directory in public Documents folder
             val backupDir = getBackupDirectory()

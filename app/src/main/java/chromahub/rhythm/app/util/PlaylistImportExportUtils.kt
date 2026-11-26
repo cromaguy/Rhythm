@@ -10,6 +10,7 @@ import android.net.Uri
 import android.os.Environment
 import android.util.Log
 import androidx.documentfile.provider.DocumentFile
+import chromahub.rhythm.app.core.domain.backup.BackupSongResolver
 import chromahub.rhythm.app.shared.data.model.Playlist
 import chromahub.rhythm.app.shared.data.model.Song
 import com.google.gson.Gson
@@ -114,7 +115,9 @@ object PlaylistImportExportUtils {
         JSON(".json", "application/json", "JSON Format"),
         M3U(".m3u", "audio/x-mpegurl", "M3U Playlist"),
         M3U8(".m3u8", "application/x-mpegURL", "M3U8 Playlist"),
-        PLS(".pls", "audio/x-scpls", "PLS Playlist")
+        PLS(".pls", "audio/x-scpls", "PLS Playlist"),
+        XSPF(".xspf", "application/xspf+xml", "XSPF Playlist"),
+        WPL(".wpl", "application/vnd.ms-wpl", "WPL Playlist")
     }
     
     data class PlaylistExportData(
@@ -165,9 +168,11 @@ object PlaylistImportExportUtils {
                 
                 when (format) {
                     PlaylistExportFormat.JSON -> exportToJson(playlist, file)
-                    PlaylistExportFormat.M3U -> exportToM3u(playlist, file, false)
-                    PlaylistExportFormat.M3U8 -> exportToM3u(playlist, file, true)
-                    PlaylistExportFormat.PLS -> exportToPls(playlist, file)
+                    PlaylistExportFormat.M3U -> file.writeText(PlaylistSerializer.serializeM3u(playlist, false))
+                    PlaylistExportFormat.M3U8 -> file.writeText(PlaylistSerializer.serializeM3u(playlist, true))
+                    PlaylistExportFormat.PLS -> file.writeText(PlaylistSerializer.serializePls(playlist))
+                    PlaylistExportFormat.XSPF -> file.writeText(PlaylistSerializer.serializeXspf(playlist))
+                    PlaylistExportFormat.WPL -> file.writeText(PlaylistSerializer.serializeWpl(playlist))
                 }
                 file
             }
@@ -252,21 +257,11 @@ object PlaylistImportExportUtils {
             val rawPlaylists: List<Playlist> = GsonUtils.gson.fromJson(playlistsData, type)
                 ?: return Result.failure(IllegalArgumentException("Failed to parse playlists from backup"))
 
-            // Build a URI -> Song lookup for fast matching
-            val songByUri = availableSongs.associateBy { it.uri.toString() }
-
-            val restoredPlaylists = rawPlaylists.map { playlist ->
-                val matchedSongs = playlist.songs.mapNotNull { song ->
-                    // Primary: match by URI (fast, exact)
-                    songByUri[song.uri.toString()]
-                        // Fallback: match by title + artist (handles URI changes across reinstalls)
-                        ?: availableSongs.find { available ->
-                            available.title.equals(song.title, ignoreCase = true) &&
-                            available.artist.equals(song.artist, ignoreCase = true)
-                        }
-                }
-                playlist.copy(songs = matchedSongs)
-            }
+            val (restoredPlaylists, _) = BackupSongResolver.resolvePlaylists(
+                playlists = rawPlaylists,
+                availableSongs = availableSongs,
+                keepUnresolvedStreaming = false
+            )
 
             Log.d(TAG, "Imported ${restoredPlaylists.size} playlists from Rhythm backup")
             Result.success(restoredPlaylists)
@@ -314,13 +309,30 @@ object PlaylistImportExportUtils {
                 fileName.endsWith(".json", true) || (trimmedContent.startsWith("{") && trimmedContent.endsWith("}")) -> "json"
                 fileName.endsWith(".m3u", true) || fileName.endsWith(".m3u8", true) || trimmedContent.startsWith("#EXTM3U", true) -> "m3u"
                 fileName.endsWith(".pls", true) || trimmedContent.startsWith("[playlist]", true) -> "pls"
+                fileName.endsWith(".xspf", true) || trimmedContent.contains("<playlist", true) -> "xspf"
+                fileName.endsWith(".wpl", true) || trimmedContent.contains("<smil", true) -> "wpl"
                 else -> null
             }
-            
+
+            val defaultName = fileName.substringBeforeLast(".")
             val playlist = when (resolvedFormat) {
                 "json" -> importFromJson(content, availableSongs)
-                "m3u" -> importFromM3u(content, fileName, availableSongs, filePathMap, m3uDirectory)
-                "pls" -> importFromPls(content, fileName, availableSongs, filePathMap, m3uDirectory)
+                "m3u" -> {
+                    val parsed = PlaylistSerializer.parseM3u(content)
+                    buildImportedPlaylist(parsed.name ?: defaultName, parsed.entries, availableSongs, filePathMap, m3uDirectory)
+                }
+                "pls" -> {
+                    val parsed = PlaylistSerializer.parsePls(content)
+                    buildImportedPlaylist(parsed.name ?: defaultName, parsed.entries, availableSongs, filePathMap, m3uDirectory)
+                }
+                "xspf" -> {
+                    val parsed = PlaylistSerializer.parseXspf(content)
+                    buildImportedPlaylist(parsed.name ?: defaultName, parsed.entries, availableSongs, filePathMap, m3uDirectory)
+                }
+                "wpl" -> {
+                    val parsed = PlaylistSerializer.parseWpl(content)
+                    buildImportedPlaylist(parsed.name ?: defaultName, parsed.entries, availableSongs, filePathMap, m3uDirectory)
+                }
                 else -> return Result.failure(IllegalArgumentException("Unsupported or unrecognized file format"))
             }
             
@@ -358,38 +370,29 @@ object PlaylistImportExportUtils {
         val json = GsonUtils.gson.toJson(exportData)
         outputFile.writeText(json)
     }
-    
-    private fun exportToM3u(playlist: Playlist, outputFile: File, extended: Boolean) {
-        outputFile.bufferedWriter().use { writer ->
-            if (extended) {
-                writer.write("#EXTM3U\n")
-            }
-            
-            playlist.songs.forEach { song ->
-                if (extended) {
-                    writer.write("#EXTINF:${song.duration / 1000},${song.artist} - ${song.title}\n")
-                }
-                writer.write("${song.uri}\n")
-            }
-        }
+
+    private fun buildImportedPlaylist(
+        name: String,
+        entries: List<PlaylistSerializer.ParsedTrackEntry>,
+        availableSongs: List<Song>,
+        filePathMap: Map<String, Song>,
+        m3uDirectory: String?
+    ): Playlist {
+        val matchedSongs = PlaylistSerializer.resolveEntries(
+            entries = entries,
+            availableSongs = availableSongs,
+            extraFilePaths = filePathMap,
+            baseDirectory = m3uDirectory
+        )
+        return Playlist(
+            id = System.currentTimeMillis().toString(),
+            name = name,
+            songs = matchedSongs,
+            dateCreated = System.currentTimeMillis(),
+            dateModified = System.currentTimeMillis()
+        )
     }
-    
-    private fun exportToPls(playlist: Playlist, outputFile: File) {
-        outputFile.bufferedWriter().use { writer ->
-            writer.write("[playlist]\n")
-            
-            playlist.songs.forEachIndexed { index, song ->
-                val num = index + 1
-                writer.write("File$num=${song.uri}\n")
-                writer.write("Title$num=${song.artist} - ${song.title}\n")
-                writer.write("Length$num=${song.duration / 1000}\n")
-            }
-            
-            writer.write("NumberOfEntries=${playlist.songs.size}\n")
-            writer.write("Version=2\n")
-        }
-    }
-    
+
     private fun importFromJson(content: String, availableSongs: List<Song>): Playlist {
         val exportData = GsonUtils.gson.fromJson(content, PlaylistExportData::class.java)
             ?: throw IllegalArgumentException("Invalid playlist JSON format")
@@ -445,294 +448,7 @@ object PlaylistImportExportUtils {
             dateModified = System.currentTimeMillis()
         )
     }
-    
-    private fun importFromM3u(
-        content: String, 
-        fileName: String, 
-        availableSongs: List<Song>,
-        filePathMap: Map<String, Song>,
-        m3uDirectory: String?
-    ): Playlist {
-        val lines = content.lines().filter { it.isNotBlank() }
-        val matchedSongs = mutableListOf<Song>()
-        val addedSongUris = mutableSetOf<String>()
-        val addedSongKeys = mutableSetOf<String>()
-        var currentTitle = ""
-        
-        lines.forEach { line ->
-            when {
-                line.startsWith("#EXTINF:") -> {
-                    // Extract title from extended info
-                    val titleStart = line.indexOf(',')
-                    if (titleStart != -1 && titleStart + 1 < line.length) {
-                        currentTitle = line.substring(titleStart + 1)
-                    }
-                }
-                line.startsWith("#") -> {
-                    // Skip other comments
-                }
-                else -> {
-                    // This is a file path/URI - process ALL non-comment lines
-                    val trimmedLine = line.trim()
-                    if (trimmedLine.isNotEmpty()) {
-                        val song = findSongByPathOrTitle(trimmedLine, currentTitle, availableSongs, filePathMap, m3uDirectory)
-                        if (song != null) {
-                            val songKey = "${song.title.trim().lowercase()}_${song.artist.trim().lowercase()}"
-                            val songUri = song.uri.toString()
-                            
-                            // Check for duplicates
-                            if (!addedSongUris.contains(songUri) && !addedSongKeys.contains(songKey)) {
-                                matchedSongs.add(song) 
-                                addedSongUris.add(songUri)
-                                addedSongKeys.add(songKey)
-                                Log.d(TAG, "Imported song from M3U: ${song.title} (${song.artist}) from path: $trimmedLine")
-                            } else {
-                                Log.d(TAG, "Skipping duplicate song in M3U: ${song.title} by ${song.artist}")
-                            }
-                        } else {
-                            Log.w(TAG, "Could not find song for M3U path: $trimmedLine" + 
-                                if (currentTitle.isNotEmpty()) " (title: $currentTitle)" else "")
-                        }
-                    }
-                    // Reset currentTitle after processing each path (whether match found or not)
-                    currentTitle = ""
-                }
-            }
-        }
-        
-        Log.d(TAG, "M3U import completed: ${matchedSongs.size} songs imported from ${fileName}")
-        return Playlist(
-            id = System.currentTimeMillis().toString(),
-            name = fileName.substringBeforeLast("."),
-            songs = matchedSongs,
-            dateCreated = System.currentTimeMillis(),
-            dateModified = System.currentTimeMillis()
-        )
-    }
-    
-    private fun importFromPls(
-        content: String, 
-        fileName: String, 
-        availableSongs: List<Song>,
-        filePathMap: Map<String, Song>,
-        m3uDirectory: String?
-    ): Playlist {
-        val lines = content.lines()
-        val matchedSongs = mutableListOf<Song>()
-        val addedSongUris = mutableSetOf<String>()
-        val addedSongKeys = mutableSetOf<String>()
-        val entries = mutableMapOf<Int, Triple<String?, String?, String?>>() // file, title, length
-        
-        lines.forEach { line ->
-            when {
-                line.startsWith("File") -> {
-                    val parts = line.split("=", limit = 2)
-                    if (parts.size == 2) {
-                        val num = parts[0].removePrefix("File").toIntOrNull()
-                        if (num != null) {
-                            val current = entries[num] ?: Triple(null, null, null)
-                            entries[num] = current.copy(first = parts[1])
-                        }
-                    }
-                }
-                line.startsWith("Title") -> {
-                    val parts = line.split("=", limit = 2)
-                    if (parts.size == 2) {
-                        val num = parts[0].removePrefix("Title").toIntOrNull()
-                        if (num != null) {
-                            val current = entries[num] ?: Triple(null, null, null)
-                            entries[num] = current.copy(second = parts[1])
-                        }
-                    }
-                }
-            }
-        }
-        
-        // Process entries in order
-        entries.toSortedMap().forEach { (_, entry) ->
-            val (filePath, title, _) = entry
-            if (filePath != null) {
-                val song = findSongByPathOrTitle(filePath, title ?: "", availableSongs, filePathMap, m3uDirectory)
-                song?.let { 
-                    val songKey = "${it.title.trim().lowercase()}_${it.artist.trim().lowercase()}"
-                    val songUri = it.uri.toString()
-                    
-                    // Check for duplicates
-                    if (!addedSongUris.contains(songUri) && !addedSongKeys.contains(songKey)) {
-                        matchedSongs.add(it)
-                        addedSongUris.add(songUri)
-                        addedSongKeys.add(songKey)
-                    } else {
-                        Log.d(TAG, "Skipping duplicate song in PLS: ${it.title} by ${it.artist}")
-                    }
-                }
-            }
-        }
-        
-        return Playlist(
-            id = System.currentTimeMillis().toString(),
-            name = fileName.substringBeforeLast("."),
-            songs = matchedSongs,
-            dateCreated = System.currentTimeMillis(),
-            dateModified = System.currentTimeMillis()
-        )
-    }
-    
-    private fun findSongByPathOrTitle(
-        path: String, 
-        title: String, 
-        availableSongs: List<Song>,
-        filePathMap: Map<String, Song>,
-        m3uDirectory: String?
-    ): Song? {
-        // Try exact URI match first (for content:// URIs exported by Rhythm)
-        availableSongs.find { it.uri.toString() == path }?.let { 
-            Log.d(TAG, "Found song by exact URI match: $path")
-            return it 
-        }
-        
-        // Try exact file path match from the pre-built map
-        filePathMap[path]?.let {
-            Log.d(TAG, "Found song by exact file path match: $path")
-            return it
-        }
-        
-        // Try case-insensitive file path match
-        filePathMap[path.lowercase()]?.let {
-            Log.d(TAG, "Found song by case-insensitive file path match: $path")
-            return it
-        }
-        
-        // Handle relative paths - resolve relative to M3U file directory
-        if (!path.startsWith("/") && m3uDirectory != null) {
-            val absolutePath = java.io.File(m3uDirectory, path).canonicalPath
-            filePathMap[absolutePath]?.let {
-                Log.d(TAG, "Found song by resolved relative path: $path -> $absolutePath")
-                return it
-            }
-            filePathMap[absolutePath.lowercase()]?.let {
-                Log.d(TAG, "Found song by resolved relative path (case-insensitive): $path -> $absolutePath")
-                return it
-            }
-        }
-        
-        // Handle partial paths like "/Music/filename" - try common storage prefixes
-        if (path.startsWith("/") && !path.startsWith("/storage")) {
-            val commonPrefixes = listOf(
-                "/storage/emulated/0",
-                "/storage/sdcard0",
-                // /sdcard is a legacy symlink to the primary external storage dir
-                // (resolved below via Environment), so it is not listed explicitly
-                android.os.Environment.getExternalStorageDirectory().absolutePath
-            )
-            
-            for (prefix in commonPrefixes) {
-                val absolutePath = prefix + path
-                filePathMap[absolutePath]?.let {
-                    Log.d(TAG, "Found song by prefix resolution: $path -> $absolutePath")
-                    return it
-                }
-                filePathMap[absolutePath.lowercase()]?.let {
-                    Log.d(TAG, "Found song by prefix resolution (case-insensitive): $path -> $absolutePath")
-                    return it
-                }
-            }
-        }
-        
-        // Build a map of filenames to songs for fallback matching
-        val fileNameToSongs = filePathMap.entries
-            .filter { it.key.contains("/") }
-            .groupBy { java.io.File(it.key).name.lowercase() }
-        
-        // Try file name match (basename with extension)
-        val fileName = path.substringAfterLast("/").substringAfterLast("\\")
-        if (fileName.isNotBlank()) {
-            fileNameToSongs[fileName.lowercase()]?.firstOrNull()?.let { entry ->
-                Log.d(TAG, "Found song by filename match: $fileName")
-                return entry.value
-            }
-        }
-        
-        // Try file name without extension
-        val fileNameNoExt = fileName.substringBeforeLast(".")
-        if (fileNameNoExt.isNotBlank()) {
-            fileNameToSongs.entries.find { (key, _) ->
-                key.substringBeforeLast(".") == fileNameNoExt.lowercase()
-            }?.value?.firstOrNull()?.let { entry ->
-                Log.d(TAG, "Found song by filename (no extension) match: $fileNameNoExt")
-                return entry.value
-            }
-        }
-        
-        // Try fuzzy filename match (handles URL encoding, underscores vs spaces, etc.)
-        val normalizedFileName = fileNameNoExt.replace("_", " ").replace("%20", " ").replace("-", " ").lowercase()
-        if (normalizedFileName.isNotBlank()) {
-            fileNameToSongs.entries.find { (key, _) ->
-                val normalizedKey = key.substringBeforeLast(".")
-                    .replace("_", " ").replace("%20", " ").replace("-", " ")
-                normalizedKey == normalizedFileName
-            }?.value?.firstOrNull()?.let { entry ->
-                Log.d(TAG, "Found song by normalized filename match: $normalizedFileName")
-                return entry.value
-            }
-        }
-        
-        // Try matching by path segments (handles different root paths but same folder structure)
-        val pathSegments = path.split("/", "\\").filter { it.isNotBlank() }
-        if (pathSegments.size >= 2) {
-            val lastTwoSegments = pathSegments.takeLast(2).map { it.lowercase() }
-            filePathMap.entries.find { (filePath, _) ->
-                val songSegments = filePath.split("/").filter { it.isNotBlank() }.map { it.lowercase() }
-                songSegments.takeLast(2) == lastTwoSegments
-            }?.let { entry ->
-                Log.d(TAG, "Found song by path segments match: ${pathSegments.takeLast(2)}")
-                return entry.value
-            }
-        }
-        
-        // Try title match from EXTINF metadata
-        if (title.isNotBlank()) {
-            // Try exact title match first
-            availableSongs.find { song ->
-                song.title.equals(title, ignoreCase = true)
-            }?.let { 
-                Log.d(TAG, "Found song by exact title match: $title")
-                return it 
-            }
-            
-            // Try "Artist - Title" format match
-            val cleanTitle = title.trim()
-            availableSongs.find { song ->
-                val artistTitle = "${song.artist} - ${song.title}"
-                artistTitle.equals(cleanTitle, ignoreCase = true)
-            }?.let { 
-                Log.d(TAG, "Found song by artist-title match: $cleanTitle")
-                return it 
-            }
-            
-            // Try reversed "Title - Artist" format match (some M3Us use this)
-            availableSongs.find { song ->
-                val titleArtist = "${song.title} - ${song.artist}"
-                titleArtist.equals(cleanTitle, ignoreCase = true)
-            }?.let { 
-                Log.d(TAG, "Found song by title-artist match: $cleanTitle")
-                return it 
-            }
-            
-            // Try partial title match
-            availableSongs.find { song ->
-                cleanTitle.contains(song.title, ignoreCase = true) || 
-                song.title.contains(cleanTitle, ignoreCase = true)
-            }?.let { 
-                Log.d(TAG, "Found song by partial title match: $cleanTitle")
-                return it 
-            }
-        }
-        
-        Log.d(TAG, "No match found for path: $path" + if (title.isNotBlank()) " (title: $title)" else "")
-        return null
-    }
-    
+
     private fun createPlaylistsZip(playlists: List<Playlist>, format: PlaylistExportFormat, zipFile: File) {
         // Create a temp directory to hold individual playlist files
         val tempDir = File(zipFile.parentFile, "temp_playlists_${System.currentTimeMillis()}")
@@ -747,9 +463,11 @@ object PlaylistImportExportUtils {
 
                 when (format) {
                     PlaylistExportFormat.JSON -> exportToJson(playlist, tempFile)
-                    PlaylistExportFormat.M3U -> exportToM3u(playlist, tempFile, false)
-                    PlaylistExportFormat.M3U8 -> exportToM3u(playlist, tempFile, true)
-                    PlaylistExportFormat.PLS -> exportToPls(playlist, tempFile)
+                    PlaylistExportFormat.M3U -> tempFile.writeText(PlaylistSerializer.serializeM3u(playlist, false))
+                    PlaylistExportFormat.M3U8 -> tempFile.writeText(PlaylistSerializer.serializeM3u(playlist, true))
+                    PlaylistExportFormat.PLS -> tempFile.writeText(PlaylistSerializer.serializePls(playlist))
+                    PlaylistExportFormat.XSPF -> tempFile.writeText(PlaylistSerializer.serializeXspf(playlist))
+                    PlaylistExportFormat.WPL -> tempFile.writeText(PlaylistSerializer.serializeWpl(playlist))
                 }
 
                 tempFiles.add(tempFile)
@@ -850,9 +568,11 @@ object PlaylistImportExportUtils {
                     val json = GsonUtils.gson.toJson(exportData)
                     outputStream.write(json.toByteArray())
                 }
-                PlaylistExportFormat.M3U -> exportM3uToStream(playlist, outputStream, false)
-                PlaylistExportFormat.M3U8 -> exportM3uToStream(playlist, outputStream, true)
-                PlaylistExportFormat.PLS -> exportPlsToStream(playlist, outputStream)
+                PlaylistExportFormat.M3U -> outputStream.write(PlaylistSerializer.serializeM3u(playlist, false).toByteArray(Charsets.UTF_8))
+                PlaylistExportFormat.M3U8 -> outputStream.write(PlaylistSerializer.serializeM3u(playlist, true).toByteArray(Charsets.UTF_8))
+                PlaylistExportFormat.PLS -> outputStream.write(PlaylistSerializer.serializePls(playlist).toByteArray(Charsets.UTF_8))
+                PlaylistExportFormat.XSPF -> outputStream.write(PlaylistSerializer.serializeXspf(playlist).toByteArray(Charsets.UTF_8))
+                PlaylistExportFormat.WPL -> outputStream.write(PlaylistSerializer.serializeWpl(playlist).toByteArray(Charsets.UTF_8))
             }
         } ?: throw IllegalArgumentException("Cannot open output stream for selected file")
         
@@ -880,44 +600,6 @@ object PlaylistImportExportUtils {
             exportToUserSelectedDirectory(context, directoryUri, playlist, format, fileName)
         }
         
-        // Return a dummy File object for compatibility
         return File(directory.uri.path ?: "user_selected", "playlists_exported")
-    }
-    
-    /**
-     * Helper to export M3U format to output stream
-     */
-    private fun exportM3uToStream(playlist: Playlist, outputStream: java.io.OutputStream, extended: Boolean) {
-        val writer = outputStream.bufferedWriter()
-        if (extended) {
-            writer.write("#EXTM3U\n")
-        }
-        
-        playlist.songs.forEach { song ->
-            if (extended) {
-                writer.write("#EXTINF:${song.duration / 1000},${song.artist} - ${song.title}\n")
-            }
-            writer.write("${song.uri}\n")
-        }
-        writer.flush()
-    }
-    
-    /**
-     * Helper to export PLS format to output stream
-     */
-    private fun exportPlsToStream(playlist: Playlist, outputStream: java.io.OutputStream) {
-        val writer = outputStream.bufferedWriter()
-        writer.write("[playlist]\n")
-        
-        playlist.songs.forEachIndexed { index, song ->
-            val num = index + 1
-            writer.write("File$num=${song.uri}\n")
-            writer.write("Title$num=${song.artist} - ${song.title}\n")
-            writer.write("Length$num=${song.duration / 1000}\n")
-        }
-        
-        writer.write("NumberOfEntries=${playlist.songs.size}\n")
-        writer.write("Version=2\n")
-        writer.flush()
     }
 }

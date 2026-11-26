@@ -705,5 +705,7 @@ private fun getFormatIcon(format: PlaylistImportExportUtils.PlaylistExportFormat
         PlaylistImportExportUtils.PlaylistExportFormat.M3U,
         PlaylistImportExportUtils.PlaylistExportFormat.M3U8 -> RhythmIcons.Playlist
         PlaylistImportExportUtils.PlaylistExportFormat.PLS -> RhythmIcons.Queue
+        PlaylistImportExportUtils.PlaylistExportFormat.XSPF,
+        PlaylistImportExportUtils.PlaylistExportFormat.WPL -> RhythmIcons.List
     }
 }

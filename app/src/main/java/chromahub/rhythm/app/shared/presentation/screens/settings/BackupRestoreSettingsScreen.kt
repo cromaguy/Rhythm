@@ -51,6 +51,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.border
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.material3.*
@@ -92,6 +93,7 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import chromahub.rhythm.app.BuildConfig
+import chromahub.rhythm.app.core.domain.backup.BackupCrypto
 import chromahub.rhythm.app.shared.data.model.AppSettings
 import chromahub.rhythm.app.shared.data.model.Playlist
 import chromahub.rhythm.app.shared.data.model.Song
@@ -217,6 +219,31 @@ fun BackupRestoreSettingsScreen(onBackClick: () -> Unit) {
     var backupSections by remember { mutableStateOf(AppSettings.BackupRestoreSections()) }
     var restoreSections by remember { mutableStateOf(AppSettings.BackupRestoreSections()) }
     var resultSheetState by remember { mutableStateOf<BackupRestoreResultState?>(null) }
+    var pendingBackupPassphrase by remember { mutableStateOf<String?>(null) }
+    var showBackupPassphraseDialog by remember { mutableStateOf(false) }
+    var showRestorePassphraseDialog by remember { mutableStateOf(false) }
+    var pendingEncryptedPayload by remember { mutableStateOf<String?>(null) }
+    var pendingEncryptedSections by remember { mutableStateOf(AppSettings.BackupRestoreSections()) }
+    val hasSafetyRollback = remember(resultSheetState, restoreResult) {
+        musicViewModel.hasSafetyRollbackSnapshot()
+    }
+    val playlistSyncUri by appSettings.playlistSyncUri.collectAsState()
+
+    val m3uSyncFolderLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocumentTree()
+    ) { treeUri ->
+        if (treeUri != null) {
+            runCatching {
+                context.contentResolver.takePersistableUriPermission(
+                    treeUri,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                )
+            }
+            appSettings.setPlaylistSyncUri(treeUri.toString())
+            chromahub.rhythm.app.infrastructure.worker.M3uSyncWorker.enqueue(context)
+            Toast.makeText(context, "Playlist M3U8 sync enabled", Toast.LENGTH_SHORT).show()
+        }
+    }
 
     val isBusy = isCreatingBackup || isPreparingRestore || isRestoringFromFile || isRestoringFromClipboard
 
@@ -283,8 +310,11 @@ fun BackupRestoreSettingsScreen(onBackClick: () -> Unit) {
                         isCreatingBackup = true
                         HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
 
-                        musicViewModel.ensurePlaylistsSaved()
-                        val backupJson = appSettings.createBackup(pendingBackupSections)
+                        val backupJson = musicViewModel.createBackupPayload(
+                            sections = pendingBackupSections,
+                            passphrase = pendingBackupPassphrase
+                        )
+                        pendingBackupPassphrase = null
 
                         val outputStream = context.contentResolver.openOutputStream(uri)
                             ?: throw IllegalStateException("Unable to open backup destination")
@@ -385,10 +415,14 @@ fun BackupRestoreSettingsScreen(onBackClick: () -> Unit) {
         }
     }
 
-    fun applyRestoreWithSections(backupJson: String, sections: AppSettings.BackupRestoreSections) {
+    fun applyRestoreWithSections(
+        backupJson: String,
+        sections: AppSettings.BackupRestoreSections,
+        passphrase: String? = null
+    ) {
         isPreparingRestore = true
         HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
-        musicViewModel.restoreFromBackup(backupJson, sections)
+        musicViewModel.restoreFromBackup(backupJson, sections, passphrase)
     }
 
     val infiniteTransition = rememberInfiniteTransition(label = "backup_animations")
@@ -661,13 +695,49 @@ fun BackupRestoreSettingsScreen(onBackClick: () -> Unit) {
                                     isRestoringFromFile = true
                                     val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
                                         addCategory(Intent.CATEGORY_OPENABLE)
-                                        type = "application/json"
+                                        type = "*/*"
+                                        putExtra(
+                                            Intent.EXTRA_MIME_TYPES,
+                                            arrayOf("application/json", "application/octet-stream", "text/plain")
+                                        )
                                     }
                                     filePickerLauncher.launch(intent)
                                 }
                             }
+                        ),
+                        SettingItem(
+                            MaterialSymbolIcon("sync"),
+                            "Continuous M3U8 Playlist Sync",
+                            if (playlistSyncUri.isNullOrBlank()) {
+                                "Automatically export updated playlists to a chosen folder"
+                            } else {
+                                "Syncing playlists to selected folder (tap to disable)"
+                            },
+                            onClick = {
+                                HapticUtils.performHapticFeedback(context, haptics, HapticType.LIGHT)
+                                if (playlistSyncUri.isNullOrBlank()) {
+                                    m3uSyncFolderLauncher.launch(null)
+                                } else {
+                                    appSettings.setPlaylistSyncUri(null)
+                                    Toast.makeText(context, "Playlist M3U8 sync disabled", Toast.LENGTH_SHORT).show()
+                                }
+                            }
                         )
-                    )
+                    ) + if (hasSafetyRollback) {
+                        listOf(
+                            SettingItem(
+                                MaterialSymbolIcon("history"),
+                                "Restore Pre-Restore Rollback",
+                                "Revert to the automatic snapshot captured before the last restore",
+                                onClick = {
+                                    if (!isBusy) {
+                                        HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
+                                        musicViewModel.restoreLastSafetyRollback()
+                                    }
+                                }
+                            )
+                        )
+                    } else emptyList()
                 )
             )
 
@@ -752,16 +822,52 @@ fun BackupRestoreSettingsScreen(onBackClick: () -> Unit) {
 
                 pendingBackupSections = selectedSections
                 showBackupSelectionSheet = false
+                showBackupPassphraseDialog = true
+            }
+        )
+    }
 
-                val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
-                    addCategory(Intent.CATEGORY_OPENABLE)
-                    type = "application/json"
-                    putExtra(
-                        Intent.EXTRA_TITLE,
-                        "rhythm_backup_${SimpleDateFormat("yyyyMMdd_HHmmss", java.util.Locale.getDefault()).format(Date())}.json"
+    if (showBackupPassphraseDialog) {
+        val backupPassphraseState = rememberTextFieldState()
+        val launchCreateBackup = { passphrase: String? ->
+            pendingBackupPassphrase = passphrase?.takeIf { it.isNotBlank() }
+            showBackupPassphraseDialog = false
+            val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
+                addCategory(Intent.CATEGORY_OPENABLE)
+                type = "application/json"
+                putExtra(
+                    Intent.EXTRA_TITLE,
+                    "rhythm_backup_${SimpleDateFormat("yyyyMMdd_HHmmss", java.util.Locale.getDefault()).format(Date())}.json"
+                )
+            }
+            backupLocationLauncher.launch(intent)
+        }
+        AlertDialog(
+            onDismissRequest = { showBackupPassphraseDialog = false },
+            title = { Text("Encrypt Backup (Optional)") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = "Enter a passphrase to encrypt with AES-256-GCM, or leave blank for plain JSON.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    OutlinedSecureTextField(
+                        state = backupPassphraseState,
+                        label = { Text("Backup passphrase") },
+                        modifier = Modifier.fillMaxWidth()
                     )
                 }
-                backupLocationLauncher.launch(intent)
+            },
+            confirmButton = {
+                Button(onClick = { launchCreateBackup(backupPassphraseState.text.toString()) }) {
+                    Text(if (backupPassphraseState.text.isNotBlank()) "Encrypt & Save" else "Save Plaintext")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { launchCreateBackup(null) }) {
+                    Text("Skip Encryption")
+                }
             }
         )
     }
@@ -788,7 +894,62 @@ fun BackupRestoreSettingsScreen(onBackClick: () -> Unit) {
                 val backupJson = pendingRestorePayload ?: return@BackupRestoreSectionPickerBottomSheet
                 showRestoreSelectionSheet = false
                 pendingRestorePayload = null
-                applyRestoreWithSections(backupJson, selectedSections)
+                if (BackupCrypto.isEncryptedEnvelope(backupJson)) {
+                    pendingEncryptedPayload = backupJson
+                    pendingEncryptedSections = selectedSections
+                    showRestorePassphraseDialog = true
+                } else {
+                    applyRestoreWithSections(backupJson, selectedSections, null)
+                }
+            }
+        )
+    }
+
+    if (showRestorePassphraseDialog && pendingEncryptedPayload != null) {
+        val restorePassphraseState = rememberTextFieldState()
+        AlertDialog(
+            onDismissRequest = {
+                showRestorePassphraseDialog = false
+                pendingEncryptedPayload = null
+            },
+            title = { Text("Encrypted Backup") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = "Enter the passphrase used to encrypt this backup.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    OutlinedSecureTextField(
+                        state = restorePassphraseState,
+                        label = { Text("Passphrase") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    enabled = restorePassphraseState.text.isNotBlank(),
+                    onClick = {
+                        val payload = pendingEncryptedPayload ?: return@Button
+                        val passphrase = restorePassphraseState.text.toString()
+                        showRestorePassphraseDialog = false
+                        pendingEncryptedPayload = null
+                        applyRestoreWithSections(payload, pendingEncryptedSections, passphrase)
+                    }
+                ) {
+                    Text("Decrypt & Restore")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showRestorePassphraseDialog = false
+                        pendingEncryptedPayload = null
+                    }
+                ) {
+                    Text(stringResource(R.string.ui_cancel))
+                }
             }
         )
     }

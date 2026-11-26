@@ -135,6 +135,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
     data class QueuedRestore(
         val backupJson: String,
         val sections: AppSettings.BackupRestoreSections,
+        val passphrase: String? = null,
         val onResult: (Boolean) -> Unit
     )
 
@@ -2659,7 +2660,11 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                 if (queued != null) {
                     pendingRestore = null
                     Log.d(TAG, "Executing queued restore operation...")
-                    val success = repository.backupRestoreManager.restoreFromBackupPayload(queued.backupJson, queued.sections)
+                    val success = repository.backupRestoreManager.restoreFromBackupPayload(
+                        queued.backupJson,
+                        queued.sections,
+                        queued.passphrase
+                    )
                     if (success) {
                         reloadPlaylistsFromSettings()
                     }
@@ -3286,34 +3291,59 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
         metadataManagerHelper.cancelPendingBatchMetadataWrite()
     }
     
+    suspend fun createBackupPayload(
+        sections: AppSettings.BackupRestoreSections = AppSettings.BackupRestoreSections(),
+        passphrase: String? = null
+    ): String {
+        ensurePlaylistsSaved()
+        return repository.backupRestoreManager.createBackupPayload(sections, passphrase)
+    }
+
+    fun hasSafetyRollbackSnapshot(): Boolean = repository.backupRestoreManager.hasSafetySnapshot()
+
+    fun restoreLastSafetyRollback() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val success = repository.backupRestoreManager.restoreLastSafetySnapshot()
+            withContext(Dispatchers.Main) {
+                if (success) {
+                    reloadPlaylistsFromSettings()
+                    _restoreResult.value = RestoreResult.Success(wasQueued = false)
+                } else {
+                    _restoreResult.value = RestoreResult.Failure("No valid pre-restore safety snapshot available")
+                }
+            }
+        }
+    }
+
     /**
      * Restores app data from a backup JSON string. If a media scan is active,
      * the restore is queued until the scan finishes.
      */
     fun restoreFromBackup(
         backupJson: String,
-        sections: AppSettings.BackupRestoreSections = AppSettings.BackupRestoreSections()
+        sections: AppSettings.BackupRestoreSections = AppSettings.BackupRestoreSections(),
+        passphrase: String? = null
     ) {
         if (_isLibraryRefreshing.value || _isMediaScanning.value) {
             Log.d(TAG, "Media scan is active. Queueing backup restore.")
-            pendingRestore = QueuedRestore(backupJson, sections) { success ->
+            pendingRestore = QueuedRestore(backupJson, sections, passphrase) { success ->
                 if (success) {
                     _restoreResult.value = RestoreResult.Success(wasQueued = true)
                 } else {
-                    _restoreResult.value = RestoreResult.Failure("Invalid backup format or corrupted data")
+                    _restoreResult.value = RestoreResult.Failure("Invalid backup format, wrong passphrase, or corrupted data")
                 }
             }
             _restoreResult.value = RestoreResult.Queued
         } else {
             Log.d(TAG, "No active scan. Applying non-blocking atomic backup restore.")
             viewModelScope.launch(Dispatchers.IO) {
-                val success = repository.backupRestoreManager.restoreFromBackupPayload(backupJson, sections)
+                val success = repository.backupRestoreManager.restoreFromBackupPayload(backupJson, sections, passphrase)
                 withContext(Dispatchers.Main) {
                     if (success) {
                         reloadPlaylistsFromSettings()
                         _restoreResult.value = RestoreResult.Success(wasQueued = false)
                     } else {
-                        _restoreResult.value = RestoreResult.Failure("Invalid backup format or corrupted data")
+                        _restoreResult.value = RestoreResult.Failure("Invalid backup format, wrong passphrase, or corrupted data")
                     }
                 }
             }
@@ -3845,6 +3875,9 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                     }
                 }
                 Log.d(TAG, "Successfully saved ${currentPlaylists.size} playlists to Room")
+                if (!appSettings.playlistSyncUri.value.isNullOrBlank()) {
+                    chromahub.rhythm.app.infrastructure.worker.M3uSyncWorker.enqueue(getApplication())
+                }
             } catch (e: Exception) {
                 Log.e(TAG, "Error saving playlists to Room", e)
             }

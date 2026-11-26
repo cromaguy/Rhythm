@@ -449,6 +449,7 @@ class AppSettings private constructor(context: Context) {
         private const val KEY_LAST_BACKUP_TIMESTAMP = "last_backup_timestamp"
         private const val KEY_AUTO_BACKUP_ENABLED = "auto_backup_enabled"
         private const val KEY_BACKUP_LOCATION = "backup_location"
+        private const val KEY_PLAYLIST_SYNC_URI = "playlist_sync_uri"
         
         // Sleep Timer
         private const val KEY_SLEEP_TIMER_ACTIVE = "sleep_timer_active"
@@ -2267,6 +2268,9 @@ private val _autoCheckForUpdates = MutableStateFlow(prefs.getBoolean(KEY_AUTO_CH
     
     private val _backupLocation = MutableStateFlow(prefs.getString(KEY_BACKUP_LOCATION, null))
     val backupLocation: StateFlow<String?> = _backupLocation.asStateFlow()
+
+    private val _playlistSyncUri = MutableStateFlow(prefs.getString(KEY_PLAYLIST_SYNC_URI, null))
+    val playlistSyncUri: StateFlow<String?> = _playlistSyncUri.asStateFlow()
     
     // Media Scan Tracking
     private val _lastScanTimestamp = MutableStateFlow(safeLong(KEY_LAST_SCAN_TIMESTAMP, 0L))
@@ -4817,6 +4821,16 @@ private val _autoCheckForUpdates = MutableStateFlow(prefs.getBoolean(KEY_AUTO_CH
         _backupLocation.value = location
     }
 
+    fun setPlaylistSyncUri(uri: String?) {
+        if (uri.isNullOrBlank()) {
+            prefs.edit { remove(KEY_PLAYLIST_SYNC_URI) }
+            _playlistSyncUri.value = null
+        } else {
+            prefs.edit { putString(KEY_PLAYLIST_SYNC_URI, uri) }
+            _playlistSyncUri.value = uri
+        }
+    }
+
     data class BackupRestoreSections(
         val includeGeneralSettings: Boolean = true,
         val includeLibraryData: Boolean = true,
@@ -4906,6 +4920,9 @@ private val _autoCheckForUpdates = MutableStateFlow(prefs.getBoolean(KEY_AUTO_CH
     ): BackupValidationResult {
         if (backupJson.isBlank()) {
             return BackupValidationResult.Invalid("Backup JSON payload is empty")
+        }
+        if (chromahub.rhythm.app.core.domain.backup.BackupCrypto.isEncryptedEnvelope(backupJson)) {
+            return BackupValidationResult.Valid
         }
         return try {
             val type = object : TypeToken<Map<String, Any?>>() {}.type
