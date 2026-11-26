@@ -307,7 +307,8 @@ fun MaterialPlayerScreen(
     isStreamingMode: Boolean = false,
     onOpenFullScreenLyrics: () -> Unit = {},
     swipeToDismissEnabled: Boolean = true,
-    expansionFraction: Float = 1f
+    expansionFraction: Float = 1f,
+    expansionFractionProvider: () -> Float = { expansionFraction }
 ) {
     val context = LocalContext.current
     val density = LocalDensity.current
@@ -817,37 +818,39 @@ fun MaterialPlayerScreen(
     var showPlayerControls by remember { mutableStateOf(true) }
     var showBottomButtons by remember { mutableStateOf(true) }
 
-    val localEntranceFraction = if (swipeToDismissEnabled) {
-        var animateEntrance by remember { mutableStateOf(false) }
+    val swipeEntranceAnim = remember { androidx.compose.animation.core.Animatable(0f) }
+    if (swipeToDismissEnabled) {
         LaunchedEffect(Unit) {
-            animateEntrance = true
+            swipeEntranceAnim.animateTo(
+                1f,
+                animationSpec = spring(stiffness = Spring.StiffnessLow)
+            )
         }
-        animateFloatAsState(
-            targetValue = if (animateEntrance) 1f else 0f,
-            animationSpec = spring(stiffness = Spring.StiffnessLow),
-            label = "localEntranceFraction"
-        ).value
+    }
+    val localEntranceProvider: () -> Float = if (swipeToDismissEnabled) {
+        { swipeEntranceAnim.value }
     } else {
-        expansionFraction
+        expansionFractionProvider
     }
 
-    val line1Fraction = androidx.compose.animation.core.FastOutSlowInEasing.transform(((localEntranceFraction - 0.0f) / 0.5f).coerceIn(0f, 1f))
-    val line2Fraction = androidx.compose.animation.core.FastOutSlowInEasing.transform(((localEntranceFraction - 0.1f) / 0.5f).coerceIn(0f, 1f))
-    val line3Fraction = androidx.compose.animation.core.FastOutSlowInEasing.transform(((localEntranceFraction - 0.2f) / 0.5f).coerceIn(0f, 1f))
-    val line4Fraction = androidx.compose.animation.core.FastOutSlowInEasing.transform(((localEntranceFraction - 0.3f) / 0.5f).coerceIn(0f, 1f))
-    val line5Fraction = androidx.compose.animation.core.FastOutSlowInEasing.transform(((localEntranceFraction - 0.4f) / 0.5f).coerceIn(0f, 1f))
-    val line6Fraction = androidx.compose.animation.core.FastOutSlowInEasing.transform(((localEntranceFraction - 0.5f) / 0.5f).coerceIn(0f, 1f))
-
-    val line1Alpha = line1Fraction
-    val line1TranslationY = with(LocalDensity.current) { -16.dp.toPx() * (1f - line1Fraction) }
-
-    val line2Alpha = line2Fraction
-    val line2TranslationY = with(LocalDensity.current) { 32.dp.toPx() * (1f - line2Fraction) }
-
-    val line3Alpha = line3Fraction
-    val line4Alpha = line4Fraction
-    val line5Alpha = line5Fraction
-    val line6Alpha = line6Fraction
+    val line1Fraction: () -> Float = {
+        chromahub.rhythm.app.shared.presentation.components.player.FullPlayerCompositionPolicy.staggeredFraction(localEntranceProvider(), 0.0f)
+    }
+    val line2Fraction: () -> Float = {
+        chromahub.rhythm.app.shared.presentation.components.player.FullPlayerCompositionPolicy.staggeredFraction(localEntranceProvider(), 0.1f)
+    }
+    val line3Fraction: () -> Float = {
+        chromahub.rhythm.app.shared.presentation.components.player.FullPlayerCompositionPolicy.staggeredFraction(localEntranceProvider(), 0.2f)
+    }
+    val line4Fraction: () -> Float = {
+        chromahub.rhythm.app.shared.presentation.components.player.FullPlayerCompositionPolicy.staggeredFraction(localEntranceProvider(), 0.3f)
+    }
+    val line5Fraction: () -> Float = {
+        chromahub.rhythm.app.shared.presentation.components.player.FullPlayerCompositionPolicy.staggeredFraction(localEntranceProvider(), 0.4f)
+    }
+    val line6Fraction: () -> Float = {
+        chromahub.rhythm.app.shared.presentation.components.player.FullPlayerCompositionPolicy.staggeredFraction(localEntranceProvider(), 0.5f)
+    }
     
     // Swipe to dismiss gesture state - enhanced for mini player-like transition
     var swipeOffsetY by remember { mutableFloatStateOf(0f) }
@@ -1385,8 +1388,9 @@ fun MaterialPlayerScreen(
         actions = {
             Row(
                 modifier = Modifier.graphicsLayer {
-                    alpha = line1Alpha
-                    translationY = line1TranslationY
+                    val f1 = line1Fraction()
+                    alpha = f1
+                    translationY = -16.dp.toPx() * (1f - f1)
                 },
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -1538,7 +1542,7 @@ fun MaterialPlayerScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .graphicsLayer {
-                                alpha = line3Alpha
+                                alpha = line3Fraction()
                             }
                             .padding(
                                 horizontal = when {
@@ -1679,14 +1683,15 @@ fun MaterialPlayerScreen(
                                 .aspectRatio(1f)
                                 .graphicsLayer {
                                     val currentSwipeProgress = (animatedSwipeOffset / screenHeight).coerceIn(0f, 1f)
+                                    val f2 = line2Fraction()
                                     // Album art scales and shrinks during swipe (mini-player effect)
                                     val combinedScale = albumScale * (1f - currentSwipeProgress * 0.2f)
                                     scaleX = combinedScale
                                     scaleY = combinedScale
-                                    alpha = albumAlpha * (1f - currentSwipeProgress * 0.3f) * line2Alpha
+                                    alpha = albumAlpha * (1f - currentSwipeProgress * 0.3f) * f2
                                     
                                     // Move upward slightly as if collapsing to mini player position
-                                    translationY = -currentSwipeProgress * 100f + line2TranslationY
+                                    translationY = -currentSwipeProgress * 100f + 32.dp.toPx() * (1f - f2)
                                     
                                     // Apply horizontal translation for track swipe and track change animation
                                     translationX = artworkTranslationX + albumSlideOffset
@@ -2498,7 +2503,7 @@ fun MaterialPlayerScreen(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .graphicsLayer {
-                                        alpha = line4Alpha
+                                        alpha = line4Fraction()
                                     }
                                     .padding(
                                         horizontal = when {
@@ -2549,7 +2554,7 @@ fun MaterialPlayerScreen(
                                                                 } else if (playerProgressStyle == "WAVY") {
                                     // WaveSlider: proper animated waves + morphing thumb + play/pause reaction
                                     WaveSlider(
-                                        value = if (isScrubbing && enhancedSeekingEnabled) scrubProgress else progress(),
+                                        valueProvider = { if (isScrubbing && enhancedSeekingEnabled) scrubProgress else progress() },
                                         onValueChange = { newValue ->
                                             if (canSeek && enhancedSeekingEnabled) {
                                                 isScrubbing = true
@@ -2679,7 +2684,7 @@ fun MaterialPlayerScreen(
                         // Full width container with same padding as toggle buttons
                         Box(
                             modifier = Modifier.graphicsLayer {
-                                alpha = line5Alpha
+                                alpha = line5Fraction()
                             }
                         ) {
                             chromahub.rhythm.app.shared.presentation.components.common.ExpressivePlayerControlGroup(
@@ -2755,7 +2760,7 @@ fun MaterialPlayerScreen(
                         // Secondary action buttons with Expressive Toggle Button Group
                         Box(
                             modifier = Modifier.graphicsLayer {
-                                alpha = line6Alpha
+                                alpha = line6Fraction()
                             }
                         ) {
                         chromahub.rhythm.app.shared.presentation.components.common.ExpressiveToggleButtonGroup(
@@ -3417,7 +3422,7 @@ fun MaterialPlayerScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .graphicsLayer {
-                                    alpha = line6Alpha
+                                    alpha = line6Fraction()
                                 }
                                 .padding(
                                     start = when {

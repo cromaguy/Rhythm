@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2024-2026 Anjishnu Nandi <https://github.com/cromaguy>
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ */
+
 package chromahub.rhythm.app.benchmark
 
 import androidx.benchmark.macro.MacrobenchmarkScope
@@ -103,6 +108,35 @@ class BaselineProfileGenerator {
             swipeVertically(up = true)
             device.waitForIdle(500)
         }
+
+        openTabAndScroll("Settings")
+        openTabAndScroll("Search")
+        expandMiniPlayerIfPresent()
+    }
+
+    private fun MacrobenchmarkScope.openTabAndScroll(label: String) {
+        val target = device.findObject(By.desc(label))
+            ?: device.findObject(By.text(label))
+            ?: device.findObject(By.descContains(label.lowercase()))
+            ?: return
+        target.click()
+        device.waitForIdle(900)
+        device.findObject(By.scrollable(true))?.let {
+            swipeVertically(up = true)
+            device.waitForIdle(400)
+            swipeVertically(up = false)
+            device.waitForIdle(400)
+        }
+    }
+
+    private fun MacrobenchmarkScope.expandMiniPlayerIfPresent() {
+        val miniBar = device.findObject(By.descContains("mini player"))
+            ?: device.findObject(By.descContains("now playing"))
+            ?: return
+        miniBar.click()
+        device.waitForIdle(900)
+        device.pressBack()
+        device.waitForIdle(600)
     }
 
     private fun MacrobenchmarkScope.swipeVertically(up: Boolean) {

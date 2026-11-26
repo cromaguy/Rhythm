@@ -23,6 +23,7 @@ import chromahub.rhythm.app.shared.presentation.components.lyrics.FullScreenLyri
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -170,12 +171,16 @@ fun PlayerScreen(
     onShuffleArtistSongs: (List<Song>) -> Unit = {},
     isStreamingMode: Boolean = false,
     swipeToDismissEnabled: Boolean = true,
-    expansionFraction: Float = 1f
+    expansionFraction: Float = 1f,
+    expansionFractionProvider: () -> Float = { expansionFraction }
 ) {
     val playerThemeId by appSettings.playerThemeId.collectAsState()
     var showFullScreenLyrics by remember { mutableStateOf(false) }
 
-    BackHandler(enabled = showFullScreenLyrics || expansionFraction > 0.5f) {
+    val handleBackNavigation by remember(showFullScreenLyrics, expansionFractionProvider) {
+        derivedStateOf { showFullScreenLyrics || expansionFractionProvider() > 0.5f }
+    }
+    BackHandler(enabled = handleBackNavigation) {
         if (showFullScreenLyrics) {
             showFullScreenLyrics = false
         } else {
@@ -521,6 +526,7 @@ fun PlayerScreen(
             canvasLoading = if (showFullScreenLyrics) false else canvasLoading,
             swipeToDismissEnabled = swipeToDismissEnabled && gesturePlayerSwipeDismiss,
             expansionFraction = expansionFraction,
+            expansionFractionProvider = expansionFractionProvider,
             modifier = modifier
         )
 
@@ -916,6 +922,7 @@ fun PlayerScreen(
             canvasLoading = if (showFullScreenLyrics) false else canvasLoading,
             swipeToDismissEnabled = swipeToDismissEnabled,
             expansionFraction = expansionFraction,
+            expansionFractionProvider = expansionFractionProvider,
             modifier = modifier
         )
     }

@@ -533,7 +533,7 @@ fun StyledProgressBar(
             ProgressStyle.WAVY -> {
                 if (showThumb && thumbStyle != ThumbStyle.NONE) {
                     WaveSlider(
-                        value = displayProgress,
+                        valueProvider = { displayProgress },
                         onValueChange = { latestOnSeek?.invoke(it) },
                         onValueChangeFinished = { latestOnSeekFinished?.invoke() },
                         modifier = Modifier.fillMaxWidth(),

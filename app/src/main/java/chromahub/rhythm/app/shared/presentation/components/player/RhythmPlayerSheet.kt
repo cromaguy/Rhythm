@@ -21,7 +21,10 @@ import chromahub.rhythm.app.util.windowScreenWidthDp
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.layout
+import kotlinx.coroutines.launch
 import androidx.compose.ui.zIndex
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -123,113 +126,186 @@ fun RhythmPlayerSheet(
         
         val miniPlayerHeight = if (miniPlayerThemeId == "EXPRESSIVE") 84.dp else 110.dp
         
-        var dragOffset by remember { mutableFloatStateOf(0f) }
-        
         val collapsedOffset = screenHeightPx - with(density) { (miniPlayerBottomOffset + miniPlayerHeight).toPx() }
         val expandedOffset = 0f
-        
-        val targetOffset = if (isExpanded) expandedOffset else collapsedOffset
-        
-        val motionConfig = MiniPlayerMotion.resolveConfig(miniPlayerThemeId)
 
-        val animatedOffset by animateFloatAsState(
-            targetValue = targetOffset + dragOffset,
-            animationSpec = motionConfig.slowSpatialSpring,
-            label = "sheetOffset"
-        )
-        
-        val expansionFraction = ((collapsedOffset - animatedOffset) / collapsedOffset).coerceIn(0f, 1f)
-        
+        val targetOffset = if (isExpanded) expandedOffset else collapsedOffset
+        val motionConfig = MiniPlayerMotion.resolveConfig(miniPlayerThemeId)
+        val scope = androidx.compose.runtime.rememberCoroutineScope()
+
+        val offsetAnim = remember {
+            androidx.compose.animation.core.Animatable(if (isExpanded) expandedOffset else collapsedOffset)
+        }
+        var isDraggingSheet by remember { mutableStateOf(false) }
+
+        LaunchedEffect(isExpanded, collapsedOffset, isDraggingSheet) {
+            if (!isDraggingSheet) {
+                offsetAnim.animateTo(
+                    targetValue = targetOffset,
+                    animationSpec = motionConfig.slowSpatialSpring
+                )
+            }
+        }
+
+        val expansionFractionProvider: () -> Float = remember(collapsedOffset) {
+            {
+                val span = collapsedOffset.coerceAtLeast(1f)
+                ((collapsedOffset - offsetAnim.value) / span).coerceIn(0f, 1f)
+            }
+        }
+
         val maxCornerRadius = 32.dp
-        val cornerBlendProgress = ((expansionFraction - 0.75f) / 0.25f).coerceIn(0f, 1f)
-        val smoothBlend = cornerBlendProgress * cornerBlendProgress
-        val topCornerSize = maxCornerRadius * (1f - smoothBlend)
-        val bottomCornerSize = 28.dp * (1f - expansionFraction)
-        val sheetShape = RoundedCornerShape(
-            topStart = topCornerSize,
-            topEnd = topCornerSize,
-            bottomStart = bottomCornerSize,
-            bottomEnd = bottomCornerSize
-        )
-        
-        val bottomEdgePx = screenHeightPx - with(density) { miniPlayerBottomOffset.toPx() } * (1f - expansionFraction)
-        val sheetHeightPx = (bottomEdgePx - animatedOffset).coerceAtLeast(0f)
-        val sheetHeightDp = with(density) { sheetHeightPx.toDp() }
+        val sheetShape = remember(maxCornerRadius, expansionFractionProvider) {
+            object : androidx.compose.ui.graphics.Shape {
+                override fun createOutline(
+                    size: androidx.compose.ui.geometry.Size,
+                    layoutDirection: androidx.compose.ui.unit.LayoutDirection,
+                    density: androidx.compose.ui.unit.Density
+                ): androidx.compose.ui.graphics.Outline {
+                    val exp = expansionFractionProvider()
+                    val cornerBlend = FullPlayerCompositionPolicy.cornerBlendProgress(exp)
+                    val smoothBlend = cornerBlend * cornerBlend
+                    val topPx = with(density) { (maxCornerRadius * (1f - smoothBlend)).toPx() }
+                    val bottomPx = with(density) { (28.dp * (1f - exp)).toPx() }
+                    return androidx.compose.ui.graphics.Outline.Rounded(
+                        androidx.compose.ui.geometry.RoundRect(
+                            left = 0f,
+                            top = 0f,
+                            right = size.width,
+                            bottom = size.height,
+                            topLeftCornerRadius = androidx.compose.ui.geometry.CornerRadius(topPx, topPx),
+                            topRightCornerRadius = androidx.compose.ui.geometry.CornerRadius(topPx, topPx),
+                            bottomLeftCornerRadius = androidx.compose.ui.geometry.CornerRadius(bottomPx, bottomPx),
+                            bottomRightCornerRadius = androidx.compose.ui.geometry.CornerRadius(bottomPx, bottomPx)
+                        )
+                    )
+                }
+            }
+        }
 
         val dragModifier = Modifier.draggable(
             orientation = Orientation.Vertical,
             state = rememberDraggableState { delta ->
-                dragOffset = (dragOffset + delta).coerceIn(
-                    minimumValue = expandedOffset - targetOffset,
-                    maximumValue = screenHeightPx - targetOffset
-                )
+                isDraggingSheet = true
+                val next = (offsetAnim.value + delta).coerceIn(expandedOffset, screenHeightPx)
+                scope.launch { offsetAnim.snapTo(next) }
             },
             onDragStopped = { velocity ->
-                val currentOffset = targetOffset + dragOffset
+                val currentOffset = offsetAnim.value
+                isDraggingSheet = false
                 if (isExpanded) {
                     if (currentOffset > collapsedOffset * 0.3f || velocity > 1000f) {
                         onCollapse()
+                    } else {
+                        scope.launch { offsetAnim.animateTo(targetOffset, motionConfig.slowSpatialSpring) }
                     }
                 } else {
                     if (currentOffset > collapsedOffset + with(density) { 40.dp.toPx() } || velocity > 1000f) {
                         onMiniPlayerDismiss()
                     } else if (currentOffset < collapsedOffset * 0.7f || velocity < -1000f) {
                         onExpand()
+                    } else {
+                        scope.launch { offsetAnim.animateTo(targetOffset, motionConfig.slowSpatialSpring) }
                     }
                 }
-                dragOffset = 0f
             }
         )
 
-        val sheetBackgroundAlpha = if (isExpanded) {
-            1f
-        } else if (dragOffset != 0f) {
-            ((collapsedOffset - animatedOffset) / collapsedOffset).coerceIn(0f, 1f)
-        } else {
-            0f
-        }
-        val sheetBackgroundColor = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = sheetBackgroundAlpha)
-
+        val surfaceContainerColor = MaterialTheme.colorScheme.surfaceContainer
         val isTablet = windowScreenWidthDp() >= 600
 
-        val miniPlayerAlpha = (1f - (expansionFraction / 0.25f)).coerceIn(0f, 1f)
-        val expandedPlayerAlpha = ((expansionFraction - 0.20f) / 0.80f).coerceIn(0f, 1f)
+        // Threshold-only derived states: recomposition occurs only when crossing 0.15f/0.25f/visibility.
+        val isBelowQuarterExpansion by remember(collapsedOffset) {
+            androidx.compose.runtime.derivedStateOf {
+                expansionFractionProvider() < FullPlayerCompositionPolicy.MINI_FADE_END_FRACTION
+            }
+        }
+        val isMiniClickable by remember(collapsedOffset) {
+            androidx.compose.runtime.derivedStateOf {
+                expansionFractionProvider() < 0.15f && !isDraggingSheet
+            }
+        }
+        val isTabletCompact by remember(isTablet, collapsedOffset) {
+            androidx.compose.runtime.derivedStateOf {
+                isTablet && expansionFractionProvider() < 0.15f
+            }
+        }
+        var hasExpandedOnce by remember { mutableStateOf(isExpanded) }
+        LaunchedEffect(isExpanded) {
+            if (isExpanded) hasExpandedOnce = true
+        }
+        val shouldRenderExpandedPlayer by remember(isExpanded, hasExpandedOnce, collapsedOffset) {
+            androidx.compose.runtime.derivedStateOf {
+                FullPlayerCompositionPolicy.shouldComposeExpandedContent(
+                    expansionFraction = expansionFractionProvider(),
+                    isExpanded = isExpanded,
+                    wasPreviouslyExpanded = hasExpandedOnce
+                )
+            }
+        }
+        val miniBottomOffsetPx = with(density) { miniPlayerBottomOffset.toPx() }
 
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .offset { IntOffset(0, animatedOffset.roundToInt()) }
+                .offset { IntOffset(0, offsetAnim.value.roundToInt()) }
         ) {
-            val sheetContainerModifier = if (isTablet && expansionFraction < 0.15f) {
-                Modifier
-                    .fillMaxWidth()
-                    .height(sheetHeightDp)
+            val baseHeightModifier = Modifier
+                .fillMaxWidth()
+                .layout { measurable, constraints ->
+                    val exp = expansionFractionProvider()
+                    val bottomEdgePx = screenHeightPx - miniBottomOffsetPx * (1f - exp)
+                    val heightPx = (bottomEdgePx - offsetAnim.value).coerceAtLeast(0f).roundToInt()
+                    val cappedHeight = heightPx.coerceIn(constraints.minHeight, constraints.maxHeight)
+                    val placeable = measurable.measure(
+                        constraints.copy(minHeight = cappedHeight, maxHeight = cappedHeight)
+                    )
+                    layout(placeable.width, placeable.height) {
+                        placeable.placeRelative(0, 0)
+                    }
+                }
+
+            val sheetContainerModifier = if (isTabletCompact) {
+                baseHeightModifier
             } else {
-                Modifier
-                    .fillMaxWidth()
-                    .height(sheetHeightDp)
-                    .clip(sheetShape)
-                    .background(sheetBackgroundColor, sheetShape)
+                baseHeightModifier
+                    .graphicsLayer {
+                        clip = true
+                        shape = sheetShape
+                    }
+                    .drawBehind {
+                        val bgAlpha = if (isExpanded) 1f
+                        else if (isDraggingSheet) expansionFractionProvider()
+                        else 0f
+                        if (bgAlpha > 0f) {
+                            drawRect(color = surfaceContainerColor.copy(alpha = bgAlpha))
+                        }
+                    }
                     .then(dragModifier)
             }
 
             Box(
                 modifier = sheetContainerModifier
             ) {
-                val miniPlayerContainerModifier = if (isTablet && expansionFraction < 0.15f) {
+                val miniPlayerContainerModifier = if (isTabletCompact) {
                     Modifier
                         .fillMaxWidth()
                         .height(miniPlayerHeight)
-                        .zIndex(if (expansionFraction < 0.25f) 1f else 0f)
-                        .graphicsLayer { alpha = miniPlayerAlpha }
+                        .zIndex(if (isBelowQuarterExpansion) 1f else 0f)
+                        .graphicsLayer {
+                            alpha = FullPlayerCompositionPolicy.miniPlayerAlpha(expansionFractionProvider())
+                        }
                 } else {
                     Modifier
                         .fillMaxWidth()
                         .height(miniPlayerHeight)
-                        .zIndex(if (expansionFraction < 0.25f) 1f else 0f)
-                        .graphicsLayer { alpha = miniPlayerAlpha }
-                        .clip(sheetShape)
-                        .clickable(enabled = expansionFraction < 0.15f && dragOffset == 0f) {
+                        .zIndex(if (isBelowQuarterExpansion) 1f else 0f)
+                        .graphicsLayer {
+                            alpha = FullPlayerCompositionPolicy.miniPlayerAlpha(expansionFractionProvider())
+                            clip = true
+                            shape = sheetShape
+                        }
+                        .clickable(enabled = isMiniClickable) {
                             onExpand()
                         }
                 }
@@ -251,15 +327,20 @@ fun RhythmPlayerSheet(
                         modifier = Modifier.fillMaxSize()
                     )
                 }
-                
+
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .zIndex(if (expansionFraction >= 0.25f) 1f else 0f)
-                        .graphicsLayer { alpha = expandedPlayerAlpha }
-                        .clip(sheetShape)
+                        .zIndex(if (!isBelowQuarterExpansion) 1f else 0f)
+                        .graphicsLayer {
+                            alpha = FullPlayerCompositionPolicy.expandedPlayerAlpha(expansionFractionProvider())
+                            clip = true
+                            shape = sheetShape
+                        }
                 ) {
-                    PlayerScreen(
+                    if (shouldRenderExpandedPlayer) {
+                        WithoutPlatformOverscroll {
+                            PlayerScreen(
                         song = song,
                         isPlaying = isPlaying,
                         progress = progress,
@@ -326,9 +407,11 @@ fun RhythmPlayerSheet(
                         musicViewModel = musicViewModel,
                         navController = navController,
                         isStreamingMode = isStreamingMode,
-                        swipeToDismissEnabled = false,
-                        expansionFraction = expansionFraction
-                    )
+                                swipeToDismissEnabled = false,
+                                expansionFractionProvider = expansionFractionProvider
+                            )
+                        }
+                    }
                 }
             }
         }

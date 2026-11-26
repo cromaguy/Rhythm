@@ -61,11 +61,64 @@ import kotlin.math.roundToInt
 import chromahub.rhythm.app.ui.theme.PlayerProgressColor
 import chromahub.rhythm.app.util.HapticUtils
 import chromahub.rhythm.app.util.HapticType
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.snapshotFlow
+import kotlinx.coroutines.flow.collectLatest
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun WaveSlider(
     value: Float,
+    onValueChange: (Float) -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    interactionSource: MutableInteractionSource? = null,
+    valueRange: ClosedFloatingPointRange<Float> = 0f..1f,
+    onValueChangeFinished: (() -> Unit)? = null,
+    onValueCommit: ((Float) -> Unit)? = null,
+    activeTrackColor: Color = PlayerProgressColor,
+    inactiveTrackColor: Color = androidx.compose.material3.MaterialTheme.colorScheme.surfaceVariant,
+    thumbColor: Color = androidx.compose.material3.MaterialTheme.colorScheme.primary,
+    isPlaying: Boolean = true,
+    strokeWidth: Dp = 5.dp,
+    thumbRadius: Dp = 8.dp,
+    trackEdgePadding: Dp = thumbRadius,
+    wavelength: Dp = WavyProgressIndicatorDefaults.LinearDeterminateWavelength,
+    waveSpeed: Dp = WavyProgressIndicatorDefaults.LinearDeterminateWavelength / 2f,
+    waveAmplitudeWhenPlaying: Dp = 4.dp,
+    thumbLineHeightWhenInteracting: Dp = 24.dp,
+    semanticsLabel: String? = null,
+    semanticsProgressStep: Float = 0.01f
+) {
+    WaveSlider(
+        valueProvider = { value },
+        onValueChange = onValueChange,
+        modifier = modifier,
+        enabled = enabled,
+        interactionSource = interactionSource,
+        valueRange = valueRange,
+        onValueChangeFinished = onValueChangeFinished,
+        onValueCommit = onValueCommit,
+        activeTrackColor = activeTrackColor,
+        inactiveTrackColor = inactiveTrackColor,
+        thumbColor = thumbColor,
+        isPlaying = isPlaying,
+        strokeWidth = strokeWidth,
+        thumbRadius = thumbRadius,
+        trackEdgePadding = trackEdgePadding,
+        wavelength = wavelength,
+        waveSpeed = waveSpeed,
+        waveAmplitudeWhenPlaying = waveAmplitudeWhenPlaying,
+        thumbLineHeightWhenInteracting = thumbLineHeightWhenInteracting,
+        semanticsLabel = semanticsLabel,
+        semanticsProgressStep = semanticsProgressStep
+    )
+}
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
+@Composable
+fun WaveSlider(
+    valueProvider: () -> Float,
     onValueChange: (Float) -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
@@ -99,15 +152,18 @@ fun WaveSlider(
 
     val stroke = remember(strokeWidthPx) { Stroke(width = strokeWidthPx, cap = StrokeCap.Round) }
 
-    val normalizedValue = if (valueRange.endInclusive == valueRange.start) 0f
-    else ((value - valueRange.start) / (valueRange.endInclusive - valueRange.start)).coerceIn(0f, 1f)
+    val latestValueProvider by rememberUpdatedState(valueProvider)
+    fun normalize(raw: Float): Float =
+        if (valueRange.endInclusive == valueRange.start) 0f
+        else ((raw - valueRange.start) / (valueRange.endInclusive - valueRange.start)).coerceIn(0f, 1f)
 
     val safeSemanticsStep = semanticsProgressStep.coerceIn(0.005f, 0.25f)
-    val semanticNormalizedValue = remember(normalizedValue, safeSemanticsStep) {
-        ((normalizedValue / safeSemanticsStep).roundToInt() * safeSemanticsStep).coerceIn(0f, 1f)
-    }
-    val semanticSliderValue = remember(semanticNormalizedValue, valueRange) {
-        valueRange.start + semanticNormalizedValue * (valueRange.endInclusive - valueRange.start)
+    val semanticSliderValue by remember(safeSemanticsStep, valueRange) {
+        derivedStateOf {
+            val normalized = normalize(latestValueProvider())
+            val quantized = ((normalized / safeSemanticsStep).roundToInt() * safeSemanticsStep).coerceIn(0f, 1f)
+            valueRange.start + quantized * (valueRange.endInclusive - valueRange.start)
+        }
     }
     val latestOnValueChange by rememberUpdatedState(onValueChange)
     val latestOnValueChangeFinished by rememberUpdatedState(onValueChangeFinished)
@@ -127,38 +183,39 @@ fun WaveSlider(
         label = "amplitude"
     )
 
-    val renderedNormalizedProgress = remember { mutableFloatStateOf(normalizedValue) }
+    val renderedNormalizedProgress = remember { mutableFloatStateOf(normalize(latestValueProvider())) }
     var lastProgressUpdateNanos by remember { mutableLongStateOf(0L) }
-    LaunchedEffect(normalizedValue, isInteracting, enabled) {
-        val target = normalizedValue.coerceIn(0f, 1f)
-        if (!enabled || isInteracting) {
+    LaunchedEffect(isInteracting, enabled, valueRange) {
+        snapshotFlow { normalize(latestValueProvider()) }.collectLatest { target ->
+            if (!enabled || isInteracting) {
+                renderedNormalizedProgress.floatValue = target
+                lastProgressUpdateNanos = System.nanoTime()
+                return@collectLatest
+            }
+
+            val nowNanos = System.nanoTime()
+            val intervalMs = if (lastProgressUpdateNanos == 0L) 180L
+            else ((nowNanos - lastProgressUpdateNanos) / 1_000_000L).coerceAtLeast(1L)
+            lastProgressUpdateNanos = nowNanos
+
+            val start = renderedNormalizedProgress.floatValue
+            if (abs(start - target) <= 0.0001f) {
+                renderedNormalizedProgress.floatValue = target
+                return@collectLatest
+            }
+
+            val durationNanos = (intervalMs * 900_000L).coerceAtLeast(1_000_000L)
+            var startFrameNanos = 0L
+            while (isActive) {
+                val frameNanos = withFrameNanos { it }
+                if (startFrameNanos == 0L) startFrameNanos = frameNanos
+                val elapsedNanos = (frameNanos - startFrameNanos).coerceAtLeast(0L)
+                val fraction = (elapsedNanos.toDouble() / durationNanos.toDouble()).toFloat().coerceIn(0f, 1f)
+                renderedNormalizedProgress.floatValue = start + (target - start) * fraction
+                if (fraction >= 1f) break
+            }
             renderedNormalizedProgress.floatValue = target
-            lastProgressUpdateNanos = System.nanoTime()
-            return@LaunchedEffect
         }
-
-        val nowNanos = System.nanoTime()
-        val intervalMs = if (lastProgressUpdateNanos == 0L) 180L
-        else ((nowNanos - lastProgressUpdateNanos) / 1_000_000L).coerceAtLeast(1L)
-        lastProgressUpdateNanos = nowNanos
-
-        val start = renderedNormalizedProgress.floatValue
-        if (abs(start - target) <= 0.0001f) {
-            renderedNormalizedProgress.floatValue = target
-            return@LaunchedEffect
-        }
-
-        val durationNanos = (intervalMs * 900_000L).coerceAtLeast(1_000_000L)
-        var startFrameNanos = 0L
-        while (isActive) {
-            val frameNanos = withFrameNanos { it }
-            if (startFrameNanos == 0L) startFrameNanos = frameNanos
-            val elapsedNanos = (frameNanos - startFrameNanos).coerceAtLeast(0L)
-            val fraction = (elapsedNanos.toDouble() / durationNanos.toDouble()).toFloat().coerceIn(0f, 1f)
-            renderedNormalizedProgress.floatValue = start + (target - start) * fraction
-            if (fraction >= 1f) break
-        }
-        renderedNormalizedProgress.floatValue = target
     }
 
     val containerHeight = max(WavyProgressIndicatorDefaults.LinearContainerHeight, max(thumbRadius * 2, thumbLineHeightWhenInteracting))
