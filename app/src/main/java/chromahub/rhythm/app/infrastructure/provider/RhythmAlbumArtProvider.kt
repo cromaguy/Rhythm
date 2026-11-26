@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2026 The Rhythm authors
+ * Copyright (C) 2026 Anjishnu Nandi <https://github.com/cromaguy>
  * Copyright (C) 2026 The Gramophone authors
  *
  * SPDX-FileCopyrightText: 2026 Anjishnu Nandi <https://github.com/cromaguy>

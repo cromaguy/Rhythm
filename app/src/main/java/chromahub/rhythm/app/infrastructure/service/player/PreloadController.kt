@@ -46,27 +46,7 @@ class PreloadController(
             val limit = appSettings.preloadLimit.value
             targetPreloadStatusControl.preloadLimit = limit
 
-            val resolvingDataSourceFactory = ResolvingDataSource.Factory(
-                DefaultDataSource.Factory(context, DefaultHttpDataSource.Factory()),
-                object : ResolvingDataSource.Resolver {
-                    override fun resolveDataSpec(dataSpec: DataSpec): DataSpec {
-                        if (dataSpec.uri.scheme == "streaming") {
-                            val trackId = dataSpec.uri.lastPathSegment
-                            if (!trackId.isNullOrBlank()) {
-                                val repository = StreamingMusicModule.provideStreamingMusicRepository(context)
-                                val freshUrl = runBlocking { repository.getStreamingUrl(trackId) }
-                                if (!freshUrl.isNullOrBlank()) {
-                                    return dataSpec.withUri((freshUrl).toUri())
-                                }
-                            }
-                        }
-                        return dataSpec
-                    }
-                }
-            )
-
-            val mediaSourceFactory = DefaultMediaSourceFactory(context)
-                .setDataSourceFactory(resolvingDataSourceFactory)
+            val mediaSourceFactory = RhythmMediaDataSourceFactory.createMediaSourceFactory(context)
 
             @Suppress("DEPRECATION")
             val builder = DefaultPreloadManager.Builder(context, targetPreloadStatusControl as TargetPreloadStatusControl<Int, DefaultPreloadManager.PreloadStatus>)

@@ -124,6 +124,7 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
     private var rhythmSpatializationProcessor: chromahub.rhythm.app.infrastructure.audio.RhythmSpatializationProcessor? = null
     private var rhythmMonoAudioProcessor: chromahub.rhythm.app.infrastructure.audio.RhythmMonoAudioProcessor? = null
     private var rhythmViperProcessor: chromahub.rhythm.app.infrastructure.audio.viper.ViperAudioProcessor? = null
+    private var audioDeviceCallback: android.media.AudioDeviceCallback? = null
     
     private var virtualizerStrength: Short = 0 // Store strength for virtualizer
     private var isInitializingAudioEffects: Boolean = false // Prevent concurrent initialization
@@ -692,14 +693,16 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 val audioManager = getSystemService(Context.AUDIO_SERVICE) as? android.media.AudioManager
-                audioManager?.registerAudioDeviceCallback(object : android.media.AudioDeviceCallback() {
+                val callback = object : android.media.AudioDeviceCallback() {
                     override fun onAudioDevicesAdded(addedDevices: Array<out android.media.AudioDeviceInfo>?) {
                         updatePlaybackQuality()
                     }
                     override fun onAudioDevicesRemoved(removedDevices: Array<out android.media.AudioDeviceInfo>?) {
                         updatePlaybackQuality()
                     }
-                }, android.os.Handler(android.os.Looper.getMainLooper()))
+                }
+                audioDeviceCallback = callback
+                audioManager?.registerAudioDeviceCallback(callback, android.os.Handler(android.os.Looper.getMainLooper()))
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error setting up Bluetooth codec and audio device monitoring", e)
@@ -2522,6 +2525,16 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
         serviceScope.cancel()
         
         // Release preloader
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            audioDeviceCallback?.let { callback ->
+                try {
+                    (getSystemService(Context.AUDIO_SERVICE) as? android.media.AudioManager)
+                        ?.unregisterAudioDeviceCallback(callback)
+                } catch (_: Exception) {
+                }
+                audioDeviceCallback = null
+            }
+        }
         if (::preloadController.isInitialized) {
             preloadController.release()
         }
@@ -3648,8 +3661,11 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
                 rhythmBassBoostProcessor?.setEnabled(false)
                 rhythmSpatializationProcessor?.setEnabled(false)
                 rhythmMonoAudioProcessor?.setEnabled(false)
+                rhythmViperProcessor?.setForcedBypass(true)
                 return
             }
+
+            rhythmViperProcessor?.setForcedBypass(false)
 
             if (equalizer != null) {
                 val shouldBeEnabled = appSettings.equalizerEnabled.value

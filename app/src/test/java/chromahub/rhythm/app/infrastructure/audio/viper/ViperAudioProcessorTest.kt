@@ -1,6 +1,5 @@
 /*
  * SPDX-FileCopyrightText: 2024-2026 Anjishnu Nandi <https://github.com/cromaguy>
- * SPDX-FileCopyrightText: 2026 Rhythm Audio Enhancement Contributors
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
@@ -244,5 +243,25 @@ class ViperAudioProcessorTest {
         for (s in buffer) {
             assertTrue("Sample must not exceed Short limits", s <= Short.MAX_VALUE && s >= Short.MIN_VALUE)
         }
+    }
+
+    @Test
+    fun testForcedBypass_propagatesToChildWithoutOverwritingSavedConfig() {
+        val parent = ViperAudioProcessor()
+        val child = ViperAudioProcessor()
+        child.setParent(parent)
+
+        parent.updateConfig(ViperMasterConfig(masterEnabled = true))
+        assertTrue(parent.isEnabled())
+        assertTrue(child.isEnabled())
+
+        parent.setForcedBypass(true)
+        assertFalse("Forced bypass must disable parent", parent.isEnabled())
+        assertFalse("Forced bypass must disable child", child.isEnabled())
+        assertTrue("Saved config masterEnabled must stay intact", parent.getConfig().masterEnabled)
+
+        parent.setForcedBypass(false)
+        assertTrue("Disabling forced bypass must restore enabled state", parent.isEnabled())
+        assertTrue("Disabling forced bypass must restore child enabled state", child.isEnabled())
     }
 }

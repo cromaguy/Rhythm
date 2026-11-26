@@ -58,6 +58,14 @@ class AudioDeviceManager(private val context: Context) {
         const val DEVICE_WIRED_HEADSET = "wired_headset"
         const val DEVICE_BLUETOOTH_PREFIX = "bt_"
         const val DEVICE_USB_PREFIX = "usb_"
+
+        internal fun classifyDeviceType(deviceId: String): String = when {
+            deviceId == DEVICE_SPEAKER -> "Speaker"
+            deviceId == DEVICE_WIRED_HEADSET -> "Wired Headset"
+            deviceId.startsWith(DEVICE_BLUETOOTH_PREFIX) -> "Bluetooth"
+            deviceId.startsWith(DEVICE_USB_PREFIX) -> "USB Audio"
+            else -> "Unknown"
+        }
     }
     
     // Add a flag to track if the device was manually selected by the user
@@ -420,12 +428,7 @@ class AudioDeviceManager(private val context: Context) {
         // Show the system output switcher dialog instead of manually handling audio routing
         showOutputSwitcherDialog()
         
-        val deviceType = when {
-            device.id == DEVICE_SPEAKER -> "Speaker"
-            device.id == DEVICE_WIRED_HEADSET -> "Wired Headset"
-            device.id.startsWith(DEVICE_BLUETOOTH_PREFIX) -> "Bluetooth"
-            else -> "Unknown"
-        }
+        val deviceType = classifyDeviceType(device.id)
         
         Log.d(TAG, "Audio output selection initiated for $deviceType: ${device.name}")
     }

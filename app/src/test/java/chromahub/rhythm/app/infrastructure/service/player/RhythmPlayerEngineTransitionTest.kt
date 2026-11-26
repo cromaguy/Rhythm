@@ -133,4 +133,33 @@ class RhythmPlayerEngineTransitionTest {
         assertEquals(0, player.seekCount)
         assertEquals(0, player.releaseCount)
     }
+
+    @Test
+    fun playerTelemetryTracker_preservesDecoderIdentityAcrossRepeatedSwaps() {
+        val tracker = PlayerTelemetryTracker<Any>()
+        var masterPlayer = Any()
+        var standbyPlayer = Any()
+
+        tracker.recordDecoderInitialized(masterPlayer, "c2.android.flac.decoder")
+        tracker.recordDecoderInitialized(standbyPlayer, "OMX.google.aac.decoder")
+        assertEquals("c2.android.flac.decoder", tracker.getDecoderName(masterPlayer))
+
+        // Swap #1: standby becomes master (equals checks identity, not mutable slot)
+        val prevMaster = masterPlayer
+        masterPlayer = standbyPlayer
+        standbyPlayer = prevMaster
+        assertEquals("OMX.google.aac.decoder", tracker.getDecoderName(masterPlayer))
+        assertEquals("c2.android.flac.decoder", tracker.getDecoderName(standbyPlayer))
+
+        // Standby decodes another track before swap #2
+        tracker.recordDecoderInitialized(standbyPlayer, "c2.android.opus.decoder")
+        val nextMaster = standbyPlayer
+        standbyPlayer = masterPlayer
+        masterPlayer = nextMaster
+        assertEquals("c2.android.opus.decoder", tracker.getDecoderName(masterPlayer))
+
+        tracker.clearPlayer(standbyPlayer)
+        assertEquals("", tracker.getDecoderName(standbyPlayer))
+        assertEquals("c2.android.opus.decoder", tracker.getDecoderName(masterPlayer))
+    }
 }

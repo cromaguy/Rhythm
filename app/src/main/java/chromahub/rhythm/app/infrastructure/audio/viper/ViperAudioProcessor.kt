@@ -1,6 +1,5 @@
 /*
  * SPDX-FileCopyrightText: 2024-2026 Anjishnu Nandi <https://github.com/cromaguy>
- * SPDX-FileCopyrightText: 2026 Rhythm Audio Enhancement Contributors
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
@@ -63,6 +62,10 @@ class ViperAudioProcessor : RhythmAudioProcessor() {
 
     @Volatile
     private var config: ViperMasterConfig = ViperMasterConfig()
+
+    // Transient bypass (e.g., Bit-Perfect routing mode) without overwriting saved user config
+    @Volatile
+    private var forcedBypass: Boolean = false
 
     // Telemetry flow for the live Audio Engine Status Dialog
     private val _telemetry = MutableStateFlow(ViperEngineTelemetry())
@@ -165,8 +168,21 @@ class ViperAudioProcessor : RhythmAudioProcessor() {
         parent?.childProcessors?.add(this)
         if (parent != null) {
             updateConfig(parent.getConfig())
+            setForcedBypass(parent.isForcedBypassed())
         }
     }
+
+    fun setForcedBypass(bypass: Boolean) {
+        this.forcedBypass = bypass
+        if (bypass) {
+            resetDspStates()
+        }
+        for (child in childProcessors) {
+            child.setForcedBypass(bypass)
+        }
+    }
+
+    fun isForcedBypassed(): Boolean = forcedBypass || (parentProcessor?.isForcedBypassed() == true)
 
     fun updateConfig(newConfig: ViperMasterConfig) {
         this.config = newConfig
@@ -185,6 +201,7 @@ class ViperAudioProcessor : RhythmAudioProcessor() {
     fun getConfig(): ViperMasterConfig = parentProcessor?.getConfig() ?: config
 
     override fun isEnabled(): Boolean {
+        if (isForcedBypassed()) return false
         val activeConfig = getConfig()
         return activeConfig.masterEnabled
     }

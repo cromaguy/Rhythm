@@ -26,21 +26,11 @@ import androidx.media3.exoplayer.mediacodec.MediaCodecSelector
 import chromahub.rhythm.app.core.device.HiFiCapabilityChecker
 import chromahub.rhythm.app.core.device.DeviceCapabilitiesProvider
 import androidx.media3.exoplayer.DecoderReuseEvaluation
-import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
-import androidx.media3.datasource.ResolvingDataSource
-import androidx.media3.datasource.DefaultDataSource
-import androidx.media3.datasource.DefaultHttpDataSource
-import androidx.media3.datasource.DataSpec
-import androidx.media3.datasource.okhttp.OkHttpDataSource
-import chromahub.rhythm.app.features.streaming.data.provider.UserTrustManager
 import java.util.concurrent.TimeUnit
 import android.os.Build
 import androidx.media3.common.TrackSelectionParameters
 import chromahub.rhythm.app.shared.data.model.AppSettings
 import android.net.Uri
-import chromahub.rhythm.app.features.streaming.di.StreamingMusicModule
-import kotlinx.coroutines.runBlocking
-import androidx.media3.datasource.cache.CacheDataSource
 import chromahub.rhythm.app.infrastructure.audio.RhythmBassBoostProcessor
 import chromahub.rhythm.app.infrastructure.audio.RhythmSpatializationProcessor
 import chromahub.rhythm.app.infrastructure.audio.RhythmMonoAudioProcessor
@@ -123,57 +113,46 @@ class RhythmPlayerEngine(
     private val _currentEngineFormat = MutableStateFlow<EngineAudioFormat?>(null)
     val currentEngineFormat: StateFlow<EngineAudioFormat?> = _currentEngineFormat.asStateFlow()
 
-    private var playerADecoderName: String = ""
-    private var playerBDecoderName: String = ""
+    private val telemetryTracker = PlayerTelemetryTracker<Player>()
+    private val analyticsListenersByPlayer = java.util.IdentityHashMap<ExoPlayer, AnalyticsListener>()
 
-    private val analyticsListenerA = object : AnalyticsListener {
-        override fun onAudioDecoderInitialized(
-            eventTime: AnalyticsListener.EventTime,
-            decoderName: String,
-            initializedTimestampMs: Long,
-            initializationDurationMs: Long
-        ) {
-            playerADecoderName = decoderName
-            val format = playerA.audioFormat ?: playerA.currentTracks.getFirstSelectedTrackFormatByType(C.TRACK_TYPE_AUDIO)
-            if (format != null && masterPlayer === playerA) {
-                _currentEngineFormat.value = EngineAudioFormat(format, decoderName)
+    private fun attachAnalyticsListener(targetPlayer: ExoPlayer) {
+        detachAnalyticsListener(targetPlayer)
+        val listener = object : AnalyticsListener {
+            override fun onAudioDecoderInitialized(
+                eventTime: AnalyticsListener.EventTime,
+                decoderName: String,
+                initializedTimestampMs: Long,
+                initializationDurationMs: Long
+            ) {
+                telemetryTracker.recordDecoderInitialized(targetPlayer, decoderName)
+                val format = targetPlayer.audioFormat
+                    ?: targetPlayer.currentTracks.getFirstSelectedTrackFormatByType(C.TRACK_TYPE_AUDIO)
+                if (format != null && masterPlayer === targetPlayer) {
+                    _currentEngineFormat.value = EngineAudioFormat(format, decoderName)
+                }
+            }
+
+            override fun onAudioInputFormatChanged(
+                eventTime: AnalyticsListener.EventTime,
+                format: androidx.media3.common.Format,
+                decoderReuseEvaluation: DecoderReuseEvaluation?
+            ) {
+                if (masterPlayer === targetPlayer) {
+                    val decoderName = telemetryTracker.getDecoderName(targetPlayer)
+                    _currentEngineFormat.value = EngineAudioFormat(format, decoderName)
+                }
             }
         }
-
-        override fun onAudioInputFormatChanged(
-            eventTime: AnalyticsListener.EventTime,
-            format: androidx.media3.common.Format,
-            decoderReuseEvaluation: DecoderReuseEvaluation?
-        ) {
-            if (masterPlayer === playerA) {
-                _currentEngineFormat.value = EngineAudioFormat(format, playerADecoderName)
-            }
-        }
+        analyticsListenersByPlayer[targetPlayer] = listener
+        targetPlayer.addAnalyticsListener(listener)
     }
 
-    private val analyticsListenerB = object : AnalyticsListener {
-        override fun onAudioDecoderInitialized(
-            eventTime: AnalyticsListener.EventTime,
-            decoderName: String,
-            initializedTimestampMs: Long,
-            initializationDurationMs: Long
-        ) {
-            playerBDecoderName = decoderName
-            val format = playerB.audioFormat ?: playerB.currentTracks.getFirstSelectedTrackFormatByType(C.TRACK_TYPE_AUDIO)
-            if (format != null && masterPlayer === playerB) {
-                _currentEngineFormat.value = EngineAudioFormat(format, decoderName)
-            }
+    private fun detachAnalyticsListener(targetPlayer: ExoPlayer) {
+        analyticsListenersByPlayer.remove(targetPlayer)?.let { listener ->
+            targetPlayer.removeAnalyticsListener(listener)
         }
-
-        override fun onAudioInputFormatChanged(
-            eventTime: AnalyticsListener.EventTime,
-            format: androidx.media3.common.Format,
-            decoderReuseEvaluation: DecoderReuseEvaluation?
-        ) {
-            if (masterPlayer === playerB) {
-                _currentEngineFormat.value = EngineAudioFormat(format, playerBDecoderName)
-            }
-        }
+        telemetryTracker.clearPlayer(targetPlayer)
     }
 
     // Audio Focus Management — managed manually so both players share a single focus request
@@ -239,7 +218,7 @@ class RhythmPlayerEngine(
                     ReplayGainCache.put(id, info)
                 }
                 activeReplayGainProcessor?.setRootFormat(format)
-                val currentDec = if (masterPlayer === playerA) playerADecoderName else playerBDecoderName
+                val currentDec = telemetryTracker.getDecoderName(masterPlayer)
                 _currentEngineFormat.value = EngineAudioFormat(format, currentDec)
             }
         }
@@ -301,10 +280,16 @@ class RhythmPlayerEngine(
         }
 
         if (::playerA.isInitialized) {
-            try { playerA.release() } catch (_: Exception) {}
+            try {
+                detachAnalyticsListener(playerA)
+                playerA.release()
+            } catch (_: Exception) {}
         }
         if (::playerB.isInitialized) {
-            try { playerB.release() } catch (_: Exception) {}
+            try {
+                detachAnalyticsListener(playerB)
+                playerB.release()
+            } catch (_: Exception) {}
         }
 
         // Instantiate child processors for Player A
@@ -350,8 +335,8 @@ class RhythmPlayerEngine(
         playerB.playbackParameters = initParams
 
         playerA.addListener(masterPlayerListener)
-        playerA.addAnalyticsListener(analyticsListenerA)
-        playerB.addAnalyticsListener(analyticsListenerB)
+        attachAnalyticsListener(playerA)
+        attachAnalyticsListener(playerB)
         activeReplayGainProcessor = aReplayGain
 
         _activeAudioSessionId.value = playerA.audioSessionId
@@ -438,10 +423,13 @@ class RhythmPlayerEngine(
         val isPlaybackRateModified =
             kotlin.math.abs(appSettings.playbackSpeed.value - 1f) > 0.001f ||
             kotlin.math.abs(appSettings.playbackPitch.value - 1f) > 0.001f
-        val isViperActive = viperProcessor?.isEnabled() == true ||
-            try {
-                chromahub.rhythm.app.infrastructure.audio.viper.ViperSettingsRepository.getInstance(context).configFlow.value.masterEnabled
-            } catch (_: Exception) { false }
+        val isViperActive = viperProcessor?.isEnabled() ?: (
+            appSettings.audioRoutingMode.value != "app" &&
+                try {
+                    chromahub.rhythm.app.infrastructure.audio.viper.ViperSettingsRepository
+                        .getInstance(context).configFlow.value.masterEnabled
+                } catch (_: Exception) { false }
+        )
         val hasActiveProcessors =
             appSettings.bassBoostEnabled.value ||
             appSettings.virtualizerEnabled.value ||
@@ -558,44 +546,7 @@ class RhythmPlayerEngine(
             .setUsage(C.USAGE_MEDIA)
             .build()
 
-        val okHttpClient = UserTrustManager.buildUserTrustingHttpClientBuilder()
-            .connectTimeout(15, TimeUnit.SECONDS)
-            .readTimeout(30, TimeUnit.SECONDS)
-            .build()
-        val httpDataSourceFactory = OkHttpDataSource.Factory(okHttpClient)
-            .setUserAgent("Rhythm/${chromahub.rhythm.app.BuildConfig.VERSION_NAME} (Android)")
-        val cacheDataSourceFactory = CacheDataSource.Factory()
-            .setCache(AudioCacheManager.getCache(context))
-            .setUpstreamDataSourceFactory(httpDataSourceFactory)
-            .setFlags(CacheDataSource.FLAG_IGNORE_CACHE_ON_ERROR)
-
-        val baseDataSourceFactory = DefaultDataSource.Factory(context, cacheDataSourceFactory)
-
-        val resolvingDataSourceFactory = ResolvingDataSource.Factory(
-            baseDataSourceFactory,
-            object : ResolvingDataSource.Resolver {
-                override fun resolveDataSpec(dataSpec: DataSpec): DataSpec {
-                    if (dataSpec.uri.scheme == "streaming") {
-                        val trackId = dataSpec.uri.lastPathSegment
-                        if (!trackId.isNullOrBlank()) {
-                            val repository = StreamingMusicModule.provideStreamingMusicRepository(context)
-                            // Run blocking is safe here as ExoPlayer calls resolveDataSpec on a background thread
-                            val freshUrl = runBlocking { repository.getStreamingUrl(trackId) }
-                            if (!freshUrl.isNullOrBlank()) {
-                                return dataSpec.buildUpon()
-                                    .setUri((freshUrl).toUri())
-                                    .setKey("streaming_$trackId")
-                                    .build()
-                            }
-                        }
-                    }
-                    return dataSpec
-                }
-            }
-        )
-
-        val mediaSourceFactory = DefaultMediaSourceFactory(context)
-            .setDataSourceFactory(resolvingDataSourceFactory)
+        val mediaSourceFactory = RhythmMediaDataSourceFactory.createMediaSourceFactory(context)
 
         val defaultParams = TrackSelectionParameters.DEFAULT
         val trackSelectionParameters = buildTrackSelectionParameters(defaultParams, appSettings)
@@ -852,9 +803,28 @@ class RhythmPlayerEngine(
 
         outgoingPlayer.removeListener(masterPlayerListener)
 
-        val incomingReplayGain = if (incomingPlayer === playerA) playerAReplayGain else playerBReplayGain
+        val outgoingReplayGain = playerAReplayGain
+        val incomingReplayGain = playerBReplayGain
+        val outgoingBassBoost = playerABassBoost
+        val incomingBassBoost = playerBBassBoost
+        val outgoingSpatial = playerASpatialization
+        val incomingSpatial = playerBSpatialization
+        val outgoingMono = playerAMono
+        val incomingMono = playerBMono
+        val outgoingViper = playerAViper
+        val incomingViper = playerBViper
         playerA = incomingPlayer
         playerB = outgoingPlayer
+        playerAReplayGain = incomingReplayGain
+        playerBReplayGain = outgoingReplayGain
+        playerABassBoost = incomingBassBoost
+        playerBBassBoost = outgoingBassBoost
+        playerASpatialization = incomingSpatial
+        playerBSpatialization = outgoingSpatial
+        playerAMono = incomingMono
+        playerBMono = outgoingMono
+        playerAViper = incomingViper
+        playerBViper = outgoingViper
         activeReplayGainProcessor = incomingReplayGain
 
         // Sync ReplayGain formats for the incoming player
@@ -887,9 +857,7 @@ class RhythmPlayerEngine(
         _activeAudioSessionId.value = playerA.audioSessionId
 
         val swappedFormat = playerA.audioFormat ?: playerA.currentTracks.getFirstSelectedTrackFormatByType(C.TRACK_TYPE_AUDIO)
-        val swappedDecoder = if (playerA === incomingPlayer) {
-            if (incomingPlayer === playerA) playerADecoderName else playerBDecoderName
-        } else playerADecoderName
+        val swappedDecoder = telemetryTracker.getDecoderName(playerA)
         if (swappedFormat != null) {
             _currentEngineFormat.value = EngineAudioFormat(swappedFormat, swappedDecoder)
         }
@@ -987,6 +955,7 @@ class RhythmPlayerEngine(
         } catch (e: Exception) {
             Log.w(TAG, "Failed to reset playerB standby parameters, falling back to clean rebuild", e)
             try {
+                detachAnalyticsListener(playerB)
                 playerB.release()
             } catch (_: Exception) {}
             val otherReplayGain = if (incomingReplayGain === playerAReplayGain) playerBReplayGain else playerAReplayGain
@@ -1003,7 +972,7 @@ class RhythmPlayerEngine(
                 viperProcessor = otherViper
             ).apply {
                 playbackParameters = playerA.playbackParameters
-                addAnalyticsListener(analyticsListenerB)
+                attachAnalyticsListener(this)
             }
         }
     }
@@ -1060,10 +1029,13 @@ class RhythmPlayerEngine(
             kotlin.math.abs(appSettings.playbackPitch.value - 1f) > 0.001f
 
         val isSkipSilenceEnabled = appSettings.skipSilenceEnabled.value
-        val isViperActive = viperProcessor?.isEnabled() == true ||
-            try {
-                chromahub.rhythm.app.infrastructure.audio.viper.ViperSettingsRepository.getInstance(context).configFlow.value.masterEnabled
-            } catch (_: Exception) { false }
+        val isViperActive = viperProcessor?.isEnabled() ?: (
+            appSettings.audioRoutingMode.value != "app" &&
+                try {
+                    chromahub.rhythm.app.infrastructure.audio.viper.ViperSettingsRepository
+                        .getInstance(context).configFlow.value.masterEnabled
+                } catch (_: Exception) { false }
+        )
 
         val isOffloadSupported = appSettings.isAudioOffloadActive.value &&
             (!isCrossfadeEnabled && !isEqualizerEnabled && !isReplayGainEnabled &&
@@ -1078,7 +1050,7 @@ class RhythmPlayerEngine(
                     TrackSelectionParameters.AudioOffloadPreferences.AUDIO_OFFLOAD_MODE_DISABLED
                 }
             )
-            .setIsSpeedChangeSupportRequired(true)
+            .setIsSpeedChangeSupportRequired(isPlaybackRateModified)
             .setIsGaplessSupportRequired(appSettings.gaplessPlayback.value)
             .build()
 
@@ -1128,12 +1100,12 @@ class RhythmPlayerEngine(
         scope.cancel()
         abandonAudioFocus()
         if (::playerA.isInitialized) {
-            playerA.removeAnalyticsListener(analyticsListenerA)
+            detachAnalyticsListener(playerA)
             playerA.removeListener(masterPlayerListener)
             playerA.release()
         }
         if (::playerB.isInitialized) {
-            playerB.removeAnalyticsListener(analyticsListenerB)
+            detachAnalyticsListener(playerB)
             playerB.release()
         }
         isReleased = true
