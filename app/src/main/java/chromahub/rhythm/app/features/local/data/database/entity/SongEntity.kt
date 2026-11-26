@@ -6,10 +6,17 @@
 package chromahub.rhythm.app.features.local.data.database.entity
 
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 import androidx.core.net.toUri
 
-@Entity(tableName = "songs")
+@Entity(
+    tableName = "songs",
+    indices = [
+        Index(value = ["albumId"]),
+        Index(value = ["artist"])
+    ]
+)
 data class SongEntity(
     @PrimaryKey val id: String,
     val title: String,

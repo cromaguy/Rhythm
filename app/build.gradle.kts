@@ -21,6 +21,11 @@ plugins {
 //    alias(libs.plugins.kotlin.serialization)
 }
 
+ksp {
+    arg("room.schemaLocation", "$projectDir/schemas")
+    arg("room.generateKotlin", "true")
+}
+
 android {
     namespace = "chromahub.rhythm.app"
     compileSdk {
@@ -208,6 +213,12 @@ android {
         )
     }
 
+    sourceSets {
+        getByName("androidTest") {
+            assets.directories.add("$projectDir/schemas")
+        }
+    }
+
 }
 
 androidComponents {
@@ -334,6 +345,7 @@ dependencies {
     testImplementation(libs.com.squareup.okhttp3.mockwebserver3)
     // Real org.json for JVM tests; android.jar only has stubs.
     testImplementation(libs.org.json)
+    androidTestImplementation(libs.androidx.room.testing)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))

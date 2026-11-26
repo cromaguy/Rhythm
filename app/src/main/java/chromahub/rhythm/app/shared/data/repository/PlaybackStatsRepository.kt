@@ -75,6 +75,7 @@ class PlaybackStatsRepository internal constructor(
 ) {
     private val gson = Gson()
     private val historyFile = historyFileOverride ?: File(context.applicationContext.filesDir, "playback_history.json")
+    private val mirrorToRoom = historyFileOverride == null
     private val memoryLock = Any()
     private val eventsType = object : TypeToken<MutableList<PlaybackEvent>>() {}.type
     
@@ -88,6 +89,11 @@ class PlaybackStatsRepository internal constructor(
     init {
         ioScope.launch {
             ensureLoadedFromDisk()
+            if (mirrorToRoom) {
+                PlaybackStatsRoomBridge.backfillIfNeeded(context) {
+                    synchronized(memoryLock) { inMemoryEvents.toList() }
+                }
+            }
             for (eventsToSave in saveChannel) {
                 writeEventsToDiskAtomic(eventsToSave)
             }
@@ -344,6 +350,21 @@ class PlaybackStatsRepository internal constructor(
             inMemoryEvents.toList()
         }
         saveChannel.trySend(snapshot)
+        if (mirrorToRoom) {
+            ioScope.launch {
+                PlaybackStatsRoomBridge.recordEvent(
+                    context = context,
+                    songId = songId,
+                    title = title,
+                    artist = artist,
+                    album = album,
+                    genre = genre,
+                    startedAtMs = start,
+                    endedAtMs = coercedTimestamp,
+                    durationMs = coercedDuration
+                )
+            }
+        }
     }
     
     /**

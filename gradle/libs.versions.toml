@@ -106,6 +106,7 @@ androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = 
 androidx-room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "roomKtx" }
 androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "roomKtx" }
 androidx-room-paging = { group = "androidx.room", name = "room-paging", version.ref = "roomKtx" }
+androidx-room-testing = { group = "androidx.room", name = "room-testing", version.ref = "roomKtx" }
 androidx-paging-runtime-ktx = { group = "androidx.paging", name = "paging-runtime-ktx", version = "3.5.3" }
 androidx-paging-compose = { group = "androidx.paging", name = "paging-compose", version = "3.5.3" }
 androidx-compose-ui-unit = { group = "androidx.compose.ui", name = "ui-unit", version.ref = "uiUnit" }

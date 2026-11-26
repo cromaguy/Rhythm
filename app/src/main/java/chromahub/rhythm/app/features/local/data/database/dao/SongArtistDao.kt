@@ -50,8 +50,13 @@ interface SongArtistDao {
     @Query("DELETE FROM song_artists WHERE songId = :songId")
     suspend fun deleteBySongId(songId: String)
 
-    @Query("DELETE FROM song_artists WHERE songId IN (:songIds)")
-    suspend fun deleteBySongIds(songIds: List<String>)
+    @Query("DELETE FROM song_artists WHERE songId IN (:songIdsChunk)")
+    suspend fun deleteBySongIdsChunk(songIdsChunk: List<String>)
+
+    suspend fun deleteBySongIds(songIds: List<String>) {
+        if (songIds.isEmpty()) return
+        songIds.distinct().chunked(450).forEach { chunk -> deleteBySongIdsChunk(chunk) }
+    }
 
     @Transaction
     suspend fun replaceAll(songArtists: List<SongArtistEntity>, groupByAlbumArtist: Boolean) {
