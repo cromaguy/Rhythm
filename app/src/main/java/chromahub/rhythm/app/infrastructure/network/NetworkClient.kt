@@ -7,6 +7,7 @@ package chromahub.rhythm.app.network
 
 import android.util.Log
 import chromahub.rhythm.app.BuildConfig
+import chromahub.rhythm.app.infrastructure.network.Ipv4FirstDnsResolver
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -155,6 +156,7 @@ object NetworkClient {
     
     private val deezerHttpClient: OkHttpClient by lazy {
         OkHttpClient.Builder()
+            .dns(Ipv4FirstDnsResolver)
             .addInterceptor(deezerHeadersInterceptor())
             .addInterceptor(loggingInterceptor)
             .addInterceptor(retryInterceptor)
@@ -175,6 +177,7 @@ object NetworkClient {
     
     private val lrclibHttpClient: OkHttpClient by lazy {
         OkHttpClient.Builder()
+            .dns(Ipv4FirstDnsResolver)
             .addInterceptor(appHeadersInterceptor(
                 customUserAgent = "Rhythm/${BuildConfig.VERSION_NAME} (https://github.com/cromaguy/Rhythm)",
                 extraHeaders = mapOf("Lrclib-Client" to "Rhythm/${BuildConfig.VERSION_NAME} (https://github.com/cromaguy/Rhythm)")
@@ -198,6 +201,7 @@ object NetworkClient {
     
     private val betterlyricsHttpClient: OkHttpClient by lazy {
         OkHttpClient.Builder()
+            .dns(Ipv4FirstDnsResolver)
             .addInterceptor(appHeadersInterceptor())
             .addInterceptor(loggingInterceptor)
             .addInterceptor(retryInterceptor)
@@ -218,6 +222,7 @@ object NetworkClient {
     
     private val ytmusicHttpClient: OkHttpClient by lazy {
         OkHttpClient.Builder()
+            .dns(Ipv4FirstDnsResolver)
             .addInterceptor(deezerHeadersInterceptor())
             .addInterceptor(loggingInterceptor)
             .addInterceptor(retryInterceptor)
@@ -238,6 +243,7 @@ object NetworkClient {
     
     private val spotifyHttpClient: OkHttpClient by lazy {
         OkHttpClient.Builder()
+            .dns(Ipv4FirstDnsResolver)
             .addInterceptor(appHeadersInterceptor())
             .addInterceptor(loggingInterceptor)
             .addInterceptor(retryInterceptor)
@@ -258,6 +264,7 @@ object NetworkClient {
         
     private val lyricallyHttpClient: OkHttpClient by lazy {
         OkHttpClient.Builder()
+            .dns(Ipv4FirstDnsResolver)
             .addInterceptor(deezerHeadersInterceptor())
             .addInterceptor(loggingInterceptor)
             .addInterceptor(retryInterceptor)
@@ -278,6 +285,7 @@ object NetworkClient {
 
     private val itunesHttpClient: OkHttpClient by lazy {
         OkHttpClient.Builder()
+            .dns(Ipv4FirstDnsResolver)
             .addInterceptor(appHeadersInterceptor())
             .addInterceptor(loggingInterceptor)
             .addInterceptor(retryInterceptor)
@@ -326,6 +334,7 @@ object NetworkClient {
     
     val genericHttpClient: OkHttpClient by lazy {
         OkHttpClient.Builder()
+            .dns(Ipv4FirstDnsResolver)
             .addInterceptor(deezerHeadersInterceptor())
             .addInterceptor(loggingInterceptor)
             .build()

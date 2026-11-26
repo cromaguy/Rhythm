@@ -193,6 +193,7 @@ object AudioQualityDetector {
                 val rawBitrate = if (isCompressedLossless) (bitrateKbps * 1000.0 / 0.55) else (bitrateKbps * 1000.0)
                 val calculated = (rawBitrate / (sampleRateHz * channelCount)).toInt()
                 val result = when {
+                    calculated >= 30 -> 32
                     calculated >= 22 -> 24
                     calculated >= 14 -> 16
                     calculated >= 12 -> 16

@@ -51,6 +51,7 @@ internal object UserTrustManager {
                 init(null, arrayOf(trustManager), null)
             }
             OkHttpClient.Builder()
+                .dns(chromahub.rhythm.app.infrastructure.network.Ipv4FirstDnsResolver)
                 .sslSocketFactory(sslContext.socketFactory, trustManager)
                 .hostnameVerifier { hostname, session ->
                     isPrivateOrLocalHost(hostname) || defaultVerifier.verify(hostname, session)
@@ -58,6 +59,7 @@ internal object UserTrustManager {
         } catch (e: Exception) {
             Log.e(TAG, "Failed to build user-trusting TrustManager, falling back to default: ${e.message}", e)
             OkHttpClient.Builder()
+                .dns(chromahub.rhythm.app.infrastructure.network.Ipv4FirstDnsResolver)
                 .hostnameVerifier { hostname, session ->
                     isPrivateOrLocalHost(hostname) || defaultVerifier.verify(hostname, session)
                 }

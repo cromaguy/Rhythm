@@ -1395,8 +1395,8 @@ object MediaUtils {
                         if (!embedLyricsInAudioFile(tempFile, lyrics)) {
                             throw Exception("Failed to embed lyrics in temp file")
                         }
-                        // Write temp back via ContentResolver (WRITE_EXTERNAL_STORAGE covers API 29)
-                        if (writeTempFileToContentUri(contentResolver, song.uri, tempFile)) {
+                        // Write temp back via crash-safe verified writer (WRITE_EXTERNAL_STORAGE covers API 29)
+                        if (SongMetadataWriteBack.writeVerifiedTempFile(context, contentResolver, song.uri, tempFile)) {
                             fileWriteSucceeded = true
                         } else {
                             // Fallback: write directly via file path
@@ -1586,7 +1586,7 @@ object MediaUtils {
                 tempFile = File(retryPath)
             }
 
-            if (!writeTempFileToContentUri(contentResolver, pendingRequest.song.uri, tempFile)) {
+            if (!SongMetadataWriteBack.writeVerifiedTempFile(context, contentResolver, pendingRequest.song.uri, tempFile)) {
                 Log.e(TAG, "Cannot write temp file to URI after permission granted for lyrics")
                 return false
             }
@@ -1887,7 +1887,7 @@ object MediaUtils {
                         Log.d(TAG, "Step 3: Copying modified file back to original location...")
 
                         val writeSuccess = try {
-                            writeTempFileToContentUri(contentResolver, song.uri, tempFile)
+                            SongMetadataWriteBack.writeVerifiedTempFile(context, contentResolver, song.uri, tempFile)
                         } catch (e: android.app.RecoverableSecurityException) {
                             // Android 11+ requires user permission via createWriteRequest
                             Log.e(
@@ -2373,7 +2373,7 @@ object MediaUtils {
             Log.d(TAG, "Completing write operation after permission granted for: ${pendingRequest.song.title}")
 
             // Now we have permission, copy the temp file back to original location
-            if (!writeTempFileToContentUri(contentResolver, pendingRequest.song.uri, tempFile)) {
+            if (!SongMetadataWriteBack.writeVerifiedTempFile(context, contentResolver, pendingRequest.song.uri, tempFile)) {
                 Log.e(TAG, "Failed to write temp file to URI even after permission granted")
                 return false
             }

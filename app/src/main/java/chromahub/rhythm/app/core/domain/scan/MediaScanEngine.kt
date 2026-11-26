@@ -428,25 +428,27 @@ class MediaScanEngine(
 
             // Sync with Room DB atomically
             _scanProgress.value = ScanProgress(scannedSongs.size, scannedSongs.size, ScanPhase.SavingDb, 0)
+            val existingById = allExistingSongs.associateBy { it.id }
+            val diff = LocalLibraryChangeTracker.computeIncrementalDiff(existingById, scannedSongs)
             database.withTransaction {
-                if (forceRefresh) {
-                    database.songDao().replaceAll(scannedSongs)
-                    database.artistDao().deleteAll()
-                    database.songArtistDao().deleteAll()
-                } else {
-                    val staleSongIds = allExistingSongs.map { it.id }.toSet() - seenIds
-                    val newSongIds = seenIds - allExistingSongs.map { it.id }.toSet()
-                    if (staleSongIds.isNotEmpty()) {
-                        database.songDao().deleteByIds(staleSongIds.toList())
-                        database.songArtistDao().deleteBySongIds(staleSongIds.toList())
-                    }
-                    database.songDao().upsertAll(scannedSongs)
-                    if (staleSongIds.isNotEmpty() || newSongIds.isNotEmpty()) {
-                        database.artistDao().deleteAll()
-                        database.songArtistDao().deleteAll()
+                if (diff.removedIds.isNotEmpty()) {
+                    database.songDao().deleteByIds(diff.removedIds)
+                    database.songArtistDao().deleteBySongIds(diff.removedIds)
+                }
+                if (diff.toUpsert.isNotEmpty()) {
+                    diff.toUpsert.chunked(500).forEach { chunk ->
+                        database.songDao().upsertAll(chunk)
                     }
                 }
+                if (forceRefresh || diff.hasChanges) {
+                    database.artistDao().deleteAll()
+                    database.songArtistDao().deleteAll()
+                }
             }
+            Log.d(
+                TAG,
+                "Incremental scan delta: upsert=${diff.toUpsert.size}, removed=${diff.removedIds.size}, unchanged=${diff.unchangedCount}"
+            )
 
             appSettings.setLastScanTimestamp(System.currentTimeMillis())
             try {

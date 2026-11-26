@@ -9,7 +9,6 @@ import android.content.Context
 import androidx.annotation.OptIn
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.database.StandaloneDatabaseProvider
-import androidx.media3.datasource.cache.LeastRecentlyUsedCacheEvictor
 import androidx.media3.datasource.cache.SimpleCache
 import java.io.File
 
@@ -26,7 +25,7 @@ object AudioCacheManager {
         if (simpleCache == null) {
             val cacheDir = File(context.cacheDir, "audio_cache")
             val maxCacheSize = 150 * 1024 * 1024L // 150MB Cache Size
-            val evictor = LeastRecentlyUsedCacheEvictor(maxCacheSize)
+            val evictor = AdaptiveCacheEvictor(cacheDir, maxCacheSize)
             val databaseProvider = StandaloneDatabaseProvider(context)
             simpleCache = SimpleCache(cacheDir, evictor, databaseProvider)
         }

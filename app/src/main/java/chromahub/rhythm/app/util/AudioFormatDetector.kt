@@ -67,17 +67,44 @@ object AudioFormatDetector {
         var formatInfo = AudioFormatInfo()
 
         try {
-            // Try MediaExtractor first for codec details
-            formatInfo = detectUsingMediaExtractor(context, uri) ?: formatInfo
-            
-            // Fallback to MediaMetadataRetriever for additional metadata
+            val inspected = try {
+                val fileSize = context.contentResolver.openAssetFileDescriptor(uri, "r")?.use { it.length }
+                    ?.takeIf { it > 0L } ?: (song?.bitrate?.takeIf { it > 0 }?.let { 0L } ?: 0L)
+                context.contentResolver.openInputStream(uri)?.use { stream ->
+                    AudioHeaderInspector.inspect(stream, fileSize)
+                }
+            } catch (_: Exception) {
+                null
+            }
+
+            val extractorInfo = detectUsingMediaExtractor(context, uri)
             val retrieverInfo = detectUsingMetadataRetriever(context, uri)
+
+            if (inspected != null) {
+                val baseSampleRate = if (inspected.sampleRateHz > 0) inspected.sampleRateHz else (extractorInfo?.sampleRateHz ?: 0)
+                val baseBitrate = if (inspected.bitrateKbps > 0) inspected.bitrateKbps else (extractorInfo?.bitrateKbps ?: 0)
+                val baseIsHiRes = (inspected.isLossless && (baseSampleRate >= 48_000 || inspected.bitDepth >= 24 || baseBitrate >= 2000)) ||
+                    inspected.codec == "DSD"
+                formatInfo = AudioFormatInfo(
+                    codec = inspected.codec,
+                    isLossless = inspected.isLossless,
+                    isDolby = extractorInfo?.isDolby == true || retrieverInfo?.isDolby == true,
+                    isDTS = extractorInfo?.isDTS == true || retrieverInfo?.isDTS == true,
+                    isHiRes = baseIsHiRes || (extractorInfo?.isHiRes == true),
+                    bitDepth = inspected.bitDepth,
+                    sampleRateHz = baseSampleRate,
+                    channelCount = if (inspected.channelCount > 0) inspected.channelCount else (extractorInfo?.channelCount ?: 0),
+                    bitrateKbps = baseBitrate,
+                    formatName = inspected.codec
+                )
+            } else {
+                formatInfo = extractorInfo ?: formatInfo
+            }
+
             formatInfo = mergeFormatInfo(formatInfo, retrieverInfo)
-            
-            // Always recalculate bit depth from Song metadata if available for lossless
-            // This is more accurate than MediaExtractor/MediaMetadataRetriever
-            // MediaExtractor often returns PCM decoding format (16-bit) instead of source bit depth
-            if (song != null && formatInfo.isLossless) {
+
+            // Only invoke heuristic bit depth calculation when container inspection didn't yield an exact depth
+            if (song != null && formatInfo.isLossless && formatInfo.bitDepth == 0) {
                 Log.d(TAG, "Recalculating bit depth for lossless format using Song metadata")
                 formatInfo = enhanceBitDepthFromSong(formatInfo, song)
             }
