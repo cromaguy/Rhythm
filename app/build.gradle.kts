@@ -238,6 +238,7 @@ androidComponents {
 }
 
 dependencies {
+    implementation(project(":native-audio"))
     implementation(libs.androidx.compose.ui.unit)
     // Desugaring library
     coreLibraryDesugaring(libs.androidx.desugar.jdk.libs)

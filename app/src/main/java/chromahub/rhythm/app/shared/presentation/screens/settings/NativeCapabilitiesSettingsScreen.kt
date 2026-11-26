@@ -85,6 +85,15 @@ fun NativeCapabilitiesSettingsScreen(
     val isFloatSupported = remember { HiFiCapabilityChecker.isSupported() }
     val allDecoders = remember(context) { DeviceCapabilitiesProvider.getAudioDecoders() }
     val hardwareDecoders = remember(allDecoders) { allDecoders.filter { it.isHardwareAccelerated } }
+    val halCapabilitiesState = androidx.compose.runtime.produceState<chromahub.rhythm.nativeaudio.HalAudioCapabilities?>(
+        initialValue = null,
+        context
+    ) {
+        value = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            chromahub.rhythm.nativeaudio.AudioTrackHalInspector.inspect(context)
+        }
+    }
+    val halCapabilities = halCapabilitiesState.value
 
     val storageStats = remember {
         runCatching {
@@ -162,65 +171,100 @@ fun NativeCapabilitiesSettingsScreen(
         )
     }
 
-    val pipelineItems = remember(capabilities, isFloatSupported) {
+    val pipelineItems = remember(capabilities, isFloatSupported, halCapabilities) {
         val isOffloadSupported = capabilities.offloadSupportedFormats.isNotEmpty()
-        listOf(
-            NativeGridItem(
-                label = "Native HAL Rate",
-                value = "${capabilities.nativeSampleRate} Hz",
-                badge = "HAL",
-                isHighlighted = true,
-                subtitle = "Hardware clock rate",
-                onClick = { copyToClipboard("Native HAL Rate", "${capabilities.nativeSampleRate} Hz") }
-            ),
-            NativeGridItem(
-                label = "Buffer Frame Burst",
-                value = "${capabilities.framesPerBuffer} frames",
-                badge = "LOW LATENCY",
-                subtitle = "Kernel burst quantum",
-                onClick = { copyToClipboard("Native Buffer Size", "${capabilities.framesPerBuffer} frames") }
-            ),
-            NativeGridItem(
-                label = "DSP Audio Offload",
-                value = if (isOffloadSupported) "Supported (${capabilities.offloadSupportedFormats.size} formats)" else "Unsupported",
-                badge = if (isOffloadSupported) "HW DSP" else "DISABLED",
-                isHighlighted = isOffloadSupported,
-                subtitle = if (isOffloadSupported) capabilities.offloadSupportedFormats.joinToString(", ") else "Direct DAC power saving",
-                onClick = { copyToClipboard("DSP Offload", if (isOffloadSupported) capabilities.offloadSupportedFormats.joinToString(", ") else "Unsupported") }
-            ),
-            NativeGridItem(
-                label = "Pro Audio Stack",
-                value = if (capabilities.isProAudioSupported) "Supported" else "Unsupported",
-                badge = "FEATURE",
-                isHighlighted = capabilities.isProAudioSupported,
-                subtitle = "Pro-level audio routing",
-                onClick = { copyToClipboard("Pro Audio", if (capabilities.isProAudioSupported) "Supported" else "Unsupported") }
-            ),
-            NativeGridItem(
-                label = "Fast Track Audio",
-                value = if (capabilities.isLowLatencySupported) "Supported" else "Unsupported",
-                badge = "FAST TRACK",
-                isHighlighted = capabilities.isLowLatencySupported,
-                subtitle = "Direct mixer bypass",
-                onClick = { copyToClipboard("Low Latency", if (capabilities.isLowLatencySupported) "Supported" else "Unsupported") }
-            ),
-            NativeGridItem(
-                label = "32-Bit Float PCM",
-                value = if (isFloatSupported) "Supported" else "Unsupported",
-                badge = "IEEE 754",
-                isHighlighted = isFloatSupported,
-                subtitle = "Full dynamic precision",
-                onClick = { copyToClipboard("32-Bit Float PCM", if (isFloatSupported) "Supported" else "Unsupported") }
-            ),
-            NativeGridItem(
-                label = "1-Bit DSD / SACD",
-                value = "DSD64–DSD512",
-                badge = "KAISER FIR",
-                isHighlighted = true,
-                subtitle = "DSF & DSDIFF -> Float32 PCM",
-                onClick = { copyToClipboard("DSD Playback", "Pure Kotlin 64-tap Kaiser FIR Decimator (DSF/DFF)") }
+        val hal = halCapabilities
+        val nativeActive = hal?.nativeLibraryLoaded == true
+        buildList<NativeGridItem> {
+            add(
+                NativeGridItem(
+                    label = "Native HAL Rate",
+                    value = "${capabilities.nativeSampleRate} Hz",
+                    badge = "HAL",
+                    isHighlighted = true,
+                    subtitle = "Hardware clock rate",
+                    onClick = { copyToClipboard("Native HAL Rate", "${capabilities.nativeSampleRate} Hz") }
+                )
             )
-        )
+            add(
+                NativeGridItem(
+                    label = "Native Audio Core",
+                    value = when {
+                        hal == null -> "Probing..."
+                        hal.nativeLibraryLoaded && hal.aaudioExclusiveSupported -> "AAudio Exclusive"
+                        hal.nativeLibraryLoaded -> "Loaded (Shared)"
+                        !hal.safetyGuardPermitsNative -> "Safety Guarded"
+                        else -> "Kotlin Fallback"
+                    },
+                    badge = if (hal?.aaudioMmapSupported == true) "MMAP" else if (nativeActive) "JNI C++20" else "KOTLIN",
+                    isHighlighted = nativeActive,
+                    subtitle = hal?.let {
+                        if (it.aaudioHalSampleRateHz > 0) "${it.aaudioHalSampleRateHz} Hz • ${it.aaudioFramesPerBurst}f burst"
+                        else "Direct bitstream: ${if (it.directBitStreamSupported) "Yes" else "No"}"
+                    } ?: "Inspecting AAudio HAL",
+                    onClick = { copyToClipboard("Native Audio Core", "Loaded=${hal?.nativeLibraryLoaded}, Exclusive=${hal?.aaudioExclusiveSupported}, MMAP=${hal?.aaudioMmapSupported}") }
+                )
+            )
+            add(
+                NativeGridItem(
+                    label = "Buffer Frame Burst",
+                    value = "${capabilities.framesPerBuffer} frames",
+                    badge = "LOW LATENCY",
+                    subtitle = "Kernel burst quantum",
+                    onClick = { copyToClipboard("Native Buffer Size", "${capabilities.framesPerBuffer} frames") }
+                )
+            )
+            add(
+                NativeGridItem(
+                    label = "DSP Audio Offload",
+                    value = if (isOffloadSupported) "Supported (${capabilities.offloadSupportedFormats.size} formats)" else "Unsupported",
+                    badge = if (isOffloadSupported) "HW DSP" else "DISABLED",
+                    isHighlighted = isOffloadSupported,
+                    subtitle = if (isOffloadSupported) capabilities.offloadSupportedFormats.joinToString(", ") else "Direct DAC power saving",
+                    onClick = { copyToClipboard("DSP Offload", if (isOffloadSupported) capabilities.offloadSupportedFormats.joinToString(", ") else "Unsupported") }
+                )
+            )
+            add(
+                NativeGridItem(
+                    label = "Pro Audio Stack",
+                    value = if (capabilities.isProAudioSupported) "Supported" else "Unsupported",
+                    badge = "FEATURE",
+                    isHighlighted = capabilities.isProAudioSupported,
+                    subtitle = "Pro-level audio routing",
+                    onClick = { copyToClipboard("Pro Audio", if (capabilities.isProAudioSupported) "Supported" else "Unsupported") }
+                )
+            )
+            add(
+                NativeGridItem(
+                    label = "Fast Track Audio",
+                    value = if (capabilities.isLowLatencySupported) "Supported" else "Unsupported",
+                    badge = "FAST TRACK",
+                    isHighlighted = capabilities.isLowLatencySupported,
+                    subtitle = "Direct mixer bypass",
+                    onClick = { copyToClipboard("Low Latency", if (capabilities.isLowLatencySupported) "Supported" else "Unsupported") }
+                )
+            )
+            add(
+                NativeGridItem(
+                    label = "32-Bit Float PCM",
+                    value = if (isFloatSupported) "Supported" else "Unsupported",
+                    badge = "IEEE 754",
+                    isHighlighted = isFloatSupported,
+                    subtitle = "Full dynamic precision",
+                    onClick = { copyToClipboard("32-Bit Float PCM", if (isFloatSupported) "Supported" else "Unsupported") }
+                )
+            )
+            add(
+                NativeGridItem(
+                    label = "1-Bit DSD / SACD",
+                    value = "DSD64–DSD512",
+                    badge = if (nativeActive) "NATIVE LUT" else "KAISER FIR",
+                    isHighlighted = true,
+                    subtitle = "DSF & DSDIFF -> Float32 PCM",
+                    onClick = { copyToClipboard("DSD Playback", if (nativeActive) "C++20 Kaiser FIR LUT Decimator" else "Kotlin Kaiser FIR Decimator") }
+                )
+            )
+        }
     }
 
     val usbDacProfiles = remember(context) {

@@ -66,16 +66,25 @@ class DsdPcmDecimator(
     private val filterBytes: Int = LUT_BYTES_PER_16X * max(1, decimationFactor / 16)
     private val history = ByteArray(safeChannels * filterBytes)
     private val lut = FloatArray(filterBytes * 256)
+    private val nativeDecimator = chromahub.rhythm.nativeaudio.NativeDsdDecimator(
+        channelCount = safeChannels,
+        decimationFactor = decimationFactor,
+        lsbFirst = lsbFirst
+    )
+    private var floatScratch = FloatArray(0)
 
     private var ringWritePos = 0
     private var bytePhase = 0
 
     init {
-        buildFilterTables()
+        if (!nativeDecimator.isUsingNative) {
+            buildFilterTables()
+        }
         reset()
     }
 
     fun reset() {
+        nativeDecimator.reset()
         // Alternating 01010101 bits represent zero DC energy in 1-bit PDM/DSD
         history.fill(0x55.toByte())
         ringWritePos = 0
@@ -102,6 +111,25 @@ class DsdPcmDecimator(
         outputPcmBytes: ByteArray
     ): Int {
         if (length <= 0) return 0
+        if (nativeDecimator.isUsingNative) {
+            val maxFloats = outputPcmBytes.size / 4
+            if (floatScratch.size < maxFloats) {
+                floatScratch = FloatArray(maxFloats)
+            }
+            val producedFloats = nativeDecimator.processToFloats(
+                input = input,
+                offset = offset,
+                length = length,
+                planar = planar,
+                blockBytesPerChannel = blockSizePerChannel,
+                outputPcm = floatScratch
+            )
+            val outBuf = ByteBuffer.wrap(outputPcmBytes).order(ByteOrder.LITTLE_ENDIAN)
+            for (i in 0 until producedFloats) {
+                outBuf.putFloat(i * 4, floatScratch[i])
+            }
+            return producedFloats * 4
+        }
         val framesPerChannel = if (planar) blockSizePerChannel else length / safeChannels
         if (framesPerChannel <= 0) return 0
 

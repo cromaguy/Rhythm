@@ -28,4 +28,5 @@ dependencyResolutionManagement {
 
 rootProject.name = "Rhythm"
 include(":app")
+include(":native-audio")
 include(":macrobenchmark")

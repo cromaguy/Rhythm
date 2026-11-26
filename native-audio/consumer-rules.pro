@@ -1,0 +1,1 @@
+-keep class chromahub.rhythm.nativeaudio.** { *; }
