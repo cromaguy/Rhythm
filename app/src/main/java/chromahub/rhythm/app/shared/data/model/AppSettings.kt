@@ -383,6 +383,7 @@ class AppSettings private constructor(context: Context) {
         // Crash Reporting
         private const val KEY_LAST_CRASH_LOG = "last_crash_log"
         private const val KEY_CRASH_LOG_HISTORY = "crash_log_history" // New key for crash log history
+        private const val KEY_MAIN_THREAD_STALL_MONITOR_ENABLED = "main_thread_stall_monitor_enabled"
         
         // Haptic Feedback
         private const val KEY_HAPTIC_FEEDBACK_ENABLED = "haptic_feedback_enabled"
@@ -1952,6 +1953,11 @@ private val _autoCheckForUpdates = MutableStateFlow(prefs.getBoolean(KEY_AUTO_CH
         }
     )
     val crashLogHistory: StateFlow<List<CrashLogEntry>> = _crashLogHistory.asStateFlow()
+
+    private val _mainThreadStallMonitorEnabled = MutableStateFlow(
+        prefs.getBoolean(KEY_MAIN_THREAD_STALL_MONITOR_ENABLED, false)
+    )
+    val mainThreadStallMonitorEnabled: StateFlow<Boolean> = _mainThreadStallMonitorEnabled.asStateFlow()
     
     // Haptic Feedback Settings
     private val _hapticFeedbackEnabled = MutableStateFlow(prefs.getBoolean(KEY_HAPTIC_FEEDBACK_ENABLED, true))
@@ -4139,22 +4145,30 @@ private val _autoCheckForUpdates = MutableStateFlow(prefs.getBoolean(KEY_AUTO_CH
     }
 
     fun addCrashLogEntry(log: String) {
+        addCrashLogEntryWithTimestamp(System.currentTimeMillis(), log)
+    }
+
+    @Synchronized
+    fun addCrashLogEntryWithTimestamp(timestampMs: Long, log: String) {
         val currentHistory = _crashLogHistory.value.toMutableList()
-        val newEntry = CrashLogEntry(System.currentTimeMillis(), log)
-        currentHistory.add(0, newEntry) // Add to the beginning
-        // Keep only the last 6 crash logs to prevent excessive storage
-        val limitedHistory = currentHistory.take(6)
+        val newEntry = CrashLogEntry(timestampMs, log)
+        currentHistory.add(newEntry)
+        val limitedHistory = currentHistory
+            .distinctBy { it.timestamp to it.log.lineSequence().firstOrNull() }
+            .sortedByDescending { it.timestamp }
+            .take(12)
         val json = Gson().toJson(limitedHistory)
-        // Update in-memory state first for immediate UI feedback
         _crashLogHistory.value = limitedHistory
-        // Use commit() instead of apply() for crash logs to ensure persistence before process exits
-        // This is critical - crash logs must be written synchronously or they'll be lost
         try {
             prefs.edit { putString(KEY_CRASH_LOG_HISTORY, json) }
         } catch (e: Exception) {
-            // If commit fails (shouldn't happen), at least log it
             Log.e("CrashLog", "Failed to persist crash log to SharedPreferences", e)
         }
+    }
+
+    fun setMainThreadStallMonitorEnabled(enabled: Boolean) {
+        prefs.edit { putBoolean(KEY_MAIN_THREAD_STALL_MONITOR_ENABLED, enabled) }
+        _mainThreadStallMonitorEnabled.value = enabled
     }
 
     fun clearCrashLogHistory() {
@@ -5731,6 +5745,7 @@ private val _autoCheckForUpdates = MutableStateFlow(prefs.getBoolean(KEY_AUTO_CH
             val json = prefs.getString(KEY_CRASH_LOG_HISTORY, null)
             if (json != null) Gson().fromJson(json, object : TypeToken<List<CrashLogEntry>>() {}.type) else emptyList()
         } catch (e: Exception) { emptyList() }
+        _mainThreadStallMonitorEnabled.value = prefs.getBoolean(KEY_MAIN_THREAD_STALL_MONITOR_ENABLED, false)
         
         // Other settings
         _hapticFeedbackEnabled.value = prefs.getBoolean(KEY_HAPTIC_FEEDBACK_ENABLED, true)

@@ -124,15 +124,52 @@ object LrcUtils {
                 }
             }
         }
-        out.sortBy {
+        out.sortByDescending {
             if (it !is SyncedLyrics) {
-                return@sortBy -10
+                return@sortByDescending -10
             }
-            val hasWords = it.text.find { it.words != null } != null
-            val hasTl = it.text.find { it.isTranslated } != null
-            if (hasWords) 10 else 0 + if (hasTl) 1 else 0
+            val hasWords = it.text.find { line -> line.words != null } != null
+            val hasTl = it.text.find { line -> line.isTranslated } != null
+            (if (hasWords) 10 else 0) + (if (hasTl) 1 else 0)
         }
         return out
+    }
+
+    internal fun decodeLyricsBytes(bytes: ByteArray): String {
+        if (bytes.isEmpty()) return ""
+        // Check BOM markers first for UTF-8, UTF-16BE, UTF-16LE.
+        if (bytes.size >= 3 &&
+            bytes[0] == 0xEF.toByte() &&
+            bytes[1] == 0xBB.toByte() &&
+            bytes[2] == 0xBF.toByte()
+        ) {
+            return String(bytes, 3, bytes.size - 3, Charsets.UTF_8)
+        }
+        if (bytes.size >= 2 && bytes[0] == 0xFE.toByte() && bytes[1] == 0xFF.toByte()) {
+            return String(bytes, 2, bytes.size - 2, Charsets.UTF_16BE)
+        }
+        if (bytes.size >= 2 && bytes[0] == 0xFF.toByte() && bytes[1] == 0xFE.toByte()) {
+            return String(bytes, 2, bytes.size - 2, Charsets.UTF_16LE)
+        }
+
+        val candidates = listOfNotNull(
+            Charsets.UTF_8,
+            runCatching { Charset.forName("GB18030") }.getOrNull(),
+            runCatching { Charset.forName("Shift_JIS") }.getOrNull(),
+            runCatching { Charset.forName("windows-1252") }.getOrNull(),
+            Charsets.ISO_8859_1
+        )
+        for (charset in candidates) {
+            val decoded = runCatching {
+                charset.newDecoder()
+                    .onMalformedInput(java.nio.charset.CodingErrorAction.REPORT)
+                    .onUnmappableCharacter(java.nio.charset.CodingErrorAction.REPORT)
+                    .decode(java.nio.ByteBuffer.wrap(bytes))
+                    .toString()
+            }.getOrNull()
+            if (decoded != null) return decoded
+        }
+        return bytes.toString(Charsets.UTF_8)
     }
 
     fun loadAndParseLyricsFile(
@@ -161,7 +198,7 @@ object LrcUtils {
     private fun loadTextFile(lrcFile: File?, errorText: String?): String? {
         return try {
             if (lrcFile?.exists() == true)
-                lrcFile.readBytes().toString(Charset.defaultCharset())
+                decodeLyricsBytes(lrcFile.readBytes())
             else null
         } catch (e: Exception) {
             Log.e(TAG, Log.getThrowableString(e)!!)

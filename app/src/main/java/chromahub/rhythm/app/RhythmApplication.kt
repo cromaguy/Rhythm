@@ -90,11 +90,22 @@ class RhythmApplication : Application(), ImageLoaderFactory {
         )
         Log.d(TAG, "✓ NetworkClient initialized")
         
-        // Configure LeakCanary for debug builds
+        val previousSession = chromahub.rhythm.app.util.diagnostics.SessionMarker.markLaunch(
+            context = applicationContext,
+            versionName = BuildConfig.VERSION_NAME
+        )
+        CoroutineScope(Dispatchers.IO).launch {
+            chromahub.rhythm.app.util.diagnostics.ExitReasonReader.recordPendingExitReasons(
+                context = applicationContext,
+                appSettings = settings,
+                previousSession = previousSession
+            )
+        }
+
         if (BuildConfig.DEBUG) {
             configureLeakCanary()
-            startANRWatchdog()
         }
+        setStallMonitorEnabled(BuildConfig.DEBUG || settings.mainThreadStallMonitorEnabled.value)
         
         Log.d(TAG, "RhythmApplication initialization complete")
         
@@ -188,10 +199,37 @@ class RhythmApplication : Application(), ImageLoaderFactory {
     /**
      * Start ANR watchdog to monitor UI thread responsiveness
      */
+    fun setStallMonitorEnabled(enabled: Boolean) {
+        if (enabled) {
+            if (anrWatchdog?.isAlive != true) {
+                startANRWatchdog()
+            }
+        } else if (!BuildConfig.DEBUG) {
+            anrWatchdog?.stopWatching()
+            anrWatchdog = null
+        }
+    }
+
+    /**
+     * Start ANR/stall watchdog to monitor UI thread responsiveness and record stalls.
+     */
     private fun startANRWatchdog() {
         try {
-            // Start with 5 second timeout (standard ANR threshold)
-            anrWatchdog = ANRWatchdog(timeoutMs = 5000).apply {
+            val settings = AppSettings.getInstance(applicationContext)
+            var lastRecordedStallAt = 0L
+            anrWatchdog = ANRWatchdog(timeoutMs = 5000) { blockedMs, stackTrace ->
+                val now = System.currentTimeMillis()
+                if (now - lastRecordedStallAt < 30_000L) return@ANRWatchdog
+                lastRecordedStallAt = now
+                val detail = buildString {
+                    appendLine("=== Main-Thread Stall Watchdog ===")
+                    appendLine("Blocked for ${blockedMs}ms (threshold 5000ms)")
+                    stackTrace.take(24).forEach { element ->
+                        appendLine("    at $element")
+                    }
+                }.trim()
+                settings.addCrashLogEntryWithTimestamp(now, detail)
+            }.apply {
                 start()
             }
             Log.d(TAG, "✓ ANR Watchdog started")

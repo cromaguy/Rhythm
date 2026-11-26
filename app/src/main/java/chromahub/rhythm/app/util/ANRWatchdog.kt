@@ -17,7 +17,10 @@ import android.util.Log
  * Note: This watchdog is designed for DEBUG builds only and logs to logcat.
  * It does NOT show any user-facing dialogs or popups.
  */
-class ANRWatchdog(private val timeoutMs: Long = 5000) : Thread("ANRWatchdog") {
+class ANRWatchdog(
+    private val timeoutMs: Long = 5000,
+    private val onStallDetected: ((blockedMs: Long, stackTrace: Array<StackTraceElement>) -> Unit)? = null
+) : Thread("ANRWatchdog") {
     
     companion object {
         private const val TAG = "ANRWatchdog"
@@ -69,6 +72,9 @@ class ANRWatchdog(private val timeoutMs: Long = 5000) : Thread("ANRWatchdog") {
                     // Get the main thread's stack trace
                     val mainThread = Looper.getMainLooper().thread
                     val stackTrace = mainThread.stackTrace
+                    onStallDetected?.let { callback ->
+                        runCatching { callback(blockedTime, stackTrace) }
+                    }
                     
                     Log.e(TAG, "📍 Main thread (UI thread) stack trace:")
                     Log.e(TAG, "───────────────────────────────────────────────────────────")
