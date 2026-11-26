@@ -214,7 +214,8 @@ data class SettingItem(
     val onToggleChange: ((Boolean) -> Unit)? = null,
     val data: Any? = null,
     val enabled: Boolean = true,
-    val palette: SettingsBadgePalette? = null
+    val palette: SettingsBadgePalette? = null,
+    val settingKey: String? = null
 )
 
 data class SettingGroup(
@@ -467,6 +468,10 @@ fun SettingsScreen(
                 results = searchResults,
                 query = searchQuery,
                 onResultClick = { result ->
+                    SettingHighlightController.requestHighlight(
+                        settingKey = result.settingKey,
+                        title = result.title
+                    )
                     if (result.route != null) {
                         onNavigateTo(result.route)
                     }
@@ -512,6 +517,8 @@ fun SettingsScreen(
                             Material3SettingsItem(
                                 icon = item.icon,
                                 palette = item.palette,
+                                settingKey = item.settingKey,
+                                settingTitle = item.title,
                                 title = { Text(item.title) },
                                 description = item.description?.let { descriptionText ->
                                     { Text(descriptionText) }

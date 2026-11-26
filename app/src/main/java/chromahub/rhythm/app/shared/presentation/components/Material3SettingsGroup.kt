@@ -10,6 +10,7 @@ import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -32,13 +33,17 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import chromahub.rhythm.app.shared.presentation.components.icons.Icon
 import chromahub.rhythm.app.shared.presentation.components.icons.MaterialSymbolIcon
+import chromahub.rhythm.app.shared.presentation.screens.settings.SettingHighlightController
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ProvideTextStyle
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -329,6 +334,28 @@ fun Material3SettingsGroup(
                 }
 
                 val itemPalette = item.palette ?: sectionPalette ?: getIconPalette(item.icon)
+                val activeHighlightKey by SettingHighlightController.highlightedKey.collectAsState()
+                val activeHighlightTitle by SettingHighlightController.highlightedTitle.collectAsState()
+                val isSearchHighlighted = SettingHighlightController.matches(
+                    targetKey = activeHighlightKey,
+                    targetTitle = activeHighlightTitle,
+                    itemKey = item.settingKey,
+                    itemTitle = item.settingTitle
+                )
+                if (isSearchHighlighted) {
+                    LaunchedEffect(activeHighlightKey, activeHighlightTitle) {
+                        delay(2200L)
+                        SettingHighlightController.clear()
+                    }
+                }
+                val resolvedContainerColor by animateColorAsState(
+                    targetValue = if (isSearchHighlighted) {
+                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.52f)
+                    } else {
+                        containerColor
+                    },
+                    label = "settings_search_highlight_bg"
+                )
 
                 Card(
                     modifier = Modifier
@@ -336,8 +363,13 @@ fun Material3SettingsGroup(
                         .animateContentSize(),
                     shape = shape,
                     colors = CardDefaults.cardColors(
-                        containerColor = containerColor
+                        containerColor = resolvedContainerColor
                     ),
+                    border = if (isSearchHighlighted) {
+                        BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary)
+                    } else {
+                        null
+                    },
                     elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                 ) {
                     Material3SettingsItemRow(
@@ -545,6 +577,8 @@ data class Material3SettingsItem(
     val enabled: Boolean = true,
     val scope: SettingScope = SettingScope.BOTH,
     val leadingContent: (@Composable () -> Unit)? = null,
+    val settingKey: String? = null,
+    val settingTitle: String? = null,
     val onClick: (() -> Unit)? = null
 )
 

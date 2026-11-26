@@ -52,6 +52,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -151,6 +152,56 @@ fun buildSettingsSearchIndex(context: Context): List<SearchableSettingItem> {
             icon = MaterialSymbolIcon("open_in_new"),
             route = SettingsRoutes.EXTERNAL_PLAYER_CUSTOMIZATION,
             parentScreen = context.getString(R.string.settings_section_appearance)
+        ))
+        add(SearchableSettingItem(
+            id = "external_player_isolate_preview",
+            title = context.getString(R.string.external_player_isolate_preview),
+            description = context.getString(R.string.external_player_isolate_preview_desc),
+            keywords = listOf("external player", "isolated preview", "queue", "intent", "preview sheet"),
+            icon = MaterialSymbolIcon("layers"),
+            route = SettingsRoutes.EXTERNAL_PLAYER_CUSTOMIZATION,
+            parentScreen = context.getString(R.string.settings_external_player_customization),
+            settingKey = "external_player_isolate_preview"
+        ))
+        add(SearchableSettingItem(
+            id = "music_haptics_enabled",
+            title = "Beat-Sync Music Haptics",
+            description = "Vibrate gently in sync with low-frequency beats and transient peaks",
+            keywords = listOf("music haptics", "beat sync", "vibration", "tactile", "haptics"),
+            icon = MaterialSymbolIcon("vibration"),
+            route = SettingsRoutes.PLAYBACK,
+            parentScreen = context.getString(R.string.settings_playback),
+            settingKey = "music_haptics_enabled"
+        ))
+        add(SearchableSettingItem(
+            id = "automix_bpm_sync_enabled",
+            title = "Smart AutoMix (BPM & Bass Swap)",
+            description = "Beat-match crossfades and swap sub-bass across phrasing boundaries",
+            keywords = listOf("automix", "crossfade", "bpm", "dj", "transition", "bass swap"),
+            icon = MaterialSymbolIcon("tune"),
+            route = SettingsRoutes.CROSSFADE,
+            parentScreen = context.getString(R.string.settings_crossfade),
+            settingKey = "automix_bpm_sync_enabled"
+        ))
+        add(SearchableSettingItem(
+            id = "status_bar_ticker_enabled",
+            title = "Status-Bar Ticker Lyrics (OEM)",
+            description = "Broadcast the active synced lyric line via OEM status-bar ticker notification",
+            keywords = listOf("status bar", "ticker", "lyrics", "flyme", "hyperos", "miui"),
+            icon = MaterialSymbolIcon("subtitles"),
+            route = SettingsRoutes.LYRICS,
+            parentScreen = context.getString(R.string.settings_lyrics_source),
+            settingKey = "status_bar_ticker_enabled"
+        ))
+        add(SearchableSettingItem(
+            id = "agsl_fluid_backdrop_enabled",
+            title = "Beat-Sync AGSL Backdrop",
+            description = "Animate beat-driven multi-stop album art fluid shader on Android 13+",
+            keywords = listOf("agsl", "fluid", "shader", "backdrop", "player"),
+            icon = MaterialSymbolIcon("blur_on"),
+            route = SettingsRoutes.PLAYER_CUSTOMIZATION,
+            parentScreen = context.getString(R.string.settings_player_customization),
+            settingKey = "agsl_fluid_backdrop_enabled"
         ))
         add(SearchableSettingItem(
             id = "album_bottom_sheet_blur",
@@ -2974,6 +3025,9 @@ fun SettingsSearchResults(
 ) {
     val context = LocalContext.current
     val haptic = LocalHapticFeedback.current
+    val appSettings = remember(context) {
+        chromahub.rhythm.app.shared.data.model.AppSettings.getInstance(context)
+    }
     val highlightColor = MaterialTheme.colorScheme.primary
     val matchById = remember(results, query) {
         if (query.isBlank()) emptyMap()
@@ -3009,8 +3063,12 @@ fun SettingsSearchResults(
 
                     val materialItems = items.map { setting ->
                         val match = matchById[setting.id]
+                        val inlineToggle = SettingsInlineToggleRegistry.resolve(appSettings, setting.settingKey)
+                        val checkedState = inlineToggle?.stateFlow?.collectAsState()?.value
                         Material3SettingsItem(
                             icon = setting.icon,
+                            settingKey = setting.settingKey,
+                            settingTitle = setting.title,
                             title = {
                                 Text(
                                     SettingsFuzzyMatcher.highlightMatchedText(
@@ -3030,12 +3088,40 @@ fun SettingsSearchResults(
                                 )
                             },
                             trailingContent = {
-                                Icon(
-                                    imageVector = MaterialSymbolIcon("arrow_forward_ios", filled = true),
-                                    contentDescription = context.getString(R.string.cd_navigate),
-                                    modifier = Modifier.size(16.dp),
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
+                                if (inlineToggle != null && checkedState != null) {
+                                    androidx.compose.foundation.layout.Row(
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(
+                                            imageVector = MaterialSymbolIcon("arrow_forward_ios", filled = true),
+                                            contentDescription = context.getString(R.string.cd_navigate),
+                                            modifier = Modifier.size(16.dp),
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                                        )
+                                        Spacer(modifier = Modifier.width(12.dp))
+                                        Box(
+                                            modifier = Modifier
+                                                .width(1.dp)
+                                                .height(20.dp)
+                                                .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f))
+                                        )
+                                        Spacer(modifier = Modifier.width(12.dp))
+                                        TunerAnimatedSwitch(
+                                            checked = checkedState,
+                                            onCheckedChange = { newValue ->
+                                                HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
+                                                inlineToggle.onToggle(newValue)
+                                            }
+                                        )
+                                    }
+                                } else {
+                                    Icon(
+                                        imageVector = MaterialSymbolIcon("arrow_forward_ios", filled = true),
+                                        contentDescription = context.getString(R.string.cd_navigate),
+                                        modifier = Modifier.size(16.dp),
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
                             },
                             onClick = {
                                 HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)

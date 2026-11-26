@@ -372,6 +372,8 @@ fun PlaybackSettingsScreen(
                 val materialItems = group.items.map { item ->
                     Material3SettingsItem(
                         icon = item.icon,
+                        settingKey = item.settingKey,
+                        settingTitle = item.title,
                         title = { Text(item.title) },
                         description = item.description?.let { desc -> { Text(desc) } },
                         trailingContent = when {
