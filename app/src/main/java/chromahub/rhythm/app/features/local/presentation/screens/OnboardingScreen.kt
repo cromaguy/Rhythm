@@ -2019,8 +2019,7 @@ fun EnhancedBackupRestoreContent(
                         isRestoringFromFile = true
                         HapticUtils.performHapticFeedback(context, hapticFeedback, HapticType.HEAVY)
                         val backupJson = context.contentResolver.openInputStream(uri)
-                            ?.bufferedReader()
-                            ?.use { it.readText() }
+                            ?.use { chromahub.rhythm.app.core.domain.backup.BackupArchive.readPayload(it) }
                         handleRestorePayload(backupJson)
                     } catch (e: Exception) {
                         backupStatusIsError = true

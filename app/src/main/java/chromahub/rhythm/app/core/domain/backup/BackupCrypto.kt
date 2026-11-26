@@ -19,7 +19,7 @@ import javax.crypto.spec.SecretKeySpec
 /**
  * Cryptographic envelope and path-containment helpers for Rhythm v5 modular backups.
  *
- * Uses PBKDF2-HMAC-SHA256 (150,000 iterations) + AES-256-GCM so encrypted `.rhythm` / `.json`
+ * Uses PBKDF2-HMAC-SHA256 (210,000 iterations) + AES-256-GCM so encrypted `.rhythm` / `.json`
  * backups remain portable across devices (not bound to one phone's Android Keystore).
  */
 object BackupCrypto {
@@ -27,7 +27,7 @@ object BackupCrypto {
     const val ENVELOPE_FORMAT = "RHYTHM_ENC_V1"
     private const val KDF_ALGORITHM = "PBKDF2WithHmacSHA256"
     private const val CIPHER_TRANSFORMATION = "AES/GCM/NoPadding"
-    private const val PBKDF2_ITERATIONS = 150_000
+    private const val PBKDF2_ITERATIONS = 210_000
     private const val KEY_LENGTH_BITS = 256
     private const val SALT_BYTES = 16
     private const val IV_BYTES = 12
@@ -49,11 +49,19 @@ object BackupCrypto {
         }
     }
 
-    fun encryptPayload(plaintextJson: String, passphrase: String): String {
+    fun encryptPayload(plaintextJson: String, passphrase: String): String =
+        encryptPayloadWithIterations(plaintextJson, passphrase, PBKDF2_ITERATIONS)
+
+    internal fun encryptPayloadWithIterations(
+        plaintextJson: String,
+        passphrase: String,
+        iterations: Int
+    ): String {
         require(passphrase.isNotEmpty()) { "Passphrase must not be empty" }
+        val boundedIterations = iterations.coerceIn(10_000, 1_000_000)
         val salt = ByteArray(SALT_BYTES).also { random.nextBytes(it) }
         val iv = ByteArray(IV_BYTES).also { random.nextBytes(it) }
-        val key = deriveAesKey(passphrase.toCharArray(), salt, PBKDF2_ITERATIONS)
+        val key = deriveAesKey(passphrase.toCharArray(), salt, boundedIterations)
 
         val cipher = Cipher.getInstance(CIPHER_TRANSFORMATION)
         cipher.init(Cipher.ENCRYPT_MODE, key, GCMParameterSpec(GCM_TAG_BITS, iv))
@@ -64,7 +72,7 @@ object BackupCrypto {
         return JSONObject().apply {
             put("rhythm_backup_format", ENVELOPE_FORMAT)
             put("kdf", KDF_ALGORITHM)
-            put("iterations", PBKDF2_ITERATIONS)
+            put("iterations", boundedIterations)
             put("salt", encoder.encodeToString(salt))
             put("iv", encoder.encodeToString(iv))
             put("ciphertext", encoder.encodeToString(ciphertext))

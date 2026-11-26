@@ -93,6 +93,7 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import chromahub.rhythm.app.BuildConfig
+import chromahub.rhythm.app.core.domain.backup.BackupArchive
 import chromahub.rhythm.app.core.domain.backup.BackupCrypto
 import chromahub.rhythm.app.shared.data.model.AppSettings
 import chromahub.rhythm.app.shared.data.model.Playlist
@@ -319,8 +320,7 @@ fun BackupRestoreSettingsScreen(onBackClick: () -> Unit) {
                         val outputStream = context.contentResolver.openOutputStream(uri)
                             ?: throw IllegalStateException("Unable to open backup destination")
                         outputStream.use { stream ->
-                            stream.write(backupJson.toByteArray())
-                            stream.flush()
+                            BackupArchive.writeArchive(backupJson, stream)
                         }
 
                         appSettings.setLastBackupTimestamp(System.currentTimeMillis())
@@ -363,7 +363,7 @@ fun BackupRestoreSettingsScreen(onBackClick: () -> Unit) {
                         HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
 
                         val inputStream = context.contentResolver.openInputStream(uri)
-                        val backupJson = inputStream?.bufferedReader()?.use { it.readText() }
+                        val backupJson = inputStream?.use { BackupArchive.readPayload(it) }
 
                         if (!backupJson.isNullOrEmpty()) {
                             pendingRestorePayload = backupJson
@@ -834,10 +834,10 @@ fun BackupRestoreSettingsScreen(onBackClick: () -> Unit) {
             showBackupPassphraseDialog = false
             val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
                 addCategory(Intent.CATEGORY_OPENABLE)
-                type = "application/json"
+                type = "application/octet-stream"
                 putExtra(
                     Intent.EXTRA_TITLE,
-                    "rhythm_backup_${SimpleDateFormat("yyyyMMdd_HHmmss", java.util.Locale.getDefault()).format(Date())}.json"
+                    "rhythm_backup_${SimpleDateFormat("yyyyMMdd_HHmmss", java.util.Locale.getDefault()).format(Date())}.rhythm"
                 )
             }
             backupLocationLauncher.launch(intent)
