@@ -211,13 +211,40 @@ fun NativeCapabilitiesSettingsScreen(
                 isHighlighted = isFloatSupported,
                 subtitle = "Full dynamic precision",
                 onClick = { copyToClipboard("32-Bit Float PCM", if (isFloatSupported) "Supported" else "Unsupported") }
+            ),
+            NativeGridItem(
+                label = "1-Bit DSD / SACD",
+                value = "DSD64–DSD512",
+                badge = "KAISER FIR",
+                isHighlighted = true,
+                subtitle = "DSF & DSDIFF -> Float32 PCM",
+                onClick = { copyToClipboard("DSD Playback", "Pure Kotlin 64-tap Kaiser FIR Decimator (DSF/DFF)") }
             )
         )
     }
 
-    val endpointItems = remember(capabilities.outputRoutes) {
+    val usbDacProfiles = remember(context) {
+        chromahub.rhythm.app.infrastructure.audio.usb.UsbDacDescriptorProber.inspectConnectedDacs(context)
+    }
+
+    val endpointItems = remember(capabilities.outputRoutes, usbDacProfiles) {
+        val dacGrid = usbDacProfiles.map { dac ->
+            val rateText = if (dac.supportedRatesHz.isNotEmpty()) {
+                dac.supportedRatesHz.joinToString(", ") { "${it / 1000}k" }
+            } else {
+                "Auto rates"
+            }
+            NativeGridItem(
+                label = dac.productName,
+                value = "${dac.uacVersionLabel} • ${dac.advertisedBitResolution}-bit",
+                badge = if (dac.supportsHalFloat) "USB FLOAT" else "USB DAC",
+                isHighlighted = true,
+                subtitle = rateText,
+                onClick = { copyToClipboard("USB DAC", "${dac.productName} (${dac.uacVersionLabel}, $rateText)") }
+            )
+        }
         if (capabilities.outputRoutes.isNotEmpty()) {
-            capabilities.outputRoutes.map { route ->
+            dacGrid + capabilities.outputRoutes.map { route ->
                 NativeGridItem(
                     label = route.name,
                     value = route.category.name,

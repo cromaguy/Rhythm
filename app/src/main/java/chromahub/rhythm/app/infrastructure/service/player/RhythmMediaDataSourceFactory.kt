@@ -85,13 +85,17 @@ object RhythmMediaDataSourceFactory {
         val baseExtractors = DefaultExtractorsFactory()
         val extractorsFactory = object : ExtractorsFactory {
             override fun createExtractors(): Array<Extractor> =
-                baseExtractors.createExtractors() + AiffMedia3Extractor()
+                baseExtractors.createExtractors() +
+                    AiffMedia3Extractor() +
+                    chromahub.rhythm.app.infrastructure.audio.codec.DsdMedia3Extractor()
 
             override fun createExtractors(
                 uri: android.net.Uri,
                 responseHeaders: Map<String, List<String>>
             ): Array<Extractor> =
-                baseExtractors.createExtractors(uri, responseHeaders) + AiffMedia3Extractor()
+                baseExtractors.createExtractors(uri, responseHeaders) +
+                    AiffMedia3Extractor() +
+                    chromahub.rhythm.app.infrastructure.audio.codec.DsdMedia3Extractor()
         }
         return DefaultMediaSourceFactory(context.applicationContext, extractorsFactory)
             .setDataSourceFactory(createResolvingDataSourceFactory(context))
