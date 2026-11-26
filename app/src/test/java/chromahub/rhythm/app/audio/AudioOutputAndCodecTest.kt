@@ -21,6 +21,7 @@ import chromahub.rhythm.app.infrastructure.audio.dsp.SampleRateCapAudioProcessor
 import chromahub.rhythm.app.infrastructure.audio.dsp.SurroundDownmixAudioProcessor
 import chromahub.rhythm.app.infrastructure.audio.usb.MixerFormat
 import chromahub.rhythm.app.infrastructure.audio.usb.selectBitPerfectMixerFormat
+import chromahub.rhythm.app.infrastructure.service.player.AudioDecoderPolicy
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -187,6 +188,21 @@ class AudioOutputAndCodecTest {
         tracker.sample(0, 1000, true)
         val ppm = tracker.sample(1000, 2000, true)
         assertEquals(0.0, ppm ?: 1.0, 0.1)
+    }
+
+    @Test
+    fun audioDecoderPolicy_prefersSoftwareForLosslessFloatAndFiltersDisabled() {
+        val candidates = listOf("c2.qti.flac.decoder", "c2.android.flac.decoder", "omx.google.raw")
+        val prioritized = AudioDecoderPolicy.prioritizeDecoders(
+            decoders = candidates,
+            nameOf = { it },
+            isHardwareOf = { it.startsWith("c2.qti.") },
+            disabledDecoders = setOf("omx.google.raw"),
+            preferHardware = true,
+            floatOutputActive = true,
+            mimeType = androidx.media3.common.MimeTypes.AUDIO_FLAC
+        )
+        assertEquals(listOf("c2.android.flac.decoder", "c2.qti.flac.decoder"), prioritized)
     }
 
     private class InMemoryExtractorInput(private val data: ByteArray) : ExtractorInput {

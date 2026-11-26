@@ -98,6 +98,12 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
     // Track current custom layout state to avoid unnecessary updates
     private var lastShuffleState: Boolean? = null
     private var lastRepeatMode: Int? = null
+    @Volatile
+    private var rhythmGuardInFlightElapsedMs: Long = 0L
+    @Volatile
+    private var rhythmGuardLastTickMs: Long = 0L
+    @Volatile
+    private var rhythmGuardTrackedMediaId: String? = null
     private var lastFavoriteState: Boolean? = null
     private var lastWidgetSnapshotKey: String? = null
     private var lastHandledPlayerTransitionMediaId: String? = null
@@ -633,8 +639,42 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
             // Rhythm Guard background check loop (every 10 seconds)
             serviceScope.launch {
                 val statsRepository = PlaybackStatsRepository.getInstance(applicationContext)
+                suspend fun computeTodayListeningMinutes(): Int {
+                    val todaySummary = runCatching {
+                        statsRepository.loadSummary(StatsTimeRange.TODAY)
+                    }.getOrNull()
+                    val dbDurationMs = todaySummary?.totalDurationMs ?: 0L
+                    val totalMs = dbDurationMs + rhythmGuardInFlightElapsedMs
+                    return (totalMs / 60000L).toInt().coerceAtLeast(0)
+                }
+
                 while (isActive) {
                     try {
+                        val nowElapsed = android.os.SystemClock.elapsedRealtime()
+                        val isPlayingNow = withContext(Dispatchers.Main) {
+                            val playing = player.isPlaying
+                            val mediaId = player.currentMediaItem?.mediaId
+                            val pos = player.currentPosition
+                            if (::rhythmPlayerEngine.isInitialized) {
+                                rhythmPlayerEngine.sampleStreamHealth(pos, nowElapsed, playing)
+                            }
+                            if (mediaId != rhythmGuardTrackedMediaId) {
+                                rhythmGuardTrackedMediaId = mediaId
+                                rhythmGuardInFlightElapsedMs = 0L
+                                rhythmGuardLastTickMs = nowElapsed
+                            } else if (playing) {
+                                val prevTick = rhythmGuardLastTickMs
+                                if (prevTick > 0L) {
+                                    val delta = (nowElapsed - prevTick).coerceIn(0L, 15_000L)
+                                    rhythmGuardInFlightElapsedMs += delta
+                                }
+                                rhythmGuardLastTickMs = nowElapsed
+                            } else {
+                                rhythmGuardLastTickMs = 0L
+                            }
+                            playing
+                        }
+
                         val mode = appSettings.rhythmGuardMode.value
                         if (mode != AppSettings.RHYTHM_GUARD_MODE_OFF) {
                             val now = System.currentTimeMillis()
@@ -643,15 +683,8 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
                             if (timeoutUntil > 0L && now >= timeoutUntil && cooldownUntil <= 0L) {
                                 val cooldownMinutes = appSettings.rhythmGuardPostTimeoutCooldownMinutes.value.coerceIn(1, 60)
                                 val cooldownUntilMs = now + cooldownMinutes.toLong() * 60_000L
-                                
-                                val todaySummary = runCatching {
-                                    statsRepository.loadSummary(StatsTimeRange.TODAY)
-                                }.getOrNull()
-                                val dbDurationMs = todaySummary?.totalDurationMs ?: 0L
-                                val currentPositionMs = player.currentPosition
-                                val totalMs = dbDurationMs + currentPositionMs
-                                val currentMinutes = (totalMs / 60000L).toInt().coerceAtLeast(0)
-                                
+                                val currentMinutes = computeTodayListeningMinutes()
+
                                 appSettings.setRhythmGuardTimeoutCooldownWithLimit(cooldownUntilMs, currentMinutes + 15)
                                 appSettings.clearRhythmGuardListeningTimeout()
                                 cancelRhythmGuardTimerNotification()
@@ -663,7 +696,7 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
                                 }
                             } else if (now < timeoutUntil) {
                                 // Timeout is active, ensure playback is paused
-                                if (player.isPlaying) {
+                                if (isPlayingNow) {
                                     wasPlayingBeforeTimeout = true
                                     withContext(Dispatchers.Main) {
                                         player.pause()
@@ -675,7 +708,7 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
                                 if (cooldownUntil > 0L) {
                                     appSettings.clearRhythmGuardTimeoutCooldown()
                                 }
-                                if (player.isPlaying) {
+                                if (isPlayingNow) {
                                     // Check active daily exposure limit
                                     val age = appSettings.rhythmGuardAge.value
                                     val policy = appSettings.getRhythmGuardPolicy(age)
@@ -688,13 +721,7 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
                                         policy.recommendedDailyMinutes
                                     }
 
-                                    val todaySummary = runCatching {
-                                        statsRepository.loadSummary(StatsTimeRange.TODAY)
-                                    }.getOrNull()
-                                    val dbDurationMs = todaySummary?.totalDurationMs ?: 0L
-                                    val currentPositionMs = player.currentPosition
-                                    val totalMs = dbDurationMs + currentPositionMs
-                                    val currentMinutes = (totalMs / 60000L).toInt().coerceAtLeast(0)
+                                    val currentMinutes = computeTodayListeningMinutes()
 
                                     // If listening minutes are below the daily limit (e.g., new day), reset the next allowed limit
                                     if (currentMinutes <= effectiveLimitMinutes) {
@@ -894,7 +921,8 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
             monoProcessor = rhythmMonoAudioProcessor,
             viperProcessor = rhythmViperProcessor,
             parametricEqProcessor = rhythmParametricEqProcessor,
-            hapticsController = musicHapticsController
+            hapticsController = musicHapticsController,
+            preloadController = if (::preloadController.isInitialized) preloadController else null
         )
         rhythmPlayerEngine.initialize()
         serviceScope.launch {
@@ -1058,6 +1086,12 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
             }
             
             override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+                rhythmGuardInFlightElapsedMs = 0L
+                rhythmGuardTrackedMediaId = mediaItem?.mediaId
+                rhythmGuardLastTickMs = android.os.SystemClock.elapsedRealtime()
+                if (::rhythmPlayerEngine.isInitialized) {
+                    rhythmPlayerEngine.resetStreamHealth()
+                }
                 if (::preloadController.isInitialized) {
                     val currentIndex = player.currentMediaItemIndex
                     if (currentIndex != androidx.media3.common.C.INDEX_UNSET) {
@@ -1350,6 +1384,15 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
     }
     
     private fun handlePlaybackError(error: PlaybackException) {
+        if (::rhythmPlayerEngine.isInitialized && rhythmPlayerEngine.handleOffloadErrorIfApplicable(error)) {
+            try {
+                player.prepare()
+                player.playWhenReady = true
+                return
+            } catch (e: Exception) {
+                Log.w(TAG, "Offload fallback retry failed", e)
+            }
+        }
         if (skipMissingLocalItem(error)) return
 
         val message = when (error.errorCode) {

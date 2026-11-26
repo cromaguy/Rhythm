@@ -79,6 +79,10 @@ class PreloadController(
         preloadManager?.remove(mediaItem)
     }
 
+    fun getPreloadedMediaSource(mediaItem: MediaItem): androidx.media3.exoplayer.source.MediaSource? {
+        return preloadManager?.getMediaSource(mediaItem)
+    }
+
     fun release() {
         preloadManager?.release()
         preloadManager = null

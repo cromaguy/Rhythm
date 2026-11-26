@@ -29,7 +29,7 @@ object SessionMarker {
     )
 
     private fun prefs(context: Context): SharedPreferences =
-        context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        (context.applicationContext ?: context).getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
     @Synchronized
     fun markLaunch(context: Context, versionName: String, nowMs: Long = System.currentTimeMillis()): PreviousSession? {

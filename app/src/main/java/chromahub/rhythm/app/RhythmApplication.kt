@@ -7,7 +7,9 @@ package chromahub.rhythm.app
 
 import android.app.Application
 import android.content.ComponentCallbacks2
+import android.content.Context
 import android.os.Build
+import android.os.StatFs
 import android.util.Log
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.edit
@@ -17,6 +19,7 @@ import coil.ImageLoaderFactory
 import coil.disk.DiskCache
 import coil.memory.MemoryCache
 import okhttp3.Dispatcher
+import chromahub.rhythm.app.infrastructure.service.player.CacheStoragePolicy
 import chromahub.rhythm.app.infrastructure.widget.glance.GlanceShapeBitmaps
 import chromahub.rhythm.app.infrastructure.widget.glance.RhythmCookieWidget
 import chromahub.rhythm.app.infrastructure.widget.glance.RhythmMusicWidget
@@ -51,6 +54,15 @@ class RhythmApplication : Application(), ImageLoaderFactory {
     }
     
     private var anrWatchdog: ANRWatchdog? = null
+    private var previousLaunchSession: chromahub.rhythm.app.util.diagnostics.SessionMarker.PreviousSession? = null
+
+    override fun attachBaseContext(base: Context) {
+        super.attachBaseContext(base)
+        previousLaunchSession = chromahub.rhythm.app.util.diagnostics.SessionMarker.markLaunch(
+            context = base,
+            versionName = BuildConfig.VERSION_NAME
+        )
+    }
     
     override fun onCreate() {
         super.onCreate()
@@ -90,10 +102,7 @@ class RhythmApplication : Application(), ImageLoaderFactory {
         )
         Log.d(TAG, "✓ NetworkClient initialized")
         
-        val previousSession = chromahub.rhythm.app.util.diagnostics.SessionMarker.markLaunch(
-            context = applicationContext,
-            versionName = BuildConfig.VERSION_NAME
-        )
+        val previousSession = previousLaunchSession
         CoroutineScope(Dispatchers.IO).launch {
             chromahub.rhythm.app.util.diagnostics.ExitReasonReader.recordPendingExitReasons(
                 context = applicationContext,
@@ -168,9 +177,16 @@ class RhythmApplication : Application(), ImageLoaderFactory {
                     .build()
             }
             .diskCache {
+                val imageCacheDir = cacheDir.resolve("image_cache")
+                val usableBytes = runCatching { StatFs(cacheDir.absolutePath).availableBytes }
+                    .getOrDefault(CacheStoragePolicy.LOW_STORAGE_THRESHOLD_BYTES)
+                val maxDiskBytes = CacheStoragePolicy.computeMaxCacheBytes(
+                    usableSpaceBytes = usableBytes,
+                    configuredMaxBytes = 128L * 1024L * 1024L
+                )
                 DiskCache.Builder()
-                    .directory(cacheDir.resolve("image_cache"))
-                    .maxSizeBytes(128L * 1024 * 1024) // 128 MB (default is ~2% of disk)
+                    .directory(imageCacheDir)
+                    .maxSizeBytes(maxDiskBytes)
                     .build()
             }
             .crossfade(true)

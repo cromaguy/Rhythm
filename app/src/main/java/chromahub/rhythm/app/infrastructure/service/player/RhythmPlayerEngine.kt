@@ -34,6 +34,7 @@ import android.net.Uri
 import chromahub.rhythm.app.infrastructure.audio.RhythmBassBoostProcessor
 import chromahub.rhythm.app.infrastructure.audio.RhythmSpatializationProcessor
 import chromahub.rhythm.app.infrastructure.audio.RhythmMonoAudioProcessor
+import chromahub.rhythm.app.infrastructure.audio.StreamHealthTracker
 import chromahub.rhythm.app.infrastructure.audio.dsp.AudioPipelineTelemetry
 import chromahub.rhythm.app.infrastructure.audio.dsp.RhythmAudioSinkCoordinator
 import chromahub.rhythm.app.infrastructure.audio.dsp.SampleRateCapAudioProcessor
@@ -85,11 +86,19 @@ class RhythmPlayerEngine(
     private val monoProcessor: RhythmMonoAudioProcessor? = null,
     private val viperProcessor: chromahub.rhythm.app.infrastructure.audio.viper.ViperAudioProcessor? = null,
     private val parametricEqProcessor: RhythmParametricEqAudioProcessor? = null,
-    private val hapticsController: MusicHapticsController? = null
+    private val hapticsController: MusicHapticsController? = null,
+    private val preloadController: PreloadController? = null
 ) {
     companion object {
         private const val TAG = "RhythmPlayerEngine"
+        private const val PREF_OFFLOAD_FAILED_FINGERPRINT = "offload_failed_build_fingerprint"
     }
+
+    private val streamHealthTracker = StreamHealthTracker()
+    @Volatile
+    private var isOffloadDisabledByFailure = false
+    @Volatile
+    private var lastOffloadRequested = false
 
     private var scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
     private var transitionJob: Job? = null
@@ -510,12 +519,16 @@ class RhythmPlayerEngine(
             val disabled = appSettings.audioEngineDisabledDecoders.value
             val preferHw = appSettings.audioEnginePreferHardware.value
 
-            val filtered = if (disabled.isEmpty()) defaultDecoders else defaultDecoders.filter { it.name !in disabled }
-            if (preferHw) {
-                filtered.sortedByDescending { if (DeviceCapabilitiesProvider.isLikelyHardwareDecoder(it.name)) 1 else 0 }
-            } else {
-                filtered
-            }
+            val decoders = AudioDecoderPolicy.prioritizeDecoders(
+                decoders = defaultDecoders,
+                nameOf = { it.name },
+                isHardwareOf = { DeviceCapabilitiesProvider.isLikelyHardwareDecoder(it.name) },
+                disabledDecoders = disabled,
+                preferHardware = preferHw,
+                floatOutputActive = floatOutputPref,
+                mimeType = mimeType
+            )
+            decoders
         }
 
         val renderersFactory = object : DefaultRenderersFactory(context) {
@@ -771,11 +784,16 @@ class RhythmPlayerEngine(
                     playerB.setShuffleOrder(RhythmShuffleOrder(shuffleIndices))
                 }
             } else {
-                playerB.setMediaItem(mediaItem)
-                if (startPositionMs > 0) {
-                    playerB.seekTo(startPositionMs)
+                val preloaded = preloadController?.getPreloadedMediaSource(mediaItem)
+                if (preloaded != null) {
+                    playerB.setMediaSource(preloaded, startPositionMs.coerceAtLeast(0L))
                 } else {
-                    playerB.seekTo(0)
+                    playerB.setMediaItem(mediaItem)
+                    if (startPositionMs > 0) {
+                        playerB.seekTo(startPositionMs)
+                    } else {
+                        playerB.seekTo(0)
+                    }
                 }
             }
 
@@ -1226,10 +1244,17 @@ class RhythmPlayerEngine(
                 } catch (_: Exception) { false }
         )
 
-        val isOffloadSupported = appSettings.isAudioOffloadActive.value &&
+        val offloadFailedOnBuild = try {
+            appSettings.prefs.getString(PREF_OFFLOAD_FAILED_FINGERPRINT, null) == Build.FINGERPRINT
+        } catch (_: Exception) { false }
+
+        val isOffloadSupported = !isOffloadDisabledByFailure &&
+            !offloadFailedOnBuild &&
+            appSettings.isAudioOffloadActive.value &&
             (!isCrossfadeEnabled && !isEqualizerEnabled && !isReplayGainEnabled &&
              !isBassBoostEnabled && !isVirtualizerEnabled && !isMonoAudioEnabled &&
              !isPlaybackRateModified && !isSkipSilenceEnabled && !isViperActive)
+        lastOffloadRequested = isOffloadSupported
 
         val audioOffloadPreferences = TrackSelectionParameters.AudioOffloadPreferences.Builder()
             .setAudioOffloadMode(
@@ -1240,7 +1265,7 @@ class RhythmPlayerEngine(
                 }
             )
             .setIsSpeedChangeSupportRequired(isPlaybackRateModified)
-            .setIsGaplessSupportRequired(appSettings.gaplessPlayback.value)
+            .setIsGaplessSupportRequired(true)
             .build()
 
         return baseParameters.buildUpon()
@@ -1306,6 +1331,35 @@ class RhythmPlayerEngine(
 
     fun getCurrentDecoderName(): String =
         _currentEngineFormat.value?.decoderName.orEmpty()
+
+    fun sampleStreamHealth(positionMs: Long, wallMs: Long, isPlaying: Boolean) {
+        streamHealthTracker.sample(positionMs, wallMs, isPlaying)
+    }
+
+    fun resetStreamHealth() {
+        streamHealthTracker.reset()
+    }
+
+    fun getStreamHealthSnapshot(): Pair<Double?, Long> =
+        streamHealthTracker.driftPpm to streamHealthTracker.glitchCount
+
+    fun handleOffloadErrorIfApplicable(error: androidx.media3.common.PlaybackException): Boolean {
+        if (!lastOffloadRequested || isOffloadDisabledByFailure) return false
+        val isOffloadRelated = error.errorCode == androidx.media3.common.PlaybackException.ERROR_CODE_AUDIO_TRACK_INIT_FAILED ||
+            error.errorCode == androidx.media3.common.PlaybackException.ERROR_CODE_AUDIO_TRACK_WRITE_FAILED ||
+            error.errorCode == androidx.media3.common.PlaybackException.ERROR_CODE_AUDIO_TRACK_OFFLOAD_INIT_FAILED ||
+            error.errorCode == androidx.media3.common.PlaybackException.ERROR_CODE_AUDIO_TRACK_OFFLOAD_WRITE_FAILED
+        if (!isOffloadRelated) return false
+        isOffloadDisabledByFailure = true
+        runCatching {
+            AppSettings.getInstance(context).prefs.edit()
+                .putString(PREF_OFFLOAD_FAILED_FINGERPRINT, Build.FINGERPRINT)
+                .apply()
+        }
+        Log.w(TAG, "Audio offload failed (${error.errorCodeName}); falling back to standard PCM path")
+        updateTrackSelectionParameters()
+        return true
+    }
 }
 
 data class EngineAudioFormat(

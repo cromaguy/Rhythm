@@ -8,6 +8,7 @@ package chromahub.rhythm.app.infrastructure.network
 import chromahub.rhythm.app.infrastructure.service.player.CacheStoragePolicy
 import chromahub.rhythm.app.util.NaturalSortComparator
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.net.InetAddress
@@ -51,5 +52,27 @@ class NetworkCacheAndSortPolicyTest {
             NaturalSortComparator.comparator(stripLeadingArticles = true) { it }
         )
         assertEquals(listOf("Bach", "The Beatles", "A Flock of Seagulls"), sortedArtists)
+    }
+
+    @Test
+    fun ipv4FirstDnsResolver_parsesDohJsonAndSkipsLocalOrLiteralHosts() {
+        assertFalse(Ipv4FirstDnsResolver.shouldUseDohFallback("192.168.1.50"))
+        assertFalse(Ipv4FirstDnsResolver.shouldUseDohFallback("nas.local"))
+        assertFalse(Ipv4FirstDnsResolver.shouldUseDohFallback("navidrome"))
+        assertTrue(Ipv4FirstDnsResolver.shouldUseDohFallback("music.example.org"))
+
+        val payload = """
+            {
+              "Status": 0,
+              "Answer": [
+                {"name": "music.example.org", "type": 28, "data": "2001:db8::42"},
+                {"name": "music.example.org", "type": 1, "data": "203.0.113.10"}
+              ]
+            }
+        """.trimIndent()
+        val parsed = Ipv4FirstDnsResolver.parseDnsJsonResponse(payload)
+        assertEquals(2, parsed.size)
+        assertEquals(InetAddress.getByName("203.0.113.10"), parsed[0])
+        assertEquals(InetAddress.getByName("2001:db8::42"), parsed[1])
     }
 }
