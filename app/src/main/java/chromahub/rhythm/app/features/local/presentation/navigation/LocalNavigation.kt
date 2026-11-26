@@ -554,15 +554,20 @@ fun LocalNavigation(
 
     // Track current destination for hiding navigation bar on player screen
     var currentRoute by remember { mutableStateOf(Screen.Home.route) }
+    var lastNonPlayerRoute by remember { mutableStateOf(Screen.Home.route) }
 
     // Update current route when destination changes
     LaunchedEffect(navController) {
         navController.currentBackStackEntryFlow.collect { backStackEntry ->
-            currentRoute = backStackEntry.destination.route ?: Screen.Home.route
-            val routeBase = currentRoute.substringBefore("?")
+            val route = backStackEntry.destination.route ?: Screen.Home.route
+            currentRoute = route
+            if (route != Screen.Player.route) {
+                lastNonPlayerRoute = route
+            }
+            val routeBase = route.substringBefore("?")
             // Update selectedTab based on current route
             when {
-                currentRoute == Screen.Home.route -> selectedTab = 0
+                route == Screen.Home.route -> selectedTab = 0
                 routeBase == Screen.Library.route.substringBefore("?") -> selectedTab = 1
             }
         }
@@ -642,6 +647,23 @@ fun LocalNavigation(
                 currentRoute == Screen.Settings.route
         }
     }
+    val effectiveAnchorRoute = if (currentRoute == Screen.Player.route) lastNonPlayerRoute else currentRoute
+    val effectiveIsLibraryRoute = remember(effectiveAnchorRoute) {
+        effectiveAnchorRoute.substringBefore("?") == Screen.Library.route.substringBefore("?")
+    }
+    val effectiveShowMiniPlayer =
+        currentSong != null &&
+            !isMiniPlayerDismissed &&
+            effectiveAnchorRoute != Screen.Search.route
+    val effectiveShowBottomNav = remember(effectiveAnchorRoute, floatingNavigationBar) {
+        if (floatingNavigationBar) {
+            effectiveAnchorRoute == Screen.Home.route || effectiveIsLibraryRoute
+        } else {
+            effectiveAnchorRoute == Screen.Home.route ||
+                effectiveIsLibraryRoute ||
+                effectiveAnchorRoute == Screen.Settings.route
+        }
+    }
     
     val systemNavBarPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     val miniPlayerBottomPadding by animateDpAsState(
@@ -649,22 +671,22 @@ fun LocalNavigation(
             val miniPlayerHeight = if (miniPlayerThemeId == "EXPRESSIVE") 84.dp else 96.dp
             val bottomNavigationHeight = if (floatingNavigationBar) MusicDimensions.bottomNavigationHeight else 80.dp
             val basePadding = when {
-                showBottomNav && showMiniPlayer -> {
+                effectiveShowBottomNav && effectiveShowMiniPlayer -> {
                     if (floatingNavigationBar) {
                         bottomNavigationHeight + 16.dp + miniPlayerHeight + 16.dp
                     } else {
                         bottomNavigationHeight + miniPlayerHeight + 16.dp
                     }
                 }
-                showBottomNav -> {
+                effectiveShowBottomNav -> {
                     if (floatingNavigationBar) bottomNavigationHeight + 16.dp else bottomNavigationHeight
                 }
-                showMiniPlayer -> miniPlayerHeight + 16.dp
+                effectiveShowMiniPlayer -> miniPlayerHeight + 16.dp
                 else -> 0.dp
             }
             basePadding + systemNavBarPadding
         } else {
-            if (showMiniPlayer) {
+            if (effectiveShowMiniPlayer) {
                 val miniPlayerHeight = if (miniPlayerThemeId == "EXPRESSIVE") 84.dp else 96.dp
                 miniPlayerHeight + 16.dp + systemNavBarPadding
             } else {
@@ -738,6 +760,9 @@ fun LocalNavigation(
                     },
                     showMiniPlayer = showMiniPlayer,
                     showBottomNav = false,
+                    effectiveAnchorRoute = effectiveAnchorRoute,
+                    effectiveShowMiniPlayer = effectiveShowMiniPlayer,
+                    effectiveShowBottomNav = false,
                     isTablet = true,
                     startDestination = startDestination,
                     songs = songs,
@@ -842,6 +867,9 @@ fun LocalNavigation(
                 },
                 showMiniPlayer = showMiniPlayer,
                 showBottomNav = showBottomNav,
+                effectiveAnchorRoute = effectiveAnchorRoute,
+                effectiveShowMiniPlayer = effectiveShowMiniPlayer,
+                effectiveShowBottomNav = effectiveShowBottomNav,
                 isTablet = false,
                 startDestination = startDestination,
                 songs = songs,
@@ -921,6 +949,9 @@ private fun LocalNavigationContent(
     onMiniPlayerDismiss: () -> Unit,
     showMiniPlayer: Boolean,
     showBottomNav: Boolean,
+    effectiveAnchorRoute: String,
+    effectiveShowMiniPlayer: Boolean,
+    effectiveShowBottomNav: Boolean,
     isTablet: Boolean,
     startDestination: String,
     songs: List<chromahub.rhythm.app.shared.data.model.Song>,
@@ -1263,8 +1294,8 @@ private fun LocalNavigationContent(
             val systemNavBarPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
             val miniPlayerBottomOffset by animateDpAsState(
                 targetValue = when {
-                    showBottomNav -> MusicDimensions.bottomNavigationHeight + 12.dp + systemNavBarPadding
-                    currentRoute == Screen.Search.route -> 88.dp + systemNavBarPadding
+                    effectiveShowBottomNav -> MusicDimensions.bottomNavigationHeight + 12.dp + systemNavBarPadding
+                    effectiveAnchorRoute == Screen.Search.route -> 88.dp + systemNavBarPadding
                     else -> 8.dp + systemNavBarPadding
                 },
                 animationSpec = spring(
@@ -1277,9 +1308,9 @@ private fun LocalNavigationContent(
             val miniPlayerHeight = if (miniPlayerThemeId == "EXPRESSIVE") 84.dp else 110.dp
             val gradientHeight by animateDpAsState(
                 targetValue = when {
-                    showBottomNav && showMiniPlayer -> MusicDimensions.bottomNavigationHeight + 16.dp + miniPlayerHeight + 32.dp
-                    showBottomNav -> MusicDimensions.bottomNavigationHeight + 32.dp
-                    showMiniPlayer -> miniPlayerHeight + 32.dp
+                    effectiveShowBottomNav && effectiveShowMiniPlayer -> MusicDimensions.bottomNavigationHeight + 16.dp + miniPlayerHeight + 32.dp
+                    effectiveShowBottomNav -> MusicDimensions.bottomNavigationHeight + 32.dp
+                    effectiveShowMiniPlayer -> miniPlayerHeight + 32.dp
                     else -> 0.dp
                 },
                 animationSpec = spring(
@@ -1989,6 +2020,9 @@ private fun LocalNavigationContent(
                     },
                     exitTransition = {
                         when {
+                            targetState.destination.route == Screen.Player.route -> {
+                                ExitTransition.None
+                            }
                             targetState.destination.route?.startsWith("library") == true -> {
                                 // Horizontal slide animation when going to Library
                                 fadeOut(animationSpec = tween(300)) +
@@ -2006,6 +2040,9 @@ private fun LocalNavigationContent(
                     },
                     popEnterTransition = {
                         when {
+                            initialState.destination.route == Screen.Player.route -> {
+                                EnterTransition.None
+                            }
                             initialState.destination.route?.startsWith("library") == true -> {
                                 // Restore horizontal slide animation when popping back from Library
                                 fadeIn(animationSpec = tween(300)) +
@@ -2205,7 +2242,18 @@ private fun LocalNavigationContent(
                                 )
                     },
                     exitTransition = {
-                        fadeOut(animationSpec = tween(300))
+                        if (targetState.destination.route == Screen.Player.route) {
+                            ExitTransition.None
+                        } else {
+                            fadeOut(animationSpec = tween(300))
+                        }
+                    },
+                    popEnterTransition = {
+                        if (initialState.destination.route == Screen.Player.route) {
+                            EnterTransition.None
+                        } else {
+                            fadeIn(animationSpec = tween(200))
+                        }
                     },
                     popExitTransition = {
                         fadeOut(animationSpec = tween(300)) +
@@ -2265,7 +2313,18 @@ private fun LocalNavigationContent(
                                 )
                     },
                     exitTransition = {
-                        fadeOut(animationSpec = tween(300))
+                        if (targetState.destination.route == Screen.Player.route) {
+                            ExitTransition.None
+                        } else {
+                            fadeOut(animationSpec = tween(300))
+                        }
+                    },
+                    popEnterTransition = {
+                        if (initialState.destination.route == Screen.Player.route) {
+                            EnterTransition.None
+                        } else {
+                            fadeIn(animationSpec = tween(200))
+                        }
                     },
                     popExitTransition = {
                         fadeOut(animationSpec = tween(300)) +
@@ -2392,7 +2451,18 @@ private fun LocalNavigationContent(
                                 )
                     },
                     exitTransition = {
-                        fadeOut(animationSpec = tween(300))
+                        if (targetState.destination.route == Screen.Player.route) {
+                            ExitTransition.None
+                        } else {
+                            fadeOut(animationSpec = tween(300))
+                        }
+                    },
+                    popEnterTransition = {
+                        if (initialState.destination.route == Screen.Player.route) {
+                            EnterTransition.None
+                        } else {
+                            fadeIn(animationSpec = tween(200))
+                        }
                     },
                     popExitTransition = {
                         fadeOut(animationSpec = tween(300)) +
@@ -2417,7 +2487,18 @@ private fun LocalNavigationContent(
                                 )
                     },
                     exitTransition = {
-                        fadeOut(animationSpec = tween(300))
+                        if (targetState.destination.route == Screen.Player.route) {
+                            ExitTransition.None
+                        } else {
+                            fadeOut(animationSpec = tween(300))
+                        }
+                    },
+                    popEnterTransition = {
+                        if (initialState.destination.route == Screen.Player.route) {
+                            EnterTransition.None
+                        } else {
+                            fadeIn(animationSpec = tween(200))
+                        }
                     },
                     popExitTransition = {
                         fadeOut(animationSpec = tween(300)) +
@@ -2560,7 +2641,18 @@ private fun LocalNavigationContent(
                                 )
                     },
                     exitTransition = {
-                        fadeOut(animationSpec = tween(300))
+                        if (targetState.destination.route == Screen.Player.route) {
+                            ExitTransition.None
+                        } else {
+                            fadeOut(animationSpec = tween(300))
+                        }
+                    },
+                    popEnterTransition = {
+                        if (initialState.destination.route == Screen.Player.route) {
+                            EnterTransition.None
+                        } else {
+                            fadeIn(animationSpec = tween(200))
+                        }
                     },
                     popExitTransition = {
                         fadeOut(animationSpec = tween(300)) +
@@ -2585,7 +2677,18 @@ private fun LocalNavigationContent(
                                 )
                     },
                     exitTransition = {
-                        fadeOut(animationSpec = tween(300))
+                        if (targetState.destination.route == Screen.Player.route) {
+                            ExitTransition.None
+                        } else {
+                            fadeOut(animationSpec = tween(300))
+                        }
+                    },
+                    popEnterTransition = {
+                        if (initialState.destination.route == Screen.Player.route) {
+                            EnterTransition.None
+                        } else {
+                            fadeIn(animationSpec = tween(200))
+                        }
                     },
                     popExitTransition = {
                         fadeOut(animationSpec = tween(300)) +
@@ -2610,7 +2713,18 @@ private fun LocalNavigationContent(
                                 )
                     },
                     exitTransition = {
-                        fadeOut(animationSpec = tween(300))
+                        if (targetState.destination.route == Screen.Player.route) {
+                            ExitTransition.None
+                        } else {
+                            fadeOut(animationSpec = tween(300))
+                        }
+                    },
+                    popEnterTransition = {
+                        if (initialState.destination.route == Screen.Player.route) {
+                            EnterTransition.None
+                        } else {
+                            fadeIn(animationSpec = tween(200))
+                        }
                     },
                     popExitTransition = {
                         fadeOut(animationSpec = tween(300)) +
@@ -2639,7 +2753,18 @@ private fun LocalNavigationContent(
                             )
                     },
                     exitTransition = {
-                        fadeOut(animationSpec = tween(300))
+                        if (targetState.destination.route == Screen.Player.route) {
+                            ExitTransition.None
+                        } else {
+                            fadeOut(animationSpec = tween(300))
+                        }
+                    },
+                    popEnterTransition = {
+                        if (initialState.destination.route == Screen.Player.route) {
+                            EnterTransition.None
+                        } else {
+                            fadeIn(animationSpec = tween(200))
+                        }
                     },
                     popExitTransition = {
                         fadeOut(animationSpec = tween(300)) +
@@ -2910,7 +3035,18 @@ private fun LocalNavigationContent(
                             )
                     },
                     exitTransition = {
-                        fadeOut(animationSpec = tween(300))
+                        if (targetState.destination.route == Screen.Player.route) {
+                            ExitTransition.None
+                        } else {
+                            fadeOut(animationSpec = tween(300))
+                        }
+                    },
+                    popEnterTransition = {
+                        if (initialState.destination.route == Screen.Player.route) {
+                            EnterTransition.None
+                        } else {
+                            fadeIn(animationSpec = tween(200))
+                        }
                     },
                     popExitTransition = {
                         fadeOut(animationSpec = tween(300)) +
@@ -3474,7 +3610,18 @@ private fun LocalNavigationContent(
                             )
                     },
                     exitTransition = {
-                        fadeOut(animationSpec = tween(300))
+                        if (targetState.destination.route == Screen.Player.route) {
+                            ExitTransition.None
+                        } else {
+                            fadeOut(animationSpec = tween(300))
+                        }
+                    },
+                    popEnterTransition = {
+                        if (initialState.destination.route == Screen.Player.route) {
+                            EnterTransition.None
+                        } else {
+                            fadeIn(animationSpec = tween(200))
+                        }
                     },
                     popExitTransition = {
                         fadeOut(animationSpec = tween(300))
@@ -3503,7 +3650,18 @@ private fun LocalNavigationContent(
                             )
                     },
                     exitTransition = {
-                        fadeOut(animationSpec = tween(300))
+                        if (targetState.destination.route == Screen.Player.route) {
+                            ExitTransition.None
+                        } else {
+                            fadeOut(animationSpec = tween(300))
+                        }
+                    },
+                    popEnterTransition = {
+                        if (initialState.destination.route == Screen.Player.route) {
+                            EnterTransition.None
+                        } else {
+                            fadeIn(animationSpec = tween(200))
+                        }
                     },
                     popExitTransition = {
                         fadeOut(animationSpec = tween(300))
@@ -3552,6 +3710,9 @@ private fun LocalNavigationContent(
                     },
                     exitTransition = {
                         when (targetState.destination.route) {
+                            Screen.Player.route -> {
+                                ExitTransition.None
+                            }
                             Screen.Home.route -> {
                                 // Horizontal slide animation when going to Home
                                 fadeOut(animationSpec = tween(300)) +
@@ -3569,6 +3730,9 @@ private fun LocalNavigationContent(
                     },
                     popEnterTransition = {
                         when (initialState.destination.route) {
+                            Screen.Player.route -> {
+                                EnterTransition.None
+                            }
                             Screen.Home.route -> {
                                 // Restore horizontal slide animation when popping back from Home
                                 fadeIn(animationSpec = tween(300)) +
@@ -4068,7 +4232,18 @@ private fun LocalNavigationContent(
                                 )
                     },
                     exitTransition = {
-                        fadeOut(animationSpec = tween(300))
+                        if (targetState.destination.route == Screen.Player.route) {
+                            ExitTransition.None
+                        } else {
+                            fadeOut(animationSpec = tween(300))
+                        }
+                    },
+                    popEnterTransition = {
+                        if (initialState.destination.route == Screen.Player.route) {
+                            EnterTransition.None
+                        } else {
+                            fadeIn(animationSpec = tween(200))
+                        }
                     },
                     popExitTransition = {
                         fadeOut(animationSpec = tween(300)) +
@@ -4305,7 +4480,18 @@ private fun LocalNavigationContent(
                                 )
                     },
                     exitTransition = {
-                        fadeOut(animationSpec = tween(300))
+                        if (targetState.destination.route == Screen.Player.route) {
+                            ExitTransition.None
+                        } else {
+                            fadeOut(animationSpec = tween(300))
+                        }
+                    },
+                    popEnterTransition = {
+                        if (initialState.destination.route == Screen.Player.route) {
+                            EnterTransition.None
+                        } else {
+                            fadeIn(animationSpec = tween(200))
+                        }
                     },
                     popExitTransition = {
                         fadeOut(animationSpec = tween(300)) +
@@ -4574,7 +4760,18 @@ private fun LocalNavigationContent(
                                 )
                     },
                     exitTransition = {
-                        fadeOut(animationSpec = tween(300))
+                        if (targetState.destination.route == Screen.Player.route) {
+                            ExitTransition.None
+                        } else {
+                            fadeOut(animationSpec = tween(300))
+                        }
+                    },
+                    popEnterTransition = {
+                        if (initialState.destination.route == Screen.Player.route) {
+                            EnterTransition.None
+                        } else {
+                            fadeIn(animationSpec = tween(200))
+                        }
                     },
                     popExitTransition = {
                         fadeOut(animationSpec = tween(300)) +

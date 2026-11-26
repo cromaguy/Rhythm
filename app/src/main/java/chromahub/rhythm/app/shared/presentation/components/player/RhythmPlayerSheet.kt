@@ -138,12 +138,17 @@ fun RhythmPlayerSheet(
         }
         var isDraggingSheet by remember { mutableStateOf(false) }
 
-        LaunchedEffect(isExpanded, collapsedOffset, isDraggingSheet) {
+        LaunchedEffect(isExpanded, isDraggingSheet) {
             if (!isDraggingSheet) {
                 offsetAnim.animateTo(
                     targetValue = targetOffset,
                     animationSpec = motionConfig.spatialSpring
                 )
+            }
+        }
+        LaunchedEffect(collapsedOffset) {
+            if (!isExpanded && !isDraggingSheet && !offsetAnim.isRunning) {
+                offsetAnim.snapTo(collapsedOffset)
             }
         }
 
