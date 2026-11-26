@@ -134,14 +134,17 @@ class UiPreferencesStore(prefs: SharedPreferences) : PreferenceStoreBase(prefs) 
     private val _agslFluidBackdropEnabled = BooleanPref("agsl_fluid_backdrop_enabled", true)
     private val _karaokeCanvasEnabled = BooleanPref("karaoke_canvas_enabled", true)
     private val _instrumentalBreakThresholdMs = LongPref("instrumental_break_threshold_ms", 8000L)
+    private val _statusBarTickerEnabled = BooleanPref("status_bar_ticker_lyrics_enabled", false)
 
     val agslFluidBackdropEnabled = _agslFluidBackdropEnabled.state
     val karaokeCanvasEnabled = _karaokeCanvasEnabled.state
     val instrumentalBreakThresholdMs = _instrumentalBreakThresholdMs.state
+    val statusBarTickerEnabled = _statusBarTickerEnabled.state
 
     fun setAgslFluidBackdropEnabled(enabled: Boolean) = _agslFluidBackdropEnabled.set(enabled)
     fun setKaraokeCanvasEnabled(enabled: Boolean) = _karaokeCanvasEnabled.set(enabled)
     fun setInstrumentalBreakThresholdMs(ms: Long) = _instrumentalBreakThresholdMs.set(ms.coerceIn(3000L, 30000L))
+    fun setStatusBarTickerEnabled(enabled: Boolean) = _statusBarTickerEnabled.set(enabled)
 }
 
 class LibraryPreferencesStore(prefs: SharedPreferences) : PreferenceStoreBase(prefs) {

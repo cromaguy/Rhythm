@@ -387,6 +387,7 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
     
     // Status broadcaster for Tasker, KWGT, and other automation apps
     private lateinit var statusBroadcaster: chromahub.rhythm.app.utils.StatusBroadcaster
+    private var statusBarLyricController: StatusBarLyricController? = null
     
     // SharedPreferences keys
     companion object {
@@ -593,6 +594,7 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
         
         // Initialize status broadcaster for Tasker/KWGT
         statusBroadcaster = chromahub.rhythm.app.utils.StatusBroadcaster(applicationContext)
+        statusBarLyricController = StatusBarLyricController(applicationContext, CHANNEL_ID)
 
         // Register BroadcastReceiver for favorite changes
         androidx.core.content.ContextCompat.registerReceiver(
@@ -1119,6 +1121,9 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
             
             override fun onIsPlayingChanged(isPlaying: Boolean) {
                 musicHapticsController?.isPlaybackActive = isPlaying
+                if (!isPlaying) {
+                    statusBarLyricController?.clear()
+                }
                 
                 // Broadcast status for Tasker/KWGT/automation apps
                 if (appSettings.broadcastStatusEnabled.value) {
@@ -2655,6 +2660,12 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
                         
                         // Update widgets
                         chromahub.rhythm.app.infrastructure.widget.glance.GlanceWidgetUpdater.updateLyrics(this@MediaPlaybackService, getProcessedLyricTexts(), lyricIndex)
+
+                        statusBarLyricController?.updateLyric(
+                            line = lyricLine,
+                            enabled = appSettings.uiPrefs.statusBarTickerEnabled.value,
+                            isPlaying = player.isPlaying
+                        )
                         
                         // Update Bluetooth metadata lyrics
                         if (appSettings.bluetoothLyricsEnabled.value) {
@@ -4134,6 +4145,8 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
             rhythmParametricEqProcessor = null
             musicHapticsController?.release()
             musicHapticsController = null
+            statusBarLyricController?.clear()
+            statusBarLyricController = null
             
             Log.d(TAG, "Audio effects released")
         } catch (e: Exception) {

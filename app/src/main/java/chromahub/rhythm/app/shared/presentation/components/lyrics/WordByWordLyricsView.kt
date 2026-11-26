@@ -47,8 +47,66 @@ import kotlin.math.abs
  * Represents either a lyrics line or a gap indicator
  */
 sealed class LyricsItem {
-    data class LyricLine(val line: WordByWordLyricLine, val index: Int) : LyricsItem()
+    data class LyricLine(
+        val line: WordByWordLyricLine,
+        val index: Int,
+        val backgroundLines: List<Pair<Int, WordByWordLyricLine>> = emptyList()
+    ) : LyricsItem()
     data class Gap(val duration: Long, val startTime: Long) : LyricsItem()
+}
+
+internal fun buildGroupedWordByWordItems(
+    visibleLyricsLines: List<WordByWordLyricLine>
+): List<LyricsItem> {
+    val vocalLines = visibleLyricsLines.mapIndexedNotNull { i, line ->
+        if (line.words.any { it.text.isNotBlank() }) i to line else null
+    }
+    if (vocalLines.isEmpty()) return emptyList()
+
+    val intervals = vocalLines.zipWithNext { (_, a), (_, b) -> (b.lineTimestamp - a.lineTimestamp).coerceAtLeast(0L) }
+        .filter { it > 0L }
+    val medianInterval = if (intervals.isNotEmpty()) {
+        val sorted = intervals.sorted()
+        sorted[sorted.size / 2]
+    } else {
+        2000L
+    }
+    val longGapThreshold = maxOf(5200L, (medianInterval * 2.4f).toLong())
+
+    // Nest backing vocal lines directly under their lead line so they do not hijack vertical scroll focus.
+    val grouped = mutableListOf<LyricsItem.LyricLine>()
+    vocalLines.forEach { (origIdx, line) ->
+        if (line.background && grouped.isNotEmpty()) {
+            val prev = grouped.removeAt(grouped.lastIndex)
+            grouped.add(prev.copy(backgroundLines = prev.backgroundLines + (origIdx to line)))
+        } else {
+            grouped.add(LyricsItem.LyricLine(line = line, index = origIdx))
+        }
+    }
+
+    val items = mutableListOf<LyricsItem>()
+    grouped.forEachIndexed { idx, group ->
+        items.add(group)
+        if (idx < grouped.size - 1) {
+            val nextGroup = grouped[idx + 1]
+            val groupEndMs = maxOf(
+                group.line.effectiveLineEndtime(),
+                group.backgroundLines.maxOfOrNull { it.second.effectiveLineEndtime() } ?: 0L
+            )
+            val gapDuration = nextGroup.line.lineTimestamp - groupEndMs
+            val isExplicit = !group.line.endIsImplicit
+            val shouldAddGap = if (isExplicit) {
+                gapDuration >= 4500L
+            } else {
+                val intervalToNext = nextGroup.line.lineTimestamp - group.line.lineTimestamp
+                intervalToNext >= longGapThreshold && gapDuration >= 3500L
+            }
+            if (shouldAddGap) {
+                items.add(LyricsItem.Gap(gapDuration, groupEndMs))
+            }
+        }
+    }
+    return items
 }
 
 private const val LARGE_SCROLL_CATCH_UP_DELTA = 8
@@ -164,43 +222,9 @@ fun WordByWordLyricsView(
         parsedLyrics
     }
 
-    // Create items list with gaps for instrumental sections
+    // Create items list with nested backing vocals and gaps for instrumental sections
     val lyricsItems = remember(visibleLyricsLines) {
-        val vocalLines = visibleLyricsLines.mapIndexedNotNull { i, line ->
-            if (line.words.any { it.text.isNotBlank() }) i to line else null
-        }
-
-        val intervals = vocalLines.zipWithNext { (_, a), (_, b) -> (b.lineTimestamp - a.lineTimestamp).coerceAtLeast(0L) }
-            .filter { it > 0L }
-        val medianInterval = if (intervals.isNotEmpty()) {
-            val sorted = intervals.sorted()
-            sorted[sorted.size / 2]
-        } else {
-            2000L
-        }
-        val longGapThreshold = maxOf(5200L, (medianInterval * 2.4f).toLong())
-
-        val items = mutableListOf<LyricsItem>()
-        vocalLines.forEachIndexed { idx, (origIdx, line) ->
-            items.add(LyricsItem.LyricLine(line, origIdx))
-            
-            // Check for gap to next line
-            if (idx < vocalLines.size - 1) {
-                val nextLine = vocalLines[idx + 1].second
-                val gapDuration = nextLine.lineTimestamp - line.effectiveLineEndtime()
-                val isExplicit = !line.endIsImplicit
-                val shouldAddGap = if (isExplicit) {
-                    gapDuration >= 4500L
-                } else {
-                    val intervalToNext = nextLine.lineTimestamp - line.lineTimestamp
-                    intervalToNext >= longGapThreshold && gapDuration >= 3500L
-                }
-                if (shouldAddGap) {
-                    items.add(LyricsItem.Gap(gapDuration, line.effectiveLineEndtime()))
-                }
-            }
-        }
-        items
+        buildGroupedWordByWordItems(visibleLyricsLines)
     }
 
     // Detect if playback is currently in an instrumental gap
@@ -285,9 +309,12 @@ fun WordByWordLyricsView(
 
             if (!userScrolledRecently) {
                 previousLineIndex.intValue = currentLineIndex
-                // Find the corresponding item index in lyricsItems
+                // Find the corresponding lead item index (including nested backing harmonies)
                 val targetItemIndex = lyricsItems.indexOfFirst { item ->
-                    item is LyricsItem.LyricLine && item.index == currentLineIndex
+                    item is LyricsItem.LyricLine && (
+                        item.index == currentLineIndex ||
+                            item.backgroundLines.any { it.first == currentLineIndex }
+                        )
                 }
 
                 if (targetItemIndex >= 0 && lyricsItems.isNotEmpty()) {
@@ -367,50 +394,66 @@ fun WordByWordLyricsView(
                     is LyricsItem.LyricLine -> {
                         val line = item.line
                         val index = item.index
-                        val isCurrentLine = currentLineIndex == index
+                        val isBackgroundActive = item.backgroundLines.any { it.first == currentLineIndex }
+                        val isCurrentLine = currentLineIndex == index || isBackgroundActive
                         val isUpcomingLine = index > currentLineIndex
                         val linesAhead = index - currentLineIndex
-                        
                         val distanceFromCurrent = abs(index - currentLineIndex)
-                        
-                        // Active word index calculation
-                        val activeWordIndex = if (isCurrentLine) {
-                            val exactActive = line.words.indexOfLast { word ->
-                                adjustedPlaybackTime >= word.timestamp && adjustedPlaybackTime <= word.endtime
-                            }
 
-                            if (exactActive >= 0) {
-                                exactActive
-                            } else {
-                                line.words.indexOfLast { word ->
-                                    adjustedPlaybackTime >= word.timestamp
-                                }
-                            }
-                        } else {
-                            -1
-                        }
-
-                        WordByWordLyricLineItem(
+                        val activeWordIndex = computeActiveWordIndex(
                             line = line,
-                            index = index,
-                            isCurrentLine = isCurrentLine,
-                            isUpcomingLine = isUpcomingLine,
-                            linesAhead = linesAhead,
-                            distanceFromCurrent = distanceFromCurrent,
-                            activeWordIndex = activeWordIndex,
-                            adjustedPlaybackTime = adjustedPlaybackTime,
-                            textSizeMultiplier = textSizeMultiplier,
-                            textAlignment = textAlignment,
-                            showTranslation = showTranslation,
-                            showRomanization = showRomanization,
-                            onSeek = handleSeek,
-                            onTapLyricsView = onTapLyricsView,
-                            lyricBold = lyricBoldVal,
-                            noAnimation = lyricNoAnimationVal,
-                            textColor = textColor,
-                            activeColor = activeColor,
-                            subtitleColor = subtitleColor
+                            isActive = currentLineIndex == index,
+                            adjustedPlaybackTime = adjustedPlaybackTime
                         )
+
+                        Column(modifier = Modifier.fillMaxWidth()) {
+                            WordByWordLyricLineItem(
+                                line = line,
+                                index = index,
+                                isCurrentLine = currentLineIndex == index,
+                                isUpcomingLine = isUpcomingLine,
+                                linesAhead = linesAhead,
+                                distanceFromCurrent = if (isCurrentLine) 0 else distanceFromCurrent,
+                                activeWordIndex = activeWordIndex,
+                                adjustedPlaybackTime = adjustedPlaybackTime,
+                                textSizeMultiplier = textSizeMultiplier,
+                                textAlignment = textAlignment,
+                                showTranslation = showTranslation,
+                                showRomanization = showRomanization,
+                                onSeek = handleSeek,
+                                onTapLyricsView = onTapLyricsView,
+                                lyricBold = lyricBoldVal,
+                                noAnimation = lyricNoAnimationVal,
+                                textColor = textColor,
+                                activeColor = activeColor,
+                                subtitleColor = subtitleColor
+                            )
+                            item.backgroundLines.forEach { (bgIdx, bgLine) ->
+                                val bgActive = currentLineIndex == bgIdx ||
+                                    (adjustedPlaybackTime >= bgLine.lineTimestamp && adjustedPlaybackTime <= bgLine.effectiveLineEndtime())
+                                WordByWordLyricLineItem(
+                                    line = bgLine,
+                                    index = bgIdx,
+                                    isCurrentLine = bgActive,
+                                    isUpcomingLine = bgIdx > currentLineIndex,
+                                    linesAhead = bgIdx - currentLineIndex,
+                                    distanceFromCurrent = if (bgActive || isCurrentLine) 0 else abs(bgIdx - currentLineIndex),
+                                    activeWordIndex = computeActiveWordIndex(bgLine, bgActive, adjustedPlaybackTime),
+                                    adjustedPlaybackTime = adjustedPlaybackTime,
+                                    textSizeMultiplier = textSizeMultiplier,
+                                    textAlignment = textAlignment,
+                                    showTranslation = showTranslation,
+                                    showRomanization = showRomanization,
+                                    onSeek = handleSeek,
+                                    onTapLyricsView = onTapLyricsView,
+                                    lyricBold = lyricBoldVal,
+                                    noAnimation = lyricNoAnimationVal,
+                                    textColor = textColor,
+                                    activeColor = activeColor,
+                                    subtitleColor = subtitleColor
+                                )
+                            }
+                        }
                     }
                     is LyricsItem.Gap -> {
                         InstrumentalBreakIndicator(
@@ -633,6 +676,22 @@ private fun WordByWordLyricLineItem(
                 modifier = Modifier.fillMaxWidth()
             )
         }
+    }
+}
+
+private fun computeActiveWordIndex(
+    line: WordByWordLyricLine,
+    isActive: Boolean,
+    adjustedPlaybackTime: Long
+): Int {
+    if (!isActive) return -1
+    val exactActive = line.words.indexOfLast { word ->
+        adjustedPlaybackTime >= word.timestamp && adjustedPlaybackTime <= word.endtime
+    }
+    return if (exactActive >= 0) {
+        exactActive
+    } else {
+        line.words.indexOfLast { word -> adjustedPlaybackTime >= word.timestamp }
     }
 }
 

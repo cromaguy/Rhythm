@@ -5,6 +5,9 @@
 
 package chromahub.rhythm.app.util
 
+import chromahub.rhythm.app.infrastructure.service.StatusBarLyricController
+import chromahub.rhythm.app.shared.presentation.components.lyrics.LyricsItem
+import chromahub.rhythm.app.shared.presentation.components.lyrics.buildGroupedWordByWordItems
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -190,5 +193,49 @@ class LyricsEnhancementsTest {
         out.write((v ushr 14) and 0x7F)
         out.write((v ushr 7) and 0x7F)
         out.write(v and 0x7F)
+    }
+
+    @Test
+    fun wordByWordGroupingNestsBackingVocalsWithoutAddingExtraScrollItems() {
+        val lines = listOf(
+            WordByWordLyricLine(
+                words = listOf(WordByWordWord("Lead line", false, 1000L, 3000L)),
+                lineTimestamp = 1000L,
+                lineEndtime = 3000L,
+                background = false
+            ),
+            WordByWordLyricLine(
+                words = listOf(WordByWordWord("(Backing ooh)", false, 2000L, 3500L)),
+                lineTimestamp = 2000L,
+                lineEndtime = 3500L,
+                background = true
+            ),
+            WordByWordLyricLine(
+                words = listOf(WordByWordWord("Next lead", false, 4000L, 6000L)),
+                lineTimestamp = 4000L,
+                lineEndtime = 6000L,
+                background = false
+            )
+        )
+
+        val grouped = buildGroupedWordByWordItems(lines)
+        assertEquals(2, grouped.size)
+        val first = grouped[0] as LyricsItem.LyricLine
+        assertEquals(0, first.index)
+        assertEquals(1, first.backgroundLines.size)
+        assertEquals(1, first.backgroundLines[0].first)
+        assertEquals(2, (grouped[1] as LyricsItem.LyricLine).index)
+    }
+
+    @Test
+    fun statusBarTickerControllerAppliesOemFlagsAndThrottlesDuplicates() {
+        val flags = StatusBarLyricController.applyTickerFlags(0)
+        assertTrue((flags and StatusBarLyricController.FLAG_ALWAYS_SHOW_TICKER) != 0)
+        assertTrue((flags and StatusBarLyricController.FLAG_ONLY_UPDATE_TICKER) != 0)
+
+        assertFalse(StatusBarLyricController.shouldEmitUpdate("   ", null, 1000L, 0L))
+        assertFalse(StatusBarLyricController.shouldEmitUpdate("Same line", "Same line", 1000L, 0L))
+        assertFalse(StatusBarLyricController.shouldEmitUpdate("New line", "Old", 500L, 300L))
+        assertTrue(StatusBarLyricController.shouldEmitUpdate("New line", "Old", 1000L, 300L))
     }
 }

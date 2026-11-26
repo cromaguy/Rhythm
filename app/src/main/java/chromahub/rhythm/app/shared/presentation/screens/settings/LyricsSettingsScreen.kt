@@ -176,6 +176,7 @@ fun LyricsSettingsScreen(onBackClick: () -> Unit) {
     val lyricsSourcePreference by appSettings.lyricsSourcePreference.collectAsState()
     val bluetoothLyricsEnabled by appSettings.bluetoothLyricsEnabled.collectAsState()
     val broadcastStatusEnabled by appSettings.broadcastStatusEnabled.collectAsState()
+    val statusBarTickerEnabled by appSettings.uiPrefs.statusBarTickerEnabled.collectAsState()
     var showPriorityBottomSheet by remember { mutableStateOf(false) }
     var showLrcRenameBottomSheet by remember { mutableStateOf(false) }
 
@@ -802,6 +803,17 @@ fun LyricsSettingsScreen(onBackClick: () -> Unit) {
                                         appSettings.setBroadcastStatusEnabled(true)
                                     }
                                 }
+                            )
+                        ),
+                        toMaterial3SettingsItem(
+                            context = context,
+                            hapticFeedback = hapticFeedback,
+                            item = SettingItem(
+                                icon = MaterialSymbolIcon("subtitles"),
+                                title = "Status-Bar Ticker Lyrics (OEM)",
+                                description = "Display live lyric line in the system status bar on Flyme, HyperOS, or compatible OEM ROMs",
+                                toggleState = statusBarTickerEnabled,
+                                onToggleChange = { appSettings.uiPrefs.setStatusBarTickerEnabled(it) }
                             )
                         )
                     ),
