@@ -46,4 +46,6 @@ data class TransitionSettings(
     val curveOut: Curve = Curve.EQUAL_POWER,
     val isManualSkip: Boolean = false,
     val isSkipPrevious: Boolean = false,
+    val tempoRatio: Float = 1.0f,
+    val useBassSwap: Boolean = false
 )

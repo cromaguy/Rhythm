@@ -87,6 +87,8 @@ fun PlaybackSettingsScreen(
     val alacDecoderEnabled by appSettings.playbackPrefs.alacDecoderEnabled.collectAsState()
     val surroundDownmixEnabled by appSettings.playbackPrefs.surroundDownmixEnabled.collectAsState()
     val sampleRateCapHz by appSettings.playbackPrefs.sampleRateCapHz.collectAsState()
+    val musicHapticsEnabled by appSettings.playbackPrefs.musicHapticsEnabled.collectAsState()
+    val musicHapticsIntensity by appSettings.playbackPrefs.musicHapticsIntensity.collectAsState()
 
     CollapsibleHeaderScreen(
         title = context.getString(R.string.settings_playback_title),
@@ -274,6 +276,28 @@ fun PlaybackSettingsScreen(
                             }
                             appSettings.playbackPrefs.setSampleRateCapHz(next)
                         },
+                        enabled = !isBitPerfect
+                    ),
+                    SettingItem(
+                        icon = MaterialSymbolIcon("vibration", filled = true),
+                        title = "Beat-Sync Music Haptics",
+                        description = if (isBitPerfect) {
+                            context.getString(R.string.audio_routing_bit_perfect_disabled_effect)
+                        } else {
+                            "Pulse gentle vibration synced to bass kicks and vocals (Intensity: ${(musicHapticsIntensity * 100).toInt()}%)"
+                        },
+                        toggleState = musicHapticsEnabled && !isBitPerfect,
+                        onToggleChange = { appSettings.playbackPrefs.setMusicHapticsEnabled(it) },
+                        onClick = if (musicHapticsEnabled && !isBitPerfect) {
+                            {
+                                val next = when {
+                                    musicHapticsIntensity < 0.55f -> 0.7f
+                                    musicHapticsIntensity < 0.85f -> 1.0f
+                                    else -> 0.4f
+                                }
+                                appSettings.playbackPrefs.setMusicHapticsIntensity(next)
+                            }
+                        } else null,
                         enabled = !isBitPerfect
                     ),
                     SettingItem(

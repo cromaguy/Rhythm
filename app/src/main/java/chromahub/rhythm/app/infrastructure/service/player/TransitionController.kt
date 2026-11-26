@@ -5,6 +5,7 @@
 
 package chromahub.rhythm.app.infrastructure.service.player
 
+import android.content.Context
 import android.util.Log
 import androidx.annotation.OptIn
 import androidx.media3.common.C
@@ -12,7 +13,12 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.common.Timeline
 import androidx.media3.common.util.UnstableApi
+import chromahub.rhythm.app.features.local.data.database.RhythmDatabase
+import chromahub.rhythm.app.infrastructure.service.player.automix.SmartMixInput
+import chromahub.rhythm.app.infrastructure.service.player.automix.SmartTransitionPlanner
+import chromahub.rhythm.app.infrastructure.service.player.automix.TagBpmReader
 import chromahub.rhythm.app.shared.data.model.AppSettings
+import chromahub.rhythm.app.shared.data.model.Curve
 import chromahub.rhythm.app.shared.data.model.TransitionMode
 import chromahub.rhythm.app.shared.data.model.TransitionSettings
 import kotlinx.coroutines.CoroutineScope
@@ -23,20 +29,18 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
- * Orchestrates crossfade transitions by monitoring the master player's playback position
- * and firing transitions at the right moment via [RhythmPlayerEngine].
- *
- * Listens for media item transitions, play/pause changes, timeline changes, and repeat mode
- * changes to schedule or cancel transitions dynamically.
- *
- * Uses global crossfade settings from [AppSettings] (no per-playlist rules in Rhythm).
+ * Orchestrates gapless / crossfade / two-tier Smart AutoMix transitions by monitoring playback
+ * position, resolving global/per-playlist transition rules and BPM/Camelot metadata off the main
+ * thread, and triggering [RhythmPlayerEngine] with smooth bass-swap & tempo lock.
  */
 @OptIn(UnstableApi::class)
 class TransitionController(
     private val engine: RhythmPlayerEngine,
     private val appSettings: AppSettings,
+    private val context: Context? = null
 ) {
     companion object {
         private const val TAG = "TransitionController"
@@ -409,6 +413,20 @@ class TransitionController(
 
             if (!isActive || !isLatestSchedule(generation, expectedMediaId, player)) return@launch
 
+            val smartPlan = resolveSmartMixPlan(
+                outgoingItem = currentMediaItem,
+                incomingItem = nextMediaItem,
+                outgoingDurationMs = duration,
+                baseDurationMs = settings.durationMs,
+                baseMode = settings.mode
+            )
+            val resolvedSettings = smartPlan.settings
+            if (resolvedSettings.mode == TransitionMode.NONE || resolvedSettings.durationMs <= 0) {
+                Log.d(TAG, "Smart AutoMix preserved gapless playback.")
+                engine.setPauseAtEndOfMediaItems(false)
+                return@launch
+            }
+
             val minFade = 500L
             val guardWindow = 150L
             val leadTimeMs = 50L
@@ -420,13 +438,13 @@ class TransitionController(
             }
 
             val maxAllowedFade = (duration * 0.45f).toLong().coerceAtLeast(minFade)
-            val effectiveDuration = settings.durationMs.toLong()
+            val effectiveDuration = resolvedSettings.durationMs.toLong()
                 .coerceIn(minFade, maxAllowedFade)
                 .coerceAtMost((duration - guardWindow).coerceAtLeast(minFade))
 
             val transitionPoint = (duration - effectiveDuration - leadTimeMs).coerceAtLeast(0L)
 
-            Log.d(TAG, "Scheduled crossfade at ${transitionPoint}ms (trackDur: $duration, leadTime: ${leadTimeMs}ms). Fade: ${effectiveDuration}ms")
+            Log.d(TAG, "Scheduled crossfade at ${transitionPoint}ms (trackDur: $duration, leadTime: ${leadTimeMs}ms, bpmRatio=${smartPlan.tempoRatio}, bassSwap=${smartPlan.useBassSwap}). Fade: ${effectiveDuration}ms")
 
             // Handle case where we're already past the transition point
             if (transitionPoint <= player.currentPosition) {
@@ -436,7 +454,7 @@ class TransitionController(
                     if (isLatestSchedule(generation, expectedMediaId, player)) {
                         Log.w(TAG, "Already past transition point! Triggering immediately.")
                         engine.setPauseAtEndOfMediaItems(true)
-                        engine.performTransition(settings.copy(durationMs = adjustedDuration.toInt()))
+                        engine.performTransition(resolvedSettings.copy(durationMs = adjustedDuration.toInt()))
                     } else {
                         Log.d(TAG, "Skipping immediate trigger for stale schedule.")
                     }
@@ -470,13 +488,69 @@ class TransitionController(
                 setState(TransitionState.TRANSITIONING)
                 Log.d(TAG, "FIRING TRANSITION NOW!")
                 engine.setPauseAtEndOfMediaItems(true)
-                engine.performTransition(settings.copy(durationMs = effectiveDuration.toInt()))
+                engine.performTransition(resolvedSettings.copy(durationMs = effectiveDuration.toInt()))
                 watchForTransitionCompletion(generation)
             } else {
                 Log.d(TAG, "Job cancelled before firing.")
                 engine.setPauseAtEndOfMediaItems(false)
             }
         }
+    }
+
+    private suspend fun resolveSmartMixPlan(
+        outgoingItem: MediaItem,
+        incomingItem: MediaItem,
+        outgoingDurationMs: Long,
+        baseDurationMs: Int,
+        baseMode: TransitionMode
+    ) = withContext(Dispatchers.IO) {
+        val ctx = context
+        var ruleDuration = baseDurationMs
+        var ruleMode = baseMode
+        var curveIn = Curve.EQUAL_POWER
+        var curveOut = Curve.EQUAL_POWER
+
+        var ruleBpmSync = appSettings.playbackPrefs.autoMixBpmSyncEnabled.value
+
+        if (ctx != null) {
+            runCatching {
+                val rule = RhythmDatabase.getInstance(ctx).transitionRuleDao().resolveBestRule(
+                    fromSongId = outgoingItem.mediaId,
+                    toSongId = incomingItem.mediaId,
+                    playlistId = null
+                )
+                if (rule != null) {
+                    ruleDuration = rule.durationMs
+                    ruleMode = if (rule.mode.equals("NONE", true)) TransitionMode.NONE else TransitionMode.OVERLAP
+                    curveIn = runCatching { Curve.valueOf(rule.curveIn) }.getOrDefault(Curve.EQUAL_POWER)
+                    curveOut = runCatching { Curve.valueOf(rule.curveOut) }.getOrDefault(Curve.EQUAL_POWER)
+                    ruleBpmSync = rule.bpmSync
+                }
+            }
+        }
+
+        val outTags = if (ctx != null) outgoingItem.localConfiguration?.uri?.let { TagBpmReader.readFromUri(ctx, it) } else null
+        val inTags = if (ctx != null) incomingItem.localConfiguration?.uri?.let { TagBpmReader.readFromUri(ctx, it) } else null
+        val sameAlbum = outgoingItem.mediaMetadata.albumTitle?.toString()?.takeIf { it.isNotBlank() } != null &&
+            outgoingItem.mediaMetadata.albumTitle?.toString() == incomingItem.mediaMetadata.albumTitle?.toString() &&
+            outgoingItem.mediaMetadata.artist?.toString() == incomingItem.mediaMetadata.artist?.toString()
+
+        SmartTransitionPlanner.plan(
+            SmartMixInput(
+                baseDurationMs = ruleDuration,
+                baseMode = ruleMode,
+                curveIn = curveIn,
+                curveOut = curveOut,
+                outgoingDurationMs = outgoingDurationMs,
+                incomingDurationMs = outgoingDurationMs,
+                outgoingBpm = outTags?.bpm,
+                incomingBpm = inTags?.bpm,
+                outgoingKey = outTags?.initialKey,
+                incomingKey = inTags?.initialKey,
+                bpmSyncEnabled = ruleBpmSync,
+                sameAlbumSequence = sameAlbum
+            )
+        )
     }
 
     private fun handleSeek(positionMs: Long) {

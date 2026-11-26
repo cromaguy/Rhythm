@@ -128,6 +128,7 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
     private var rhythmMonoAudioProcessor: chromahub.rhythm.app.infrastructure.audio.RhythmMonoAudioProcessor? = null
     private var rhythmViperProcessor: chromahub.rhythm.app.infrastructure.audio.viper.ViperAudioProcessor? = null
     private var rhythmParametricEqProcessor: chromahub.rhythm.app.infrastructure.audio.peq.RhythmParametricEqAudioProcessor? = null
+    private var musicHapticsController: chromahub.rhythm.app.infrastructure.audio.haptics.MusicHapticsController? = null
     private var audioDeviceCallback: android.media.AudioDeviceCallback? = null
     
     private var virtualizerStrength: Short = 0 // Store strength for virtualizer
@@ -513,6 +514,34 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
             rhythmParametricEqProcessor = chromahub.rhythm.app.infrastructure.audio.peq.RhythmParametricEqAudioProcessor().also {
                 syncParametricEqFromSettings(it)
             }
+            musicHapticsController = chromahub.rhythm.app.infrastructure.audio.haptics.MusicHapticsController(applicationContext).apply {
+                updateConfig(
+                    chromahub.rhythm.app.infrastructure.audio.haptics.MusicHapticsConfig(
+                        enabled = appSettings.playbackPrefs.musicHapticsEnabled.value,
+                        intensityScale = appSettings.playbackPrefs.musicHapticsIntensity.value
+                    )
+                )
+            }
+            serviceScope.launch {
+                kotlinx.coroutines.flow.combine(
+                    appSettings.playbackPrefs.musicHapticsEnabled,
+                    appSettings.playbackPrefs.musicHapticsIntensity,
+                    appSettings.audioRoutingMode
+                ) { enabled, intensity, routing ->
+                    listOf(enabled, intensity, routing == "app")
+                }.collect { state ->
+                    val enabled = state[0] as Boolean
+                    val intensity = state[1] as Float
+                    val bitPerfect = state[2] as Boolean
+                    musicHapticsController?.isBitPerfectActive = bitPerfect
+                    musicHapticsController?.updateConfig(
+                        chromahub.rhythm.app.infrastructure.audio.haptics.MusicHapticsConfig(
+                            enabled = enabled,
+                            intensityScale = intensity
+                        )
+                    )
+                }
+            }
             serviceScope.launch {
                 viperRepo.configFlow.collect { newConfig ->
                     rhythmViperProcessor?.updateConfig(newConfig)
@@ -864,7 +893,8 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
             spatializationProcessor = rhythmSpatializationProcessor,
             monoProcessor = rhythmMonoAudioProcessor,
             viperProcessor = rhythmViperProcessor,
-            parametricEqProcessor = rhythmParametricEqProcessor
+            parametricEqProcessor = rhythmParametricEqProcessor,
+            hapticsController = musicHapticsController
         )
         rhythmPlayerEngine.initialize()
         serviceScope.launch {
@@ -1009,6 +1039,7 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
             }
             
             override fun onIsPlayingChanged(isPlaying: Boolean) {
+                musicHapticsController?.isPlaybackActive = isPlaying
                 
                 // Broadcast status for Tasker/KWGT/automation apps
                 if (appSettings.broadcastStatusEnabled.value) {
@@ -1109,7 +1140,7 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
         playerListener?.let { player.addListener(it) }
         
         // Initialize transition controller for crossfade scheduling
-        transitionController = TransitionController(rhythmPlayerEngine, appSettings)
+        transitionController = TransitionController(rhythmPlayerEngine, appSettings, applicationContext)
         transitionController.initialize()
         
         // Apply current settings
@@ -3981,6 +4012,8 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
             rhythmMonoAudioProcessor = null
             rhythmViperProcessor = null
             rhythmParametricEqProcessor = null
+            musicHapticsController?.release()
+            musicHapticsController = null
             
             Log.d(TAG, "Audio effects released")
         } catch (e: Exception) {

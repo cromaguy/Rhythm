@@ -71,6 +71,7 @@ fun CrossfadeSettingsScreen(
     val crossfadeDuration by appSettings.crossfadeDuration.collectAsState()
     val crossfadeRepeatOne by appSettings.crossfadeRepeatOne.collectAsState()
     val crossfadeOnSkip by appSettings.crossfadeOnSkip.collectAsState()
+    val autoMixBpmSync by appSettings.playbackPrefs.autoMixBpmSyncEnabled.collectAsState()
     val isAudioOffloadActive by appSettings.isAudioOffloadActive.collectAsState()
     val batterySaverEnabled by appSettings.batterySaverEnabled.collectAsState()
     val batterySaverMode by appSettings.batterySaverMode.collectAsState()
@@ -252,6 +253,21 @@ fun CrossfadeSettingsScreen(
                             onClick = {
                                 HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
                                 appSettings.setCrossfadeOnSkip(!crossfadeOnSkip)
+                            }
+                        ),
+                        Material3SettingsItem(
+                            icon = MaterialSymbolIcon("graphic_eq", filled = true),
+                            title = { Text("Smart AutoMix (BPM & Bass Swap)") },
+                            description = { Text("Match compatible BPM/Camelot keys within ±6% and hand off sub-bass cleanly on blends") },
+                            trailingContent = {
+                                TunerAnimatedSwitch(
+                                    checked = autoMixBpmSync,
+                                    onCheckedChange = { appSettings.playbackPrefs.setAutoMixBpmSyncEnabled(it) }
+                                )
+                            },
+                            onClick = {
+                                HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
+                                appSettings.playbackPrefs.setAutoMixBpmSyncEnabled(!autoMixBpmSync)
                             }
                         )
                     )

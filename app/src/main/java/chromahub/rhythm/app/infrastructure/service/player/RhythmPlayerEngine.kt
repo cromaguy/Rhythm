@@ -38,8 +38,11 @@ import chromahub.rhythm.app.infrastructure.audio.dsp.AudioPipelineTelemetry
 import chromahub.rhythm.app.infrastructure.audio.dsp.RhythmAudioSinkCoordinator
 import chromahub.rhythm.app.infrastructure.audio.dsp.SampleRateCapAudioProcessor
 import chromahub.rhythm.app.infrastructure.audio.dsp.SurroundDownmixAudioProcessor
+import chromahub.rhythm.app.infrastructure.audio.haptics.MusicHapticsController
+import chromahub.rhythm.app.infrastructure.audio.haptics.MusicHapticsTapProcessor
 import chromahub.rhythm.app.infrastructure.audio.peq.RhythmParametricEqAudioProcessor
 import chromahub.rhythm.app.infrastructure.audio.usb.BitPerfectUsbAudioOutputProvider
+import chromahub.rhythm.app.infrastructure.service.player.automix.DeckEqAudioProcessor
 import chromahub.rhythm.app.shared.data.model.TransitionSettings
 import chromahub.rhythm.app.infrastructure.service.player.replaygain.ReplayGainAudioProcessor
 import chromahub.rhythm.app.infrastructure.service.player.replaygain.ReplayGainCache
@@ -81,7 +84,8 @@ class RhythmPlayerEngine(
     private val spatializationProcessor: RhythmSpatializationProcessor? = null,
     private val monoProcessor: RhythmMonoAudioProcessor? = null,
     private val viperProcessor: chromahub.rhythm.app.infrastructure.audio.viper.ViperAudioProcessor? = null,
-    private val parametricEqProcessor: RhythmParametricEqAudioProcessor? = null
+    private val parametricEqProcessor: RhythmParametricEqAudioProcessor? = null,
+    private val hapticsController: MusicHapticsController? = null
 ) {
     companion object {
         private const val TAG = "RhythmPlayerEngine"
@@ -110,6 +114,10 @@ class RhythmPlayerEngine(
     private var playerBDownmix: SurroundDownmixAudioProcessor? = null
     private var playerASampleRateCap: SampleRateCapAudioProcessor? = null
     private var playerBSampleRateCap: SampleRateCapAudioProcessor? = null
+    private var playerADeckEq: DeckEqAudioProcessor? = null
+    private var playerBDeckEq: DeckEqAudioProcessor? = null
+    private var playerAHapticsTap: MusicHapticsTapProcessor? = null
+    private var playerBHapticsTap: MusicHapticsTapProcessor? = null
     private lateinit var playerAReplayGain: ReplayGainAudioProcessor
     private lateinit var playerBReplayGain: ReplayGainAudioProcessor
     private var activeReplayGainProcessor: ReplayGainAudioProcessor? = null
@@ -316,6 +324,8 @@ class RhythmPlayerEngine(
         val aPeq = parametricEqProcessor?.let { RhythmParametricEqAudioProcessor().apply { setParent(it) } }
         val aDownmix = SurroundDownmixAudioProcessor()
         val aRateCap = SampleRateCapAudioProcessor()
+        val aDeckEq = DeckEqAudioProcessor()
+        val aHapticsTap = hapticsController?.let { MusicHapticsTapProcessor(it) }
         val aReplayGain = ReplayGainAudioProcessor()
         playerABassBoost = aBass
         playerASpatialization = aSpatial
@@ -324,6 +334,8 @@ class RhythmPlayerEngine(
         playerAParametricEq = aPeq
         playerADownmix = aDownmix
         playerASampleRateCap = aRateCap
+        playerADeckEq = aDeckEq
+        playerAHapticsTap = aHapticsTap
         playerAReplayGain = aReplayGain
 
         // Instantiate child processors for Player B
@@ -334,6 +346,8 @@ class RhythmPlayerEngine(
         val bPeq = parametricEqProcessor?.let { RhythmParametricEqAudioProcessor().apply { setParent(it) } }
         val bDownmix = SurroundDownmixAudioProcessor()
         val bRateCap = SampleRateCapAudioProcessor()
+        val bDeckEq = DeckEqAudioProcessor()
+        val bHapticsTap = hapticsController?.let { MusicHapticsTapProcessor(it) }
         val bReplayGain = ReplayGainAudioProcessor()
         playerBBassBoost = bBass
         playerBSpatialization = bSpatial
@@ -342,6 +356,8 @@ class RhythmPlayerEngine(
         playerBParametricEq = bPeq
         playerBDownmix = bDownmix
         playerBSampleRateCap = bRateCap
+        playerBDeckEq = bDeckEq
+        playerBHapticsTap = bHapticsTap
         playerBReplayGain = bReplayGain
 
         // Apply settings initially
@@ -354,8 +370,8 @@ class RhythmPlayerEngine(
         applyReplayGainSettingsOnProcessor(aReplayGain, appSettings.replayGain.value)
         applyReplayGainSettingsOnProcessor(bReplayGain, appSettings.replayGain.value)
 
-        playerA = buildPlayer(handleAudioFocus = false, bassProcessor = aBass, spatialProcessor = aSpatial, monoProcessor = aMono, replayGainProcessor = aReplayGain, viperProcessor = aViper, parametricEqProcessor = aPeq, downmixProcessor = aDownmix, sampleRateCapProcessor = aRateCap)
-        playerB = buildPlayer(handleAudioFocus = false, bassProcessor = bBass, spatialProcessor = bSpatial, monoProcessor = bMono, replayGainProcessor = bReplayGain, viperProcessor = bViper, parametricEqProcessor = bPeq, downmixProcessor = bDownmix, sampleRateCapProcessor = bRateCap)
+        playerA = buildPlayer(handleAudioFocus = false, bassProcessor = aBass, spatialProcessor = aSpatial, monoProcessor = aMono, replayGainProcessor = aReplayGain, viperProcessor = aViper, parametricEqProcessor = aPeq, downmixProcessor = aDownmix, sampleRateCapProcessor = aRateCap, deckEqProcessor = aDeckEq, hapticsTapProcessor = aHapticsTap)
+        playerB = buildPlayer(handleAudioFocus = false, bassProcessor = bBass, spatialProcessor = bSpatial, monoProcessor = bMono, replayGainProcessor = bReplayGain, viperProcessor = bViper, parametricEqProcessor = bPeq, downmixProcessor = bDownmix, sampleRateCapProcessor = bRateCap, deckEqProcessor = bDeckEq, hapticsTapProcessor = bHapticsTap)
 
         val initVolume = if (appSettings.useSystemVolume.value) 1.0f else appSettings.appVolume.value
         userVolume = initVolume
@@ -461,7 +477,9 @@ class RhythmPlayerEngine(
         viperProcessor: chromahub.rhythm.app.infrastructure.audio.viper.ViperAudioProcessor? = null,
         parametricEqProcessor: RhythmParametricEqAudioProcessor? = null,
         downmixProcessor: SurroundDownmixAudioProcessor? = null,
-        sampleRateCapProcessor: SampleRateCapAudioProcessor? = null
+        sampleRateCapProcessor: SampleRateCapAudioProcessor? = null,
+        deckEqProcessor: DeckEqAudioProcessor? = null,
+        hapticsTapProcessor: MusicHapticsTapProcessor? = null
     ): ExoPlayer {
         val loadControl = DefaultLoadControl.Builder()
             .setBufferDurationsMs(15_000, 30_000, 1_500, 2_500)
@@ -530,6 +548,12 @@ class RhythmPlayerEngine(
                 }
                 if (viperProcessor != null) {
                     processors.add(viperProcessor)
+                }
+                if (deckEqProcessor != null) {
+                    processors.add(deckEqProcessor)
+                }
+                if (hapticsTapProcessor != null) {
+                    processors.add(hapticsTapProcessor)
                 }
                 
                 val silenceSkippingDelegate = SilenceSkippingAudioProcessor(
@@ -913,6 +937,16 @@ class RhythmPlayerEngine(
         val incomingMono = playerBMono
         val outgoingViper = playerAViper
         val incomingViper = playerBViper
+        val outgoingPeq = playerAParametricEq
+        val incomingPeq = playerBParametricEq
+        val outgoingDownmix = playerADownmix
+        val incomingDownmix = playerBDownmix
+        val outgoingRateCap = playerASampleRateCap
+        val incomingRateCap = playerBSampleRateCap
+        val outgoingDeckEq = playerADeckEq
+        val incomingDeckEq = playerBDeckEq
+        val outgoingHapticsTap = playerAHapticsTap
+        val incomingHapticsTap = playerBHapticsTap
         playerA = incomingPlayer
         playerB = outgoingPlayer
         playerAReplayGain = incomingReplayGain
@@ -925,6 +959,16 @@ class RhythmPlayerEngine(
         playerBMono = outgoingMono
         playerAViper = incomingViper
         playerBViper = outgoingViper
+        playerAParametricEq = incomingPeq
+        playerBParametricEq = outgoingPeq
+        playerADownmix = incomingDownmix
+        playerBDownmix = outgoingDownmix
+        playerASampleRateCap = incomingRateCap
+        playerBSampleRateCap = outgoingRateCap
+        playerADeckEq = incomingDeckEq
+        playerBDeckEq = outgoingDeckEq
+        playerAHapticsTap = incomingHapticsTap
+        playerBHapticsTap = outgoingHapticsTap
         activeReplayGainProcessor = incomingReplayGain
 
         // Sync ReplayGain formats for the incoming player
@@ -1003,6 +1047,22 @@ class RhythmPlayerEngine(
 
             val stepMs = 16L
             var elapsed = 0L
+            val useBassSwap = settings.useBassSwap
+            var bassSwapped = false
+            val basePlaybackParams = playerA.playbackParameters
+            val applyTempoSync = !settings.isManualSkip &&
+                kotlin.math.abs(settings.tempoRatio - 1.0f) in 0.002f..0.06f
+
+            if (useBassSwap) {
+                incomingDeckEq?.setBassCut(true)
+                outgoingDeckEq?.resetCutImmediately()
+            }
+            if (applyTempoSync) {
+                playerA.playbackParameters = PlaybackParameters(
+                    (basePlaybackParams.speed * settings.tempoRatio).coerceIn(0.25f, 3.0f),
+                    basePlaybackParams.pitch
+                )
+            }
 
             while (elapsed <= fadeDuration && transitionRunning) {
                 while (!playerA.playWhenReady && transitionRunning) {
@@ -1018,6 +1078,19 @@ class RhythmPlayerEngine(
                 if (!transitionRunning) break
 
                 val progress = (elapsed.toFloat() / fadeDuration).coerceIn(0f, 1f)
+                if (useBassSwap && !bassSwapped && progress >= 0.48f) {
+                    outgoingDeckEq?.setBassCut(true)
+                    incomingDeckEq?.setBassCut(false)
+                    bassSwapped = true
+                }
+                if (applyTempoSync && progress >= 0.5f) {
+                    val relaxT = ((progress - 0.5f) * 2f).coerceIn(0f, 1f)
+                    val blendedRatio = settings.tempoRatio + (1.0f - settings.tempoRatio) * relaxT
+                    playerA.playbackParameters = PlaybackParameters(
+                        (basePlaybackParams.speed * blendedRatio).coerceIn(0.25f, 3.0f),
+                        basePlaybackParams.pitch
+                    )
+                }
                 val volIn = calculateVolumeIn(progress, settings.curveIn) * targetVolume
                 val volOut = calculateVolumeOut(progress, settings.curveOut) * targetVolume
 
@@ -1030,6 +1103,12 @@ class RhythmPlayerEngine(
 
                 delay(stepMs)
                 elapsed += stepMs
+            }
+
+            outgoingDeckEq?.resetCutImmediately()
+            incomingDeckEq?.resetCutImmediately()
+            if (applyTempoSync) {
+                playerA.playbackParameters = basePlaybackParams
             }
         } else {
             playerA.volume = targetVolume
@@ -1066,6 +1145,8 @@ class RhythmPlayerEngine(
             val otherPeq = if (incomingReplayGain === playerAReplayGain) playerBParametricEq else playerAParametricEq
             val otherDownmix = if (incomingReplayGain === playerAReplayGain) playerBDownmix else playerADownmix
             val otherRateCap = if (incomingReplayGain === playerAReplayGain) playerBSampleRateCap else playerASampleRateCap
+            val otherDeckEq = if (incomingReplayGain === playerAReplayGain) playerBDeckEq else playerADeckEq
+            val otherHapticsTap = if (incomingReplayGain === playerAReplayGain) playerBHapticsTap else playerAHapticsTap
             playerB = buildPlayer(
                 handleAudioFocus = false,
                 bassProcessor = otherBassBoost,
@@ -1075,7 +1156,9 @@ class RhythmPlayerEngine(
                 viperProcessor = otherViper,
                 parametricEqProcessor = otherPeq,
                 downmixProcessor = otherDownmix,
-                sampleRateCapProcessor = otherRateCap
+                sampleRateCapProcessor = otherRateCap,
+                deckEqProcessor = otherDeckEq,
+                hapticsTapProcessor = otherHapticsTap
             ).apply {
                 playbackParameters = playerA.playbackParameters
                 attachAnalyticsListener(this)
