@@ -5,13 +5,6 @@
 
 package chromahub.rhythm.app.shared.presentation.components.lyrics
 
-import android.graphics.Color as AndroidColor
-import android.graphics.LinearGradient
-import android.graphics.Matrix
-import android.graphics.Paint
-import android.graphics.PorterDuff
-import android.graphics.PorterDuffXfermode
-import android.graphics.Shader
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.Spring
@@ -38,28 +31,17 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextLayoutResult
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.ResolvedTextDirection
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import chromahub.rhythm.app.R
-import chromahub.rhythm.app.util.KaraokeLineSplitter
-import chromahub.rhythm.app.util.WordByWordWord
-import kotlin.math.abs
 
 /**
  * Three-dot countdown pill rendered during long instrumental breaks in both word-by-word
@@ -209,197 +191,6 @@ internal fun SpeakerBadgeRow(
                 ),
                 color = accentColor.copy(alpha = if (isCurrentLine) 0.95f else 0.68f),
                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
-            )
-        }
-    }
-}
-
-/**
- * Pooled unit-width LTR/RTL feather gradients updated via matrix transform in draw phase
- * so karaoke gradient wipes trigger zero per-frame object allocation or text recomposition.
- */
-private class PooledKaraokeFeatherMask {
-    private val ltr = LinearGradient(
-        0f, 0f, 1f, 0f,
-        AndroidColor.WHITE,
-        AndroidColor.TRANSPARENT,
-        Shader.TileMode.CLAMP
-    )
-    private val rtl = LinearGradient(
-        0f, 0f, 1f, 0f,
-        AndroidColor.TRANSPARENT,
-        AndroidColor.WHITE,
-        Shader.TileMode.CLAMP
-    )
-    private val matrix = Matrix()
-    val maskPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        xfermode = PorterDuffXfermode(PorterDuff.Mode.DST_IN)
-    }
-    val clearPaint = Paint().apply {
-        xfermode = PorterDuffXfermode(PorterDuff.Mode.CLEAR)
-    }
-
-    fun applyMaskRange(rtlDir: Boolean, xStart: Float, xEnd: Float) {
-        val shader = if (rtlDir) rtl else ltr
-        matrix.reset()
-        matrix.setScale((xEnd - xStart).coerceAtLeast(1f), 1f)
-        matrix.postTranslate(xStart, 0f)
-        shader.setLocalMatrix(matrix)
-        maskPaint.shader = shader
-    }
-}
-
-/**
- * Draw-phase Canvas gradient karaoke text renderer.
- * Eliminates composition-phase `Brush.linearGradient` churn and text relayout on every frame
- * by keeping the text layout immutable and performing feathered masking & syllable lift in draw phase.
- */
-@Composable
-internal fun DrawPhaseKaraokeText(
-    words: List<WordByWordWord>,
-    lineTimestamp: Long,
-    lineEndtime: Long,
-    adjustedPlaybackTime: Long,
-    isCurrentLine: Boolean,
-    isWordTimed: Boolean,
-    lyricBold: Boolean,
-    noAnimation: Boolean,
-    inactiveColor: Color,
-    activeColor: Color,
-    baseStyle: TextStyle,
-    textAlign: TextAlign,
-    modifier: Modifier = Modifier
-) {
-    val (fullText, charRanges) = remember(words) {
-        KaraokeLineSplitter.buildRenderedTextAndRanges(words)
-    }
-    if (fullText.isEmpty()) return
-
-    val activeStyle = remember(baseStyle, lyricBold) {
-        baseStyle.copy(fontWeight = if (lyricBold) FontWeight.Black else FontWeight.Bold)
-    }
-    val unlitStyle = remember(baseStyle, lyricBold, isCurrentLine) {
-        baseStyle.copy(
-            fontWeight = when {
-                isCurrentLine -> if (lyricBold) FontWeight.ExtraBold else FontWeight.SemiBold
-                lyricBold -> FontWeight.Bold
-                else -> FontWeight.Normal
-            }
-        )
-    }
-
-    var textLayout by remember(fullText, baseStyle, textAlign) { mutableStateOf<TextLayoutResult?>(null) }
-    val featherMask = remember { PooledKaraokeFeatherMask() }
-
-    Box(modifier = modifier.fillMaxWidth()) {
-        Text(
-            text = fullText,
-            style = unlitStyle,
-            color = if (isCurrentLine && !isWordTimed) activeColor else inactiveColor,
-            textAlign = textAlign,
-            onTextLayout = { textLayout = it },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        if (isCurrentLine && isWordTimed && !noAnimation) {
-            Text(
-                text = fullText,
-                style = activeStyle,
-                color = activeColor,
-                textAlign = textAlign,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .drawWithContent {
-                        val layout = textLayout ?: return@drawWithContent
-                        val textLen = fullText.length
-                        if (textLen == 0) return@drawWithContent
-
-                        val (activeIdx, easedP) = KaraokeLineSplitter.computeWordSweepState(
-                            words = words,
-                            lineEndMs = lineEndtime,
-                            positionMs = adjustedPlaybackTime
-                        )
-                        if (activeIdx < 0) return@drawWithContent
-
-                        val range = charRanges.getOrNull(activeIdx) ?: return@drawWithContent
-                        val startIdx = range.first.coerceIn(0, textLen - 1)
-                        val endCharIdx = (range.last).coerceIn(startIdx, textLen - 1)
-                        val isLastAndComplete = activeIdx == words.lastIndex && easedP >= 1f
-
-                        val liftFrac = KaraokeLineSplitter.computeSyllableLiftFraction(
-                            words = words,
-                            index = activeIdx,
-                            lineEndMs = lineEndtime,
-                            positionMs = adjustedPlaybackTime
-                        )
-                        val liftOffsetY = if (isLastAndComplete) 0f else -liftFrac * 2.dp.toPx()
-
-                        val canvas = drawContext.canvas.nativeCanvas
-                        if (isLastAndComplete) {
-                            drawContent()
-                            return@drawWithContent
-                        }
-
-                        val isRtl = layout.getParagraphDirection(startIdx) == ResolvedTextDirection.Rtl
-                        val lineIdx = layout.getLineForOffset(startIdx)
-                        val endLineIdx = layout.getLineForOffset(endCharIdx)
-
-                        val sweepX: Float
-                        val feather: Float
-                        if (lineIdx == endLineIdx) {
-                            val xs = layout.getHorizontalPosition(startIdx, true)
-                            val xe = if (range.last + 1 < textLen && layout.getLineForOffset(range.last + 1) == lineIdx) {
-                                layout.getHorizontalPosition(range.last + 1, true)
-                            } else if (isRtl) layout.getLineLeft(lineIdx) else layout.getLineRight(lineIdx)
-                            sweepX = xs + (xe - xs) * easedP
-                            feather = (abs(xe - xs) * 0.35f).coerceIn(8f, 22f)
-                        } else {
-                            sweepX = if (isRtl) layout.getLineLeft(lineIdx) else layout.getLineRight(lineIdx)
-                            feather = 14f
-                        }
-
-                        // Prior wrapped visual lines stay completely lit without descender clipping
-                        val splitTop = if (lineIdx > 0) {
-                            (layout.getLineBottom(lineIdx - 1) + layout.getLineTop(lineIdx)) * 0.5f
-                        } else -size.height
-                        val splitBottom = if (lineIdx + 1 < layout.lineCount) {
-                            (layout.getLineBottom(lineIdx) + layout.getLineTop(lineIdx + 1)) * 0.5f
-                        } else size.height * 2f
-
-                        if (lineIdx > 0) {
-                            val saved = canvas.save()
-                            canvas.clipRect(-size.width, -size.height, size.width * 2f, splitTop)
-                            drawContent()
-                            canvas.restoreToCount(saved)
-                        }
-
-                        val layer = canvas.saveLayer(0f, splitTop, size.width, splitBottom, null)
-                        canvas.save()
-                        canvas.translate(0f, liftOffsetY)
-                        drawContent()
-                        canvas.restore()
-
-                        val xStart = (sweepX - feather).coerceAtLeast(0f)
-                        val xEnd = (sweepX + feather).coerceAtMost(size.width)
-                        if (isRtl) {
-                            if (xStart > 0f) canvas.drawRect(0f, splitTop, xStart, splitBottom, featherMask.clearPaint)
-                        } else {
-                            if (xEnd < size.width) canvas.drawRect(xEnd, splitTop, size.width, splitBottom, featherMask.clearPaint)
-                        }
-                        if (xEnd > xStart) {
-                            featherMask.applyMaskRange(isRtl, xStart, xEnd)
-                            canvas.drawRect(xStart, splitTop, xEnd, splitBottom, featherMask.maskPaint)
-                        }
-                        canvas.restoreToCount(layer)
-                    }
-            )
-        } else if (isCurrentLine && isWordTimed && noAnimation) {
-            Text(
-                text = fullText,
-                style = activeStyle,
-                color = activeColor,
-                textAlign = textAlign,
-                modifier = Modifier.fillMaxWidth()
             )
         }
     }

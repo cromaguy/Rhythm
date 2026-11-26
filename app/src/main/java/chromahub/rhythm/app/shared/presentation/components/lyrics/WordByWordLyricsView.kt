@@ -41,6 +41,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.text.TextLayoutResult
 import kotlin.math.abs
 
 /**
@@ -570,9 +572,126 @@ private fun WordByWordLyricLineItem(
         else -> activeColor ?: MaterialTheme.colorScheme.primary
     }
     val unlitInk = when {
-        isVoice2 || isVoice3 -> if (isCurrentLine) highlightInk.copy(alpha = 0.48f) else highlightInk
-        isCurrentLine -> highlightInk.copy(alpha = 0.45f)
+        isVoice2 || isVoice3 -> if (isCurrentLine) highlightInk.copy(alpha = 0.5f) else highlightInk
+        isCurrentLine -> highlightInk.copy(alpha = 0.5f)
         else -> textColor ?: MaterialTheme.colorScheme.onSurface
+    }
+
+    val activeWord = if (isCurrentLine) line.words.getOrNull(activeWordIndex) else null
+    val initialWordFraction = remember(activeWord) {
+        if (activeWord != null && activeWord.endtime > activeWord.timestamp) {
+            ((adjustedPlaybackTime - activeWord.timestamp).toFloat() /
+                (activeWord.endtime - activeWord.timestamp).toFloat()).coerceIn(0f, 1f)
+        } else 0f
+    }
+    val remainingDurationMs = remember(activeWord) {
+        activeWord?.let { (it.endtime - adjustedPlaybackTime).toInt().coerceAtLeast(0) } ?: 0
+    }
+    val animatedProgress = remember(activeWord) { Animatable(initialWordFraction) }
+    LaunchedEffect(activeWord) {
+        if (remainingDurationMs > 0 && !noAnimation && isWordTimed) {
+            animatedProgress.animateTo(
+                targetValue = 1f,
+                animationSpec = tween(durationMillis = remainingDurationMs, easing = LinearEasing)
+            )
+        } else {
+            animatedProgress.snapTo(1f)
+        }
+    }
+
+    var textLayoutResult by remember(line.words) { mutableStateOf<TextLayoutResult?>(null) }
+    val wordRanges = remember(line.words) {
+        val ranges = mutableListOf<IntRange>()
+        var currentPos = 0
+        line.words.forEachIndexed { wordIdx, word ->
+            if (wordIdx > 0 && !word.isPart) {
+                currentPos += 1
+            }
+            val start = currentPos
+            val end = currentPos + word.text.length
+            ranges.add(start..end)
+            currentPos = end
+        }
+        ranges
+    }
+
+    val annotatedText = buildAnnotatedString {
+        line.words.forEachIndexed { wordIndex, word ->
+            val isWordActive = isCurrentLine && wordIndex == activeWordIndex
+            val isWordPassed = isCurrentLine && wordIndex < activeWordIndex
+            val activeGlow = if (!noAnimation) {
+                Shadow(
+                    color = highlightInk.copy(alpha = 0.55f),
+                    blurRadius = 14f
+                )
+            } else null
+
+            val style = if (isWordActive) {
+                val range = wordRanges.getOrNull(wordIndex)
+                val layout = textLayoutResult
+                val sweepProgress = animatedProgress.value
+                val textLen = layout?.layoutInput?.text?.length ?: 0
+                if (isWordTimed && range != null && layout != null && textLen > 0 && !noAnimation && sweepProgress < 1f) {
+                    val startChar = range.first.coerceIn(0, textLen - 1)
+                    val endChar = (range.last - 1).coerceIn(startChar, textLen - 1)
+                    val startRect = layout.getBoundingBox(startChar)
+                    val endRect = layout.getBoundingBox(endChar)
+                    val sameVisualLine = abs(startRect.top - endRect.top) < 2f
+                    val horizontalSpanOk = abs(endRect.right - startRect.left) > 0.5f
+
+                    if (sameVisualLine && horizontalSpanOk) {
+                        val activeBrush = Brush.linearGradient(
+                            colorStops = arrayOf(
+                                (sweepProgress - 0.15f).coerceIn(0f, 1f) to highlightInk,
+                                (sweepProgress + 0.15f).coerceIn(0f, 1f) to unlitInk
+                            ),
+                            start = Offset(startRect.left, 0f),
+                            end = Offset(endRect.right, 0f)
+                        )
+                        SpanStyle(
+                            brush = activeBrush,
+                            fontWeight = if (lyricBold) FontWeight.Black else FontWeight.Bold,
+                            shadow = activeGlow
+                        )
+                    } else {
+                        SpanStyle(
+                            color = highlightInk,
+                            fontWeight = if (lyricBold) FontWeight.Black else FontWeight.Bold,
+                            shadow = activeGlow
+                        )
+                    }
+                } else {
+                    SpanStyle(
+                        color = highlightInk,
+                        fontWeight = if (lyricBold) FontWeight.Black else FontWeight.Bold,
+                        shadow = activeGlow
+                    )
+                }
+            } else {
+                val isHighlighted = isWordPassed || (!isWordTimed && isCurrentLine)
+                SpanStyle(
+                    color = if (isHighlighted) highlightInk else unlitInk,
+                    fontWeight = if (isCurrentLine) {
+                        if (lyricBold) FontWeight.ExtraBold else FontWeight.SemiBold
+                    } else {
+                        if (lyricBold) FontWeight.Bold else FontWeight.Normal
+                    },
+                    shadow = if (isHighlighted && !noAnimation) {
+                        Shadow(
+                            color = highlightInk.copy(alpha = 0.25f),
+                            blurRadius = 8f
+                        )
+                    } else null
+                )
+            }
+
+            withStyle(style) {
+                if (wordIndex > 0 && !word.isPart) {
+                    append(" ")
+                }
+                append(word.text)
+            }
+        }
     }
 
     val lineTextAlignment = if (textAlignment == TextAlign.Start && isVoice2) {
@@ -614,18 +733,10 @@ private fun WordByWordLyricLineItem(
             horizontalAlignment = columnAlignment
         )
 
-        DrawPhaseKaraokeText(
-            words = line.words,
-            lineTimestamp = line.lineTimestamp,
-            lineEndtime = line.lineEndtime,
-            adjustedPlaybackTime = adjustedPlaybackTime,
-            isCurrentLine = isCurrentLine,
-            isWordTimed = isWordTimed,
-            lyricBold = lyricBold,
-            noAnimation = noAnimation,
-            inactiveColor = unlitInk,
-            activeColor = highlightInk,
-            baseStyle = MaterialTheme.typography.headlineSmall.copy(
+        Text(
+            text = annotatedText,
+            onTextLayout = { textLayoutResult = it },
+            style = MaterialTheme.typography.headlineSmall.copy(
                 fontSize = MaterialTheme.typography.headlineSmall.fontSize * textSizeMultiplier * backingScale,
                 lineHeight = MaterialTheme.typography.headlineSmall.lineHeight * 1.4f * textSizeMultiplier * backingScale
             ),
