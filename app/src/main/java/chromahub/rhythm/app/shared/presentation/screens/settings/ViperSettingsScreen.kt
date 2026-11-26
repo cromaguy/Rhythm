@@ -210,10 +210,43 @@ fun ViperSettingsScreen(
                         ),
                         Toast.LENGTH_SHORT
                     ).show()
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                     Toast.makeText(context, context.getString(R.string.viper_profile_invalid_format), Toast.LENGTH_SHORT).show()
                 } finally {
                     isBusy = false
+                }
+            }
+        }
+    }
+
+    val customIrLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        if (uri != null) {
+            scope.launch {
+                try {
+                    context.contentResolver.takePersistableUriPermission(
+                        uri,
+                        android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
+                    )
+                } catch (_: Exception) {
+                }
+                val parsed = withContext(Dispatchers.IO) {
+                    chromahub.rhythm.app.infrastructure.audio.viper.dsp.WavIrParser.loadFromUri(context, uri)
+                }
+                if (parsed != null) {
+                    viperRepo.updateConfig {
+                        it.copy(
+                            convolver = it.convolver.copy(
+                                enabled = true,
+                                irUri = uri.toString(),
+                                kernelName = chromahub.rhythm.app.infrastructure.audio.viper.dsp.FastConvolver.PRESET_CUSTOM_IR
+                            )
+                        )
+                    }
+                    Toast.makeText(context, "Loaded custom IR (${parsed.left.size} taps @ ${parsed.sampleRate} Hz)", Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(context, "Unsupported or corrupted WAV/IRS impulse file", Toast.LENGTH_SHORT).show()
                 }
             }
         }
@@ -888,11 +921,60 @@ fun ViperSettingsScreen(
                         selectedIndex = convolverPresets.indexOf(convolver.kernelName).coerceAtLeast(0),
                         onItemClick = { index ->
                             HapticUtils.performHapticFeedback(context, haptics, HapticType.LIGHT)
-                            onUpdate { it.copy(convolver = it.convolver.copy(kernelName = convolverPresets[index])) }
+                            onUpdate {
+                                it.copy(
+                                    convolver = it.convolver.copy(
+                                        kernelName = convolverPresets[index],
+                                        irUri = null
+                                    )
+                                )
+                            }
                         },
                         modifier = Modifier.fillMaxWidth()
                     )
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        OutlinedButton(
+                            onClick = { customIrLauncher.launch(arrayOf("audio/*", "*/*")) },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text(
+                                text = if (!convolver.irUri.isNullOrBlank()) "Change Custom IR (.wav/.irs)" else "Load Custom IR (.wav/.irs)",
+                                maxLines = 1
+                            )
+                        }
+                        if (!convolver.irUri.isNullOrBlank()) {
+                            OutlinedButton(
+                                onClick = {
+                                    onUpdate {
+                                        it.copy(
+                                            convolver = it.convolver.copy(
+                                                kernelName = convolverPresets.first(),
+                                                irUri = null
+                                            )
+                                        )
+                                    }
+                                }
+                            ) {
+                                Text("Clear")
+                            }
+                        }
+                    }
                     Spacer(modifier = Modifier.height(12.dp))
+                    ViperSliderRow(
+                        label = "Wet Mix",
+                        value = convolver.mixPercent * 100f,
+                        valueRange = 0.0f..100.0f,
+                        valueFormatted = formatPercent(convolver.mixPercent),
+                        onValueChange = { value ->
+                            onUpdate { it.copy(convolver = it.convolver.copy(mixPercent = value / 100f)) }
+                        }
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
                     ViperSliderRow(
                         label = stringResource(R.string.viper_convolver_cross_channel),
                         value = convolver.crossChannel * 100f,

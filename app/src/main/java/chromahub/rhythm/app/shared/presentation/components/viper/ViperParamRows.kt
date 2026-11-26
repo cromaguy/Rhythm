@@ -1,6 +1,5 @@
 /*
  * SPDX-FileCopyrightText: 2024-2026 Anjishnu Nandi <https://github.com/cromaguy>
- * SPDX-FileCopyrightText: 2026 Rhythm Audio Enhancement Contributors
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 

@@ -55,8 +55,17 @@ class RhythmMonoAudioProcessor : RhythmAudioProcessor() {
         for (i in 0 until sampleCount - 1 step 2) {
             val left = samples[i].toInt()
             val right = samples[i + 1].toInt()
-            // Downmix to mono: average of left and right channels
             val mono = ((left + right) / 2).toShort()
+            samples[i] = mono
+            samples[i + 1] = mono
+        }
+    }
+
+    override fun processDoubleSamples(samples: DoubleArray, sampleCount: Int) {
+        if (!isEnabled() || channelCount != 2) return
+
+        for (i in 0 until sampleCount - 1 step 2) {
+            val mono = (samples[i] + samples[i + 1]) * 0.5
             samples[i] = mono
             samples[i + 1] = mono
         }

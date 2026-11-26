@@ -202,6 +202,8 @@ fun ArcProgressSlider(
                 var firstPointSet = false
 
                 for (i in 0..steps) {
+                    val progress = i.toFloat() / steps.toFloat()
+                    val edgeTaper = sin(progress * PI).coerceAtLeast(0.0)
                     val currentAngleDeg = startAngle + (i * angleStep)
                     val currentAngleRad = Math.toRadians(currentAngleDeg.toDouble())
 
@@ -209,7 +211,8 @@ fun ArcProgressSlider(
                     val distanceAlongArc = arcRadius * angleFromStartRad
 
                     val k = (2 * PI) / waveLengthPx
-                    val h = if (enabled) waveAmplitudePx * sin(k * distanceAlongArc + phaseShift) else 0.0
+                    val dynamicAmp = waveAmplitudePx * (0.75 + 0.45 * thumbScale) * edgeTaper
+                    val h = if (enabled) dynamicAmp * sin(k * distanceAlongArc + phaseShift) else 0.0
 
                     val r = arcRadius + h
 

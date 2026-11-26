@@ -616,6 +616,30 @@ fun EqualizerScreen(
     var showDeviceConfigSheet by remember { mutableStateOf(false) }
     var showMenu by remember { mutableStateOf(false) }
 
+    val doublePrecisionPeqEnabled by viewModel.appSettings.presetsPrefs.doublePrecisionPeqEnabled.collectAsState()
+    val parametricEqJson by viewModel.appSettings.presetsPrefs.parametricEqJson.collectAsState()
+    val peqBassGainDb by viewModel.appSettings.presetsPrefs.peqBassGainDb.collectAsState()
+    val peqTiltDbPerOctave by viewModel.appSettings.presetsPrefs.peqTiltDbPerOctave.collectAsState()
+    val activePeqSettings = remember(parametricEqJson) {
+        chromahub.rhythm.app.infrastructure.audio.peq.PeqSettings.fromJson(parametricEqJson)
+    }
+
+    val importApoLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        if (uri != null) {
+            val raw = runCatching {
+                context.contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() }
+            }.getOrNull()
+            val fileName = uri.lastPathSegment?.substringAfterLast('/')?.substringBeforeLast('.')
+            if (!raw.isNullOrBlank() && viewModel.importEqualizerApoText(raw, fileName)) {
+                Toast.makeText(context, "Imported ParametricEQ profile", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(context, "No valid EqualizerAPO filters found", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
     val isAutoEQPresetActive = remember(selectedPreset, currentAutoEQProfile, allAvailablePresets) {
         val activePreset = allAvailablePresets.find { it.name == selectedPreset }
         activePreset?.type == EqualizerPresetType.AUTO_EQ ||
@@ -691,6 +715,16 @@ fun EqualizerScreen(
                             onClick = {
                                 showMenu = false
                                 showAutoEQSelector = true
+                            }
+                        ),
+                        RhythmMenuItem(
+                            title = "Import ParametricEQ.txt",
+                            icon = MaterialSymbolIcon("upload_file", filled = true),
+                            iconContainerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.6f),
+                            iconTint = MaterialTheme.colorScheme.onSecondaryContainer,
+                            onClick = {
+                                showMenu = false
+                                importApoLauncher.launch(arrayOf("text/*", "*/*"))
                             }
                         ),
                         RhythmMenuItem(
@@ -978,13 +1012,107 @@ fun EqualizerScreen(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Text(
-                    text = context.getString(R.string.frequency_bands),
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.padding(horizontal = 8.dp)
-                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = context.getString(R.string.frequency_bands),
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    FilterChip(
+                        selected = doublePrecisionPeqEnabled,
+                        onClick = {
+                            HapticUtils.performHapticFeedback(context, haptics, HapticType.LIGHT)
+                            viewModel.appSettings.presetsPrefs.setDoublePrecisionPeqEnabled(!doublePrecisionPeqEnabled)
+                        },
+                        label = {
+                            val preampLabel = activePeqSettings?.let {
+                                String.format(Locale.ROOT, "64-bit PEQ %.1fdB", it.preampDb)
+                            } ?: "64-bit PEQ"
+                            Text(
+                                text = if (doublePrecisionPeqEnabled) preampLabel else "Hardware EQ",
+                                style = MaterialTheme.typography.labelSmall
+                            )
+                        }
+                    )
+                }
+
+                if (doublePrecisionPeqEnabled && isAutoEQPresetActive && isEqualizerEnabled) {
+                    Surface(
+                        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                        shape = RoundedCornerShape(20.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "Parametric Target Tuner",
+                                    style = MaterialTheme.typography.labelLarge,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                activePeqSettings?.fitRmsErrorDb?.let { rms ->
+                                    Text(
+                                        text = String.format(Locale.ROOT, "RMS %.2f dB • %d filters", rms, activePeqSettings.filters.size),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                            }
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Text("Bass", style = MaterialTheme.typography.labelSmall, modifier = Modifier.width(36.dp))
+                                CookieHorizontalSlider(
+                                    value = peqBassGainDb,
+                                    onValueChange = { v -> viewModel.refitActiveParametricEq(v, peqTiltDbPerOctave) },
+                                    valueRange = -6f..9f,
+                                    modifier = Modifier.weight(1f).height(28.dp)
+                                )
+                                Text(
+                                    text = String.format(Locale.ROOT, "%+.1fdB", peqBassGainDb),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    modifier = Modifier.width(46.dp),
+                                    textAlign = TextAlign.End
+                                )
+                            }
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Text("Tilt", style = MaterialTheme.typography.labelSmall, modifier = Modifier.width(36.dp))
+                                CookieHorizontalSlider(
+                                    value = peqTiltDbPerOctave,
+                                    onValueChange = { v -> viewModel.refitActiveParametricEq(peqBassGainDb, v) },
+                                    valueRange = -2f..2f,
+                                    modifier = Modifier.weight(1f).height(28.dp)
+                                )
+                                Text(
+                                    text = String.format(Locale.ROOT, "%+.1f/oct", peqTiltDbPerOctave),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    modifier = Modifier.width(46.dp),
+                                    textAlign = TextAlign.End
+                                )
+                            }
+                        }
+                    }
+                }
 
                 Surface(
                     color = MaterialTheme.colorScheme.surfaceContainer,

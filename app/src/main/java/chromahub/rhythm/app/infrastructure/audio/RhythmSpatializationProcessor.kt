@@ -84,45 +84,38 @@ class RhythmSpatializationProcessor : RhythmAudioProcessor() {
     fun isAvailable(): Boolean = channelCount == 2
     
     override fun processSamples(samples: ShortArray, sampleCount: Int) {
+        if (!isEnabled() || getStrength() == 0.toShort() || channelCount != 2) return
+        val doubles = acquireDoubleArray(sampleCount)
+        try {
+            for (i in 0 until sampleCount) doubles[i] = samples[i] / 32768.0
+            processDoubleSamples(doubles, sampleCount)
+            for (i in 0 until sampleCount) {
+                samples[i] = (doubles[i].coerceIn(-1.0, 1.0) * 32767.0).toInt().coerceIn(-32768, 32767).toShort()
+            }
+        } finally {
+            releaseDoubleArray(doubles)
+        }
+    }
+
+    override fun processDoubleSamples(samples: DoubleArray, sampleCount: Int) {
         val currentEnabled = isEnabled()
         val currentStrength = getStrength()
-        if (!currentEnabled || currentStrength == 0.toShort() || channelCount != 2) {
-            return // Only works for stereo, pass through otherwise
-        }
-        
-        // Convert strength (0-1000) to width multiplier (1.0-3.0)
-        // Using a carefully tuned curve for natural and musical spatial imaging
+        if (!currentEnabled || currentStrength == 0.toShort() || channelCount != 2) return
+
         val width = when {
-            currentStrength == 0.toShort() -> 1.0f
-            currentStrength <= 300 -> 1.0f + (currentStrength / 300.0f) * 0.5f  // 0-300 = 1.0-1.5x (subtle)
-            currentStrength <= 700 -> 1.5f + ((currentStrength - 300) / 400.0f) * 0.8f  // 300-700 = 1.5-2.3x (medium)
-            else -> 2.3f + ((currentStrength - 700) / 300.0f) * 0.7f  // 700-1000 = 2.3-3.0x (wide)
+            currentStrength == 0.toShort() -> 1.0
+            currentStrength <= 300 -> 1.0 + (currentStrength / 300.0) * 0.5
+            currentStrength <= 700 -> 1.5 + ((currentStrength - 300) / 400.0) * 0.8
+            else -> 2.3 + ((currentStrength - 700) / 300.0) * 0.7
         }
-        
-        // Process stereo pairs (L, R, L, R, ...)
+
         for (i in 0 until sampleCount - 1 step 2) {
-            // Convert to normalized float (-1.0 to 1.0)
-            val left = samples[i] / 32768.0f
-            val right = samples[i + 1] / 32768.0f
-            
-            // M/S encoding - separate center and side information
-            val mid = (left + right) * 0.5f  // Center/mono content (vocals, bass, kick)
-            val side = (left - right) * 0.5f  // Stereo/width content (reverb, panning, ambience)
-            
-            // Apply stereo widening by amplifying the side signal
-            val wideSide = side * width
-            
-            // M/S decoding with widened side - reconstruct enhanced stereo
-            val newLeft = mid + wideSide
-            val newRight = mid - wideSide
-            
-            // Apply soft clipping to prevent harsh distortion at extreme widths
-            val clippedLeft = softClip(newLeft)
-            val clippedRight = softClip(newRight)
-            
-            // Convert back to 16-bit PCM
-            samples[i] = (clippedLeft * 32767.0f).toInt().toShort()
-            samples[i + 1] = (clippedRight * 32767.0f).toInt().toShort()
+            val left = samples[i]
+            val right = samples[i + 1]
+            val mid = (left + right) * 0.5
+            val wideSide = ((left - right) * 0.5) * width
+            samples[i] = softClip((mid + wideSide).toFloat()).toDouble()
+            samples[i + 1] = softClip((mid - wideSide).toFloat()).toDouble()
         }
     }
     

@@ -1,6 +1,5 @@
 /*
  * SPDX-FileCopyrightText: 2024-2026 Anjishnu Nandi <https://github.com/cromaguy>
- * SPDX-FileCopyrightText: 2026 Rhythm Audio Enhancement Contributors
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
@@ -105,7 +104,9 @@ data class SpectrumExtensionConfig(
 data class ConvolverConfig(
     val enabled: Boolean = false,
     val kernelName: String = "Studio Master",
-    val crossChannel: Float = 0.0f
+    val crossChannel: Float = 0.0f,
+    val irUri: String? = null,
+    val mixPercent: Float = 1.0f
 )
 
 data class FieldSurroundConfig(

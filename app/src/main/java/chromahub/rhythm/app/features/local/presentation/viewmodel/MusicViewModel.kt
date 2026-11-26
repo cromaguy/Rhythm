@@ -10320,7 +10320,20 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
         if (currentPreset.startsWith("AutoEQ:") || currentPreset != "Custom") {
             appSettings.setEqualizerPreset("Custom")
             appSettings.setAutoEQProfile("")
+            appSettings.presetsPrefs.setAutoEqProfileId(null)
             Log.d(TAG, "Switched to Custom preset as user manually adjusted EQ band")
+        }
+
+        val currentLevels = appSettings.equalizerBandLevels.value
+            .split(",").mapNotNull { it.toFloatOrNull() }
+        if (currentLevels.isNotEmpty()) {
+            val peq = chromahub.rhythm.app.infrastructure.audio.peq.PeqFitter.from10BandDirect(
+                bandGainsDb = currentLevels,
+                sourceName = "Custom"
+            )
+            appSettings.presetsPrefs.setParametricEqJson(
+                chromahub.rhythm.app.infrastructure.audio.peq.PeqSettings.toJson(peq)
+            )
         }
         
         val intent = Intent(context, MediaPlaybackService::class.java).apply {
@@ -10453,6 +10466,14 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
         // Clear AutoEQ profile when applying a different preset (unless it's an AutoEQ preset)
         if (!preset.startsWith("AutoEQ:")) {
             appSettings.setAutoEQProfile("")
+            appSettings.presetsPrefs.setAutoEqProfileId(null)
+            val directPeq = chromahub.rhythm.app.infrastructure.audio.peq.PeqFitter.from10BandDirect(
+                bandGainsDb = levels,
+                sourceName = preset
+            )
+            appSettings.presetsPrefs.setParametricEqJson(
+                chromahub.rhythm.app.infrastructure.audio.peq.PeqSettings.toJson(directPeq)
+            )
             Log.d(TAG, "Cleared AutoEQ profile as user selected preset: $preset")
         }
         
@@ -10500,6 +10521,8 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
         if (profile.name.isBlank() || profile.name.equals("None", ignoreCase = true)) {
             Log.d(TAG, "Disabling AutoEQ profile")
             appSettings.setAutoEQProfile("")
+            appSettings.presetsPrefs.setAutoEqProfileId(null)
+            appSettings.presetsPrefs.setParametricEqJson("[]")
             applyEqualizerPreset("Flat", List(10) { 0f })
             return
         }
@@ -10521,6 +10544,21 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
         
         // Save profile name to settings
         appSettings.setAutoEQProfile(profile.name)
+        appSettings.presetsPrefs.setAutoEqProfileId(profile.name)
+
+        val normalizedProfile = profile.copy(bands = levels)
+        viewModelScope.launch {
+            val bassDb = appSettings.presetsPrefs.peqBassGainDb.value.toDouble()
+            val tiltDb = appSettings.presetsPrefs.peqTiltDbPerOctave.value.toDouble()
+            val fittedPeq = autoEQManager.fitParametricEq(
+                profile = normalizedProfile,
+                bassGainDb = bassDb,
+                tiltDbPerOctave = tiltDb
+            )
+            appSettings.presetsPrefs.setParametricEqJson(
+                chromahub.rhythm.app.infrastructure.audio.peq.PeqSettings.toJson(fittedPeq)
+            )
+        }
         
         // Enable equalizer first if it's not already enabled
         val wasEnabled = appSettings.equalizerEnabled.value
@@ -10530,14 +10568,7 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
             
             // Wait for equalizer to initialize using coroutine
             viewModelScope.launch {
-                // Increased delay to ensure service has time to initialize equalizer
-                // This is critical because the service needs to:
-                // 1. Process the enable intent
-                // 2. Check if equalizer object exists (may need to reinitialize)
-                // 3. Enable the equalizer
-                delay(300) // Increased from 150ms to 300ms for reliability
-                
-                // Apply the profile as a preset
+                delay(300)
                 applyEqualizerPreset("AutoEQ: ${profile.name}", levels)
                 Log.d(TAG, "AutoEQ profile applied successfully (equalizer was enabled automatically)")
             }
@@ -10546,6 +10577,47 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
             applyEqualizerPreset("AutoEQ: ${profile.name}", levels)
             Log.d(TAG, "AutoEQ profile applied successfully (equalizer was already enabled)")
         }
+    }
+
+    fun refitActiveParametricEq(bassGainDb: Float, tiltDbPerOctave: Float) {
+        appSettings.presetsPrefs.setPeqBassGainDb(bassGainDb)
+        appSettings.presetsPrefs.setPeqTiltDbPerOctave(tiltDbPerOctave)
+        viewModelScope.launch {
+            val activeName = appSettings.autoEQProfile.value
+            val currentBands = appSettings.equalizerBandLevels.value
+                .split(",").mapNotNull { it.toFloatOrNull() }
+                .takeIf { it.isNotEmpty() } ?: List(10) { 0f }
+            val profile = if (activeName.isNotBlank() && activeName != "None") {
+                autoEQManager.findProfileByName(activeName)
+                    ?: chromahub.rhythm.app.shared.data.model.AutoEQProfile(activeName, "Custom", "Custom", currentBands)
+            } else {
+                chromahub.rhythm.app.shared.data.model.AutoEQProfile(appSettings.equalizerPreset.value, "Custom", "Custom", currentBands)
+            }
+            val fitted = autoEQManager.fitParametricEq(
+                profile = profile,
+                bassGainDb = bassGainDb.toDouble(),
+                tiltDbPerOctave = tiltDbPerOctave.toDouble()
+            )
+            appSettings.presetsPrefs.setParametricEqJson(
+                chromahub.rhythm.app.infrastructure.audio.peq.PeqSettings.toJson(fitted)
+            )
+        }
+    }
+
+    fun importEqualizerApoText(rawText: String, profileName: String? = null): Boolean {
+        val parsed = autoEQManager.parseEqualizerApoText(rawText, profileName) ?: return false
+        appSettings.presetsPrefs.setDoublePrecisionPeqEnabled(true)
+        appSettings.presetsPrefs.setParametricEqJson(
+            chromahub.rhythm.app.infrastructure.audio.peq.PeqSettings.toJson(parsed)
+        )
+        val displayTitle = parsed.sourceName?.takeIf { it.isNotBlank() } ?: "ParametricEQ"
+        appSettings.setAutoEQProfile(displayTitle)
+        appSettings.presetsPrefs.setAutoEqProfileId(displayTitle)
+        appSettings.setEqualizerPreset("AutoEQ: $displayTitle")
+        if (!appSettings.equalizerEnabled.value) {
+            setEqualizerEnabled(true)
+        }
+        return true
     }
     
     fun getAutoEQRecommendedProfiles(): List<chromahub.rhythm.app.shared.data.model.AutoEQProfile> {

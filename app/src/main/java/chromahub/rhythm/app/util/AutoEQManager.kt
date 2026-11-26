@@ -6,6 +6,9 @@
 package chromahub.rhythm.app.util
 
 import android.content.Context
+import chromahub.rhythm.app.infrastructure.audio.peq.ParametricEqText
+import chromahub.rhythm.app.infrastructure.audio.peq.PeqFitter
+import chromahub.rhythm.app.infrastructure.audio.peq.PeqSettings
 import chromahub.rhythm.app.shared.data.model.AutoEQDatabase
 import chromahub.rhythm.app.shared.data.model.AutoEQProfile
 import com.google.gson.Gson
@@ -133,6 +136,23 @@ class AutoEQManager(private val context: Context) {
         
         return getCombinedProfiles().filter { it.name in recommended }
     }
+
+    /** Fits a 10-band AutoEQ profile (plus optional bass shelf & 1 kHz spectral tilt) into Double-precision parametric EQ. */
+    suspend fun fitParametricEq(
+        profile: AutoEQProfile,
+        bassGainDb: Double = 0.0,
+        tiltDbPerOctave: Double = 0.0
+    ): PeqSettings = withContext(Dispatchers.Default) {
+        val curve = PeqFitter.curveFrom10BandProfile(
+            bandGainsDb = profile.bands,
+            bassGainDb = bassGainDb,
+            tiltDbPerOctave = tiltDbPerOctave
+        )
+        PeqFitter.fit(desiredDb = curve, sourceName = profile.name)
+    }
+
+    fun parseEqualizerApoText(text: String, name: String? = null): PeqSettings? =
+        ParametricEqText.parse(text, sourceName = name)
 
     companion object {
         @Volatile

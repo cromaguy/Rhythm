@@ -49,10 +49,21 @@ class RhythmMonoAudioProcessorTest {
     }
 
     @Test
-    fun configure_withNon16Bit_throwsUnhandledAudioFormatException() {
+    fun configure_withFloatAnd24Bit_succeedsAndSetsActive() {
         val processor = RhythmMonoAudioProcessor()
-        val format = createFloatFormat()
-        
+        for (enc in intArrayOf(C.ENCODING_PCM_FLOAT, C.ENCODING_PCM_24BIT, C.ENCODING_PCM_32BIT)) {
+            val format = AudioProcessor.AudioFormat(48000, 2, enc)
+            val outputFormat = processor.configure(format)
+            assertEquals(format, outputFormat)
+            assertTrue(processor.isActive())
+        }
+    }
+
+    @Test
+    fun configure_withUnsupportedEncoding_throwsUnhandledAudioFormatException() {
+        val processor = RhythmMonoAudioProcessor()
+        val format = AudioProcessor.AudioFormat(44100, 2, C.ENCODING_MP3)
+
         assertThrows(AudioProcessor.UnhandledAudioFormatException::class.java) {
             processor.configure(format)
         }

@@ -177,14 +177,26 @@ class PresetsPreferencesStore(prefs: SharedPreferences) : PreferenceStoreBase(pr
     private val _autoEqProfileId = NullableStringPref("autoeq_active_profile_id")
     private val _convolverIrUri = NullableStringPref("convolver_ir_uri")
     private val _convolverMixPercent = FloatPref("convolver_mix_percent", 0.35f)
+    private val _doublePrecisionPeqEnabled = BooleanPref("double_precision_peq_enabled", true)
+    private val _deviceAutoEqMapJson = StringPref("device_autoeq_map_json", "{}")
+    private val _peqBassGainDb = FloatPref("peq_bass_gain_db", 0f)
+    private val _peqTiltDbPerOctave = FloatPref("peq_tilt_db_per_octave", 0f)
 
     val parametricEqJson = _parametricEqJson.state
     val autoEqProfileId = _autoEqProfileId.state
     val convolverIrUri = _convolverIrUri.state
     val convolverMixPercent = _convolverMixPercent.state
+    val doublePrecisionPeqEnabled = _doublePrecisionPeqEnabled.state
+    val deviceAutoEqMapJson = _deviceAutoEqMapJson.state
+    val peqBassGainDb = _peqBassGainDb.state
+    val peqTiltDbPerOctave = _peqTiltDbPerOctave.state
 
     fun setParametricEqJson(json: String) = _parametricEqJson.set(json)
     fun setAutoEqProfileId(profileId: String?) = _autoEqProfileId.set(profileId)
     fun setConvolverIrUri(uri: String?) = _convolverIrUri.set(uri)
     fun setConvolverMixPercent(mix: Float) = _convolverMixPercent.set(mix.coerceIn(0f, 1f))
+    fun setDoublePrecisionPeqEnabled(enabled: Boolean) = _doublePrecisionPeqEnabled.set(enabled)
+    fun setDeviceAutoEqMapJson(json: String) = _deviceAutoEqMapJson.set(json)
+    fun setPeqBassGainDb(gainDb: Float) = _peqBassGainDb.set(gainDb.coerceIn(-12f, 12f))
+    fun setPeqTiltDbPerOctave(tilt: Float) = _peqTiltDbPerOctave.set(tilt.coerceIn(-4f, 4f))
 }

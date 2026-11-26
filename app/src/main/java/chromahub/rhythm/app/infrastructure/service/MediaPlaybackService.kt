@@ -127,6 +127,7 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
     private var rhythmSpatializationProcessor: chromahub.rhythm.app.infrastructure.audio.RhythmSpatializationProcessor? = null
     private var rhythmMonoAudioProcessor: chromahub.rhythm.app.infrastructure.audio.RhythmMonoAudioProcessor? = null
     private var rhythmViperProcessor: chromahub.rhythm.app.infrastructure.audio.viper.ViperAudioProcessor? = null
+    private var rhythmParametricEqProcessor: chromahub.rhythm.app.infrastructure.audio.peq.RhythmParametricEqAudioProcessor? = null
     private var audioDeviceCallback: android.media.AudioDeviceCallback? = null
     
     private var virtualizerStrength: Short = 0 // Store strength for virtualizer
@@ -506,7 +507,11 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
             }
             val viperRepo = chromahub.rhythm.app.infrastructure.audio.viper.ViperSettingsRepository.getInstance(applicationContext)
             rhythmViperProcessor = chromahub.rhythm.app.infrastructure.audio.viper.ViperAudioProcessor().apply {
+                setApplicationContext(applicationContext)
                 updateConfig(viperRepo.configFlow.value)
+            }
+            rhythmParametricEqProcessor = chromahub.rhythm.app.infrastructure.audio.peq.RhythmParametricEqAudioProcessor().also {
+                syncParametricEqFromSettings(it)
             }
             serviceScope.launch {
                 viperRepo.configFlow.collect { newConfig ->
@@ -858,7 +863,8 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
             bassBoostProcessor = rhythmBassBoostProcessor,
             spatializationProcessor = rhythmSpatializationProcessor,
             monoProcessor = rhythmMonoAudioProcessor,
-            viperProcessor = rhythmViperProcessor
+            viperProcessor = rhythmViperProcessor,
+            parametricEqProcessor = rhythmParametricEqProcessor
         )
         rhythmPlayerEngine.initialize()
         serviceScope.launch {
@@ -1164,6 +1170,18 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
                 if (::rhythmPlayerEngine.isInitialized) {
                     rhythmPlayerEngine.setSkipSilenceEnabled(if (isBitPerfect) false else enabled)
                 }
+            }
+        }
+
+        serviceScope.launch {
+            kotlinx.coroutines.flow.combine(
+                appSettings.equalizerEnabled,
+                appSettings.equalizerBandLevels,
+                appSettings.presetsPrefs.parametricEqJson,
+                appSettings.presetsPrefs.doublePrecisionPeqEnabled,
+                appSettings.audioRoutingMode
+            ) { _, _, _, _, _ -> }.collect {
+                syncParametricEqFromSettings()
             }
         }
 
@@ -3424,12 +3442,45 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
             try {
                 val viperRepo = chromahub.rhythm.app.infrastructure.audio.viper.ViperSettingsRepository.getInstance(applicationContext)
                 rhythmViperProcessor = chromahub.rhythm.app.infrastructure.audio.viper.ViperAudioProcessor().apply {
+                    setApplicationContext(applicationContext)
                     updateConfig(viperRepo.configFlow.value)
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to create ViPER processor", e)
             }
         }
+
+        if (rhythmParametricEqProcessor == null) {
+            try {
+                rhythmParametricEqProcessor = chromahub.rhythm.app.infrastructure.audio.peq.RhythmParametricEqAudioProcessor().also {
+                    syncParametricEqFromSettings(it)
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to create Double-precision PEQ processor", e)
+            }
+        }
+    }
+
+    private fun syncParametricEqFromSettings(
+        target: chromahub.rhythm.app.infrastructure.audio.peq.RhythmParametricEqAudioProcessor? = rhythmParametricEqProcessor
+    ) {
+        val peq = target ?: return
+        val bitPerfect = appSettings.audioRoutingMode.value == "app"
+        val useDoublePeq = appSettings.presetsPrefs.doublePrecisionPeqEnabled.value
+        val eqEnabled = appSettings.equalizerEnabled.value && !bitPerfect && useDoublePeq
+        val storedPeq = chromahub.rhythm.app.infrastructure.audio.peq.PeqSettings.fromJson(
+            appSettings.presetsPrefs.parametricEqJson.value
+        ) ?: run {
+            val bands = appSettings.equalizerBandLevels.value
+                .split(",").mapNotNull { it.toFloatOrNull() }
+            if (bands.any { kotlin.math.abs(it) >= 0.01f }) {
+                chromahub.rhythm.app.infrastructure.audio.peq.PeqFitter.from10BandDirect(bands)
+            } else {
+                chromahub.rhythm.app.infrastructure.audio.peq.PeqSettings()
+            }
+        }
+        peq.updateSettings(storedPeq)
+        peq.setEnabled(eqEnabled && !storedPeq.isFlat)
     }
 
     fun initializeAudioEffects() {
@@ -3528,11 +3579,13 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
                 rhythmBassBoostProcessor?.setEnabled(false)
                 rhythmSpatializationProcessor?.setEnabled(false)
                 rhythmMonoAudioProcessor?.setEnabled(false)
+                rhythmParametricEqProcessor?.setEnabled(false)
                 rhythmViperProcessor?.setForcedBypass(true)
                 return
             }
 
             rhythmViperProcessor?.setForcedBypass(false)
+            syncParametricEqFromSettings()
 
             if (equalizer != null) {
                 val shouldBeEnabled = appSettings.equalizerEnabled.value
@@ -3616,6 +3669,20 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
     fun setEqualizerEnabled(enabled: Boolean) {
         if (enabled && appSettings.audioRoutingMode.value == "app") {
             Log.i(TAG, "Cannot enable equalizer: Bit-Perfect mode is active")
+            return
+        }
+
+        syncParametricEqFromSettings()
+        if (appSettings.presetsPrefs.doublePrecisionPeqEnabled.value) {
+            withEqualizerSafe("zero hardware bands for Double PEQ", Unit) { eq ->
+                val numberOfBands = eq.numberOfBands.toInt()
+                for (i in 0 until numberOfBands) {
+                    eq.setBandLevel(i.toShort(), 0)
+                }
+            }
+            if (::rhythmPlayerEngine.isInitialized) {
+                rhythmPlayerEngine.updateTrackSelectionParameters()
+            }
             return
         }
 
@@ -3738,7 +3805,19 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
     }
     
     fun applyEqualizerPreset(levels: FloatArray) {
+        syncParametricEqFromSettings()
+        val useDoublePeq = appSettings.presetsPrefs.doublePrecisionPeqEnabled.value
         try {
+            if (useDoublePeq) {
+                // Keep platform hardware Equalizer flat when Double-precision software PEQ handles the curve
+                withEqualizerSafe("zero hardware bands for Double PEQ", Unit) { eq ->
+                    val numberOfBands = eq.numberOfBands.toInt()
+                    for (i in 0 until numberOfBands) {
+                        eq.setBandLevel(i.toShort(), 0)
+                    }
+                }
+                return
+            }
             if (equalizer == null) {
                 Log.w(TAG, "Equalizer is null when applying preset, queuing pending levels and ensuring init")
                 pendingEqualizerLevels = levels.copyOf()
@@ -3896,10 +3975,12 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
             rhythmSpatializationProcessor?.reset()
             rhythmMonoAudioProcessor?.reset()
             rhythmViperProcessor?.reset()
+            rhythmParametricEqProcessor?.reset()
             rhythmBassBoostProcessor = null
             rhythmSpatializationProcessor = null
             rhythmMonoAudioProcessor = null
             rhythmViperProcessor = null
+            rhythmParametricEqProcessor = null
             
             Log.d(TAG, "Audio effects released")
         } catch (e: Exception) {

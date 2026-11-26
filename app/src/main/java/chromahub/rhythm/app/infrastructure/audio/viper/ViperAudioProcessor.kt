@@ -5,6 +5,7 @@
 
 package chromahub.rhythm.app.infrastructure.audio.viper
 
+import android.content.Context
 import android.util.Log
 import androidx.annotation.OptIn
 import androidx.media3.common.audio.AudioProcessor
@@ -157,16 +158,28 @@ class ViperAudioProcessor : RhythmAudioProcessor() {
     private val childProcessors = java.util.concurrent.CopyOnWriteArrayList<ViperAudioProcessor>()
 
     @Volatile
+    private var appContext: Context? = null
+
+    @Volatile
     private var lastAppliedConfig: ViperMasterConfig? = null
 
     @Volatile
     private var lastAppliedSampleRate: Int = 0
+
+    fun setApplicationContext(context: Context) {
+        val appCtx = context.applicationContext
+        this.appContext = appCtx
+        for (child in childProcessors) {
+            child.setApplicationContext(appCtx)
+        }
+    }
 
     fun setParent(parent: ViperAudioProcessor?) {
         this.parentProcessor?.childProcessors?.remove(this)
         this.parentProcessor = parent
         parent?.childProcessors?.add(this)
         if (parent != null) {
+            (parent.appContext ?: parentProcessor?.appContext)?.let { setApplicationContext(it) }
             updateConfig(parent.getConfig())
             setForcedBypass(parent.isForcedBypassed())
         }
@@ -205,6 +218,8 @@ class ViperAudioProcessor : RhythmAudioProcessor() {
         val activeConfig = getConfig()
         return activeConfig.masterEnabled
     }
+
+    override fun needs16BitDither(): Boolean = true
 
     override fun isBypassed(): Boolean {
         return !isEnabled() || channelCount != 2
@@ -344,8 +359,16 @@ class ViperAudioProcessor : RhythmAudioProcessor() {
         speakerSubsonicHp.configure(BiquadFilter.Type.HIGH_PASS, fs, 60.0f, 0.707f, 0.0f)
         speakerNotch.configure(BiquadFilter.Type.NOTCH, fs, 3200.0f, 2.5f, 0.0f)
 
-        // 11. Convolver
-        convolver.loadPreset(cfg.convolver.kernelName, fs)
+        // 11. Convolver (preset FIR or FFT Overlap-Add custom WAV/IRS impulse)
+        val ctx = appContext ?: parentProcessor?.appContext
+        val irUri = cfg.convolver.irUri
+        val mix = cfg.convolver.mixPercent
+        if (ctx != null && !irUri.isNullOrBlank()) {
+            convolver.loadFromUri(ctx, irUri, cfg.convolver.kernelName, fs, mix)
+        } else {
+            convolver.setMix(mix)
+            convolver.loadPreset(cfg.convolver.kernelName, fs)
+        }
     }
 
     private fun configureDdcFilters(fs: Int, ddc: ViperDdcConfig) {
@@ -389,6 +412,21 @@ class ViperAudioProcessor : RhythmAudioProcessor() {
     }
 
     override fun processSamples(samples: ShortArray, sampleCount: Int) {
+        val cfg = getConfig()
+        if (!cfg.masterEnabled || channelCount != 2) return
+        val doubles = acquireDoubleArray(sampleCount)
+        try {
+            for (i in 0 until sampleCount) doubles[i] = samples[i].toDouble() / 32768.0
+            processDoubleSamples(doubles, sampleCount)
+            for (i in 0 until sampleCount) {
+                samples[i] = (doubles[i].coerceIn(-1.0, 1.0) * 32767.0).toInt().coerceIn(-32768, 32767).toShort()
+            }
+        } finally {
+            releaseDoubleArray(doubles)
+        }
+    }
+
+    override fun processDoubleSamples(samples: DoubleArray, sampleCount: Int) {
         val cfg = getConfig()
         if (cfg !== lastAppliedConfig && cfg != lastAppliedConfig || sampleRate != lastAppliedSampleRate) {
             reconfigureFilters()
@@ -514,8 +552,8 @@ class ViperAudioProcessor : RhythmAudioProcessor() {
 
         var sampleIdx = 0
         while (sampleIdx < sampleCount) {
-            var left = samples[sampleIdx].toFloat() / 32768.0f
-            var right = samples[sampleIdx + 1].toFloat() / 32768.0f
+            var left = samples[sampleIdx].toFloat()
+            var right = samples[sampleIdx + 1].toFloat()
 
             // 1. Playback Gain Control (AGC)
             if (pgcEnabled) {
@@ -757,12 +795,9 @@ class ViperAudioProcessor : RhythmAudioProcessor() {
             if (abs(left) > peakL) peakL = abs(left)
             if (abs(right) > peakR) peakR = abs(right)
 
-            // Clamp safely to 16-bit PCM range
-            val sampleOutL = (left * 32767.0f).toInt().coerceIn(-32768, 32767).toShort()
-            val sampleOutR = (right * 32767.0f).toInt().coerceIn(-32768, 32767).toShort()
-
-            samples[sampleIdx] = sampleOutL
-            samples[sampleIdx + 1] = sampleOutR
+            // Store full normalized dynamic range (TPDF dither / bit-depth quantization runs in RhythmAudioProcessor sink)
+            samples[sampleIdx] = left.toDouble()
+            samples[sampleIdx + 1] = right.toDouble()
 
             sampleIdx += 2
         }

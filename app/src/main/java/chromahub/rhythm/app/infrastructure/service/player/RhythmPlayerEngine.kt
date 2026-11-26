@@ -34,6 +34,9 @@ import android.net.Uri
 import chromahub.rhythm.app.infrastructure.audio.RhythmBassBoostProcessor
 import chromahub.rhythm.app.infrastructure.audio.RhythmSpatializationProcessor
 import chromahub.rhythm.app.infrastructure.audio.RhythmMonoAudioProcessor
+import chromahub.rhythm.app.infrastructure.audio.dsp.AudioPipelineTelemetry
+import chromahub.rhythm.app.infrastructure.audio.dsp.RhythmAudioSinkCoordinator
+import chromahub.rhythm.app.infrastructure.audio.peq.RhythmParametricEqAudioProcessor
 import chromahub.rhythm.app.shared.data.model.TransitionSettings
 import chromahub.rhythm.app.infrastructure.service.player.replaygain.ReplayGainAudioProcessor
 import chromahub.rhythm.app.infrastructure.service.player.replaygain.ReplayGainCache
@@ -74,7 +77,8 @@ class RhythmPlayerEngine(
     private val bassBoostProcessor: RhythmBassBoostProcessor? = null,
     private val spatializationProcessor: RhythmSpatializationProcessor? = null,
     private val monoProcessor: RhythmMonoAudioProcessor? = null,
-    private val viperProcessor: chromahub.rhythm.app.infrastructure.audio.viper.ViperAudioProcessor? = null
+    private val viperProcessor: chromahub.rhythm.app.infrastructure.audio.viper.ViperAudioProcessor? = null,
+    private val parametricEqProcessor: RhythmParametricEqAudioProcessor? = null
 ) {
     companion object {
         private const val TAG = "RhythmPlayerEngine"
@@ -97,12 +101,17 @@ class RhythmPlayerEngine(
     private var playerBMono: RhythmMonoAudioProcessor? = null
     private var playerAViper: chromahub.rhythm.app.infrastructure.audio.viper.ViperAudioProcessor? = null
     private var playerBViper: chromahub.rhythm.app.infrastructure.audio.viper.ViperAudioProcessor? = null
+    private var playerAParametricEq: RhythmParametricEqAudioProcessor? = null
+    private var playerBParametricEq: RhythmParametricEqAudioProcessor? = null
     private lateinit var playerAReplayGain: ReplayGainAudioProcessor
     private lateinit var playerBReplayGain: ReplayGainAudioProcessor
     private var activeReplayGainProcessor: ReplayGainAudioProcessor? = null
     private var userVolume: Float = 1.0f
     @Volatile
     var isInternalVolumeAdjustment: Boolean = false
+
+    private val _pipelineTelemetry = MutableStateFlow(AudioPipelineTelemetry())
+    val pipelineTelemetry: StateFlow<AudioPipelineTelemetry> = _pipelineTelemetry.asStateFlow()
 
     private val onPlayerSwappedListeners = mutableListOf<(Player) -> Unit>()
 
@@ -297,11 +306,13 @@ class RhythmPlayerEngine(
         val aSpatial = spatializationProcessor?.let { RhythmSpatializationProcessor().apply { setParent(it) } }
         val aMono = monoProcessor?.let { RhythmMonoAudioProcessor().apply { setParent(it) } }
         val aViper = viperProcessor?.let { chromahub.rhythm.app.infrastructure.audio.viper.ViperAudioProcessor().apply { setParent(it) } }
+        val aPeq = parametricEqProcessor?.let { RhythmParametricEqAudioProcessor().apply { setParent(it) } }
         val aReplayGain = ReplayGainAudioProcessor()
         playerABassBoost = aBass
         playerASpatialization = aSpatial
         playerAMono = aMono
         playerAViper = aViper
+        playerAParametricEq = aPeq
         playerAReplayGain = aReplayGain
 
         // Instantiate child processors for Player B
@@ -309,11 +320,13 @@ class RhythmPlayerEngine(
         val bSpatial = spatializationProcessor?.let { RhythmSpatializationProcessor().apply { setParent(it) } }
         val bMono = monoProcessor?.let { RhythmMonoAudioProcessor().apply { setParent(it) } }
         val bViper = viperProcessor?.let { chromahub.rhythm.app.infrastructure.audio.viper.ViperAudioProcessor().apply { setParent(it) } }
+        val bPeq = parametricEqProcessor?.let { RhythmParametricEqAudioProcessor().apply { setParent(it) } }
         val bReplayGain = ReplayGainAudioProcessor()
         playerBBassBoost = bBass
         playerBSpatialization = bSpatial
         playerBMono = bMono
         playerBViper = bViper
+        playerBParametricEq = bPeq
         playerBReplayGain = bReplayGain
 
         // Apply settings initially
@@ -321,8 +334,8 @@ class RhythmPlayerEngine(
         applyReplayGainSettingsOnProcessor(aReplayGain, appSettings.replayGain.value)
         applyReplayGainSettingsOnProcessor(bReplayGain, appSettings.replayGain.value)
 
-        playerA = buildPlayer(handleAudioFocus = false, bassProcessor = aBass, spatialProcessor = aSpatial, monoProcessor = aMono, replayGainProcessor = aReplayGain, viperProcessor = aViper)
-        playerB = buildPlayer(handleAudioFocus = false, bassProcessor = bBass, spatialProcessor = bSpatial, monoProcessor = bMono, replayGainProcessor = bReplayGain, viperProcessor = bViper)
+        playerA = buildPlayer(handleAudioFocus = false, bassProcessor = aBass, spatialProcessor = aSpatial, monoProcessor = aMono, replayGainProcessor = aReplayGain, viperProcessor = aViper, parametricEqProcessor = aPeq)
+        playerB = buildPlayer(handleAudioFocus = false, bassProcessor = bBass, spatialProcessor = bSpatial, monoProcessor = bMono, replayGainProcessor = bReplayGain, viperProcessor = bViper, parametricEqProcessor = bPeq)
 
         val initVolume = if (appSettings.useSystemVolume.value) 1.0f else appSettings.appVolume.value
         userVolume = initVolume
@@ -411,7 +424,8 @@ class RhythmPlayerEngine(
         spatialProcessor: RhythmSpatializationProcessor? = null,
         monoProcessor: RhythmMonoAudioProcessor? = null,
         replayGainProcessor: ReplayGainAudioProcessor? = null,
-        viperProcessor: chromahub.rhythm.app.infrastructure.audio.viper.ViperAudioProcessor? = null
+        viperProcessor: chromahub.rhythm.app.infrastructure.audio.viper.ViperAudioProcessor? = null,
+        parametricEqProcessor: RhythmParametricEqAudioProcessor? = null
     ): ExoPlayer {
         val loadControl = DefaultLoadControl.Builder()
             .setBufferDurationsMs(15_000, 30_000, 1_500, 2_500)
@@ -423,24 +437,15 @@ class RhythmPlayerEngine(
         val isPlaybackRateModified =
             kotlin.math.abs(appSettings.playbackSpeed.value - 1f) > 0.001f ||
             kotlin.math.abs(appSettings.playbackPitch.value - 1f) > 0.001f
-        val isViperActive = viperProcessor?.isEnabled() ?: (
-            appSettings.audioRoutingMode.value != "app" &&
-                try {
-                    chromahub.rhythm.app.infrastructure.audio.viper.ViperSettingsRepository
-                        .getInstance(context).configFlow.value.masterEnabled
-                } catch (_: Exception) { false }
-        )
-        val hasActiveProcessors =
-            appSettings.bassBoostEnabled.value ||
-            appSettings.virtualizerEnabled.value ||
-            appSettings.monoAudioEnabled.value ||
-            appSettings.skipSilenceEnabled.value ||
-            isViperActive ||
-            isPlaybackRateModified
+        val isBitPerfectRouting = appSettings.audioRoutingMode.value == "app"
 
+        // Hi-Res Float stays unlocked alongside Double-precision DSP processors (EQ/PEQ/Bass/Spatial/Mono/ViPER);
+        // only SonicAudioProcessor (speed/pitch) or Skip Silence require 16-bit fallback when active.
+        val requires16BitOnly = appSettings.skipSilenceEnabled.value || isPlaybackRateModified
         val floatOutputPref = appSettings.audioEngineFloatOutput.value &&
             HiFiCapabilityChecker.isSupported() &&
-            !hasActiveProcessors
+            !isBitPerfectRouting &&
+            !requires16BitOnly
 
         val mediaCodecSelector = MediaCodecSelector { mimeType, requiresSecureDecoder, requiresTunnelingDecoder ->
             val defaultDecoders = MediaCodecSelector.DEFAULT.getDecoderInfos(
@@ -469,6 +474,9 @@ class RhythmPlayerEngine(
                 if (replayGainProcessor != null) {
                     processors.add(replayGainProcessor)
                 }
+                if (parametricEqProcessor != null) {
+                    processors.add(parametricEqProcessor)
+                }
                 if (bassProcessor != null) {
                     processors.add(bassProcessor)
                 }
@@ -482,16 +490,25 @@ class RhythmPlayerEngine(
                     processors.add(viperProcessor)
                 }
                 
-                val silenceSkippingProcessor = SilenceSkippingAudioProcessor(
+                val silenceSkippingDelegate = SilenceSkippingAudioProcessor(
                     /* minimumSilenceDurationUs = */ 500_000L,
                     /* silenceRetentionRatio = */ 0.2f,
                     /* maxSilenceToKeepDurationUs = */ 1_000_000L,
                     /* minVolumeToKeepPercentageWhenMuting = */ 5,
                     /* silenceThresholdLevel = */ 40.toShort()
                 )
+                val safeSilenceSkippingProcessor = object : androidx.media3.common.audio.AudioProcessor by silenceSkippingDelegate {
+                    override fun configure(inputAudioFormat: androidx.media3.common.audio.AudioProcessor.AudioFormat): androidx.media3.common.audio.AudioProcessor.AudioFormat {
+                        return if (inputAudioFormat.encoding == C.ENCODING_PCM_16BIT) {
+                            silenceSkippingDelegate.configure(inputAudioFormat)
+                        } else {
+                            androidx.media3.common.audio.AudioProcessor.AudioFormat.NOT_SET
+                        }
+                    }
+                }
                 val sonicAudioProcessor = SonicAudioProcessor()
                 val allProcessors: Array<androidx.media3.common.audio.AudioProcessor> =
-                    (listOf(silenceSkippingProcessor) + processors + sonicAudioProcessor).toTypedArray()
+                    (listOf(safeSilenceSkippingProcessor) + processors + sonicAudioProcessor).toTypedArray()
                 val processorChain = object : androidx.media3.common.audio.AudioProcessorChain {
                     override fun getAudioProcessors(): Array<androidx.media3.common.audio.AudioProcessor> = allProcessors
 
@@ -502,7 +519,7 @@ class RhythmPlayerEngine(
                     }
 
                     override fun applySkipSilenceEnabled(skipSilenceEnabled: Boolean): Boolean {
-                        silenceSkippingProcessor.setEnabled(skipSilenceEnabled)
+                        silenceSkippingDelegate.setEnabled(skipSilenceEnabled)
                         return skipSilenceEnabled
                     }
 
@@ -511,7 +528,7 @@ class RhythmPlayerEngine(
                     }
 
                     override fun getSkippedOutputFrameCount(): Long {
-                        return silenceSkippingProcessor.skippedFrames
+                        return silenceSkippingDelegate.skippedFrames
                     }
                 }
                 val baseSink = DefaultAudioSink.Builder(context)
@@ -519,17 +536,25 @@ class RhythmPlayerEngine(
                     .setEnableAudioOutputPlaybackParameters(true)
                     .setAudioProcessorChain(processorChain)
                     .build()
-
-                return if (replayGainProcessor != null) {
-                    object : ForwardingAudioSink(baseSink) {
-                        override fun configure(audioSinkConfig: AudioSink.AudioSinkConfig) {
-                            replayGainProcessor.setRootFormat(audioSinkConfig.format)
-                            super.configure(audioSinkConfig)
-                        }
-                    }
+                val fallbackSink = if (floatOutputPref) {
+                    DefaultAudioSink.Builder(context)
+                        .setEnableFloatOutput(false)
+                        .setEnableAudioOutputPlaybackParameters(true)
+                        .setAudioProcessorChain(processorChain)
+                        .build()
                 } else {
-                    baseSink
+                    null
                 }
+
+                return RhythmAudioSinkCoordinator(
+                    primarySink = baseSink,
+                    fallbackSink = fallbackSink,
+                    replayGainProcessor = replayGainProcessor,
+                    isBitPerfectActive = {
+                        appSettings.audioRoutingMode.value == "app"
+                    },
+                    onTelemetryChanged = { _pipelineTelemetry.value = it }
+                )
             }
         }.apply {
             val extensionMode = if (appSettings.decoderExtensionsEnabled.value) {
@@ -963,13 +988,15 @@ class RhythmPlayerEngine(
             val otherSpatial = if (incomingReplayGain === playerAReplayGain) playerBSpatialization else playerASpatialization
             val otherMono = if (incomingReplayGain === playerAReplayGain) playerBMono else playerAMono
             val otherViper = if (incomingReplayGain === playerAReplayGain) playerBViper else playerAViper
+            val otherPeq = if (incomingReplayGain === playerAReplayGain) playerBParametricEq else playerAParametricEq
             playerB = buildPlayer(
                 handleAudioFocus = false,
                 bassProcessor = otherBassBoost,
                 spatialProcessor = otherSpatial,
                 monoProcessor = otherMono,
                 replayGainProcessor = otherReplayGain,
-                viperProcessor = otherViper
+                viperProcessor = otherViper,
+                parametricEqProcessor = otherPeq
             ).apply {
                 playbackParameters = playerA.playbackParameters
                 attachAnalyticsListener(this)

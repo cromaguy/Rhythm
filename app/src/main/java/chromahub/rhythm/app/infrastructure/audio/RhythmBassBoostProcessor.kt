@@ -152,48 +152,48 @@ class RhythmBassBoostProcessor : RhythmAudioProcessor() {
     }
     
     override fun processSamples(samples: ShortArray, sampleCount: Int) {
+        if (!isEnabled() || getStrength() == 0.toShort()) return
+        val doubles = acquireDoubleArray(sampleCount)
+        try {
+            for (i in 0 until sampleCount) doubles[i] = samples[i] / 32768.0
+            processDoubleSamples(doubles, sampleCount)
+            for (i in 0 until sampleCount) {
+                samples[i] = (doubles[i].coerceIn(-1.0, 1.0) * 32767.0).toInt().coerceIn(-32768, 32767).toShort()
+            }
+        } finally {
+            releaseDoubleArray(doubles)
+        }
+    }
+
+    override fun processDoubleSamples(samples: DoubleArray, sampleCount: Int) {
         val currentEnabled = isEnabled()
         val currentStrength = getStrength()
-        if (!currentEnabled || currentStrength == 0.toShort()) {
-            return // Pass through unchanged for maximum efficiency
-        }
-        
-        // Update filter coefficient if not set
+        if (!currentEnabled || currentStrength == 0.toShort()) return
+
         if (filterCoeff == 0f || !filterCoeffValid) {
             updateFilterCoeff()
         }
-        
-        // Convert strength (0-1000) to linear gain (1.0-4.0)
-        // Using a logarithmic curve for more natural and musical response
+
         val gain = when {
-            currentStrength == 0.toShort() -> 1.0f
-            currentStrength <= 100 -> 1.0f + (currentStrength / 100.0f) * 0.3f  // 0-100 = 1.0-1.3x (subtle)
-            currentStrength <= 500 -> 1.3f + ((currentStrength - 100) / 400.0f) * 0.9f  // 100-500 = 1.3-2.2x (medium)
-            else -> 2.2f + ((currentStrength - 500) / 500.0f) * 1.8f  // 500-1000 = 2.2-4.0x (strong)
+            currentStrength == 0.toShort() -> 1.0
+            currentStrength <= 100 -> 1.0 + (currentStrength / 100.0) * 0.3
+            currentStrength <= 500 -> 1.3 + ((currentStrength - 100) / 400.0) * 0.9
+            else -> 2.2 + ((currentStrength - 500) / 500.0) * 1.8
         }
-        
+
+        val coeff = filterCoeff.toDouble()
         val activeChannels = if (channelCount > 0) channelCount else 1
-        
-        // Process each sample with the IIR filter
+
         for (i in 0 until sampleCount) {
             val channelIdx = i % activeChannels
-            
-            // Convert to normalized float (-1.0 to 1.0)
-            val input = samples[i] / 32768.0f
-            
-            // Apply low-pass IIR filter to extract bass frequencies
-            val lowPass = prevSample.getOrElse(channelIdx) { 0f } + filterCoeff * (input - prevSample.getOrElse(channelIdx) { 0f })
+            val input = samples[i]
+            val prev = prevSample.getOrElse(channelIdx) { 0f }.toDouble()
+            val lowPass = prev + coeff * (input - prev)
             if (channelIdx < prevSample.size) {
-                prevSample[channelIdx] = lowPass
+                prevSample[channelIdx] = lowPass.toFloat()
             }
-            
-            // Mix original signal with amplified bass
-            val bassBoost = lowPass * (gain - 1.0f)
-            val output = input + bassBoost
-            
-            // Apply soft-knee limiting to prevent hard clipping distortion
-            val limited = softLimitSample(output)
-            samples[i] = (limited * 32767.0f).toInt().toShort()
+            val output = input + lowPass * (gain - 1.0)
+            samples[i] = softLimitSample(output.toFloat()).toDouble()
         }
     }
 }
