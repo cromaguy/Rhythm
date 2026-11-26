@@ -35,6 +35,7 @@ class JellyfinApiClient(context: Context) {
     )
 
     private val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    private val secretBox = KeystoreSecretBox()
 
     @Volatile
     private var credentials: Credentials? = loadCredentials()
@@ -143,7 +144,7 @@ class JellyfinApiClient(context: Context) {
                 prefs.edit {
                     putString(KEY_SERVER_URL, effectiveUrl)
                     putString(KEY_USERNAME, username.trim())
-                    putString(KEY_ACCESS_TOKEN, token)
+                    putString(KEY_ACCESS_TOKEN, secretBox.encrypt(token))
                     putString(KEY_USER_ID, userId)
                 }
             } else {
@@ -1330,7 +1331,7 @@ class JellyfinApiClient(context: Context) {
     private fun loadCredentials(): Credentials? {
         val server = prefs.getString(KEY_SERVER_URL, null).orEmpty().trim().trimEnd('/')
         val user = prefs.getString(KEY_USERNAME, null).orEmpty().trim()
-        val token = prefs.getString(KEY_ACCESS_TOKEN, null).orEmpty().trim()
+        val token = secretBox.readAndMigrate(prefs, KEY_ACCESS_TOKEN).trim()
         val userId = prefs.getString(KEY_USER_ID, null).orEmpty().trim()
 
         if (server.isBlank() || user.isBlank() || token.isBlank() || userId.isBlank()) {

@@ -48,6 +48,7 @@ class SubsonicApiClient internal constructor(
     )
 
     private val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    private val secretBox = KeystoreSecretBox()
 
     @Volatile
     private var credentials: Credentials? = loadCredentials()
@@ -90,7 +91,7 @@ class SubsonicApiClient internal constructor(
                 prefs.edit {
     putString(KEY_SERVER_URL, normalizedUrl)
     putString(KEY_USERNAME, username.trim())
-    putString(KEY_PASSWORD, password)
+    putString(KEY_PASSWORD, secretBox.encrypt(password))
     putBoolean(KEY_USE_PASSWORD_AUTH, usePasswordAuth)
 }
             } else {
@@ -1261,7 +1262,7 @@ class SubsonicApiClient internal constructor(
     private fun loadCredentials(): Credentials? {
         val server = prefs.getString(KEY_SERVER_URL, null).orEmpty()
         val user = prefs.getString(KEY_USERNAME, null).orEmpty()
-        val pass = prefs.getString(KEY_PASSWORD, null).orEmpty()
+        val pass = secretBox.readAndMigrate(prefs, KEY_PASSWORD)
 
         if (server.isBlank() || user.isBlank() || pass.isBlank()) {
             return null
