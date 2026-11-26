@@ -84,6 +84,9 @@ fun PlaybackSettingsScreen(
 
     val audioRoutingMode by appSettings.audioRoutingMode.collectAsState()
     val isBitPerfect = audioRoutingMode == "app"
+    val alacDecoderEnabled by appSettings.playbackPrefs.alacDecoderEnabled.collectAsState()
+    val surroundDownmixEnabled by appSettings.playbackPrefs.surroundDownmixEnabled.collectAsState()
+    val sampleRateCapHz by appSettings.playbackPrefs.sampleRateCapHz.collectAsState()
 
     CollapsibleHeaderScreen(
         title = context.getString(R.string.settings_playback_title),
@@ -237,6 +240,41 @@ fun PlaybackSettingsScreen(
                         toggleState = if (isOffloadEnforced) true else if (isBitPerfect) false else audioOffloadEnabled,
                         onToggleChange = { if (!isOffloadEnforced && !isBitPerfect) appSettings.setAudioOffloadEnabled(it) },
                         enabled = !isOffloadEnforced && !isBitPerfect
+                    ),
+                    SettingItem(
+                        icon = MaterialSymbolIcon("surround_sound", filled = true),
+                        title = "Surround 5.1 / 7.1 Downmix",
+                        description = "Fold multichannel FLAC/ALAC/EAC3 tracks to stereo using ITU-R BS.775 coefficients",
+                        toggleState = surroundDownmixEnabled && !isBitPerfect,
+                        onToggleChange = { appSettings.playbackPrefs.setSurroundDownmixEnabled(it) },
+                        enabled = !isBitPerfect
+                    ),
+                    SettingItem(
+                        icon = MaterialSymbolIcon("high_quality", filled = true),
+                        title = "Software ALAC Decoder",
+                        description = "Decode 16/24-bit Apple Lossless (.m4a) via native software decoder for gapless bit-depth accuracy",
+                        toggleState = alacDecoderEnabled,
+                        onToggleChange = { appSettings.playbackPrefs.setAlacDecoderEnabled(it) }
+                    ),
+                    SettingItem(
+                        icon = MaterialSymbolIcon("speed", filled = true),
+                        title = "Maximum Output Sample Rate",
+                        description = when (sampleRateCapHz) {
+                            48_000 -> "48 kHz (Standard HAL / Bluetooth friendly)"
+                            96_000 -> "96 kHz (Hi-Res 96 kHz ceiling)"
+                            192_000 -> "192 kHz (Studio Master ceiling)"
+                            else -> "Native (No software sample-rate cap)"
+                        },
+                        onClick = {
+                            val next = when (sampleRateCapHz) {
+                                0 -> 48_000
+                                48_000 -> 96_000
+                                96_000 -> 192_000
+                                else -> 0
+                            }
+                            appSettings.playbackPrefs.setSampleRateCapHz(next)
+                        },
+                        enabled = !isBitPerfect
                     ),
                     SettingItem(
                         icon = MaterialSymbolIcon("tune", filled = true),

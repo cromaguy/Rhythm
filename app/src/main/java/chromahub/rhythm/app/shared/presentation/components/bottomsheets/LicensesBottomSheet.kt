@@ -80,6 +80,15 @@ fun LicensesBottomSheet(
                 haptic = haptic
             ),
             licenseItem(
+                name = "LastWave",
+                description = context.getString(R.string.licenses_desc_lastwave),
+                license = "GPL-3.0 License",
+                url = "https://github.com/Clash-Projects/LastWave-Native",
+                icon = RhythmIcons.Connectivity.OpenInNew,
+                context = context,
+                haptic = haptic
+            ),
+            licenseItem(
                 name = "PixelPlayer",
                 description = context.getString(R.string.licenses_desc_pixelplayer),
                 license = "GPL License",

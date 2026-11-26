@@ -431,7 +431,7 @@ object AudioHeaderInspector {
         return null
     }
 
-    private fun decodeExtended80BE(data: ByteArray, offset: Int): Double {
+    internal fun decodeExtended80BE(data: ByteArray, offset: Int): Double {
         if (offset + 10 > data.size) return 0.0
         val expon = u16BE(data, offset)
         val sign = if ((expon and 0x8000) != 0) -1.0 else 1.0
@@ -454,10 +454,10 @@ object AudioHeaderInspector {
     private fun ascii(data: ByteArray, offset: Int, len: Int): String =
         String(data, offset, len, StandardCharsets.US_ASCII)
 
-    private fun u16LE(data: ByteArray, offset: Int): Int =
+    internal fun u16LE(data: ByteArray, offset: Int): Int =
         (data[offset].toInt() and 0xFF) or ((data[offset + 1].toInt() and 0xFF) shl 8)
 
-    private fun u16BE(data: ByteArray, offset: Int): Int =
+    internal fun u16BE(data: ByteArray, offset: Int): Int =
         ((data[offset].toInt() and 0xFF) shl 8) or (data[offset + 1].toInt() and 0xFF)
 
     private fun u24BE(data: ByteArray, offset: Int): Int =
@@ -465,18 +465,18 @@ object AudioHeaderInspector {
             ((data[offset + 1].toInt() and 0xFF) shl 8) or
             (data[offset + 2].toInt() and 0xFF)
 
-    private fun u32LE(data: ByteArray, offset: Int): Long =
+    internal fun u32LE(data: ByteArray, offset: Int): Long =
         (data[offset].toLong() and 0xFFL) or
             ((data[offset + 1].toLong() and 0xFFL) shl 8) or
             ((data[offset + 2].toLong() and 0xFFL) shl 16) or
             ((data[offset + 3].toLong() and 0xFFL) shl 24)
 
-    private fun u32BE(data: ByteArray, offset: Int): Long =
+    internal fun u32BE(data: ByteArray, offset: Int): Long =
         ((data[offset].toLong() and 0xFFL) shl 24) or
             ((data[offset + 1].toLong() and 0xFFL) shl 16) or
             ((data[offset + 2].toLong() and 0xFFL) shl 8) or
             (data[offset + 3].toLong() and 0xFFL)
 
-    private fun u64BE(data: ByteArray, offset: Int): Long =
+    internal fun u64BE(data: ByteArray, offset: Int): Long =
         (u32BE(data, offset) shl 32) or u32BE(data, offset + 4)
 }

@@ -36,7 +36,10 @@ import chromahub.rhythm.app.infrastructure.audio.RhythmSpatializationProcessor
 import chromahub.rhythm.app.infrastructure.audio.RhythmMonoAudioProcessor
 import chromahub.rhythm.app.infrastructure.audio.dsp.AudioPipelineTelemetry
 import chromahub.rhythm.app.infrastructure.audio.dsp.RhythmAudioSinkCoordinator
+import chromahub.rhythm.app.infrastructure.audio.dsp.SampleRateCapAudioProcessor
+import chromahub.rhythm.app.infrastructure.audio.dsp.SurroundDownmixAudioProcessor
 import chromahub.rhythm.app.infrastructure.audio.peq.RhythmParametricEqAudioProcessor
+import chromahub.rhythm.app.infrastructure.audio.usb.BitPerfectUsbAudioOutputProvider
 import chromahub.rhythm.app.shared.data.model.TransitionSettings
 import chromahub.rhythm.app.infrastructure.service.player.replaygain.ReplayGainAudioProcessor
 import chromahub.rhythm.app.infrastructure.service.player.replaygain.ReplayGainCache
@@ -103,6 +106,10 @@ class RhythmPlayerEngine(
     private var playerBViper: chromahub.rhythm.app.infrastructure.audio.viper.ViperAudioProcessor? = null
     private var playerAParametricEq: RhythmParametricEqAudioProcessor? = null
     private var playerBParametricEq: RhythmParametricEqAudioProcessor? = null
+    private var playerADownmix: SurroundDownmixAudioProcessor? = null
+    private var playerBDownmix: SurroundDownmixAudioProcessor? = null
+    private var playerASampleRateCap: SampleRateCapAudioProcessor? = null
+    private var playerBSampleRateCap: SampleRateCapAudioProcessor? = null
     private lateinit var playerAReplayGain: ReplayGainAudioProcessor
     private lateinit var playerBReplayGain: ReplayGainAudioProcessor
     private var activeReplayGainProcessor: ReplayGainAudioProcessor? = null
@@ -307,12 +314,16 @@ class RhythmPlayerEngine(
         val aMono = monoProcessor?.let { RhythmMonoAudioProcessor().apply { setParent(it) } }
         val aViper = viperProcessor?.let { chromahub.rhythm.app.infrastructure.audio.viper.ViperAudioProcessor().apply { setParent(it) } }
         val aPeq = parametricEqProcessor?.let { RhythmParametricEqAudioProcessor().apply { setParent(it) } }
+        val aDownmix = SurroundDownmixAudioProcessor()
+        val aRateCap = SampleRateCapAudioProcessor()
         val aReplayGain = ReplayGainAudioProcessor()
         playerABassBoost = aBass
         playerASpatialization = aSpatial
         playerAMono = aMono
         playerAViper = aViper
         playerAParametricEq = aPeq
+        playerADownmix = aDownmix
+        playerASampleRateCap = aRateCap
         playerAReplayGain = aReplayGain
 
         // Instantiate child processors for Player B
@@ -321,21 +332,30 @@ class RhythmPlayerEngine(
         val bMono = monoProcessor?.let { RhythmMonoAudioProcessor().apply { setParent(it) } }
         val bViper = viperProcessor?.let { chromahub.rhythm.app.infrastructure.audio.viper.ViperAudioProcessor().apply { setParent(it) } }
         val bPeq = parametricEqProcessor?.let { RhythmParametricEqAudioProcessor().apply { setParent(it) } }
+        val bDownmix = SurroundDownmixAudioProcessor()
+        val bRateCap = SampleRateCapAudioProcessor()
         val bReplayGain = ReplayGainAudioProcessor()
         playerBBassBoost = bBass
         playerBSpatialization = bSpatial
         playerBMono = bMono
         playerBViper = bViper
         playerBParametricEq = bPeq
+        playerBDownmix = bDownmix
+        playerBSampleRateCap = bRateCap
         playerBReplayGain = bReplayGain
 
         // Apply settings initially
         val appSettings = AppSettings.getInstance(context)
+        val bitPerfectInit = appSettings.audioRoutingMode.value == "app"
+        aDownmix.setEnabled(!bitPerfectInit && appSettings.playbackPrefs.surroundDownmixEnabled.value)
+        bDownmix.setEnabled(!bitPerfectInit && appSettings.playbackPrefs.surroundDownmixEnabled.value)
+        aRateCap.setMaxSampleRateHz(if (bitPerfectInit) 0 else appSettings.playbackPrefs.sampleRateCapHz.value)
+        bRateCap.setMaxSampleRateHz(if (bitPerfectInit) 0 else appSettings.playbackPrefs.sampleRateCapHz.value)
         applyReplayGainSettingsOnProcessor(aReplayGain, appSettings.replayGain.value)
         applyReplayGainSettingsOnProcessor(bReplayGain, appSettings.replayGain.value)
 
-        playerA = buildPlayer(handleAudioFocus = false, bassProcessor = aBass, spatialProcessor = aSpatial, monoProcessor = aMono, replayGainProcessor = aReplayGain, viperProcessor = aViper, parametricEqProcessor = aPeq)
-        playerB = buildPlayer(handleAudioFocus = false, bassProcessor = bBass, spatialProcessor = bSpatial, monoProcessor = bMono, replayGainProcessor = bReplayGain, viperProcessor = bViper, parametricEqProcessor = bPeq)
+        playerA = buildPlayer(handleAudioFocus = false, bassProcessor = aBass, spatialProcessor = aSpatial, monoProcessor = aMono, replayGainProcessor = aReplayGain, viperProcessor = aViper, parametricEqProcessor = aPeq, downmixProcessor = aDownmix, sampleRateCapProcessor = aRateCap)
+        playerB = buildPlayer(handleAudioFocus = false, bassProcessor = bBass, spatialProcessor = bSpatial, monoProcessor = bMono, replayGainProcessor = bReplayGain, viperProcessor = bViper, parametricEqProcessor = bPeq, downmixProcessor = bDownmix, sampleRateCapProcessor = bRateCap)
 
         val initVolume = if (appSettings.useSystemVolume.value) 1.0f else appSettings.appVolume.value
         userVolume = initVolume
@@ -381,6 +401,20 @@ class RhythmPlayerEngine(
             launch { appSettings.gaplessPlayback.collect { updateTrackSelectionParameters() } }
             launch { appSettings.skipSilenceEnabled.collect { updateTrackSelectionParameters() } }
             launch {
+                appSettings.playbackPrefs.surroundDownmixEnabled.collect { enabled ->
+                    val bypass = appSettings.audioRoutingMode.value == "app"
+                    playerADownmix?.setEnabled(!bypass && enabled)
+                    playerBDownmix?.setEnabled(!bypass && enabled)
+                }
+            }
+            launch {
+                appSettings.playbackPrefs.sampleRateCapHz.collect { cap ->
+                    val bypass = appSettings.audioRoutingMode.value == "app"
+                    playerASampleRateCap?.setMaxSampleRateHz(if (bypass) 0 else cap)
+                    playerBSampleRateCap?.setMaxSampleRateHz(if (bypass) 0 else cap)
+                }
+            }
+            launch {
                 try {
                     chromahub.rhythm.app.infrastructure.audio.viper.ViperSettingsRepository.getInstance(context)
                         .configFlow.collect { updateTrackSelectionParameters() }
@@ -425,7 +459,9 @@ class RhythmPlayerEngine(
         monoProcessor: RhythmMonoAudioProcessor? = null,
         replayGainProcessor: ReplayGainAudioProcessor? = null,
         viperProcessor: chromahub.rhythm.app.infrastructure.audio.viper.ViperAudioProcessor? = null,
-        parametricEqProcessor: RhythmParametricEqAudioProcessor? = null
+        parametricEqProcessor: RhythmParametricEqAudioProcessor? = null,
+        downmixProcessor: SurroundDownmixAudioProcessor? = null,
+        sampleRateCapProcessor: SampleRateCapAudioProcessor? = null
     ): ExoPlayer {
         val loadControl = DefaultLoadControl.Builder()
             .setBufferDurationsMs(15_000, 30_000, 1_500, 2_500)
@@ -471,6 +507,12 @@ class RhythmPlayerEngine(
                 enableAudioTrackPlaybackParams: Boolean
             ): androidx.media3.exoplayer.audio.AudioSink? {
                 val processors = mutableListOf<androidx.media3.common.audio.AudioProcessor>()
+                if (downmixProcessor != null) {
+                    processors.add(downmixProcessor)
+                }
+                if (sampleRateCapProcessor != null) {
+                    processors.add(sampleRateCapProcessor)
+                }
                 if (replayGainProcessor != null) {
                     processors.add(replayGainProcessor)
                 }
@@ -535,7 +577,15 @@ class RhythmPlayerEngine(
                     .setEnableFloatOutput(floatOutputPref)
                     .setEnableAudioOutputPlaybackParameters(true)
                     .setAudioProcessorChain(processorChain)
-                    .build()
+                    .build().apply {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                            setAudioOutputProvider(
+                                BitPerfectUsbAudioOutputProvider(context) {
+                                    appSettings.audioRoutingMode.value == "app"
+                                }
+                            )
+                        }
+                    }
                 val fallbackSink = if (floatOutputPref) {
                     DefaultAudioSink.Builder(context)
                         .setEnableFloatOutput(false)
@@ -554,6 +604,31 @@ class RhythmPlayerEngine(
                         appSettings.audioRoutingMode.value == "app"
                     },
                     onTelemetryChanged = { _pipelineTelemetry.value = it }
+                )
+            }
+
+            override fun buildAudioRenderers(
+                context: Context,
+                extensionRendererMode: Int,
+                mediaCodecSelector: MediaCodecSelector,
+                enableDecoderFallback: Boolean,
+                audioSink: AudioSink,
+                eventHandler: android.os.Handler,
+                eventListener: androidx.media3.exoplayer.audio.AudioRendererEventListener,
+                out: java.util.ArrayList<androidx.media3.exoplayer.Renderer>
+            ) {
+                if (appSettings.playbackPrefs.alacDecoderEnabled.value) {
+                    out.add(org.nift4.alacdecoder.AlacRenderer(eventHandler, eventListener, audioSink))
+                }
+                super.buildAudioRenderers(
+                    context,
+                    extensionRendererMode,
+                    mediaCodecSelector,
+                    enableDecoderFallback,
+                    audioSink,
+                    eventHandler,
+                    eventListener,
+                    out
                 )
             }
         }.apply {
@@ -989,6 +1064,8 @@ class RhythmPlayerEngine(
             val otherMono = if (incomingReplayGain === playerAReplayGain) playerBMono else playerAMono
             val otherViper = if (incomingReplayGain === playerAReplayGain) playerBViper else playerAViper
             val otherPeq = if (incomingReplayGain === playerAReplayGain) playerBParametricEq else playerAParametricEq
+            val otherDownmix = if (incomingReplayGain === playerAReplayGain) playerBDownmix else playerADownmix
+            val otherRateCap = if (incomingReplayGain === playerAReplayGain) playerBSampleRateCap else playerASampleRateCap
             playerB = buildPlayer(
                 handleAudioFocus = false,
                 bassProcessor = otherBassBoost,
@@ -996,7 +1073,9 @@ class RhythmPlayerEngine(
                 monoProcessor = otherMono,
                 replayGainProcessor = otherReplayGain,
                 viperProcessor = otherViper,
-                parametricEqProcessor = otherPeq
+                parametricEqProcessor = otherPeq,
+                downmixProcessor = otherDownmix,
+                sampleRateCapProcessor = otherRateCap
             ).apply {
                 playbackParameters = playerA.playbackParameters
                 attachAnalyticsListener(this)

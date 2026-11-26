@@ -16,9 +16,13 @@ import androidx.media3.datasource.ResolvingDataSource
 import androidx.media3.datasource.cache.CacheDataSource
 import androidx.media3.datasource.okhttp.OkHttpDataSource
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
+import androidx.media3.extractor.DefaultExtractorsFactory
+import androidx.media3.extractor.Extractor
+import androidx.media3.extractor.ExtractorsFactory
 import chromahub.rhythm.app.BuildConfig
 import chromahub.rhythm.app.features.streaming.data.provider.UserTrustManager
 import chromahub.rhythm.app.features.streaming.di.StreamingMusicModule
+import chromahub.rhythm.app.infrastructure.audio.codec.AiffMedia3Extractor
 import kotlinx.coroutines.runBlocking
 import java.util.concurrent.TimeUnit
 
@@ -74,10 +78,22 @@ object RhythmMediaDataSourceFactory {
     }
 
     /**
-     * Creates a [DefaultMediaSourceFactory] configured with [createResolvingDataSourceFactory].
+     * Creates a [DefaultMediaSourceFactory] configured with [createResolvingDataSourceFactory]
+     * and extended extractor support (including uncompressed AIFF/AIFC PCM playback).
      */
     fun createMediaSourceFactory(context: Context): DefaultMediaSourceFactory {
-        return DefaultMediaSourceFactory(context.applicationContext)
+        val baseExtractors = DefaultExtractorsFactory()
+        val extractorsFactory = object : ExtractorsFactory {
+            override fun createExtractors(): Array<Extractor> =
+                baseExtractors.createExtractors() + AiffMedia3Extractor()
+
+            override fun createExtractors(
+                uri: android.net.Uri,
+                responseHeaders: Map<String, List<String>>
+            ): Array<Extractor> =
+                baseExtractors.createExtractors(uri, responseHeaders) + AiffMedia3Extractor()
+        }
+        return DefaultMediaSourceFactory(context.applicationContext, extractorsFactory)
             .setDataSourceFactory(createResolvingDataSourceFactory(context))
     }
 }

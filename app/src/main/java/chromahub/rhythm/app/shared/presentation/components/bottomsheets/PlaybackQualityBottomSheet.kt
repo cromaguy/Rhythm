@@ -263,12 +263,36 @@ fun PlaybackQualityBottomSheet(
                 tintContainer = MaterialTheme.colorScheme.secondaryContainer
             )
 
+            val appContext = androidx.compose.ui.platform.LocalContext.current
+            val appSettings = remember(appContext) { chromahub.rhythm.app.shared.data.model.AppSettings.getInstance(appContext) }
+            val sampleRateCapHz by appSettings.playbackPrefs.sampleRateCapHz.collectAsState()
+            val surroundDownmix by appSettings.playbackPrefs.surroundDownmixEnabled.collectAsState()
+            val audioRoutingMode by appSettings.audioRoutingMode.collectAsState()
+            val bitPerfectRouting = audioRoutingMode == "app"
+            val equalizerEnabled by appSettings.equalizerEnabled.collectAsState()
+            val floatEnabled by appSettings.audioEngineFloatOutput.collectAsState()
+            val speed by appSettings.playbackSpeed.collectAsState()
+            var showSignalPathDialog by remember { mutableStateOf(false) }
+
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 4.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
+                RhythmDetailActionButton(
+                    onClick = { showSignalPathDialog = true },
+                    weight = 1f,
+                    height = 48.dp,
+                    isFirst = true,
+                    isLast = onRouteAudio == null && onViewSongInfo == null,
+                    type = RhythmButtonType.Tonal,
+                    icon = MaterialSymbolIcon("route", filled = true),
+                    iconSize = 18.dp,
+                    text = "Signal Path",
+                    containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onTertiaryContainer
+                )
                 if (onRouteAudio != null) {
                     RhythmDetailActionButton(
                         onClick = {
@@ -277,7 +301,7 @@ fun PlaybackQualityBottomSheet(
                         },
                         weight = 1f,
                         height = 48.dp,
-                        isFirst = true,
+                        isFirst = false,
                         isLast = onViewSongInfo == null,
                         type = RhythmButtonType.Tonal,
                         icon = MaterialSymbolIcon("speaker_group", filled = true),
@@ -296,7 +320,7 @@ fun PlaybackQualityBottomSheet(
                         },
                         weight = 1f,
                         height = 48.dp,
-                        isFirst = onRouteAudio == null,
+                        isFirst = false,
                         isLast = true,
                         type = RhythmButtonType.Tonal,
                         icon = RhythmIcons.Info,
@@ -306,6 +330,45 @@ fun PlaybackQualityBottomSheet(
                         contentColor = MaterialTheme.colorScheme.onPrimaryContainer
                     )
                 }
+            }
+
+            if (showSignalPathDialog) {
+                val isUsb = quality.outputDeviceType.contains("USB", ignoreCase = true)
+                val report = remember(quality, sampleRateCapHz, surroundDownmix, bitPerfectRouting, equalizerEnabled, floatEnabled, speed) {
+                    chromahub.rhythm.app.infrastructure.audio.SignalPathEvaluator.evaluate(
+                        chromahub.rhythm.app.infrastructure.audio.SignalPathInput(
+                            sourceCodec = quality.sourceCodec,
+                            sourceSampleRateHz = quality.sourceSampleRateHz,
+                            sourceBitDepth = quality.sourceBitDepth,
+                            sourceChannels = quality.sourceChannels,
+                            isLosslessSource = quality.isLossless,
+                            outputSampleRateHz = quality.decodedSampleRateHz,
+                            outputBitDepth = quality.decodedBitDepth,
+                            outputDeviceName = quality.outputDeviceName,
+                            isUsbDevice = isUsb,
+                            bitPerfectMixerActive = quality.isBitPerfect || (isUsb && bitPerfectRouting),
+                            bitPerfectRequested = bitPerfectRouting,
+                            hasActiveEq = equalizerEnabled,
+                            hasActiveViper = false,
+                            hasActiveOtherDsp = appSettings.bassBoostEnabled.value || appSettings.virtualizerEnabled.value || appSettings.monoAudioEnabled.value,
+                            playbackSpeed = speed,
+                            sampleRateCapHz = sampleRateCapHz,
+                            surroundDownmixActive = surroundDownmix && quality.sourceChannels > 2,
+                            floatPipelineActive = floatEnabled
+                        )
+                    )
+                }
+                chromahub.rhythm.app.shared.presentation.components.dialogs.SignalPathDialog(
+                    report = report,
+                    onDismiss = { showSignalPathDialog = false },
+                    onConfigureOutput = onRouteAudio?.let { action ->
+                        {
+                            showSignalPathDialog = false
+                            onDismissRequest()
+                            action()
+                        }
+                    }
+                )
             }
         }
     }

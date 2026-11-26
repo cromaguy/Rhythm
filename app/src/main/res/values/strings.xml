@@ -2673,6 +2673,7 @@
     <string name="content_desc_customize_artwork">Customize Artwork</string>
     <string name="licenses_desc_better_lyrics">Open-source lyrics provider for word-by-word synchronized lyrics</string>
     <string name="licenses_desc_gramophone">Feature-rich, privacy-focused music player for Android</string>
+    <string name="licenses_desc_lastwave">Audiophile Android music player with Bit-Perfect USB DAC, AutoMix, and AutoEQ</string>
     <string name="licenses_desc_pixelplayer">Offline-first, Material 3 Expressive music player for Android</string>
     <string name="licenses_desc_vivi_music">More Than Just Music — Your Ultimate Audio Experience</string>
     <string name="licenses_desc_zenith">A Material Design 3 Expressive Digital Wellbeing App</string>
