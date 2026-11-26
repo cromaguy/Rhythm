@@ -809,6 +809,20 @@ class PlaybackStatsRepository internal constructor(
         }
     }
     
+    suspend fun loadListeningRecap(
+        year: Int = LocalDate.now().year,
+        songs: List<Song> = emptyList(),
+        nowMillis: Long = System.currentTimeMillis()
+    ): ListeningRecap? = withContext(Dispatchers.IO) {
+        ListeningRecapMath.buildRecap(
+            year = year,
+            events = readEvents(),
+            songs = songs,
+            zoneId = ZoneId.systemDefault(),
+            nowMillis = nowMillis
+        )
+    }
+
     private fun readEvents(): List<PlaybackEvent> {
         ensureLoadedFromDisk()
         return synchronized(memoryLock) {

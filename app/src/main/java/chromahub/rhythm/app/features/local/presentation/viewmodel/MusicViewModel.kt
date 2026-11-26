@@ -5625,7 +5625,12 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
         currentPlaybackSongId = songId
         currentPlaybackAccumulatedTime = 0L
         
-        // Report playback start for streaming items
+        val startedSong = _songs.value.find { it.id == songId } ?: _recentlyPlayed.value.find { it.id == songId }
+        if (startedSong != null) {
+            chromahub.rhythm.app.infrastructure.network.scrobble.MultiScrobblerManager
+                .getInstance(getApplication())
+                .nowPlaying(startedSong)
+        }
         if (songId.startsWith("streaming://") || songId.contains("::")) {
             viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
                 try {
@@ -5694,6 +5699,9 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
                                 song = song,
                                 durationMs = actualDuration
                             )
+                            chromahub.rhythm.app.infrastructure.network.scrobble.MultiScrobblerManager
+                                .getInstance(getApplication())
+                                .submit(song, actualDuration, System.currentTimeMillis())
                             if (appSettings.defaultPlaylistsEnabled.value) {
                                 if (appSettings.smartPlaylistRecentlyPlayed.value) {
                                     populateRecentlyPlayedPlaylist()

@@ -207,6 +207,20 @@ private fun StatsPageContent(
     }
 
     val pageScrollState = rememberScrollState()
+    var activeRecap by remember { mutableStateOf<chromahub.rhythm.app.shared.data.repository.ListeningRecap?>(null) }
+    var showRecapDialog by remember { mutableStateOf(false) }
+    var showDuplicatesSheet by remember { mutableStateOf(false) }
+
+    LaunchedEffect(songs, range) {
+        val currentYear = java.time.LocalDate.now().year
+        activeRecap = runCatching {
+            viewModel.getPlaybackStatsRepository().loadListeningRecap(currentYear, songs)
+        }.getOrNull()
+    }
+
+    val fidelityBreakdown = remember(songs) {
+        chromahub.rhythm.app.features.local.domain.library.LibraryAudioStats.computeBreakdown(songs)
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         AnimatedContent(
@@ -264,6 +278,13 @@ private fun StatsPageContent(
                                 useHoursFormat = useHoursFormat,
                                 onSaveTopSongsAsPlaylist = onSaveTopSongsAsPlaylist
                             )
+
+                            DiscoveryAndFidelityToolsCard(
+                                recapAvailable = activeRecap != null,
+                                breakdown = fidelityBreakdown,
+                                onOpenRecap = { showRecapDialog = true },
+                                onOpenDuplicates = { showDuplicatesSheet = true }
+                            )
                         }
                     }
                 } else {
@@ -291,13 +312,98 @@ private fun StatsPageContent(
                             stats = stats,
                             useHoursFormat = useHoursFormat
                         )
-                        
+
+                        DiscoveryAndFidelityToolsCard(
+                            recapAvailable = activeRecap != null,
+                            breakdown = fidelityBreakdown,
+                            onOpenRecap = { showRecapDialog = true },
+                            onOpenDuplicates = { showDuplicatesSheet = true }
+                        )
+
                         Spacer(modifier = Modifier.height(32.dp + LocalMiniPlayerPadding.current.calculateBottomPadding()))
                     }
                 }
             }
         }
     }
+
+    if (showRecapDialog) {
+        activeRecap?.let { recap ->
+            chromahub.rhythm.app.shared.presentation.components.dialogs.ListeningRecapDialog(
+                recap = recap,
+                onDismiss = { showRecapDialog = false }
+            )
+        }
+    }
+
+    if (showDuplicatesSheet) {
+        chromahub.rhythm.app.shared.presentation.components.bottomsheets.DuplicateTracksSheet(
+            songs = songs,
+            onPlaySong = { viewModel.playSong(it) },
+            onDeleteSong = { viewModel.deleteSong(it) },
+            onDismiss = { showDuplicatesSheet = false }
+        )
+    }
+}
+
+@Composable
+private fun DiscoveryAndFidelityToolsCard(
+    recapAvailable: Boolean,
+    breakdown: chromahub.rhythm.app.features.local.domain.library.LibraryAudioStats.Breakdown,
+    onOpenRecap: () -> Unit,
+    onOpenDuplicates: () -> Unit
+) {
+    val codecSummary = if (breakdown.topCodecs.isEmpty()) {
+        "No audio tracks scanned"
+    } else {
+        breakdown.topCodecs.joinToString(" • ") { "${it.first}: ${it.second}" }
+    }
+
+    val items = buildList {
+        if (recapAvailable) {
+            add(
+                Material3SettingsItem(
+                    icon = MaterialSymbolIcon("auto_stories", filled = true),
+                    palette = SettingsPalettes.Purple,
+                    isHighlighted = true,
+                    title = { Text("Rhythm Recap", fontWeight = FontWeight.SemiBold) },
+                    description = { Text("Interactive story of your year in music") },
+                    onClick = onOpenRecap
+                )
+            )
+        }
+        add(
+            Material3SettingsItem(
+                icon = MaterialSymbolIcon("graphic_eq"),
+                palette = SettingsPalettes.SkyBlue,
+                title = {
+                    Text(
+                        String.format(
+                            java.util.Locale.US,
+                            "Library Fidelity: %.0f%% Lossless • %.0f%% Hi-Res",
+                            breakdown.losslessPercent,
+                            breakdown.hiResPercent
+                        )
+                    )
+                },
+                description = { Text(codecSummary) }
+            )
+        )
+        add(
+            Material3SettingsItem(
+                icon = MaterialSymbolIcon("content_copy"),
+                palette = SettingsPalettes.Amber,
+                title = { Text("Find Duplicate Tracks") },
+                description = { Text("Compare codecs and clean up lower-quality duplicates") },
+                onClick = onOpenDuplicates
+            )
+        )
+    }
+
+    Material3SettingsGroup(
+        items = items,
+        containerColor = MaterialTheme.colorScheme.surfaceContainer
+    )
 }
 
 // ---------------------------------------------------------------------------

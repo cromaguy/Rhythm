@@ -161,6 +161,7 @@ import chromahub.rhythm.app.shared.presentation.screens.settings.TunerAnimatedSw
 import chromahub.rhythm.app.shared.presentation.screens.settings.TunerSettingCard
 import chromahub.rhythm.app.shared.presentation.screens.settings.SettingItem
 import chromahub.rhythm.app.shared.presentation.screens.settings.SettingGroup
+import kotlinx.coroutines.launch
 
 
 // API Management Screen
@@ -181,6 +182,16 @@ fun ApiManagementSettingsScreen(onBackClick: () -> Unit) {
     val appleCanvasEnabled by appSettings.appleCanvasEnabled.collectAsState()
     val appleCanvasNetworkMode by appSettings.appleCanvasNetworkMode.collectAsState()
     var showCanvasNetworkModeDialog by remember { mutableStateOf(false) }
+
+    val streamingPrefs = remember(appSettings) { appSettings.streamingPrefs }
+    val listenBrainzToken by streamingPrefs.listenBrainzToken.collectAsState()
+    val libreFmSessionKey by streamingPrefs.libreFmSessionKey.collectAsState()
+    val malojaServerUrl by streamingPrefs.malojaServerUrl.collectAsState()
+    val malojaToken by streamingPrefs.malojaToken.collectAsState()
+    val scrobbleScope = rememberCoroutineScope()
+    var showListenBrainzDialog by remember { mutableStateOf(false) }
+    var showLibreFmDialog by remember { mutableStateOf(false) }
+    var showMalojaDialog by remember { mutableStateOf(false) }
 
     CollapsibleHeaderScreen(
         title = context.getString(R.string.settings_api_management),
@@ -407,6 +418,52 @@ fun ApiManagementSettingsScreen(onBackClick: () -> Unit) {
             item { Spacer(modifier = Modifier.height(16.dp)) }
 
             item {
+                Text(
+                    text = "Scrobbling Services",
+                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(start = 16.dp, bottom = 8.dp)
+                )
+                Material3SettingsGroup(
+                    items = listOf(
+                        toMaterial3SettingsItem(
+                            context = context,
+                            hapticFeedback = hapticFeedback,
+                            item = SettingItem(
+                                icon = MaterialSymbolIcon("graphic_eq"),
+                                title = "ListenBrainz",
+                                description = if (!listenBrainzToken.isNullOrBlank()) "Connected (auto-scrobble + offline queue)" else "Tap to configure user token",
+                                onClick = { showListenBrainzDialog = true }
+                            )
+                        ),
+                        toMaterial3SettingsItem(
+                            context = context,
+                            hapticFeedback = hapticFeedback,
+                            item = SettingItem(
+                                icon = MaterialSymbolIcon("radio"),
+                                title = "Libre.fm",
+                                description = if (!libreFmSessionKey.isNullOrBlank()) "Connected (GNU FM session active)" else "Tap to sign in with Libre.fm account",
+                                onClick = { showLibreFmDialog = true }
+                            )
+                        ),
+                        toMaterial3SettingsItem(
+                            context = context,
+                            hapticFeedback = hapticFeedback,
+                            item = SettingItem(
+                                icon = MaterialSymbolIcon("dns"),
+                                title = "Maloja (Self-Hosted)",
+                                description = if (!malojaServerUrl.isNullOrBlank() && !malojaToken.isNullOrBlank()) "Connected to $malojaServerUrl" else "Tap to configure Maloja URL & API token",
+                                onClick = { showMalojaDialog = true }
+                            )
+                        )
+                    ),
+                    containerColor = MaterialTheme.colorScheme.surfaceContainer
+                )
+            }
+
+            item { Spacer(modifier = Modifier.height(12.dp)) }
+
+            item {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(24.dp),
@@ -451,6 +508,126 @@ fun ApiManagementSettingsScreen(onBackClick: () -> Unit) {
                 appSettings = appSettings,
                 context = context,
                 haptic = hapticFeedback
+            )
+        }
+
+        if (showListenBrainzDialog) {
+            var tokenInput by remember(listenBrainzToken) { mutableStateOf(listenBrainzToken.orEmpty()) }
+            AlertDialog(
+                onDismissRequest = { showListenBrainzDialog = false },
+                title = { Text("ListenBrainz Token") },
+                text = {
+                    OutlinedTextField(
+                        value = tokenInput,
+                        onValueChange = { tokenInput = it },
+                        label = { Text("User token (blank to clear)") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                },
+                confirmButton = {
+                    TextButton(onClick = {
+                        streamingPrefs.setListenBrainzToken(tokenInput)
+                        showListenBrainzDialog = false
+                    }) { Text("Save") }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showListenBrainzDialog = false }) { Text("Cancel") }
+                }
+            )
+        }
+
+        if (showLibreFmDialog) {
+            var userInput by remember { mutableStateOf("") }
+            var passInput by remember { mutableStateOf("") }
+            AlertDialog(
+                onDismissRequest = { showLibreFmDialog = false },
+                title = { Text("Libre.fm Scrobbling") },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        if (!libreFmSessionKey.isNullOrBlank()) {
+                            Text("Session is currently active. Sign in below to replace it or disconnect.")
+                        }
+                        OutlinedTextField(
+                            value = userInput,
+                            onValueChange = { userInput = it },
+                            label = { Text("Username") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        OutlinedTextField(
+                            value = passInput,
+                            onValueChange = { passInput = it },
+                            label = { Text("Password") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = {
+                        scrobbleScope.launch {
+                            val res = chromahub.rhythm.app.infrastructure.network.scrobble.MultiScrobblerManager
+                                .getInstance(context)
+                                .authenticateLibreFm(userInput, passInput)
+                            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                                Toast.makeText(
+                                    context,
+                                    if (res.isSuccess) "Libre.fm connected" else (res.exceptionOrNull()?.message ?: "Sign-in failed"),
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                                if (res.isSuccess) showLibreFmDialog = false
+                            }
+                        }
+                    }) { Text("Connect") }
+                },
+                dismissButton = {
+                    Row {
+                        if (!libreFmSessionKey.isNullOrBlank()) {
+                            TextButton(onClick = {
+                                streamingPrefs.setLibreFmSessionKey(null)
+                                showLibreFmDialog = false
+                            }) { Text("Disconnect") }
+                        }
+                        TextButton(onClick = { showLibreFmDialog = false }) { Text("Cancel") }
+                    }
+                }
+            )
+        }
+
+        if (showMalojaDialog) {
+            var urlInput by remember(malojaServerUrl) { mutableStateOf(malojaServerUrl.orEmpty()) }
+            var keyInput by remember(malojaToken) { mutableStateOf(malojaToken.orEmpty()) }
+            AlertDialog(
+                onDismissRequest = { showMalojaDialog = false },
+                title = { Text("Maloja Server") },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedTextField(
+                            value = urlInput,
+                            onValueChange = { urlInput = it },
+                            label = { Text("Server URL (e.g. https://maloja.local)") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        OutlinedTextField(
+                            value = keyInput,
+                            onValueChange = { keyInput = it },
+                            label = { Text("API Key (blank both to clear)") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = {
+                        streamingPrefs.setMalojaConfig(urlInput, keyInput)
+                        showMalojaDialog = false
+                    }) { Text("Save") }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showMalojaDialog = false }) { Text("Cancel") }
+                }
             )
         }
     }
