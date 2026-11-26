@@ -71,4 +71,11 @@ class ExternalPreviewPlayerControllerTest {
         assertEquals(song, plan.song)
         assertEquals(0L, plan.startPositionMs)
     }
+
+    @Test
+    fun shouldUseIsolatedPreview_respectsSettingAndControllerAvailability() {
+        assertTrue(ExternalPreviewHandoffPlan.shouldUseIsolatedPreview(isolatePreviewEnabled = true, previewControllerAvailable = true))
+        assertFalse(ExternalPreviewHandoffPlan.shouldUseIsolatedPreview(isolatePreviewEnabled = false, previewControllerAvailable = true))
+        assertFalse(ExternalPreviewHandoffPlan.shouldUseIsolatedPreview(isolatePreviewEnabled = true, previewControllerAvailable = false))
+    }
 }

@@ -94,8 +94,18 @@ class ExternalPlaybackActivity : ComponentActivity() {
     private fun handleDismiss() {
         val appSettings = chromahub.rhythm.app.shared.data.model.AppSettings.getInstance(this)
         val preview = previewController
-        if (preview != null && !appSettings.externalPlayerContinuePlaybackOnClose.value && !openedInRhythm) {
-            preview.pause()
+        val usingIsolatedPreview = preview != null && (
+            chromahub.rhythm.app.infrastructure.service.player.ExternalPreviewHandoffPlan.shouldUseIsolatedPreview(
+                isolatePreviewEnabled = appSettings.externalPlayerIsolatePreview.value,
+                previewControllerAvailable = true
+            ) || preview.currentSong.value != null
+        )
+        if (usingIsolatedPreview) {
+            if (!appSettings.externalPlayerContinuePlaybackOnClose.value && !openedInRhythm) {
+                preview.pause()
+            }
+        } else if (!appSettings.externalPlayerContinuePlaybackOnClose.value && !openedInRhythm) {
+            musicViewModel.pauseMusic()
         }
         finish()
     }
@@ -106,15 +116,18 @@ class ExternalPlaybackActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
+        val appSettings = chromahub.rhythm.app.shared.data.model.AppSettings.getInstance(this)
         val preview = chromahub.rhythm.app.infrastructure.service.player.ExternalPreviewPlayerController(
             context = applicationContext,
             scope = lifecycleScope
         )
         previewController = preview
 
-        handleIntent(intent)
+        if (!appSettings.externalPlayerIsolatePreview.value) {
+            musicViewModel.connectToMediaService()
+        }
 
-        val appSettings = chromahub.rhythm.app.shared.data.model.AppSettings.getInstance(this)
+        handleIntent(intent)
 
         setContent {
             val useSystemTheme by themeViewModel.useSystemTheme.collectAsState()
@@ -145,16 +158,19 @@ class ExternalPlaybackActivity : ComponentActivity() {
                 themeIntensity = themeIntensity
             ) {
                 ExternalPlaybackBottomSheet(
+                    musicViewModel = musicViewModel,
                     previewController = preview,
                     onDismiss = { handleDismiss() },
                     onOpenFullPlayer = {
-                        val handoff = preview.createOpenInAppHandoff()
                         openedInRhythm = true
-                        preview.pause()
-                        val handoffSong = handoff.song
-                        if (handoff.shouldHandOffToMainService && handoffSong != null) {
-                            musicViewModel.connectToMediaService()
-                            musicViewModel.playExternalAudioFile(handoffSong, handoff.startPositionMs)
+                        if (preview.currentSong.value != null) {
+                            val handoff = preview.createOpenInAppHandoff()
+                            preview.pause()
+                            val handoffSong = handoff.song
+                            if (handoff.shouldHandOffToMainService && handoffSong != null) {
+                                musicViewModel.connectToMediaService()
+                                musicViewModel.playExternalAudioFile(handoffSong, handoff.startPositionMs)
+                            }
                         }
                         val intent = Intent(this, MainActivity::class.java).apply {
                             flags = Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
@@ -180,6 +196,10 @@ class ExternalPlaybackActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
+        val appSettings = chromahub.rhythm.app.shared.data.model.AppSettings.getInstance(this)
+        if (!appSettings.externalPlayerIsolatePreview.value) {
+            musicViewModel.connectToMediaService()
+        }
         handleIntent(intent)
     }
 
@@ -187,7 +207,7 @@ class ExternalPlaybackActivity : ComponentActivity() {
         playbackRequestJob?.cancel()
         val appSettings = chromahub.rhythm.app.shared.data.model.AppSettings.getInstance(this)
         val preview = previewController
-        if (preview != null) {
+        if (preview != null && preview.currentSong.value != null) {
             val closeHandoff = preview.createCloseHandoff(
                 continueOnClose = appSettings.externalPlayerContinuePlaybackOnClose.value,
                 alreadyOpenedInRhythm = openedInRhythm
@@ -197,9 +217,11 @@ class ExternalPlaybackActivity : ComponentActivity() {
                 musicViewModel.connectToMediaService()
                 musicViewModel.playExternalAudioFile(handoffSong, closeHandoff.startPositionMs)
             }
-            preview.release()
-            previewController = null
+        } else if (!appSettings.externalPlayerContinuePlaybackOnClose.value && !openedInRhythm) {
+            musicViewModel.pauseMusic()
         }
+        preview?.release()
+        previewController = null
         super.onDestroy()
     }
 
@@ -306,7 +328,13 @@ class ExternalPlaybackActivity : ComponentActivity() {
 
             withContext(Dispatchers.Main) {
                 val preview = previewController
-                if (preview != null) {
+                val isolatePreview = chromahub.rhythm.app.shared.data.model.AppSettings
+                    .getInstance(this@ExternalPlaybackActivity)
+                    .externalPlayerIsolatePreview
+                    .value
+                if (chromahub.rhythm.app.infrastructure.service.player.ExternalPreviewHandoffPlan
+                        .shouldUseIsolatedPreview(isolatePreview, preview != null) && preview != null
+                ) {
                     preview.loadSong(
                         song = targetSong,
                         fetchLyrics = { musicViewModel.fetchLyricsForPreviewSong(it) },
@@ -318,9 +346,14 @@ class ExternalPlaybackActivity : ComponentActivity() {
                         "After isolated preview start - isPlaying=${preview.isPlaying.value}, currentSong=${preview.currentSong.value?.title}"
                     )
                 } else {
-                    Log.w(TAG, "Preview controller unavailable; falling back to MusicViewModel")
+                    preview?.clear()
                     musicViewModel.connectToMediaService()
                     musicViewModel.playExternalAudioFile(targetSong)
+                    delay(500)
+                    Log.d(
+                        TAG,
+                        "After direct service playback start - isPlaying=${musicViewModel.isPlaying.value}, currentSong=${musicViewModel.currentSong.value?.title}"
+                    )
                 }
             }
         } catch (e: Exception) {
@@ -335,6 +368,7 @@ class ExternalPlaybackActivity : ComponentActivity() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ExternalPlaybackBottomSheet(
+    musicViewModel: MusicViewModel,
     previewController: chromahub.rhythm.app.infrastructure.service.player.ExternalPreviewPlayerController,
     onDismiss: () -> Unit,
     onOpenFullPlayer: () -> Unit,
@@ -346,18 +380,35 @@ fun ExternalPlaybackBottomSheet(
     val hapticSetting by appSettings.externalPlayerHapticFeedback.collectAsState()
     val globalHaptics by appSettings.isHapticEnabled.collectAsState()
     val hapticEnabled = hapticSetting && globalHaptics
+    val isolatePreview by appSettings.externalPlayerIsolatePreview.collectAsState()
     val showLyrics by appSettings.externalPlayerShowLyrics.collectAsState()
     val showAudioDetails by appSettings.externalPlayerShowAudioDetails.collectAsState()
     val showWaveSeeker by appSettings.externalPlayerShowWaveSeeker.collectAsState()
     val autoCloseOnFinish by appSettings.externalPlayerAutoCloseOnFinish.collectAsState()
 
-    val currentSong by previewController.currentSong.collectAsState()
-    val isPlaying by previewController.isPlaying.collectAsState()
-    val isBuffering by previewController.isBuffering.collectAsState()
-    val isSeeking by previewController.isSeeking.collectAsState()
-    val progress by previewController.progress.collectAsState()
-    val lyrics by previewController.currentLyrics.collectAsState()
-    val lyricsTimeOffset = 0L
+    val previewSong by previewController.currentSong.collectAsState()
+    val previewPlaying by previewController.isPlaying.collectAsState()
+    val previewBuffering by previewController.isBuffering.collectAsState()
+    val previewSeeking by previewController.isSeeking.collectAsState()
+    val previewProgress by previewController.progress.collectAsState()
+    val previewLyrics by previewController.currentLyrics.collectAsState()
+
+    val serviceSong by musicViewModel.currentSong.collectAsState()
+    val servicePlaying by musicViewModel.isPlaying.collectAsState()
+    val serviceBuffering by musicViewModel.isBuffering.collectAsState()
+    val serviceSeeking by musicViewModel.isSeeking.collectAsState()
+    val serviceProgress by musicViewModel.progress.collectAsState()
+    val serviceLyrics by musicViewModel.currentLyrics.collectAsState()
+    val serviceLyricsOffset by musicViewModel.lyricsTimeOffset.collectAsState()
+
+    val usePreview = isolatePreview || previewSong != null
+    val currentSong = if (usePreview) previewSong else serviceSong
+    val isPlaying = if (usePreview) previewPlaying else servicePlaying
+    val isBuffering = if (usePreview) previewBuffering else serviceBuffering
+    val isSeeking = if (usePreview) previewSeeking else serviceSeeking
+    val progress = if (usePreview) previewProgress else serviceProgress
+    val lyrics = if (usePreview) previewLyrics else serviceLyrics
+    val lyricsTimeOffset = if (usePreview) 0L else serviceLyricsOffset.toLong()
 
     var showContent by remember { mutableStateOf(false) }
     var awaitingSong by remember { mutableStateOf(true) }
@@ -410,9 +461,7 @@ fun ExternalPlaybackBottomSheet(
         if (!awaitingSong && !isBuffering && !isSeeking) {
             // Avoid dismissing on transient nulls during controller/service churn.
             delay(1200)
-            if (currentSong == null && !isBuffering && !isSeeking) {
-                dismissSmoothly()
-            }
+            dismissSmoothly()
         }
     }
     RhythmAdaptiveModalSheet(
@@ -544,11 +593,11 @@ fun ExternalPlaybackBottomSheet(
                             target = ExpressiveShapeTarget.PLAYER_ART,
                             fallbackShape = RoundedCornerShape(24.dp)
                         )
-                        val artUri = currentSong?.artworkUri
+                        val artUri = currentSong.artworkUri
                         if (artUri != null) {
                             AsyncImage(
                                 model = artUri,
-                                contentDescription = currentSong?.title,
+                                contentDescription = currentSong.title,
                                 contentScale = ContentScale.Crop,
                                 modifier = Modifier
                                     .size(88.dp)
@@ -577,7 +626,7 @@ fun ExternalPlaybackBottomSheet(
                             modifier = Modifier.weight(1f)
                         ) {
                             AutoScrollingTextOnDemand(
-                                text = currentSong?.title ?: "Unknown Title",
+                                text = currentSong.title,
                                 style = MaterialTheme.typography.titleLarge.copy(
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onSurface
@@ -586,7 +635,7 @@ fun ExternalPlaybackBottomSheet(
                             )
                             Spacer(modifier = Modifier.height(6.dp))
                             AutoScrollingTextOnDemand(
-                                text = currentSong?.artist ?: "Unknown Artist",
+                                text = currentSong.artist,
                                 style = MaterialTheme.typography.bodyLarge.copy(
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 ),
@@ -595,7 +644,7 @@ fun ExternalPlaybackBottomSheet(
                             if (showAudioDetails) {
                                 Spacer(modifier = Modifier.height(4.dp))
                                 AutoScrollingTextOnDemand(
-                                    text = currentSong?.album ?: "Unknown album",
+                                    text = currentSong.album,
                                     style = MaterialTheme.typography.bodySmall.copy(
                                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
                                     ),
@@ -653,7 +702,11 @@ fun ExternalPlaybackBottomSheet(
                                         val currentPositionMs =
                                             (song.duration * progress.coerceIn(0f, 1f)).toLong()
                                         if (abs(targetPositionMs - currentPositionMs) >= 750L) {
-                                            previewController.seekTo(targetPositionMs)
+                                            if (usePreview) {
+                                                previewController.seekTo(targetPositionMs)
+                                            } else {
+                                                musicViewModel.seekTo(targetPositionMs)
+                                            }
                                         }
                                         if (hapticEnabled) {
                                             HapticUtils.performHapticFeedback(context, haptics, HapticType.LIGHT)
@@ -682,7 +735,11 @@ fun ExternalPlaybackBottomSheet(
                                         val currentPositionMs =
                                             (song.duration * progress.coerceIn(0f, 1f)).toLong()
                                         if (abs(targetPositionMs - currentPositionMs) >= 750L) {
-                                            previewController.seekTo(targetPositionMs)
+                                            if (usePreview) {
+                                                previewController.seekTo(targetPositionMs)
+                                            } else {
+                                                musicViewModel.seekTo(targetPositionMs)
+                                            }
                                         }
                                         if (hapticEnabled) {
                                             HapticUtils.performHapticFeedback(context, haptics, HapticType.LIGHT)
@@ -729,21 +786,33 @@ fun ExternalPlaybackBottomSheet(
                         if (hapticEnabled) {
                             HapticUtils.performHapticFeedback(context, haptics, HapticType.LIGHT)
                         }
-                        previewController.restartOrZero()
+                        if (usePreview) {
+                            previewController.restartOrZero()
+                        } else {
+                            musicViewModel.skipToPrevious()
+                        }
                     },
                     onPlayPause = {
                         if (hapticEnabled) {
                             HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
                         }
                         if (!isBuffering) {
-                            previewController.togglePlayPause()
+                            if (usePreview) {
+                                previewController.togglePlayPause()
+                            } else {
+                                musicViewModel.togglePlayPause()
+                            }
                         }
                     },
                     onNext = {
                         if (hapticEnabled) {
                             HapticUtils.performHapticFeedback(context, haptics, HapticType.LIGHT)
                         }
-                        previewController.restartOrZero()
+                        if (usePreview) {
+                            previewController.restartOrZero()
+                        } else {
+                            musicViewModel.skipToNext()
+                        }
                     },
                     onSeekBack = {},
                     onSeekForward = {},

@@ -47,6 +47,11 @@ data class ExternalPreviewHandoffPlan(
             )
         }
 
+        fun shouldUseIsolatedPreview(
+            isolatePreviewEnabled: Boolean,
+            previewControllerAvailable: Boolean
+        ): Boolean = isolatePreviewEnabled && previewControllerAvailable
+
         fun planForClose(
             song: Song?,
             currentPositionMs: Long,
@@ -214,6 +219,25 @@ class ExternalPreviewPlayerController(
 
     fun pause() {
         exoPlayer?.pause()
+    }
+
+    fun clear() {
+        stopProgressLoop()
+        lyricsJob?.cancel()
+        exoPlayer?.let { player ->
+            try {
+                player.stop()
+                player.clearMediaItems()
+            } catch (e: Exception) {
+                Log.w(TAG, "Error clearing isolated preview player", e)
+            }
+        }
+        _isPlaying.value = false
+        _isBuffering.value = false
+        _isSeeking.value = false
+        _progress.value = 0f
+        _currentLyrics.value = null
+        _currentSong.value = null
     }
 
     fun currentPositionMs(): Long {

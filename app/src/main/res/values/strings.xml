@@ -1779,6 +1779,8 @@
     <string name="settings_external_player_customization">External Player</string>
     <string name="settings_external_player_customization_desc">Sheet behavior, appearance, and playback</string>
     <string name="external_player_playback_section">Playback</string>
+    <string name="external_player_isolate_preview">Isolated Preview Player</string>
+    <string name="external_player_isolate_preview_desc">Play opened files without changing your main queue</string>
     <string name="external_player_continue_playback">Background Playback</string>
     <string name="external_player_continue_playback_desc">Keep playing after closing sheet</string>
     <string name="external_player_auto_close">Auto-Close on Finish</string>

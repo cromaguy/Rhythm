@@ -1972,6 +1972,15 @@ fun buildSettingsSearchIndex(context: Context): List<SearchableSettingItem> {
         ))
 
         add(SearchableSettingItem(
+            id = "external_player_isolate_preview",
+            title = context.getString(R.string.external_player_isolate_preview),
+            description = context.getString(R.string.external_player_isolate_preview_desc),
+            keywords = listOf("external", "isolate", "isolated", "preview", "queue", "preserve"),
+            icon = MaterialSymbolIcon("queue_music"),
+            route = SettingsRoutes.EXTERNAL_PLAYER_CUSTOMIZATION,
+            parentScreen = context.getString(R.string.settings_external_player_customization)
+        ))
+        add(SearchableSettingItem(
             id = "external_player_continue_playback",
             title = context.getString(R.string.external_player_continue_playback),
             description = context.getString(R.string.external_player_continue_playback_desc),

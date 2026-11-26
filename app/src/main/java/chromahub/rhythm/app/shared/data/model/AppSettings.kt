@@ -198,6 +198,7 @@ class AppSettings private constructor(context: Context) {
         private const val KEY_USE_EXPERIMENTAL_PLAYER_UI = "use_experimental_player_ui"
         private const val KEY_ENABLE_ALBUM_EDITING = "enable_album_editing"
 
+        private const val KEY_EXTERNAL_PLAYER_ISOLATE_PREVIEW = "external_player_isolate_preview"
         private const val KEY_EXTERNAL_PLAYER_CONTINUE_PLAYBACK_ON_CLOSE = "external_player_continue_playback_on_close"
         private const val KEY_EXTERNAL_PLAYER_HAPTIC_FEEDBACK = "external_player_haptic_feedback"
         private const val KEY_EXTERNAL_PLAYER_SHOW_LYRICS = "external_player_show_lyrics"
@@ -949,6 +950,9 @@ class AppSettings private constructor(context: Context) {
     
     private val _miniPlayerThemeId = MutableStateFlow(prefs.getString(KEY_MINI_PLAYER_THEME_ID, "EXPRESSIVE") ?: "EXPRESSIVE")
     val miniPlayerThemeId: StateFlow<String> = _miniPlayerThemeId.asStateFlow()
+
+    private val _externalPlayerIsolatePreview = MutableStateFlow(prefs.getBoolean(KEY_EXTERNAL_PLAYER_ISOLATE_PREVIEW, true))
+    val externalPlayerIsolatePreview: StateFlow<Boolean> = _externalPlayerIsolatePreview.asStateFlow()
 
     private val _externalPlayerContinuePlaybackOnClose = MutableStateFlow(prefs.getBoolean(KEY_EXTERNAL_PLAYER_CONTINUE_PLAYBACK_ON_CLOSE, false))
     val externalPlayerContinuePlaybackOnClose: StateFlow<Boolean> = _externalPlayerContinuePlaybackOnClose.asStateFlow()
@@ -2765,6 +2769,11 @@ private val _autoCheckForUpdates = MutableStateFlow(prefs.getBoolean(KEY_AUTO_CH
     fun setMiniPlayerThemeId(themeId: String) {
         prefs.edit { putString(KEY_MINI_PLAYER_THEME_ID, themeId) }
         _miniPlayerThemeId.value = themeId
+    }
+
+    fun setExternalPlayerIsolatePreview(enabled: Boolean) {
+        prefs.edit { putBoolean(KEY_EXTERNAL_PLAYER_ISOLATE_PREVIEW, enabled) }
+        _externalPlayerIsolatePreview.value = enabled
     }
 
     fun setExternalPlayerContinuePlaybackOnClose(enabled: Boolean) {
@@ -5765,6 +5774,7 @@ private val _autoCheckForUpdates = MutableStateFlow(prefs.getBoolean(KEY_AUTO_CH
         _broadcastStatusEnabled.value = prefs.getBoolean(KEY_BROADCAST_STATUS_ENABLED, false)
         _bluetoothLyricsEnabled.value = prefs.getBoolean(KEY_BLUETOOTH_LYRICS_ENABLED, false)
 
+        _externalPlayerIsolatePreview.value = prefs.getBoolean(KEY_EXTERNAL_PLAYER_ISOLATE_PREVIEW, true)
         _externalPlayerContinuePlaybackOnClose.value = prefs.getBoolean(KEY_EXTERNAL_PLAYER_CONTINUE_PLAYBACK_ON_CLOSE, false)
         _externalPlayerHapticFeedback.value = prefs.getBoolean(KEY_EXTERNAL_PLAYER_HAPTIC_FEEDBACK, true)
         _externalPlayerShowLyrics.value = prefs.getBoolean(KEY_EXTERNAL_PLAYER_SHOW_LYRICS, true)

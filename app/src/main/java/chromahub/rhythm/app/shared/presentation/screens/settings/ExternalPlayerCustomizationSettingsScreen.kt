@@ -32,6 +32,7 @@ fun ExternalPlayerCustomizationSettingsScreen(onBackClick: () -> Unit) {
     val appSettings = AppSettings.getInstance(context)
     val haptics = LocalHapticFeedback.current
 
+    val isolatePreview by appSettings.externalPlayerIsolatePreview.collectAsState()
     val continuePlaybackOnClose by appSettings.externalPlayerContinuePlaybackOnClose.collectAsState()
     val autoCloseOnFinish by appSettings.externalPlayerAutoCloseOnFinish.collectAsState()
     val showLyrics by appSettings.externalPlayerShowLyrics.collectAsState()
@@ -60,6 +61,20 @@ fun ExternalPlayerCustomizationSettingsScreen(onBackClick: () -> Unit) {
                 )
 
                 val playbackItems = listOf(
+                    toMaterial3SettingsItem(
+                        context = context,
+                        hapticFeedback = haptics,
+                        item = SettingItem(
+                            icon = MaterialSymbolIcon("queue_music"),
+                            title = stringResource(R.string.external_player_isolate_preview),
+                            description = stringResource(R.string.external_player_isolate_preview_desc),
+                            toggleState = isolatePreview,
+                            onToggleChange = {
+                                HapticUtils.performHapticFeedback(context, haptics, HapticType.LIGHT)
+                                appSettings.setExternalPlayerIsolatePreview(it)
+                            }
+                        )
+                    ),
                     toMaterial3SettingsItem(
                         context = context,
                         hapticFeedback = haptics,
