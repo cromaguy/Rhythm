@@ -142,7 +142,7 @@ fun RhythmPlayerSheet(
             if (!isDraggingSheet) {
                 offsetAnim.animateTo(
                     targetValue = targetOffset,
-                    animationSpec = motionConfig.slowSpatialSpring
+                    animationSpec = motionConfig.spatialSpring
                 )
             }
         }
@@ -197,7 +197,7 @@ fun RhythmPlayerSheet(
                     if (currentOffset > collapsedOffset * 0.3f || velocity > 1000f) {
                         onCollapse()
                     } else {
-                        scope.launch { offsetAnim.animateTo(targetOffset, motionConfig.slowSpatialSpring) }
+                        scope.launch { offsetAnim.animateTo(targetOffset, motionConfig.spatialSpring) }
                     }
                 } else {
                     if (currentOffset > collapsedOffset + with(density) { 40.dp.toPx() } || velocity > 1000f) {
@@ -205,7 +205,7 @@ fun RhythmPlayerSheet(
                     } else if (currentOffset < collapsedOffset * 0.7f || velocity < -1000f) {
                         onExpand()
                     } else {
-                        scope.launch { offsetAnim.animateTo(targetOffset, motionConfig.slowSpatialSpring) }
+                        scope.launch { offsetAnim.animateTo(targetOffset, motionConfig.spatialSpring) }
                     }
                 }
             }
@@ -233,6 +233,12 @@ fun RhythmPlayerSheet(
         var hasExpandedOnce by remember { mutableStateOf(isExpanded) }
         LaunchedEffect(isExpanded) {
             if (isExpanded) hasExpandedOnce = true
+        }
+        LaunchedEffect(Unit) {
+            if (!hasExpandedOnce) {
+                kotlinx.coroutines.delay(250)
+                hasExpandedOnce = true
+            }
         }
         val shouldRenderExpandedPlayer by remember(isExpanded, hasExpandedOnce, collapsedOffset) {
             androidx.compose.runtime.derivedStateOf {
@@ -302,8 +308,6 @@ fun RhythmPlayerSheet(
                         .zIndex(if (isBelowQuarterExpansion) 1f else 0f)
                         .graphicsLayer {
                             alpha = FullPlayerCompositionPolicy.miniPlayerAlpha(expansionFractionProvider())
-                            clip = true
-                            shape = sheetShape
                         }
                         .clickable(enabled = isMiniClickable) {
                             onExpand()
@@ -330,12 +334,24 @@ fun RhythmPlayerSheet(
 
                 Box(
                     modifier = Modifier
-                        .fillMaxSize()
                         .zIndex(if (!isBelowQuarterExpansion) 1f else 0f)
+                        .layout { measurable, constraints ->
+                            val fullHeight = screenHeightPx.roundToInt().coerceAtLeast(1)
+                            val placeable = measurable.measure(
+                                constraints.copy(
+                                    minWidth = constraints.maxWidth,
+                                    maxWidth = constraints.maxWidth,
+                                    minHeight = fullHeight,
+                                    maxHeight = fullHeight
+                                )
+                            )
+                            val layoutHeight = constraints.maxHeight.coerceIn(0, fullHeight)
+                            layout(placeable.width, layoutHeight) {
+                                placeable.placeRelative(0, 0)
+                            }
+                        }
                         .graphicsLayer {
                             alpha = FullPlayerCompositionPolicy.expandedPlayerAlpha(expansionFractionProvider())
-                            clip = true
-                            shape = sheetShape
                         }
                 ) {
                     if (shouldRenderExpandedPlayer) {

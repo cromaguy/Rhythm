@@ -8,11 +8,13 @@ package chromahub.rhythm.app.shared.presentation.components.player
 import android.graphics.Bitmap
 import android.graphics.BitmapShader
 import android.graphics.Paint
-import android.graphics.RenderEffect
 import android.graphics.RuntimeShader
 import android.graphics.Shader
 import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -26,7 +28,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.asComposeRenderEffect
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.nativeCanvas
@@ -103,6 +104,7 @@ half4 main(float2 fragCoord) {
 fun BeatSyncFluidBackground(
     coverBitmap: Bitmap?,
     isPlaying: Boolean,
+    isVisible: Boolean = true,
     dimAlpha: Float = 0.68f,
     modifier: Modifier = Modifier
 ) {
@@ -122,6 +124,18 @@ fun BeatSyncFluidBackground(
     var phaseTime by remember { mutableDoubleStateOf(0.0) }
     var lastFrameNanos by remember { mutableLongStateOf(0L) }
     var smoothedEnergy by remember { mutableStateOf(0f) }
+    val shouldMove = isPlaying && isVisible
+    val motionFactorAnim = remember { Animatable(0f) }
+
+    LaunchedEffect(shouldMove) {
+        motionFactorAnim.animateTo(
+            targetValue = if (shouldMove) 1f else 0f,
+            animationSpec = tween(
+                durationMillis = if (shouldMove) 900 else 950,
+                easing = FastOutSlowInEasing
+            )
+        )
+    }
 
     LaunchedEffect(coverBitmap) {
         if (coverBitmap !== previousBitmap) {
@@ -141,17 +155,23 @@ fun BeatSyncFluidBackground(
         }
     }
 
-    LaunchedEffect(isPlaying) {
+    LaunchedEffect(shouldMove) {
         lastFrameNanos = 0L
-        while (isPlaying) {
+        while (shouldMove || motionFactorAnim.value > 0.002f || smoothedEnergy > 0.002f) {
             withFrameNanos { now ->
                 val prev = lastFrameNanos
                 lastFrameNanos = now
                 if (prev > 0L) {
                     val dt = ((now - prev) / 1_000_000_000.0).coerceIn(0.0, 0.05)
-                    val targetEnergy = MusicHapticsController.globalRhythmLevel.value.coerceIn(0f, 1f)
-                    smoothedEnergy += (targetEnergy - smoothedEnergy) * 0.18f
-                    val speedBoost = 1.0 + smoothedEnergy * 2.1
+                    val targetEnergy = if (shouldMove) {
+                        MusicHapticsController.globalRhythmLevel.value.coerceIn(0f, 1f)
+                    } else {
+                        0f
+                    }
+                    val lerpRate = if (shouldMove) 0.14f else 0.08f
+                    smoothedEnergy += (targetEnergy - smoothedEnergy) * lerpRate
+                    if (!shouldMove && smoothedEnergy < 0.002f) smoothedEnergy = 0f
+                    val speedBoost = (1.0 + smoothedEnergy * 2.1) * motionFactorAnim.value
                     phaseTime += dt * speedBoost
                 }
             }
@@ -167,7 +187,7 @@ fun BeatSyncFluidBackground(
     }
 
     val blurEffect = remember {
-        RenderEffect.createBlurEffect(48f, 48f, Shader.TileMode.CLAMP).asComposeRenderEffect()
+        BlurEffectCache.getBlur(24f)
     }
 
     Canvas(

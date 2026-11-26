@@ -500,14 +500,33 @@ fun ExpressivePlayerScreen(
 
     val haptic = LocalHapticFeedback.current
 
+    val isSheetFullyExtended by remember(expansionFractionProvider, swipeToDismissEnabled) {
+        derivedStateOf {
+            swipeToDismissEnabled || expansionFractionProvider() >= 0.96f
+        }
+    }
+
     val artworkValidation = rememberArtworkValidation(debouncedSong.value?.artworkUri, context)
     val hasValidArtwork = artworkValidation == true
-    val isBackdropEnabled = playerAmbientBackdropEnabled &&
+    val isBackdropEnabled = playerAmbientBackdropEnabled
+    val runDynamicBackdrop = isBackdropEnabled &&
         chromahub.rhythm.app.shared.presentation.components.player.FullPlayerRuntimePolicy.shouldRunAmbientEffects(
-            backdropEnabled = playerAmbientBackdropEnabled,
-            isSheetVisible = isSheetPastHalf,
+            backdropEnabled = isBackdropEnabled,
+            isSheetVisible = isSheetFullyExtended,
             swipeToDismissEnabled = swipeToDismissEnabled
         )
+    val backdropBlurAlphaAnim = remember {
+        androidx.compose.animation.core.Animatable(if (swipeToDismissEnabled) 1f else 0f)
+    }
+    LaunchedEffect(runDynamicBackdrop) {
+        backdropBlurAlphaAnim.animateTo(
+            targetValue = if (runDynamicBackdrop) 1f else 0f,
+            animationSpec = tween(
+                durationMillis = if (runDynamicBackdrop) 700 else 260,
+                easing = FastOutSlowInEasing
+            )
+        )
+    }
     val showCanvasArtBg = isBackdropEnabled && hasValidArtwork && !lyricsVisible
     val showDarkBg = isBackdropEnabled
     val showBg = true
@@ -641,7 +660,7 @@ fun ExpressivePlayerScreen(
         if (!isBackdropEnabled) return@produceState
         value = withContext(Dispatchers.IO) {
             try {
-                val bitmap = loadArtworkBitmap(context, artworkUri, 256)
+                val bitmap = loadArtworkBitmap(context, artworkUri, 48)
                 if (bitmap != null) {
                     var r = 0L; var g = 0L; var b = 0L
                     val count = bitmap.width * bitmap.height
@@ -1036,30 +1055,56 @@ fun ExpressivePlayerScreen(
                     transitionSpec = { fadeIn(tween(1200)).togetherWith(fadeOut(tween(800))) },
                     label = "canvasArtworkTransition"
                 ) { artworkUri ->
-                    Box(modifier = modifier.fillMaxSize()) {
-                        val useAgslFluid = android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU &&
-                            agslFluidBackdropEnabled
-                        val agslCoverBitmap = if (useAgslFluid && artworkUri != null) {
-                            produceState<android.graphics.Bitmap?>(null, artworkUri) {
-                                value = withContext(Dispatchers.IO) {
-                                    runCatching { loadArtworkBitmap(context, artworkUri, 128) }.getOrNull()
-                                }
-                            }.value
-                        } else null
+                    val useAgslFluid = android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU &&
+                        agslFluidBackdropEnabled
+                    val agslCoverBitmap = if (useAgslFluid && artworkUri != null) {
+                        produceState<android.graphics.Bitmap?>(null, artworkUri) {
+                            value = withContext(Dispatchers.IO) {
+                                runCatching { loadArtworkBitmap(context, artworkUri, 64) }.getOrNull()
+                            }
+                        }.value
+                    } else null
 
-                        if (useAgslFluid && agslCoverBitmap != null && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-                            chromahub.rhythm.app.shared.presentation.components.player.BeatSyncFluidBackground(
-                                coverBitmap = agslCoverBitmap,
-                                isPlaying = isPlaying,
-                                dimAlpha = 0.72f,
-                                modifier = Modifier.fillMaxSize()
-                            )
-                        } else {
-                            AsyncImage(
-                                model = ImageRequest.Builder(context).data(artworkUri).size(128, 128).build(),
-                                contentDescription = null, contentScale = ContentScale.Crop,
-                                modifier = Modifier.fillMaxSize().blur(150.dp)
-                            )
+                    Box(modifier = modifier.fillMaxSize()) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(
+                                    Brush.verticalGradient(
+                                        listOf(
+                                            (artworkColor.value ?: Color(0xFF16161A)).copy(alpha = 0.55f),
+                                            Color.Black
+                                        )
+                                    )
+                                )
+                        )
+                        val showBlurLayer by remember {
+                            derivedStateOf { backdropBlurAlphaAnim.value > 0.002f }
+                        }
+                        if (showBlurLayer) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .graphicsLayer { alpha = backdropBlurAlphaAnim.value }
+                            ) {
+                                if (useAgslFluid && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                                    if (agslCoverBitmap != null) {
+                                        chromahub.rhythm.app.shared.presentation.components.player.BeatSyncFluidBackground(
+                                            coverBitmap = agslCoverBitmap,
+                                            isPlaying = isPlaying,
+                                            isVisible = runDynamicBackdrop,
+                                            dimAlpha = 0.72f,
+                                            modifier = Modifier.fillMaxSize()
+                                        )
+                                    }
+                                } else {
+                                    AsyncImage(
+                                        model = ImageRequest.Builder(context).data(artworkUri).size(128, 128).build(),
+                                        contentDescription = null, contentScale = ContentScale.Crop,
+                                        modifier = Modifier.fillMaxSize().blur(150.dp)
+                                    )
+                                }
+                            }
                         }
                         val useHorizontalBackdrop = isLandscapeTablet || isTabletImmersiveLyrics
                         Box(
