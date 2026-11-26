@@ -48,6 +48,7 @@ import chromahub.rhythm.app.shared.data.model.LyricsSourcePreference
 import chromahub.rhythm.app.shared.data.model.MediaScanMode
 import chromahub.rhythm.app.shared.data.model.ScanPhase
 import chromahub.rhythm.app.features.local.data.repository.MusicRepository
+import chromahub.rhythm.app.features.local.data.database.entity.AudioBookmarkEntity
 import chromahub.rhythm.app.features.local.data.database.entity.toSong
 import chromahub.rhythm.app.features.local.data.database.entity.toEntity
 import chromahub.rhythm.app.shared.data.model.PlaybackLocation
@@ -75,6 +76,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -10933,6 +10935,33 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
     
     // Sleep timer state is synchronized from service status broadcasts.
     
+    fun observeBookmarksForSong(songId: String): Flow<List<AudioBookmarkEntity>> {
+        return RhythmDatabase.getInstance(getApplication()).audioBookmarkDao().getBookmarksForSongFlow(songId)
+    }
+
+    fun addAudioBookmark(song: Song, label: String = "", fallbackPositionMs: Long = 0L) {
+        val posMs = (mediaController?.currentPosition?.takeIf { it > 0L } ?: fallbackPositionMs).coerceAtLeast(0L)
+        val formattedTime = chromahub.rhythm.app.shared.presentation.components.player.formatDuration(posMs)
+        val resolvedLabel = label.trim().ifEmpty { "Bookmark @ $formattedTime" }
+        viewModelScope.launch(Dispatchers.IO) {
+            RhythmDatabase.getInstance(getApplication()).audioBookmarkDao().upsert(
+                AudioBookmarkEntity(
+                    songId = song.id,
+                    songTitle = song.title,
+                    positionMs = posMs,
+                    label = resolvedLabel,
+                    createdAt = System.currentTimeMillis()
+                )
+            )
+        }
+    }
+
+    fun deleteAudioBookmark(bookmarkId: Long) {
+        viewModelScope.launch(Dispatchers.IO) {
+            RhythmDatabase.getInstance(getApplication()).audioBookmarkDao().deleteById(bookmarkId)
+        }
+    }
+
     override fun onCleared() {
 
         Log.d(TAG, "ViewModel clearing, cleaning up resources")

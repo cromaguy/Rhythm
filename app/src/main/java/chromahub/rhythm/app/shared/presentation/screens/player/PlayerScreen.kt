@@ -279,6 +279,7 @@ fun PlayerScreen(
         var showPlaybackSpeedDialog by remember { mutableStateOf(false) }
         var showPlaybackPitchDialog by remember { mutableStateOf(false) }
         var showSleepTimerBottomSheet by remember { mutableStateOf(false) }
+        var showBookmarksSheet by remember { mutableStateOf(false) }
         var showAlbumSheet by remember { mutableStateOf(false) }
         var selectedAlbum by remember { mutableStateOf<Album?>(null) }
         var selectedSongForPlaylist by remember { mutableStateOf<Song?>(null) }
@@ -750,6 +751,7 @@ fun PlayerScreen(
                     }
                 },
                 onSongInfo = { showSongInfoSheet = true },
+                onBookmarks = { showBookmarksSheet = true },
                 onShareFile = {
                     song?.let { currentSong ->
                         try {
@@ -824,6 +826,17 @@ fun PlayerScreen(
                 currentSong = song,
                 isPlaying = isPlaying,
                 musicViewModel = musicViewModel
+            )
+        }
+
+        if (showBookmarksSheet) {
+            chromahub.rhythm.app.shared.presentation.components.bottomsheets.AudioBookmarksBottomSheet(
+                song = song,
+                currentPositionMs = currentTimeMs,
+                musicViewModel = musicViewModel,
+                onSeekTo = { posMs -> onLyricsSeek?.invoke(posMs) ?: musicViewModel.seekTo(posMs) },
+                onDismiss = { showBookmarksSheet = false },
+                haptic = haptic
             )
         }
 

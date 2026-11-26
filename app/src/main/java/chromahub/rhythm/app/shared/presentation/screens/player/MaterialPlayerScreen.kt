@@ -465,6 +465,7 @@ fun MaterialPlayerScreen(
     var showPlaybackSpeedDialog by remember { mutableStateOf(false) }
     var showPlaybackPitchDialog by remember { mutableStateOf(false) }
     var showChipOrderBottomSheet by remember { mutableStateOf(false) }
+    var showBookmarksSheet by remember { mutableStateOf(false) }
     
     // Sleep timer state from ViewModel
     val sleepTimerActive by musicViewModel.sleepTimerActive.collectAsState()
@@ -1293,6 +1294,7 @@ fun MaterialPlayerScreen(
             },
             onSongInfo = { showSongInfoSheet = true },
             onShareFile = shareSong,
+            onBookmarks = { showBookmarksSheet = true },
             haptic = haptic,
             isExtraSmallWidth = isExtraSmallWidth,
             isCompactWidth = isCompactWidth
@@ -3822,6 +3824,19 @@ fun MaterialPlayerScreen(
             currentSong = song,
             isPlaying = isPlaying,
             musicViewModel = musicViewModel
+        )
+    }
+
+    if (showBookmarksSheet) {
+        val totalDurationMs = song?.duration?.takeIf { it > 0 } ?: resolvedDurationMs.takeIf { it > 0 } ?: 0L
+        val currentPositionMs = (progress().coerceIn(0f, 1f) * totalDurationMs).toLong()
+        chromahub.rhythm.app.shared.presentation.components.bottomsheets.AudioBookmarksBottomSheet(
+            song = song,
+            currentPositionMs = currentPositionMs,
+            musicViewModel = musicViewModel,
+            onSeekTo = { posMs -> onLyricsSeek?.invoke(posMs) ?: musicViewModel.seekTo(posMs) },
+            onDismiss = { showBookmarksSheet = false },
+            haptic = haptic
         )
     }
     

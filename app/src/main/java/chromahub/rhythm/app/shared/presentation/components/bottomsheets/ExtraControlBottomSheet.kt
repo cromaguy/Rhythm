@@ -132,6 +132,7 @@ fun ExtraControlBottomSheet(
     onArtist: () -> Unit = {},
     onSongInfo: () -> Unit,
     onShareFile: () -> Unit = {},
+    onBookmarks: (() -> Unit)? = null,
     haptic: HapticFeedback,
     isExtraSmallWidth: Boolean = false,
     isCompactWidth: Boolean = false
@@ -221,6 +222,20 @@ fun ExtraControlBottomSheet(
                 onClick = {
                     HapticUtils.performHapticFeedback(context, haptic, HapticType.HEAVY)
                     dismissAndDo { onSleepTimer() }
+                }
+            ))
+        }
+
+        onBookmarks?.let { openBookmarks ->
+            add(ControlAction(
+                icon = MaterialSymbolIcon("bookmark", filled = true),
+                label = "Audio Bookmarks",
+                description = "Save & jump to timestamps",
+                containerColor = secondary,
+                iconColor = onSecondary,
+                onClick = {
+                    HapticUtils.performHapticFeedback(context, haptic, HapticType.HEAVY)
+                    dismissAndDo { openBookmarks() }
                 }
             ))
         }
