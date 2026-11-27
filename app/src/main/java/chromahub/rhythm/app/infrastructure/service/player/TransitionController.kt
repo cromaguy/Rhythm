@@ -485,6 +485,15 @@ class TransitionController(
             }
 
             if (isActive && isLatestSchedule(generation, expectedMediaId, player)) {
+                engine.setPauseAtEndOfMediaItems(true)
+                val preFireDelayMs = ((transitionPoint + leadTimeMs) - player.currentPosition)
+                    .coerceIn(0L, leadTimeMs)
+                if (preFireDelayMs > 0L) {
+                    delay(preFireDelayMs)
+                }
+            }
+
+            if (isActive && isLatestSchedule(generation, expectedMediaId, player)) {
                 setState(TransitionState.TRANSITIONING)
                 Log.d(TAG, "FIRING TRANSITION NOW!")
                 engine.setPauseAtEndOfMediaItems(true)
@@ -534,6 +543,18 @@ class TransitionController(
         val sameAlbum = outgoingItem.mediaMetadata.albumTitle?.toString()?.takeIf { it.isNotBlank() } != null &&
             outgoingItem.mediaMetadata.albumTitle?.toString() == incomingItem.mediaMetadata.albumTitle?.toString() &&
             outgoingItem.mediaMetadata.artist?.toString() == incomingItem.mediaMetadata.artist?.toString()
+        val hasVocalClash = if (ctx != null) {
+            val outTimestamps = readCachedSyncedLyricsTimestamps(ctx, outgoingItem)
+            val inTimestamps = readCachedSyncedLyricsTimestamps(ctx, incomingItem)
+            SmartTransitionPlanner.detectVocalOverlap(
+                outgoingVocalTimestampsMs = outTimestamps,
+                incomingVocalTimestampsMs = inTimestamps,
+                outgoingDurationMs = outgoingDurationMs,
+                overlapDurationMs = ruleDuration
+            )
+        } else {
+            false
+        }
 
         SmartTransitionPlanner.plan(
             SmartMixInput(
@@ -548,9 +569,32 @@ class TransitionController(
                 outgoingKey = outTags?.initialKey,
                 incomingKey = inTags?.initialKey,
                 bpmSyncEnabled = ruleBpmSync,
-                sameAlbumSequence = sameAlbum
+                sameAlbumSequence = sameAlbum,
+                hasVocalClash = hasVocalClash
             )
         )
+    }
+
+    private fun readCachedSyncedLyricsTimestamps(
+        context: android.content.Context,
+        item: MediaItem
+    ): List<Long> {
+        val artist = item.mediaMetadata.artist?.toString()?.trim().orEmpty()
+        val title = item.mediaMetadata.title?.toString()?.trim().orEmpty()
+        if (artist.isBlank() || title.isBlank()) return emptyList()
+        return runCatching {
+            val fileName = chromahub.rhythm.app.features.local.data.repository.LyricsRepositoryDelegate.cacheFileName(
+                artist = artist,
+                title = title
+            )
+            val cacheFile = java.io.File(java.io.File(context.filesDir, "lyrics"), fileName)
+            if (!cacheFile.exists() || !cacheFile.isFile) return emptyList()
+            val lyrics = com.google.gson.Gson().fromJson(
+                cacheFile.readText(),
+                chromahub.rhythm.app.shared.data.model.LyricsData::class.java
+            ) ?: return emptyList()
+            SmartTransitionPlanner.parseSyncedTimestampsMs(lyrics.syncedLyrics)
+        }.getOrDefault(emptyList())
     }
 
     private fun handleSeek(positionMs: Long) {

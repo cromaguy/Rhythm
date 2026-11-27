@@ -24,7 +24,8 @@ data class SmartMixInput(
     val outgoingAnalysis: WindowAnalysis? = null,
     val incomingAnalysis: WindowAnalysis? = null,
     val bpmSyncEnabled: Boolean = true,
-    val sameAlbumSequence: Boolean = false
+    val sameAlbumSequence: Boolean = false,
+    val hasVocalClash: Boolean = false
 )
 
 data class SmartMixPlan(
@@ -32,7 +33,8 @@ data class SmartMixPlan(
     val tempoRatio: Float = 1.0f,
     val useBassSwap: Boolean = false,
     val harmonicMatch: HarmonicMatchEvaluation? = null,
-    val cueInMs: Long = 0L
+    val cueInMs: Long = 0L,
+    val vocalClashAvoided: Boolean = false
 )
 
 /**
@@ -76,10 +78,14 @@ object SmartTransitionPlanner {
         } else if (harmonic != null) {
             overlapMs = (overlapMs * harmonic.allowedDurationMultiplier).toLong().coerceIn(2_000L, 12_000L)
         }
+        val vocalClashAvoided = input.hasVocalClash && outEnding != EndingStyle.COLD
+        if (vocalClashAvoided) {
+            overlapMs = minOf(overlapMs, 2_000L)
+        }
 
         val maxSafe = ((input.outgoingDurationMs * 0.4f).toLong()).coerceAtLeast(1_000L)
         val finalDuration = overlapMs.coerceIn(500L, minOf(12_000L, maxSafe)).toInt()
-        val useBassSwap = input.bpmSyncEnabled && finalDuration >= 3_500 && outEnding != EndingStyle.COLD
+        val useBassSwap = input.bpmSyncEnabled && finalDuration >= 3_500 && outEnding != EndingStyle.COLD && !vocalClashAvoided
 
         val cueIn = input.incomingAnalysis?.audibleStartMs?.takeIf { it in 1L..5_000L } ?: 0L
 
@@ -95,8 +101,44 @@ object SmartTransitionPlanner {
             tempoRatio = tempoRatio,
             useBassSwap = useBassSwap,
             harmonicMatch = harmonic,
-            cueInMs = cueIn
+            cueInMs = cueIn,
+            vocalClashAvoided = vocalClashAvoided
         )
+    }
+
+    private val lrcTimePattern = Regex("""\[(\d{1,3}):(\d{2})(?:[.:](\d{1,3}))?]""")
+
+    fun parseSyncedTimestampsMs(lrcContent: String?): List<Long> {
+        if (lrcContent.isNullOrBlank()) return emptyList()
+        return lrcTimePattern.findAll(lrcContent).mapNotNull { match ->
+            val min = match.groupValues[1].toLongOrNull() ?: return@mapNotNull null
+            val sec = match.groupValues[2].toLongOrNull() ?: return@mapNotNull null
+            val fracRaw = match.groupValues[3]
+            val ms = when (fracRaw.length) {
+                0 -> 0L
+                1 -> (fracRaw.toLongOrNull() ?: 0L) * 100L
+                2 -> (fracRaw.toLongOrNull() ?: 0L) * 10L
+                else -> fracRaw.take(3).toLongOrNull() ?: 0L
+            }
+            min * 60_000L + sec * 1_000L + ms
+        }.sorted().toList()
+    }
+
+    /** Returns true when synced vocals overlap in both the outgoing tail and incoming intro window. */
+    fun detectVocalOverlap(
+        outgoingVocalTimestampsMs: List<Long>,
+        incomingVocalTimestampsMs: List<Long>,
+        outgoingDurationMs: Long,
+        overlapDurationMs: Int,
+        cueInMs: Long = 0L
+    ): Boolean {
+        if (outgoingDurationMs <= 0L || overlapDurationMs <= 0) return false
+        if (outgoingVocalTimestampsMs.isEmpty() || incomingVocalTimestampsMs.isEmpty()) return false
+        val tailStart = (outgoingDurationMs - overlapDurationMs.toLong()).coerceAtLeast(0L)
+        val hasOutgoingTailVocals = outgoingVocalTimestampsMs.any { ts -> ts in tailStart until outgoingDurationMs }
+        val introEnd = cueInMs.coerceAtLeast(0L) + overlapDurationMs.toLong()
+        val hasIncomingIntroVocals = incomingVocalTimestampsMs.any { ts -> ts in cueInMs.coerceAtLeast(0L)..introEnd }
+        return hasOutgoingTailVocals && hasIncomingIntroVocals
     }
 
     /** Computes incoming speed multiplier (allowing half/double-time matching) clamped to +-6%. */

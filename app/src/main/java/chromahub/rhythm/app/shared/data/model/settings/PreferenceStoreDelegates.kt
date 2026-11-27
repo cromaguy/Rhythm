@@ -103,21 +103,30 @@ class PlaybackPreferencesStore(prefs: SharedPreferences) : PreferenceStoreBase(p
     private val _surroundDownmixEnabled = BooleanPref("surround_downmix_enabled", false)
     private val _alacDecoderEnabled = BooleanPref("alac_decoder_enabled", true)
     private val _musicHapticsEnabled = BooleanPref("music_haptics_enabled", false)
+    private val _musicHapticsMode = StringPref("music_haptics_mode", "BASS_AND_BEATS")
     private val _musicHapticsIntensity = FloatPref("music_haptics_intensity", 0.7f)
+    private val _musicHapticsMuteOnExternal = BooleanPref("music_haptics_mute_external", true)
+    private val _musicHapticsUseSystemGenerator = BooleanPref("music_haptics_system_generator", false)
     private val _autoMixBpmSyncEnabled = BooleanPref("automix_bpm_sync_enabled", true)
 
     val sampleRateCapHz = _sampleRateCapHz.state
     val surroundDownmixEnabled = _surroundDownmixEnabled.state
     val alacDecoderEnabled = _alacDecoderEnabled.state
     val musicHapticsEnabled = _musicHapticsEnabled.state
+    val musicHapticsMode = _musicHapticsMode.state
     val musicHapticsIntensity = _musicHapticsIntensity.state
+    val musicHapticsMuteOnExternal = _musicHapticsMuteOnExternal.state
+    val musicHapticsUseSystemGenerator = _musicHapticsUseSystemGenerator.state
     val autoMixBpmSyncEnabled = _autoMixBpmSyncEnabled.state
 
     fun setSampleRateCapHz(hz: Int) = _sampleRateCapHz.set(hz.coerceAtLeast(0))
     fun setSurroundDownmixEnabled(enabled: Boolean) = _surroundDownmixEnabled.set(enabled)
     fun setAlacDecoderEnabled(enabled: Boolean) = _alacDecoderEnabled.set(enabled)
     fun setMusicHapticsEnabled(enabled: Boolean) = _musicHapticsEnabled.set(enabled)
+    fun setMusicHapticsMode(mode: String) = _musicHapticsMode.set(mode)
     fun setMusicHapticsIntensity(intensity: Float) = _musicHapticsIntensity.set(intensity.coerceIn(0.1f, 1.0f))
+    fun setMusicHapticsMuteOnExternal(enabled: Boolean) = _musicHapticsMuteOnExternal.set(enabled)
+    fun setMusicHapticsUseSystemGenerator(enabled: Boolean) = _musicHapticsUseSystemGenerator.set(enabled)
     fun setAutoMixBpmSyncEnabled(enabled: Boolean) = _autoMixBpmSyncEnabled.set(enabled)
 }
 

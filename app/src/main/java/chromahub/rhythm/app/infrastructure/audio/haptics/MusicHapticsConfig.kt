@@ -14,5 +14,7 @@ enum class MusicHapticsMode {
 data class MusicHapticsConfig(
     val enabled: Boolean = false,
     val intensityScale: Float = 0.7f,
-    val mode: MusicHapticsMode = MusicHapticsMode.BASS_AND_BEATS
+    val mode: MusicHapticsMode = MusicHapticsMode.BASS_AND_BEATS,
+    val muteOnExternalOutput: Boolean = true,
+    val useSystemHapticGenerator: Boolean = false
 )

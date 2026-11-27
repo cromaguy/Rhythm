@@ -89,6 +89,8 @@ fun PlaybackSettingsScreen(
     val sampleRateCapHz by appSettings.playbackPrefs.sampleRateCapHz.collectAsState()
     val musicHapticsEnabled by appSettings.playbackPrefs.musicHapticsEnabled.collectAsState()
     val musicHapticsIntensity by appSettings.playbackPrefs.musicHapticsIntensity.collectAsState()
+    val musicHapticsMuteOnExternal by appSettings.playbackPrefs.musicHapticsMuteOnExternal.collectAsState()
+    val musicHapticsUseSystemGenerator by appSettings.playbackPrefs.musicHapticsUseSystemGenerator.collectAsState()
 
     CollapsibleHeaderScreen(
         title = context.getString(R.string.settings_playback_title),
@@ -230,7 +232,7 @@ fun PlaybackSettingsScreen(
             ),
             SettingGroup(
                 title = context.getString(R.string.settings_section_audio_playback),
-                items = listOf(
+                items = listOfNotNull(
                     SettingItem(
                         icon = MaterialSymbolIcon("bolt", filled = true),
                         title = context.getString(R.string.settingsscreen_audio_offload),
@@ -300,6 +302,24 @@ fun PlaybackSettingsScreen(
                         } else null,
                         enabled = !isBitPerfect
                     ),
+                    if (musicHapticsEnabled && !isBitPerfect) {
+                        SettingItem(
+                            icon = MaterialSymbolIcon("usb", filled = true),
+                            title = "Mute Haptics on USB DAC / Cast",
+                            description = "Automatically pause beat vibration when audio routes over USB DAC, HDMI, or external cast devices",
+                            toggleState = musicHapticsMuteOnExternal,
+                            onToggleChange = { appSettings.playbackPrefs.setMusicHapticsMuteOnExternal(it) }
+                        )
+                    } else null,
+                    if (musicHapticsEnabled && !isBitPerfect && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                        SettingItem(
+                            icon = MaterialSymbolIcon("graphic_eq", filled = true),
+                            title = "System HapticGenerator (Android 12+)",
+                            description = "Use Android's native audio-coupled haptic synthesizer when supported by device hardware",
+                            toggleState = musicHapticsUseSystemGenerator,
+                            onToggleChange = { appSettings.playbackPrefs.setMusicHapticsUseSystemGenerator(it) }
+                        )
+                    } else null,
                     SettingItem(
                         icon = MaterialSymbolIcon("tune", filled = true),
                         title = context.getString(R.string.settings_category_audio_engine_title),

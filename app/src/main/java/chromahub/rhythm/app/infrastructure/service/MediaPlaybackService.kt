@@ -528,31 +528,49 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
                 syncParametricEqFromSettings(it)
             }
             musicHapticsController = chromahub.rhythm.app.infrastructure.audio.haptics.MusicHapticsController(applicationContext).apply {
+                val initialMode = chromahub.rhythm.app.infrastructure.audio.haptics.MusicHapticsMode.entries
+                    .firstOrNull { it.name == appSettings.playbackPrefs.musicHapticsMode.value }
+                    ?: chromahub.rhythm.app.infrastructure.audio.haptics.MusicHapticsMode.BASS_AND_BEATS
                 updateConfig(
                     chromahub.rhythm.app.infrastructure.audio.haptics.MusicHapticsConfig(
                         enabled = appSettings.playbackPrefs.musicHapticsEnabled.value,
-                        intensityScale = appSettings.playbackPrefs.musicHapticsIntensity.value
+                        intensityScale = appSettings.playbackPrefs.musicHapticsIntensity.value,
+                        mode = initialMode,
+                        muteOnExternalOutput = appSettings.playbackPrefs.musicHapticsMuteOnExternal.value,
+                        useSystemHapticGenerator = appSettings.playbackPrefs.musicHapticsUseSystemGenerator.value
                     )
                 )
             }
             serviceScope.launch {
-                kotlinx.coroutines.flow.combine(
-                    appSettings.playbackPrefs.musicHapticsEnabled,
-                    appSettings.playbackPrefs.musicHapticsIntensity,
-                    appSettings.audioRoutingMode
-                ) { enabled, intensity, routing ->
-                    listOf(enabled, intensity, routing == "app")
-                }.collect { state ->
-                    val enabled = state[0] as Boolean
-                    val intensity = state[1] as Float
-                    val bitPerfect = state[2] as Boolean
-                    musicHapticsController?.isBitPerfectActive = bitPerfect
-                    musicHapticsController?.updateConfig(
-                        chromahub.rhythm.app.infrastructure.audio.haptics.MusicHapticsConfig(
-                            enabled = enabled,
-                            intensityScale = intensity
-                        )
+                kotlinx.coroutines.flow.combine<Any, Pair<chromahub.rhythm.app.infrastructure.audio.haptics.MusicHapticsConfig, Boolean>>(
+                    listOf(
+                        appSettings.playbackPrefs.musicHapticsEnabled,
+                        appSettings.playbackPrefs.musicHapticsIntensity,
+                        appSettings.playbackPrefs.musicHapticsMode,
+                        appSettings.playbackPrefs.musicHapticsMuteOnExternal,
+                        appSettings.playbackPrefs.musicHapticsUseSystemGenerator,
+                        appSettings.audioRoutingMode
                     )
+                ) { values ->
+                    val enabled = values[0] as Boolean
+                    val intensity = values[1] as Float
+                    val modeName = values[2] as String
+                    val muteExternal = values[3] as Boolean
+                    val useSystemGenerator = values[4] as Boolean
+                    val routing = values[5] as String
+                    val mode = chromahub.rhythm.app.infrastructure.audio.haptics.MusicHapticsMode.entries
+                        .firstOrNull { it.name == modeName }
+                        ?: chromahub.rhythm.app.infrastructure.audio.haptics.MusicHapticsMode.BASS_AND_BEATS
+                    chromahub.rhythm.app.infrastructure.audio.haptics.MusicHapticsConfig(
+                        enabled = enabled,
+                        intensityScale = intensity,
+                        mode = mode,
+                        muteOnExternalOutput = muteExternal,
+                        useSystemHapticGenerator = useSystemGenerator
+                    ) to (routing == "app")
+                }.collect { (cfg, bitPerfect) ->
+                    musicHapticsController?.isBitPerfectActive = bitPerfect
+                    musicHapticsController?.updateConfig(cfg)
                 }
             }
             serviceScope.launch {
@@ -620,6 +638,7 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
                 val callback = object : android.media.AudioDeviceCallback() {
                     override fun onAudioDevicesAdded(addedDevices: Array<out android.media.AudioDeviceInfo>?) {
                         updatePlaybackQuality()
+                        syncExternalOutputHapticsMute(audioManager)
                         serviceScope.launch {
                             chromahub.rhythm.app.infrastructure.audio.peq.AutoEqController.syncForActiveOutputDevice(
                                 applicationContext,
@@ -629,6 +648,7 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
                     }
                     override fun onAudioDevicesRemoved(removedDevices: Array<out android.media.AudioDeviceInfo>?) {
                         updatePlaybackQuality()
+                        syncExternalOutputHapticsMute(audioManager)
                         serviceScope.launch {
                             chromahub.rhythm.app.infrastructure.audio.peq.AutoEqController.syncForActiveOutputDevice(
                                 applicationContext,
@@ -639,6 +659,7 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
                 }
                 audioDeviceCallback = callback
                 audioManager?.registerAudioDeviceCallback(callback, android.os.Handler(android.os.Looper.getMainLooper()))
+                syncExternalOutputHapticsMute(audioManager)
                 serviceScope.launch {
                     chromahub.rhythm.app.infrastructure.audio.peq.AutoEqController.syncForActiveOutputDevice(
                         applicationContext,
@@ -2977,6 +2998,16 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
         }
     }
 
+    private fun syncExternalOutputHapticsMute(audioManager: android.media.AudioManager?) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M || audioManager == null) return
+        val outputs = runCatching { audioManager.getDevices(android.media.AudioManager.GET_DEVICES_OUTPUTS) }
+            .getOrNull() ?: emptyArray()
+        val externalMuted = chromahub.rhythm.app.infrastructure.audio.haptics.MusicHapticsController
+            .hasExternalMuteOutputDevice(outputs)
+        musicHapticsController?.isExternalOutputMuted = externalMuted
+        musicHapticsController?.syncAudioSession(currentAudioEffectsSessionId)
+    }
+
     private fun updatePlaybackQuality() {
         try {
             val mediaItem = if (::player.isInitialized) player.currentMediaItem else null
@@ -3674,6 +3705,7 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
             loadSavedAudioEffects()
 
             audioEffectsInitialized = true
+            musicHapticsController?.syncAudioSession(audioSessionId)
             Log.d(TAG, "Audio effects initialization completed successfully")
 
         } catch (e: Exception) {

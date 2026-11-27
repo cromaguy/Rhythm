@@ -6,6 +6,8 @@
 package chromahub.rhythm.app.infrastructure.audio.haptics
 
 import android.content.Context
+import android.media.AudioDeviceInfo
+import android.media.audiofx.HapticGenerator
 import android.os.Build
 import android.os.Handler
 import android.os.HandlerThread
@@ -22,8 +24,9 @@ import kotlin.math.roundToInt
 
 /**
  * Coordinates hardware vibration feedback synchronized to [MusicHapticsAnalyzer] pulses while
- * respecting Android Power Saver mode, playing/paused state, bit-perfect exclusivity, and cooldowns.
- * Also publishes [rhythmLevel] (`0..1`) for beat-reactive visual shaders.
+ * respecting Android Power Saver mode, playing/paused state, bit-perfect exclusivity, external
+ * USB DAC / Cast routing mute, optional API 31+ [HapticGenerator], and cooldowns.
+ * Also publishes [globalRhythmLevel] (`0..1`) for beat-reactive visual shaders.
  */
 class MusicHapticsController(context: Context) : HapticPulseListener {
 
@@ -33,6 +36,21 @@ class MusicHapticsController(context: Context) : HapticPulseListener {
 
         private val _globalRhythmLevel = MutableStateFlow(0f)
         val globalRhythmLevel: StateFlow<Float> = _globalRhythmLevel.asStateFlow()
+
+        fun hasExternalMuteOutputDevice(devices: Array<out AudioDeviceInfo>): Boolean =
+            devices.any { device ->
+                if (!device.isSink) return@any false
+                when (device.type) {
+                    AudioDeviceInfo.TYPE_USB_DEVICE,
+                    AudioDeviceInfo.TYPE_USB_HEADSET,
+                    AudioDeviceInfo.TYPE_USB_ACCESSORY,
+                    AudioDeviceInfo.TYPE_HDMI,
+                    AudioDeviceInfo.TYPE_HDMI_ARC,
+                    AudioDeviceInfo.TYPE_REMOTE_SUBMIX -> true
+                    AudioDeviceInfo.TYPE_BLE_BROADCAST -> Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+                    else -> false
+                }
+            }
     }
 
     private val appContext = context.applicationContext
@@ -59,6 +77,16 @@ class MusicHapticsController(context: Context) : HapticPulseListener {
     var isBitPerfectActive: Boolean = false
 
     @Volatile
+    var isExternalOutputMuted: Boolean = false
+
+    @Volatile
+    private var lastAudioSessionId: Int = 0
+
+    private var hapticGenerator: HapticGenerator? = null
+    @Volatile
+    private var hapticGeneratorActive: Boolean = false
+
+    @Volatile
     private var lastPulseUptimeMs = 0L
 
     @Volatile
@@ -71,14 +99,60 @@ class MusicHapticsController(context: Context) : HapticPulseListener {
         if (!newConfig.enabled) {
             _globalRhythmLevel.value = 0f
             hapticHandler.removeCallbacksAndMessages(null)
+            releaseHapticGenerator()
+        } else {
+            syncAudioSession(lastAudioSessionId)
         }
     }
 
     fun shouldAnalyze(): Boolean {
         if (!config.enabled || !isPlaybackActive || isBitPerfectActive) return false
+        if (config.muteOnExternalOutput && isExternalOutputMuted) return false
         if (vibrator == null || !vibrator.hasVibrator()) return false
         if (powerManager?.isPowerSaveMode == true) return false
         return true
+    }
+
+    fun syncAudioSession(audioSessionId: Int) {
+        lastAudioSessionId = audioSessionId
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
+            releaseHapticGenerator()
+            return
+        }
+        val wantGenerator = config.useSystemHapticGenerator &&
+            audioSessionId > 0 &&
+            config.enabled &&
+            !isBitPerfectActive &&
+            !(config.muteOnExternalOutput && isExternalOutputMuted) &&
+            powerManager?.isPowerSaveMode != true
+
+        if (!wantGenerator) {
+            releaseHapticGenerator()
+            return
+        }
+        runCatching {
+            if (!HapticGenerator.isAvailable()) {
+                releaseHapticGenerator()
+                return
+            }
+            if (hapticGenerator == null) {
+                hapticGenerator = HapticGenerator.create(audioSessionId)
+            }
+            hapticGenerator?.enabled = true
+            hapticGeneratorActive = hapticGenerator?.enabled == true
+        }.onFailure { err ->
+            Log.w(TAG, "HapticGenerator unavailable for session $audioSessionId", err)
+            releaseHapticGenerator()
+        }
+    }
+
+    private fun releaseHapticGenerator() {
+        hapticGeneratorActive = false
+        runCatching {
+            hapticGenerator?.enabled = false
+            hapticGenerator?.release()
+        }
+        hapticGenerator = null
     }
 
     override fun onAnalysisFlushed() {
@@ -97,6 +171,7 @@ class MusicHapticsController(context: Context) : HapticPulseListener {
         isSharpTransient: Boolean
     ) {
         if (!shouldAnalyze()) return
+        if (hapticGeneratorActive) return
         val cfg = config
         val rawDrive = when (cfg.mode) {
             MusicHapticsMode.BASS_AND_BEATS -> if (isKick) bassEnergy else return
@@ -147,6 +222,7 @@ class MusicHapticsController(context: Context) : HapticPulseListener {
 
     fun release() {
         hapticHandler.removeCallbacksAndMessages(null)
+        releaseHapticGenerator()
         _globalRhythmLevel.value = 0f
         hapticThread.quitSafely()
     }

@@ -207,4 +207,40 @@ class AutoMixAndHapticsTest {
         assertTrue("Expected at least 2 kick haptic pulses, got $kickCount", kickCount >= 2)
         assertTrue("Expected noticeable rhythm envelope level, got $maxRhythmLevel", maxRhythmLevel > 0.3f)
     }
+
+    @Test
+    fun smartTransitionPlannerAvoidsVocalOverlapAndParsesLrcTimestamps() {
+        val outTimestamps = SmartTransitionPlanner.parseSyncedTimestampsMs(
+            "[02:50.00]Line ending near outro\n[02:56.50]Final vocal phrase"
+        )
+        val inTimestamps = SmartTransitionPlanner.parseSyncedTimestampsMs(
+            "[00:01.20]Opening vocal line\n[00:10.00]Second line"
+        )
+        assertTrue(
+            SmartTransitionPlanner.detectVocalOverlap(
+                outgoingVocalTimestampsMs = outTimestamps,
+                incomingVocalTimestampsMs = inTimestamps,
+                outgoingDurationMs = 180_000L,
+                overlapDurationMs = 6_000
+            )
+        )
+
+        val avoidedPlan = SmartTransitionPlanner.plan(
+            SmartMixInput(
+                baseDurationMs = 8_000,
+                baseMode = TransitionMode.OVERLAP,
+                curveIn = Curve.EQUAL_POWER,
+                curveOut = Curve.EQUAL_POWER,
+                outgoingDurationMs = 180_000L,
+                incomingDurationMs = 180_000L,
+                outgoingBpm = 124f,
+                incomingBpm = 124f,
+                bpmSyncEnabled = true,
+                hasVocalClash = true
+            )
+        )
+        assertTrue(avoidedPlan.vocalClashAvoided)
+        assertFalse(avoidedPlan.useBassSwap)
+        assertEquals(2_000, avoidedPlan.settings.durationMs)
+    }
 }
