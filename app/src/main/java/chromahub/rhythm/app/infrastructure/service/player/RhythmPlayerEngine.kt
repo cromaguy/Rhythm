@@ -607,12 +607,26 @@ class RhythmPlayerEngine(
                     .setEnableAudioOutputPlaybackParameters(true)
                     .setAudioProcessorChain(processorChain)
                     .build().apply {
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                        val defaultOutputProvider = androidx.media3.exoplayer.audio.AudioTrackAudioOutputProvider.Builder(context).build()
+                        val usbProvider = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                            BitPerfectUsbAudioOutputProvider(context, delegate = defaultOutputProvider) {
+                                appSettings.audioRoutingMode.value == "app"
+                            }
+                        } else {
+                            null
+                        }
+                        val delegateProvider = usbProvider ?: defaultOutputProvider
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                             setAudioOutputProvider(
-                                BitPerfectUsbAudioOutputProvider(context) {
-                                    appSettings.audioRoutingMode.value == "app"
-                                }
+                                chromahub.rhythm.app.infrastructure.audio.usb.PostAmpAudioOutputProvider(
+                                    delegate = delegateProvider,
+                                    context = context,
+                                    replayGainProcessorProvider = { getActiveReplayGainProcessor() },
+                                    isBitPerfectActive = { BitPerfectUsbAudioOutputProvider.activeStatus.value != null }
+                                )
                             )
+                        } else if (usbProvider != null) {
+                            setAudioOutputProvider(usbProvider)
                         }
                     }
                 val fallbackSink = if (floatOutputPref) {

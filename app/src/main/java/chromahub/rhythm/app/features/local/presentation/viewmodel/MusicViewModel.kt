@@ -10531,6 +10531,14 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
             appSettings.setAutoEQProfile("")
             appSettings.presetsPrefs.setAutoEqProfileId(null)
             appSettings.presetsPrefs.setParametricEqJson("[]")
+            val activeDeviceKey = chromahub.rhythm.app.infrastructure.audio.peq.AutoEqController.resolveActiveDeviceKey(getApplication())
+            appSettings.presetsPrefs.setDeviceAutoEqMapJson(
+                chromahub.rhythm.app.shared.data.model.DeviceAutoEqMap.withBinding(
+                    appSettings.presetsPrefs.deviceAutoEqMapJson.value,
+                    activeDeviceKey,
+                    null
+                )
+            )
             applyEqualizerPreset("Flat", List(10) { 0f })
             return
         }
@@ -10550,9 +10558,17 @@ class MusicViewModel(application: Application) : AndroidViewModel(application) {
             }
         }
         
-        // Save profile name to settings
+        // Save profile name to settings and bind to active audio output route
         appSettings.setAutoEQProfile(profile.name)
         appSettings.presetsPrefs.setAutoEqProfileId(profile.name)
+        val activeDeviceKey = chromahub.rhythm.app.infrastructure.audio.peq.AutoEqController.resolveActiveDeviceKey(getApplication())
+        appSettings.presetsPrefs.setDeviceAutoEqMapJson(
+            chromahub.rhythm.app.shared.data.model.DeviceAutoEqMap.withBinding(
+                appSettings.presetsPrefs.deviceAutoEqMapJson.value,
+                activeDeviceKey,
+                profile.name
+            )
+        )
 
         val normalizedProfile = profile.copy(bands = levels)
         viewModelScope.launch {

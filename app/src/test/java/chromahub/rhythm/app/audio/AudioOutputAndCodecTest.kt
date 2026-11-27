@@ -23,9 +23,12 @@ import chromahub.rhythm.app.infrastructure.audio.codec.AiffMedia3Extractor
 import chromahub.rhythm.app.infrastructure.audio.dsp.SampleRateCapAudioProcessor
 import chromahub.rhythm.app.infrastructure.audio.dsp.SurroundDownmixAudioProcessor
 import chromahub.rhythm.app.infrastructure.audio.usb.MixerFormat
+import chromahub.rhythm.app.infrastructure.audio.usb.PostAmpAudioOutputProvider
 import chromahub.rhythm.app.infrastructure.audio.usb.selectBitPerfectMixerFormat
 import chromahub.rhythm.app.infrastructure.service.player.AudioDecoderPolicy
 import chromahub.rhythm.app.infrastructure.service.player.SafeSilenceSkippingAudioProcessor
+import chromahub.rhythm.app.infrastructure.service.player.replaygain.ReplayGainUtil
+import chromahub.rhythm.app.shared.data.model.DeviceAutoEqMap
 import com.google.common.collect.ImmutableList
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -270,5 +273,42 @@ class AudioOutputAndCodecTest {
         pipeline.flush(AudioProcessor.StreamMetadata.DEFAULT)
         assertFalse(safeSilence.isActive())
         assertTrue(mono.isActive())
+    }
+
+    @Test
+    fun postAmp_clampsPositiveBoostByPeakCeilingAndBypassesWhenBitPerfect() {
+        val tags = ReplayGainUtil.ReplayGainInfo(
+            trackGain = 6.5f,
+            trackPeak = 0.7079f, // ~3.0 dB headroom before digital 0 dBFS
+            albumGain = null,
+            albumPeak = null
+        )
+        val nonBitPerfectBoost = PostAmpAudioOutputProvider.computePositivePostAmpDb(
+            tags = tags,
+            mode = ReplayGainUtil.Mode.Track,
+            rgPreampDb = 0,
+            bitPerfect = false
+        )
+        assertEquals(3.0f, nonBitPerfectBoost, 0.1f)
+
+        val bitPerfectBoost = PostAmpAudioOutputProvider.computePositivePostAmpDb(
+            tags = tags,
+            mode = ReplayGainUtil.Mode.Track,
+            rgPreampDb = 0,
+            bitPerfect = true
+        )
+        assertEquals(0f, bitPerfectBoost, 0.001f)
+    }
+
+    @Test
+    fun deviceAutoEqMap_persistsAndClearsRouteSpecificBindings() {
+        var json = DeviceAutoEqMap.withBinding(null, "bt:Sony WF-1000XM5", "Oratory1990 XM5")
+        json = DeviceAutoEqMap.withBinding(json, "usb:Qudelix-5K", "Harman Target")
+        assertEquals("Oratory1990 XM5", DeviceAutoEqMap.profileForDevice(json, "bt:Sony WF-1000XM5"))
+        assertEquals("Harman Target", DeviceAutoEqMap.profileForDevice(json, "usb:Qudelix-5K"))
+
+        json = DeviceAutoEqMap.withBinding(json, "bt:Sony WF-1000XM5", null)
+        assertEquals(null, DeviceAutoEqMap.profileForDevice(json, "bt:Sony WF-1000XM5"))
+        assertEquals("Harman Target", DeviceAutoEqMap.profileForDevice(json, "usb:Qudelix-5K"))
     }
 }

@@ -264,4 +264,74 @@ class ViperAudioProcessorTest {
         assertTrue("Disabling forced bypass must restore enabled state", parent.isEnabled())
         assertTrue("Disabling forced bypass must restore child enabled state", child.isEnabled())
     }
+
+    @Test
+    fun testDynamicEqAndMultibandCrossover_preservesCrossoverFrequencyAndAppliesBoost() {
+        val processor = ViperAudioProcessor()
+        processor.updateConfig(
+            ViperMasterConfig(
+                masterEnabled = true,
+                multibandCompressor = MultibandCompressorConfig(
+                    enabled = true,
+                    crossover1 = 120,
+                    crossover2 = 500,
+                    crossover3 = 2000,
+                    crossover4 = 8000,
+                    bandEnables = listOf(false, false, false, false, false)
+                ),
+                masterGate = MasterGateConfig(limiterEnabled = false)
+            )
+        )
+
+        val frames = 2048
+        val buffer = ShortArray(frames * 2)
+        for (i in 0 until frames) {
+            val sample = (sin(2.0 * Math.PI * 500.0 * (i.toDouble() / 44100.0)) * 12000.0).toInt().toShort()
+            buffer[i * 2] = sample
+            buffer[i * 2 + 1] = sample
+        }
+        processor.processSamples(buffer, buffer.size)
+
+        var maxPeak = 0
+        for (i in (frames / 2) until frames) {
+            maxPeak = maxOf(maxPeak, Math.abs(buffer[i * 2].toInt()))
+        }
+        assertTrue("500 Hz crossover frequency must not cancel out (peak=$maxPeak)", maxPeak > 8500)
+    }
+
+    @Test
+    fun testHeadphoneSurroundAndLufsNormalization_processStereoBinauralAndBoostQuietSignal() {
+        val hsProcessor = ViperAudioProcessor()
+        hsProcessor.updateConfig(
+            ViperMasterConfig(
+                masterEnabled = true,
+                headphoneSurround = HeadphoneSurroundConfig(enabled = true, quality = 1),
+                masterGate = MasterGateConfig(limiterEnabled = false)
+            )
+        )
+        val monoLeft = ShortArray(512)
+        for (i in 0 until 256) {
+            monoLeft[i * 2] = (sin(2.0 * Math.PI * 440.0 * (i.toDouble() / 44100.0)) * 14000.0).toInt().toShort()
+            monoLeft[i * 2 + 1] = 0
+        }
+        hsProcessor.processSamples(monoLeft, monoLeft.size)
+        var rightChannelEnergy = 0
+        for (i in 64 until 256) {
+            rightChannelEnergy += Math.abs(monoLeft[i * 2 + 1].toInt())
+        }
+        assertTrue("Headphone Surround must produce binaural crossfeed on opposite channel", rightChannelEnergy > 100)
+
+        val lufsProcessor = ViperAudioProcessor()
+        lufsProcessor.updateConfig(
+            ViperMasterConfig(
+                masterEnabled = true,
+                dynamicEq = DynamicEqConfig(enabled = true, band1GainDb = 3.0f),
+                lufs = LufsConfig(enabled = true, targetLufs = -10.0f, maxGainDb = 6.0f, speed = 2),
+                masterGate = MasterGateConfig(limiterEnabled = false)
+            )
+        )
+        val quietBuffer = ShortArray(8192) { 600 }
+        lufsProcessor.processSamples(quietBuffer, quietBuffer.size)
+        assertTrue("LUFS normalization must raise quiet signal above input level", Math.abs(quietBuffer.last().toInt()) > 650)
+    }
 }

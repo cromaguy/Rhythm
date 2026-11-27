@@ -390,9 +390,16 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
     
     // SharedPreferences keys
     companion object {
+        data class StreamHealthSnapshot(
+            val driftPpm: Double? = null,
+            val glitchCount: Long = 0L
+        )
+
         var instanceForWidgetAndLyricsOnly: MediaPlaybackService? = null
         private val _currentPlaybackQuality = MutableStateFlow<PlaybackQualityInfo?>(null)
         val currentPlaybackQuality: StateFlow<PlaybackQualityInfo?> = _currentPlaybackQuality.asStateFlow()
+        private val _streamHealthSnapshot = MutableStateFlow(StreamHealthSnapshot())
+        val streamHealthSnapshot: StateFlow<StreamHealthSnapshot> = _streamHealthSnapshot.asStateFlow()
         private const val TAG = "MediaPlaybackService"
         private const val NOTIFICATION_ID = 1001
         private const val CHANNEL_ID = "RhythmMediaPlayback"
@@ -613,13 +620,31 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
                 val callback = object : android.media.AudioDeviceCallback() {
                     override fun onAudioDevicesAdded(addedDevices: Array<out android.media.AudioDeviceInfo>?) {
                         updatePlaybackQuality()
+                        serviceScope.launch {
+                            chromahub.rhythm.app.infrastructure.audio.peq.AutoEqController.syncForActiveOutputDevice(
+                                applicationContext,
+                                appSettings
+                            )
+                        }
                     }
                     override fun onAudioDevicesRemoved(removedDevices: Array<out android.media.AudioDeviceInfo>?) {
                         updatePlaybackQuality()
+                        serviceScope.launch {
+                            chromahub.rhythm.app.infrastructure.audio.peq.AutoEqController.syncForActiveOutputDevice(
+                                applicationContext,
+                                appSettings
+                            )
+                        }
                     }
                 }
                 audioDeviceCallback = callback
                 audioManager?.registerAudioDeviceCallback(callback, android.os.Handler(android.os.Looper.getMainLooper()))
+                serviceScope.launch {
+                    chromahub.rhythm.app.infrastructure.audio.peq.AutoEqController.syncForActiveOutputDevice(
+                        applicationContext,
+                        appSettings
+                    )
+                }
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error setting up Bluetooth codec and audio device monitoring", e)
@@ -656,7 +681,12 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
                             val mediaId = player.currentMediaItem?.mediaId
                             val pos = player.currentPosition
                             if (::rhythmPlayerEngine.isInitialized) {
+                                if (mediaId != rhythmGuardTrackedMediaId) {
+                                    rhythmPlayerEngine.resetStreamHealth()
+                                }
                                 rhythmPlayerEngine.sampleStreamHealth(pos, nowElapsed, playing)
+                                val (driftPpm, glitchCount) = rhythmPlayerEngine.getStreamHealthSnapshot()
+                                _streamHealthSnapshot.value = StreamHealthSnapshot(driftPpm, glitchCount)
                             }
                             if (mediaId != rhythmGuardTrackedMediaId) {
                                 rhythmGuardTrackedMediaId = mediaId

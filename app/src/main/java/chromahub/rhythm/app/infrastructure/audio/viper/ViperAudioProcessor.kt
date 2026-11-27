@@ -48,10 +48,14 @@ class ViperAudioProcessor : RhythmAudioProcessor() {
             if (cfg.convolver.enabled) count++
             if (cfg.fieldSurround.enabled) count++
             if (cfg.diffSurround.enabled) count++
+            if (cfg.headphoneSurround.enabled) count++
             if (cfg.stereoImager.enabled) count++
             if (cfg.cureCrossfeed.enabled) count++
             if (cfg.reverberation.enabled) count++
             if (cfg.speakerOpt.enabled) count++
+            if (cfg.dynamicEq.enabled) count++
+            if (cfg.lufs.enabled) count++
+            if (cfg.multibandCompressor.enabled) count++
             if (cfg.masterGate.limiterEnabled) count++
             return count
         }
@@ -128,6 +132,17 @@ class ViperAudioProcessor : RhythmAudioProcessor() {
     // Speaker Opt Filters
     private val speakerSubsonicHp = BiquadFilter()
     private val speakerNotch = BiquadFilter()
+
+    // Dynamic EQ & Binaural Headphone Surround Filters
+    private val dynEqFilters = Array(3) { BiquadFilter() }
+    private val hsPinnaLpL = BiquadFilter()
+    private val hsPinnaLpR = BiquadFilter()
+    private val mbEnvelopes = FloatArray(5)
+    private var dynEqEnvelope = 0.0f
+    private var lufsGainSmoothed = 1.0f
+    private val hsDelayBufferL = FloatArray(128)
+    private val hsDelayBufferR = FloatArray(128)
+    private var hsDelayIndex = 0
 
     // State memory for delays and envelopes
     private var diffDelayBuffer = FloatArray(4096)
@@ -272,7 +287,16 @@ class ViperAudioProcessor : RhythmAudioProcessor() {
         diffDelayIndex = 0
         agcRmsLevel = 0.1f
         lufsIntegrated = -14.0f
+        lufsGainSmoothed = 1.0f
+        dynEqEnvelope = 0.0f
         fetEnvelope = 0.0f
+        mbEnvelopes.fill(0f)
+        for (f in dynEqFilters) f.reset()
+        hsPinnaLpL.reset()
+        hsPinnaLpR.reset()
+        hsDelayBufferL.fill(0f)
+        hsDelayBufferR.fill(0f)
+        hsDelayIndex = 0
         for (comb in reverbCombsL) comb.fill(0f)
         for (comb in reverbCombsR) comb.fill(0f)
         reverbCombIndicesL.fill(0)
@@ -358,6 +382,13 @@ class ViperAudioProcessor : RhythmAudioProcessor() {
         // 10. Speaker Optimization
         speakerSubsonicHp.configure(BiquadFilter.Type.HIGH_PASS, fs, 60.0f, 0.707f, 0.0f)
         speakerNotch.configure(BiquadFilter.Type.NOTCH, fs, 3200.0f, 2.5f, 0.0f)
+
+        // Dynamic EQ 3-band peaking filters + binaural pinna filters
+        dynEqFilters[0].configure(BiquadFilter.Type.PEAKING, fs, cfg.dynamicEq.band1Freq.toFloat().coerceIn(30f, 400f), 1.0f, cfg.dynamicEq.band1GainDb)
+        dynEqFilters[1].configure(BiquadFilter.Type.PEAKING, fs, cfg.dynamicEq.band2Freq.toFloat().coerceIn(300f, 3000f), 1.0f, cfg.dynamicEq.band2GainDb)
+        dynEqFilters[2].configure(BiquadFilter.Type.PEAKING, fs, cfg.dynamicEq.band3Freq.toFloat().coerceIn(3000f, 16000f), 1.0f, cfg.dynamicEq.band3GainDb)
+        hsPinnaLpL.configure(BiquadFilter.Type.LOW_PASS, fs, 3600.0f, 0.707f, 0.0f)
+        hsPinnaLpR.configure(BiquadFilter.Type.LOW_PASS, fs, 3600.0f, 0.707f, 0.0f)
 
         // 11. Convolver (preset FIR or FFT Overlap-Add custom WAV/IRS impulse)
         val ctx = appContext ?: parentProcessor?.appContext
@@ -544,8 +575,25 @@ class ViperAudioProcessor : RhythmAudioProcessor() {
         val revWet = cfg.reverberation.wet
         val revDry = cfg.reverberation.dry
 
-        // Speaker Opt
+        // Speaker Opt & remaining modular stages
         val speakerOptEnabled = cfg.speakerOpt.enabled
+        val hsEnabled = cfg.headphoneSurround.enabled
+        val hsDelaySamples = ((if (cfg.headphoneSurround.quality > 0) 0.00048f else 0.00028f) * fs)
+            .toInt().coerceIn(1, hsDelayBufferL.size - 1)
+        val hsWet = if (cfg.headphoneSurround.quality > 0) 0.30f else 0.20f
+
+        val dynEqEnabled = cfg.dynamicEq.enabled
+        val lufsEnabled = cfg.lufs.enabled
+        val lufsTargetDb = cfg.lufs.targetLufs.coerceIn(-30.0f, -6.0f)
+        val lufsMaxGainLin = 10.0f.pow(cfg.lufs.maxGainDb.coerceIn(0f, 15f) / 20.0f)
+        val mbEnabled = cfg.multibandCompressor.enabled
+        val mbCfg = cfg.multibandCompressor
+        val mbLinearGains = FloatArray(5) { idx ->
+            10.0f.pow(mbCfg.gainsDb.getOrElse(idx) { 0f } / 20.0f)
+        }
+        val mbThreshLinear = FloatArray(5) { idx ->
+            10.0f.pow(mbCfg.thresholdsDb.getOrElse(idx) { -16f } / 20.0f)
+        }
 
         var peakL = 0.0f
         var peakR = 0.0f
@@ -765,10 +813,99 @@ class ViperAudioProcessor : RhythmAudioProcessor() {
                 right = right * revDry + reverbSumR * 0.125f * revWet
             }
 
-            // 19. Speaker Optimization
+            // Speaker Optimization
             if (speakerOptEnabled) {
                 left = speakerNotch.processLeft(speakerSubsonicHp.processLeft(left))
                 right = speakerNotch.processRight(speakerSubsonicHp.processRight(right))
+            }
+
+            // Dynamic EQ (level-weighted 3-band tone contouring)
+            if (dynEqEnabled) {
+                val lvl = max(abs(left), abs(right))
+                dynEqEnvelope += (lvl - dynEqEnvelope) * 0.002f
+                val blend = (0.35f + dynEqEnvelope * 1.25f).coerceIn(0.25f, 1.0f)
+                var eqL = dynEqFilters[0].processLeft(left)
+                var eqR = dynEqFilters[0].processRight(right)
+                eqL = dynEqFilters[1].processLeft(eqL)
+                eqR = dynEqFilters[1].processRight(eqR)
+                eqL = dynEqFilters[2].processLeft(eqL)
+                eqR = dynEqFilters[2].processRight(eqR)
+                left = left * (1.0f - blend) + eqL * blend
+                right = right * (1.0f - blend) + eqR * blend
+            }
+
+            // Multiband Compressor (5 crossover bands)
+            if (mbEnabled) {
+                val b0L = mbLp1.processLeft(left)
+                val b0R = mbLp1.processRight(right)
+                // Invert each 2nd-order Butterworth HP stage so LP + HP sums all-pass without a 180-deg crossover notch
+                val r1L = -mbHp1.processLeft(left)
+                val r1R = -mbHp1.processRight(right)
+                val b1L = mbLp2.processLeft(r1L)
+                val b1R = mbLp2.processRight(r1R)
+                val r2L = -mbHp2.processLeft(r1L)
+                val r2R = -mbHp2.processRight(r1R)
+                val b2L = mbLp3.processLeft(r2L)
+                val b2R = mbLp3.processRight(r2R)
+                val r3L = -mbHp3.processLeft(r2L)
+                val r3R = -mbHp3.processRight(r2R)
+                val b3L = mbLp4.processLeft(r3L)
+                val b3R = mbLp4.processRight(r3R)
+                val b4L = -mbHp4.processLeft(r3L)
+                val b4R = -mbHp4.processRight(r3R)
+
+                val bandSamplesL = floatArrayOf(b0L, b1L, b2L, b3L, b4L)
+                val bandSamplesR = floatArrayOf(b0R, b1R, b2R, b3R, b4R)
+                var sumL = 0.0f
+                var sumR = 0.0f
+                for (b in 0 until 5) {
+                    var bl = bandSamplesL[b]
+                    var br = bandSamplesR[b]
+                    if (mbCfg.bandEnables.getOrElse(b) { true }) {
+                        val bPeak = max(abs(bl), abs(br))
+                        mbEnvelopes[b] += (bPeak - mbEnvelopes[b]) * 0.008f
+                        val thresh = mbThreshLinear[b]
+                        val ratio = mbCfg.ratios.getOrElse(b) { 1.8f }.coerceAtLeast(1.0f)
+                        val compGain = if (mbEnvelopes[b] > thresh && thresh > 1e-4f) {
+                            (mbEnvelopes[b] / thresh).pow(1.0f / ratio - 1.0f)
+                        } else 1.0f
+                        bl *= compGain * mbLinearGains[b]
+                        br *= compGain * mbLinearGains[b]
+                    }
+                    sumL += bl
+                    sumR += br
+                }
+                left = sumL
+                right = sumR
+            }
+
+            // Headphone Surround+ (cross-ear binaural ITD + pinna shading)
+            if (hsEnabled) {
+                hsDelayBufferL[hsDelayIndex] = hsPinnaLpL.processLeft(left)
+                hsDelayBufferR[hsDelayIndex] = hsPinnaLpR.processRight(right)
+                val readIdx = (hsDelayIndex - hsDelaySamples + hsDelayBufferL.size) % hsDelayBufferL.size
+                val bleedFromR = hsDelayBufferR[readIdx] * hsWet
+                val bleedFromL = hsDelayBufferL[readIdx] * hsWet
+                hsDelayIndex = (hsDelayIndex + 1) % hsDelayBufferL.size
+                left = left * (1.0f - hsWet * 0.35f) + bleedFromR
+                right = right * (1.0f - hsWet * 0.35f) + bleedFromL
+            }
+
+            // LUFS Target Normalization
+            if (lufsEnabled) {
+                val power = 0.5f * (left * left + right * right)
+                val instDb = if (power > 1e-9f) (10.0 * ln(power.toDouble()) / ln(10.0)).toFloat() else -60.0f
+                val lufsAlpha = when (cfg.lufs.speed) {
+                    0 -> 0.0002f
+                    2 -> 0.002f
+                    else -> 0.0007f
+                }
+                lufsIntegrated += (instDb - lufsIntegrated) * lufsAlpha
+                val targetGainLin = 10.0f.pow(((lufsTargetDb - lufsIntegrated).coerceIn(-12.0f, cfg.lufs.maxGainDb)) / 20.0f)
+                    .coerceIn(0.45f, lufsMaxGainLin)
+                lufsGainSmoothed += (targetGainLin - lufsGainSmoothed) * 0.001f
+                left *= lufsGainSmoothed
+                right *= lufsGainSmoothed
             }
 
             // 20. Master Pan & Volume
@@ -826,6 +963,10 @@ class ViperAudioProcessor : RhythmAudioProcessor() {
             if (cureEnabled) count++
             if (revEnabled) count++
             if (speakerOptEnabled) count++
+            if (dynEqEnabled) count++
+            if (mbEnabled) count++
+            if (hsEnabled) count++
+            if (lufsEnabled) count++
             if (isLimiterEnabled) count++
 
             val telem = ViperEngineTelemetry(

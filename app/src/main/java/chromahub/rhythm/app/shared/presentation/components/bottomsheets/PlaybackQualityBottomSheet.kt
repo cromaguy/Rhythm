@@ -334,7 +334,12 @@ fun PlaybackQualityBottomSheet(
 
             if (showSignalPathDialog) {
                 val isUsb = quality.outputDeviceType.contains("USB", ignoreCase = true)
-                val report = remember(quality, sampleRateCapHz, surroundDownmix, bitPerfectRouting, equalizerEnabled, floatEnabled, speed) {
+                val viperRepo = remember(appContext) {
+                    chromahub.rhythm.app.infrastructure.audio.viper.ViperSettingsRepository.getInstance(appContext.applicationContext)
+                }
+                val viperConfig by viperRepo.configFlow.collectAsState()
+                val streamHealth by chromahub.rhythm.app.infrastructure.service.MediaPlaybackService.streamHealthSnapshot.collectAsState()
+                val report = remember(quality, sampleRateCapHz, surroundDownmix, bitPerfectRouting, equalizerEnabled, floatEnabled, speed, viperConfig.masterEnabled, streamHealth) {
                     chromahub.rhythm.app.infrastructure.audio.SignalPathEvaluator.evaluate(
                         chromahub.rhythm.app.infrastructure.audio.SignalPathInput(
                             sourceCodec = quality.sourceCodec,
@@ -349,12 +354,14 @@ fun PlaybackQualityBottomSheet(
                             bitPerfectMixerActive = quality.isBitPerfect || (isUsb && bitPerfectRouting),
                             bitPerfectRequested = bitPerfectRouting,
                             hasActiveEq = equalizerEnabled,
-                            hasActiveViper = false,
+                            hasActiveViper = viperConfig.masterEnabled,
                             hasActiveOtherDsp = appSettings.bassBoostEnabled.value || appSettings.virtualizerEnabled.value || appSettings.monoAudioEnabled.value,
                             playbackSpeed = speed,
                             sampleRateCapHz = sampleRateCapHz,
                             surroundDownmixActive = surroundDownmix && quality.sourceChannels > 2,
-                            floatPipelineActive = floatEnabled
+                            floatPipelineActive = floatEnabled,
+                            driftPpm = streamHealth.driftPpm,
+                            glitchCount = streamHealth.glitchCount
                         )
                     )
                 }
