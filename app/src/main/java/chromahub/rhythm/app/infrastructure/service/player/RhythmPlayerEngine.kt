@@ -80,7 +80,7 @@ import androidx.core.net.toUri
  */
 @OptIn(UnstableApi::class)
 class RhythmPlayerEngine(
-    private val context: Context,
+    context: Context,
     private val bassBoostProcessor: RhythmBassBoostProcessor? = null,
     private val spatializationProcessor: RhythmSpatializationProcessor? = null,
     private val monoProcessor: RhythmMonoAudioProcessor? = null,
@@ -89,6 +89,7 @@ class RhythmPlayerEngine(
     private val hapticsController: MusicHapticsController? = null,
     private val preloadController: PreloadController? = null
 ) {
+    private val appContext: Context = context.applicationContext ?: context
     companion object {
         private const val TAG = "RhythmPlayerEngine"
         private const val PREF_OFFLOAD_FAILED_FINGERPRINT = "offload_failed_build_fingerprint"
@@ -189,7 +190,7 @@ class RhythmPlayerEngine(
     }
 
     // Audio Focus Management — managed manually so both players share a single focus request
-    private val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+    private val audioManager = appContext.getSystemService(Context.AUDIO_SERVICE) as AudioManager
     private var audioFocusRequest: AudioFocusRequest? = null
     private var isFocusLossPause = false
 
@@ -370,7 +371,7 @@ class RhythmPlayerEngine(
         playerBReplayGain = bReplayGain
 
         // Apply settings initially
-        val appSettings = AppSettings.getInstance(context)
+        val appSettings = AppSettings.getInstance(appContext)
         val bitPerfectInit = appSettings.audioRoutingMode.value == "app"
         aDownmix.setEnabled(!bitPerfectInit && appSettings.playbackPrefs.surroundDownmixEnabled.value)
         bDownmix.setEnabled(!bitPerfectInit && appSettings.playbackPrefs.surroundDownmixEnabled.value)
@@ -441,7 +442,7 @@ class RhythmPlayerEngine(
             }
             launch {
                 try {
-                    chromahub.rhythm.app.infrastructure.audio.viper.ViperSettingsRepository.getInstance(context)
+                    chromahub.rhythm.app.infrastructure.audio.viper.ViperSettingsRepository.getInstance(appContext)
                         .configFlow.collect { updateTrackSelectionParameters() }
                 } catch (_: Exception) {}
             }
@@ -496,7 +497,7 @@ class RhythmPlayerEngine(
             .setPrioritizeTimeOverSizeThresholds(true)
             .build()
 
-        val appSettings = AppSettings.getInstance(context)
+        val appSettings = AppSettings.getInstance(appContext)
         val isPlaybackRateModified =
             kotlin.math.abs(appSettings.playbackSpeed.value - 1f) > 0.001f ||
             kotlin.math.abs(appSettings.playbackPitch.value - 1f) > 0.001f
@@ -531,7 +532,7 @@ class RhythmPlayerEngine(
             decoders
         }
 
-        val renderersFactory = object : DefaultRenderersFactory(context) {
+        val renderersFactory = object : DefaultRenderersFactory(appContext) {
             override fun buildAudioSink(
                 context: Context,
                 enableFloatOutput: Boolean,
@@ -689,12 +690,12 @@ class RhythmPlayerEngine(
             .setUsage(C.USAGE_MEDIA)
             .build()
 
-        val mediaSourceFactory = RhythmMediaDataSourceFactory.createMediaSourceFactory(context)
+        val mediaSourceFactory = RhythmMediaDataSourceFactory.createMediaSourceFactory(appContext)
 
         val defaultParams = TrackSelectionParameters.DEFAULT
         val trackSelectionParameters = buildTrackSelectionParameters(defaultParams, appSettings)
 
-        val player = ExoPlayer.Builder(context, renderersFactory)
+        val player = ExoPlayer.Builder(appContext, renderersFactory)
             .setLoadControl(loadControl)
             .setMediaSourceFactory(mediaSourceFactory)
             .setSeekBackIncrementMs(10_000L)
@@ -1193,7 +1194,7 @@ class RhythmPlayerEngine(
     fun getActiveReplayGainProcessor(): ReplayGainAudioProcessor? = activeReplayGainProcessor
 
     private fun applyReplayGainSettingsOnProcessor(processor: ReplayGainAudioProcessor, enabled: Boolean) {
-        val appSettings = AppSettings.getInstance(context)
+        val appSettings = AppSettings.getInstance(appContext)
         val mode = if (enabled) {
             when (appSettings.replayGainMode.value) {
                 1 -> ReplayGainUtil.Mode.Track
@@ -1246,7 +1247,7 @@ class RhythmPlayerEngine(
             appSettings.audioRoutingMode.value != "app" &&
                 try {
                     chromahub.rhythm.app.infrastructure.audio.viper.ViperSettingsRepository
-                        .getInstance(context).configFlow.value.masterEnabled
+                        .getInstance(appContext).configFlow.value.masterEnabled
                 } catch (_: Exception) { false }
         )
 
@@ -1281,7 +1282,7 @@ class RhythmPlayerEngine(
 
     fun updatePlaybackParameters() {
         if (!::playerA.isInitialized || !::playerB.isInitialized) return
-        val appSettings = AppSettings.getInstance(context)
+        val appSettings = AppSettings.getInstance(appContext)
         val speed = appSettings.playbackSpeed.value.coerceIn(0.25f, 3.0f)
         val pitch = appSettings.playbackPitch.value.coerceIn(0.5f, 2.0f)
         val params = PlaybackParameters(speed, pitch)
@@ -1298,7 +1299,7 @@ class RhythmPlayerEngine(
     fun updateTrackSelectionParameters() {
         scope.launch(Dispatchers.Main) {
             if (!::playerA.isInitialized || !::playerB.isInitialized) return@launch
-            val appSettings = AppSettings.getInstance(context)
+            val appSettings = AppSettings.getInstance(appContext)
             val paramsA = buildTrackSelectionParameters(playerA.trackSelectionParameters, appSettings)
             val paramsB = buildTrackSelectionParameters(playerB.trackSelectionParameters, appSettings)
             if (playerA.trackSelectionParameters != paramsA) {
@@ -1315,9 +1316,9 @@ class RhythmPlayerEngine(
         setPauseAtEndOfMediaItems(false)
         transitionJob?.cancel()
         // Cancel the engine scope so long-running StateFlow collections
-        // (e.g. appSettings.bassBoostEnabled) don't keep this engine and its
-        // service context alive after the service is destroyed.
+        // (e.g. appSettings.bassBoostEnabled) don't keep this engine alive.
         scope.cancel()
+        onPlayerSwappedListeners.clear()
         abandonAudioFocus()
         if (::playerA.isInitialized) {
             detachAnalyticsListener(playerA)
@@ -1358,7 +1359,7 @@ class RhythmPlayerEngine(
         if (!isOffloadRelated) return false
         isOffloadDisabledByFailure = true
         runCatching {
-            AppSettings.getInstance(context).prefs.edit()
+            AppSettings.getInstance(appContext).prefs.edit()
                 .putString(PREF_OFFLOAD_FAILED_FINGERPRINT, Build.FINGERPRINT)
                 .apply()
         }

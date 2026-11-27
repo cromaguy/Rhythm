@@ -135,7 +135,11 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
     private var rhythmViperProcessor: chromahub.rhythm.app.infrastructure.audio.viper.ViperAudioProcessor? = null
     private var rhythmParametricEqProcessor: chromahub.rhythm.app.infrastructure.audio.peq.RhythmParametricEqAudioProcessor? = null
     private var musicHapticsController: chromahub.rhythm.app.infrastructure.audio.haptics.MusicHapticsController? = null
-    private var audioDeviceCallback: android.media.AudioDeviceCallback? = null
+    private var audioDeviceCallback: ServiceAudioDeviceCallback? = null
+    private var audioDeviceCallbackHandler: android.os.Handler? = null
+    private var playerSwapListener: ((Player) -> Unit)? = null
+    private var forwardingPlayerRef: ServiceForwardingPlayer? = null
+    private var controllerFuture: com.google.common.util.concurrent.ListenableFuture<MediaController>? = null
     
     private var virtualizerStrength: Short = 0 // Store strength for virtualizer
     private var isInitializingAudioEffects: Boolean = false // Prevent concurrent initialization
@@ -224,7 +228,7 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
         currentLyricTimestamps = longArrayOf()
         currentPlainLyricsLines = emptyList()
         currentLyricIndex = -1
-        chromahub.rhythm.app.infrastructure.widget.glance.GlanceWidgetUpdater.updateLyrics(this, emptyList(), -1)
+        chromahub.rhythm.app.infrastructure.widget.glance.GlanceWidgetUpdater.updateLyrics(applicationContext, emptyList(), -1)
     }
 
     private val btReceiver = object : BroadcastReceiver() {
@@ -264,7 +268,7 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
         val bits = info.bitsPerSample?.let { "$it bits" } ?: ""
         val quality = info.quality?.let { " ($it)" } ?: ""
         val message = "Bluetooth Codec: $codecName, $sampleRate, $bits$quality"
-        Toast.makeText(this, message, Toast.LENGTH_LONG).show()
+        Toast.makeText(applicationContext, message, Toast.LENGTH_LONG).show()
     }
 
     /**
@@ -308,7 +312,7 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
         }
     }
 
-    private val rhythmGuardController by lazy { RhythmGuardController(this, appSettings) }
+    private val rhythmGuardController by lazy { RhythmGuardController(applicationContext, appSettings) }
 
     private fun checkAndClampVolumeForRhythmGuard() {
         if (::appSettings.isInitialized) {
@@ -389,6 +393,38 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
     private lateinit var statusBroadcaster: chromahub.rhythm.app.utils.StatusBroadcaster
     private var statusBarLyricController: StatusBarLyricController? = null
     private var discordPresenceController: chromahub.rhythm.app.infrastructure.network.presence.DiscordPresenceController? = null
+
+    private class ServiceAudioDeviceCallback(
+        private val serviceRef: java.lang.ref.WeakReference<MediaPlaybackService>,
+        private val appContext: Context,
+        private val appSettings: AppSettings
+    ) : android.media.AudioDeviceCallback() {
+        fun detach() {
+            serviceRef.clear()
+        }
+
+        private fun handleDeviceChange() {
+            val service = serviceRef.get() ?: return
+            val audioManager =
+                appContext.getSystemService(Context.AUDIO_SERVICE) as? android.media.AudioManager
+            service.updatePlaybackQuality()
+            service.syncExternalOutputHapticsMute(audioManager)
+            service.serviceScope.launch {
+                chromahub.rhythm.app.infrastructure.audio.peq.AutoEqController.syncForActiveOutputDevice(
+                    appContext,
+                    appSettings
+                )
+            }
+        }
+
+        override fun onAudioDevicesAdded(addedDevices: Array<out android.media.AudioDeviceInfo>?) {
+            handleDeviceChange()
+        }
+
+        override fun onAudioDevicesRemoved(removedDevices: Array<out android.media.AudioDeviceInfo>?) {
+            handleDeviceChange()
+        }
+    }
     
     // SharedPreferences keys
     companion object {
@@ -494,7 +530,7 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
         Log.d(TAG, "Service created")
 
         setMediaNotificationProvider(
-            androidx.media3.session.DefaultMediaNotificationProvider(this).apply {
+            androidx.media3.session.DefaultMediaNotificationProvider(applicationContext).apply {
                 setSmallIcon(chromahub.rhythm.app.R.drawable.ic_notification)
             }
         )
@@ -629,40 +665,27 @@ class MediaPlaybackService : MediaLibraryService(), Player.Listener {
                 androidx.core.content.ContextCompat.RECEIVER_EXPORTED
             )
 
-            btProxy = chromahub.rhythm.app.util.BtCodecInfo.getCodec(this) { info ->
+            val serviceWeakRef = java.lang.ref.WeakReference(this)
+            btProxy = chromahub.rhythm.app.util.BtCodecInfo.getCodec(applicationContext) { info ->
+                val svc = serviceWeakRef.get() ?: return@getCodec
                 if (info != null) {
-                    btInfo = info
-                    Log.d(TAG, "First Bluetooth codec config: $btInfo")
-                    updatePlaybackQuality()
+                    svc.btInfo = info
+                    Log.d(TAG, "First Bluetooth codec config: ${svc.btInfo}")
+                    svc.updatePlaybackQuality()
                 }
             }
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                val audioManager = getSystemService(Context.AUDIO_SERVICE) as? android.media.AudioManager
-                val callback = object : android.media.AudioDeviceCallback() {
-                    override fun onAudioDevicesAdded(addedDevices: Array<out android.media.AudioDeviceInfo>?) {
-                        updatePlaybackQuality()
-                        syncExternalOutputHapticsMute(audioManager)
-                        serviceScope.launch {
-                            chromahub.rhythm.app.infrastructure.audio.peq.AutoEqController.syncForActiveOutputDevice(
-                                applicationContext,
-                                appSettings
-                            )
-                        }
-                    }
-                    override fun onAudioDevicesRemoved(removedDevices: Array<out android.media.AudioDeviceInfo>?) {
-                        updatePlaybackQuality()
-                        syncExternalOutputHapticsMute(audioManager)
-                        serviceScope.launch {
-                            chromahub.rhythm.app.infrastructure.audio.peq.AutoEqController.syncForActiveOutputDevice(
-                                applicationContext,
-                                appSettings
-                            )
-                        }
-                    }
-                }
+                val audioManager = applicationContext.getSystemService(Context.AUDIO_SERVICE) as? android.media.AudioManager
+                val callback = ServiceAudioDeviceCallback(
+                    serviceRef = java.lang.ref.WeakReference(this),
+                    appContext = applicationContext,
+                    appSettings = appSettings
+                )
+                val callbackHandler = android.os.Handler(android.os.Looper.getMainLooper())
                 audioDeviceCallback = callback
-                audioManager?.registerAudioDeviceCallback(callback, android.os.Handler(android.os.Looper.getMainLooper()))
+                audioDeviceCallbackHandler = callbackHandler
+                audioManager?.registerAudioDeviceCallback(callback, callbackHandler)
                 syncExternalOutputHapticsMute(audioManager)
                 serviceScope.launch {
                     chromahub.rhythm.app.infrastructure.audio.peq.AutoEqController.syncForActiveOutputDevice(
@@ -970,7 +993,7 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
         val audioRoutingMode = appSettings.audioRoutingMode.value
         Log.d(TAG, "Initializing player (routing: $audioRoutingMode)")
         rhythmPlayerEngine = RhythmPlayerEngine(
-            this, 
+            applicationContext,
             bassBoostProcessor = rhythmBassBoostProcessor,
             spatializationProcessor = rhythmSpatializationProcessor,
             monoProcessor = rhythmMonoAudioProcessor,
@@ -1003,7 +1026,7 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
         }
         
         // Register player swap listener for crossfade transitions
-        rhythmPlayerEngine.addPlayerSwapListener { newPlayer ->
+        val swapListener: (Player) -> Unit = { newPlayer ->
             Log.d(TAG, "Player swapped during crossfade transition")
             val oldPlayer = player
             val wrappedNewPlayer = wrapPlayer(newPlayer)
@@ -1032,6 +1055,8 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
                 initializeAudioEffects()
             }
         }
+        playerSwapListener = swapListener
+        rhythmPlayerEngine.addPlayerSwapListener(swapListener)
             
         // Add listener to initialize audio effects when session ID is ready and handle errors
         // Store reference for proper cleanup in onDestroy
@@ -1527,22 +1552,29 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
 
     private fun createController() {
         // Build the controller asynchronously to avoid blocking the main thread
-        val controllerFuture = MediaController.Builder(this, mediaSession!!.token)
+        val future = MediaController.Builder(applicationContext, mediaSession!!.token)
             .buildAsync()
-        
-        controllerFuture.addListener({
+        controllerFuture = future
+        val serviceWeakRef = java.lang.ref.WeakReference(this)
+
+        future.addListener({
+            val service = serviceWeakRef.get()
+            if (service == null || future.isCancelled) {
+                MediaController.releaseFuture(future)
+                return@addListener
+            }
             try {
-                controller = controllerFuture.get()
-                controller?.addListener(this)
-                // Only set custom layout if controller is properly initialized
-                controller?.let {
-                    forceCustomLayoutUpdate() // Use force update for initial setup
+                val builtController = future.get()
+                service.controller = builtController
+                builtController?.addListener(service)
+                builtController?.let {
+                    service.forceCustomLayoutUpdate()
                 }
                 Log.d(TAG, "MediaController initialized successfully")
             } catch (e: Exception) {
                 Log.e(TAG, "Error initializing MediaController", e)
             }
-        }, androidx.core.content.ContextCompat.getMainExecutor(this))
+        }, androidx.core.content.ContextCompat.getMainExecutor(applicationContext))
     }
 
     private fun createCustomCommands() {
@@ -1614,7 +1646,7 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
 
-        val rhythmBitmapLoader = RhythmBitmapLoader(this)
+        val rhythmBitmapLoader = RhythmBitmapLoader(applicationContext)
 
         return MediaLibrarySession.Builder(
             this,
@@ -2227,49 +2259,67 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
         return super.onStartCommand(intent, flags, startId)
     }
     
+    private class ServiceForwardingPlayer(
+        rawPlayer: Player,
+        private val serviceRef: java.lang.ref.WeakReference<MediaPlaybackService>
+    ) : ForwardingPlayer(rawPlayer) {
+        fun detach() {
+            serviceRef.clear()
+        }
+
+        override fun seekToNext() {
+            val service = serviceRef.get()
+            if (service == null || !service.skipWithCrossfade(toNext = true)) {
+                super.seekToNext()
+            }
+        }
+
+        override fun seekToNextMediaItem() {
+            val service = serviceRef.get()
+            if (service == null || !service.skipWithCrossfade(toNext = true)) {
+                super.seekToNextMediaItem()
+            }
+        }
+
+        override fun seekToPrevious() {
+            val service = serviceRef.get()
+            if (service == null || !service.skipWithCrossfade(toNext = false)) {
+                super.seekToPrevious()
+            }
+        }
+
+        override fun seekToPreviousMediaItem() {
+            val service = serviceRef.get()
+            if (service == null || !service.skipWithCrossfade(toNext = false)) {
+                super.seekToPreviousMediaItem()
+            }
+        }
+
+        override fun seekToDefaultPosition(mediaItemIndex: Int) {
+            val service = serviceRef.get()
+            if (service != null && mediaItemIndex != currentMediaItemIndex && mediaItemIndex in 0 until mediaItemCount) {
+                if (service.skipWithCrossfadeToIndex(mediaItemIndex)) {
+                    return
+                }
+            }
+            super.seekToDefaultPosition(mediaItemIndex)
+        }
+
+        override fun seekTo(mediaItemIndex: Int, positionMs: Long) {
+            val service = serviceRef.get()
+            if (service != null && mediaItemIndex != currentMediaItemIndex && mediaItemIndex in 0 until mediaItemCount) {
+                if (service.skipWithCrossfadeToIndex(mediaItemIndex, positionMs)) {
+                    return
+                }
+            }
+            super.seekTo(mediaItemIndex, positionMs)
+        }
+    }
+
     private fun wrapPlayer(rawPlayer: Player): Player {
-        return object : ForwardingPlayer(rawPlayer) {
-            override fun seekToNext() {
-                if (!skipWithCrossfade(toNext = true)) {
-                    super.seekToNext()
-                }
-            }
-
-            override fun seekToNextMediaItem() {
-                if (!skipWithCrossfade(toNext = true)) {
-                    super.seekToNextMediaItem()
-                }
-            }
-
-            override fun seekToPrevious() {
-                if (!skipWithCrossfade(toNext = false)) {
-                    super.seekToPrevious()
-                }
-            }
-
-            override fun seekToPreviousMediaItem() {
-                if (!skipWithCrossfade(toNext = false)) {
-                    super.seekToPreviousMediaItem()
-                }
-            }
-
-            override fun seekToDefaultPosition(mediaItemIndex: Int) {
-                if (mediaItemIndex != currentMediaItemIndex && mediaItemIndex in 0 until mediaItemCount) {
-                    if (skipWithCrossfadeToIndex(mediaItemIndex)) {
-                        return
-                    }
-                }
-                super.seekToDefaultPosition(mediaItemIndex)
-            }
-
-            override fun seekTo(mediaItemIndex: Int, positionMs: Long) {
-                if (mediaItemIndex != currentMediaItemIndex && mediaItemIndex in 0 until mediaItemCount) {
-                    if (skipWithCrossfadeToIndex(mediaItemIndex, positionMs)) {
-                        return
-                    }
-                }
-                super.seekTo(mediaItemIndex, positionMs)
-            }
+        forwardingPlayerRef?.detach()
+        return ServiceForwardingPlayer(rawPlayer, java.lang.ref.WeakReference(this)).also {
+            forwardingPlayerRef = it
         }
     }
 
@@ -2539,6 +2589,7 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
         try {
             unregisterReceiver(btReceiver)
         } catch (_: Exception) {}
+        btProxy?.close()
         btProxy = null
         try {
             unregisterReceiver(volumeChangeReceiver)
@@ -2550,19 +2601,22 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
         updateLayoutJob?.cancel()
         sleepTimerJob?.cancel()
         audioEffectsInitJob?.cancel()
+        equalizerVolumeTransitionJob?.cancel()
         cancelSleepTimerProgressNotification()
         serviceScope.cancel()
         
-        // Release preloader
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             audioDeviceCallback?.let { callback ->
+                callback.detach()
                 try {
-                    (getSystemService(Context.AUDIO_SERVICE) as? android.media.AudioManager)
+                    (applicationContext.getSystemService(Context.AUDIO_SERVICE) as? android.media.AudioManager)
                         ?.unregisterAudioDeviceCallback(callback)
                 } catch (_: Exception) {
                 }
                 audioDeviceCallback = null
             }
+            audioDeviceCallbackHandler?.removeCallbacksAndMessages(null)
+            audioDeviceCallbackHandler = null
         }
         if (::preloadController.isInitialized) {
             preloadController.release()
@@ -2573,6 +2627,8 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
             transitionController.release()
         }
         if (::rhythmPlayerEngine.isInitialized) {
+            playerSwapListener?.let { rhythmPlayerEngine.removePlayerSwapListener(it) }
+            playerSwapListener = null
             rhythmPlayerEngine.release()
         }
         
@@ -2584,13 +2640,18 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
             playerListener?.let { player.removeListener(it) }
         }
         playerListener = null
-        
-        // Remove service as listener from controller
+        forwardingPlayerRef?.detach()
+        forwardingPlayerRef = null
+
+        // Remove service as listener from controller and release pending controller future
         controller?.removeListener(this)
-        
+        controller?.release()
+        controller = null
+        controllerFuture?.let { MediaController.releaseFuture(it) }
+        controllerFuture = null
+
         mediaSession?.run {
             player.release()
-            controller?.release()
             release()
             mediaSession = null
         }
@@ -3057,7 +3118,7 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
                 (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && (it.type == AudioDeviceInfo.TYPE_BLE_HEADSET || it.type == AudioDeviceInfo.TYPE_BLE_SPEAKER))
             }
             val mediaRouterSelectedRoute = try {
-                androidx.mediarouter.media.MediaRouter.getInstance(this).selectedRoute
+                androidx.mediarouter.media.MediaRouter.getInstance(applicationContext).selectedRoute
             } catch (_: Exception) { null }
 
             val isSpeakerForced = mediaRouterSelectedRoute?.isDefault == true && usbDevice == null && wiredDevice == null
@@ -3529,7 +3590,7 @@ notificationManager.createNotificationChannel(sleepTimerChannel)
             .setContentIntent(pendingIntent)
             .build()
 
-        val appSettings = chromahub.rhythm.app.shared.data.model.AppSettings.getInstance(this)
+        val appSettings = chromahub.rhythm.app.shared.data.model.AppSettings.getInstance(applicationContext)
         if (!appSettings.sleepTimerNotificationsEnabled.value) {
             return
         }

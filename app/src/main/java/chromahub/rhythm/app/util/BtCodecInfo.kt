@@ -139,12 +139,14 @@ data class BtCodecInfo(
         }
 
         fun getCodec(context: Context, callback: (BtCodecInfo?) -> Unit): Proxy? {
+            val appContext = context.applicationContext ?: context
             val adapter =
-                ContextCompat.getSystemService(context, BluetoothManager::class.java)?.adapter
+                ContextCompat.getSystemService(appContext, BluetoothManager::class.java)?.adapter
                     ?: return null
-            val sl = Proxy(adapter, callback, context)
-            if (!adapter.getProfileProxy(context, sl, BluetoothProfile.A2DP)) {
+            val sl = Proxy(adapter, callback, appContext)
+            if (!adapter.getProfileProxy(appContext, sl, BluetoothProfile.A2DP)) {
                 Log.e(TAG, "getProfileProxy error")
+                sl.close()
                 callback(null)
                 return null
             }
@@ -152,24 +154,40 @@ data class BtCodecInfo(
         }
 
         class Proxy(
-            val adapter: BluetoothAdapter, private val callback: (BtCodecInfo?) -> Unit,
-            private val context: Context
+            val adapter: BluetoothAdapter,
+            callback: (BtCodecInfo?) -> Unit,
+            context: Context
         ) : BluetoothProfile.ServiceListener {
+            private val appContext: Context = context.applicationContext ?: context
+            private var callback: ((BtCodecInfo?) -> Unit)? = callback
             var a2dp: BluetoothA2dp? = null
+
+            fun close() {
+                a2dp?.let { proxy ->
+                    runCatching { adapter.closeProfileProxy(BluetoothProfile.A2DP, proxy) }
+                }
+                a2dp = null
+                callback = null
+            }
 
             override fun onServiceConnected(profile: Int, proxy: BluetoothProfile) {
                 if (profile != BluetoothProfile.A2DP) {
                     Log.e(TAG, "wrong profile $profile connected")
                     return
                 }
+                val currentCallback = callback
+                if (currentCallback == null) {
+                    runCatching { adapter.closeProfileProxy(BluetoothProfile.A2DP, proxy) }
+                    return
+                }
                 a2dp = proxy as BluetoothA2dp
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && ContextCompat.checkSelfPermission(
-                        context,
+                        appContext,
                         Manifest.permission.BLUETOOTH_CONNECT
                     ) != PackageManager.PERMISSION_GRANTED
                 ) {
                     Log.w(TAG, "missing bluetooth permission")
-                    callback(null)
+                    currentCallback(null)
                     return
                 }
                 val cd = a2dp!!.connectedDevices
@@ -183,7 +201,7 @@ data class BtCodecInfo(
                     } else {
                         Log.w(TAG, "getActiveDevice failed: ${cause.message}")
                     }
-                    callback(null)
+                    currentCallback(null)
                     return
                 }
                 if (device == null) return
@@ -208,7 +226,7 @@ data class BtCodecInfo(
                     }
                     null
                 }?.codecConfig
-                callback(fromCodecConfig(codec))
+                currentCallback(fromCodecConfig(codec))
             }
 
             override fun onServiceDisconnected(profile: Int) {
