@@ -250,14 +250,15 @@ private fun RhythmToggleButton(
             androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline) else null,
         interactionSource = interactionSource
     ) {
-        Box(
+        Row(
             modifier = Modifier
                 .padding(horizontal = horizontalPad)
                 .graphicsLayer {
                     scaleX = animScale
                     scaleY = animScale
                 },
-            contentAlignment = Alignment.Center
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
         ) {
             if (icon != null) {
                 Icon(
@@ -265,7 +266,7 @@ private fun RhythmToggleButton(
                     contentDescription = text,
                     modifier = Modifier.size(iconSize)
                 )
-                if (text != null) Spacer(Modifier.width(4.dp))
+                if (text != null) Spacer(Modifier.width(6.dp))
             }
             if (text != null) {
                 Text(

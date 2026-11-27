@@ -3117,5 +3117,6 @@
     <string name="share_option_track_info">Share Track Info</string>
     <string name="share_option_track_info_desc">Send song title, artist, and album</string>
     <string name="share_lyrics_loading">Checking lyrics&#8230;</string>
+    <string name="share_lyrics_randomize">Randomize card style</string>
     <string name="share_lyrics_unavailable">No lyrics found for this track</string>
 </resources>

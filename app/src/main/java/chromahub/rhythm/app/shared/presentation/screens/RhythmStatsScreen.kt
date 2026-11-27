@@ -376,17 +376,32 @@ private fun DiscoveryAndFidelityToolsCard(
             Material3SettingsItem(
                 icon = MaterialSymbolIcon("graphic_eq"),
                 palette = SettingsPalettes.SkyBlue,
-                title = {
-                    Text(
-                        String.format(
-                            java.util.Locale.US,
-                            "Library Fidelity: %.0f%% Lossless • %.0f%% Hi-Res",
-                            breakdown.losslessPercent,
-                            breakdown.hiResPercent
+                title = { Text("Library Fidelity") },
+                description = {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        FidelityMixBar(
+                            losslessPercent = breakdown.losslessPercent,
+                            hiResPercent = breakdown.hiResPercent
                         )
-                    )
-                },
-                description = { Text(codecSummary) }
+                        Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                            FidelityLegend(
+                                color = MaterialTheme.colorScheme.primary,
+                                label = "Lossless ${breakdown.losslessPercent.toInt()}%"
+                            )
+                            FidelityLegend(
+                                color = MaterialTheme.colorScheme.tertiary,
+                                label = "Hi-Res ${breakdown.hiResPercent.toInt()}%"
+                            )
+                        }
+                        Text(
+                            text = codecSummary,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
             )
         )
         add(
@@ -404,6 +419,61 @@ private fun DiscoveryAndFidelityToolsCard(
         items = items,
         containerColor = MaterialTheme.colorScheme.surfaceContainer
     )
+}
+
+@Composable
+private fun FidelityMixBar(
+    losslessPercent: Float,
+    hiResPercent: Float
+) {
+    val lossless = (losslessPercent / 100f).coerceIn(0f, 1f)
+    val hiRes = (hiResPercent / 100f).coerceIn(0f, lossless)
+    val losslessOnly = (lossless - hiRes).coerceAtLeast(0f)
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(10.dp)
+            .clip(CircleShape)
+            .background(MaterialTheme.colorScheme.surfaceContainerHighest)
+    ) {
+        if (losslessOnly > 0f) {
+            Box(
+                modifier = Modifier
+                    .weight(losslessOnly)
+                    .fillMaxHeight()
+                    .background(MaterialTheme.colorScheme.primary)
+            )
+        }
+        if (hiRes > 0f) {
+            Box(
+                modifier = Modifier
+                    .weight(hiRes)
+                    .fillMaxHeight()
+                    .background(MaterialTheme.colorScheme.tertiary)
+            )
+        }
+    }
+}
+
+@Composable
+private fun FidelityLegend(color: Color, label: String) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(8.dp)
+                .clip(CircleShape)
+                .background(color)
+        )
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
 }
 
 // ---------------------------------------------------------------------------

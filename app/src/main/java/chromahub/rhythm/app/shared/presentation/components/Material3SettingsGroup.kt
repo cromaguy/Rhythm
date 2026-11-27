@@ -11,11 +11,14 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -288,6 +291,7 @@ fun getIconPalette(icon: Any?): SettingsBadgePalette {
  * [lastItemShape] is provided it overrides only the last card (taking precedence
  * over [itemShape]) so the group can cap the bottom of a connected stack.
  */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun Material3SettingsGroup(
     title: String? = null,
@@ -342,8 +346,11 @@ fun Material3SettingsGroup(
                     itemKey = item.settingKey,
                     itemTitle = item.settingTitle
                 )
+                val bringIntoViewRequester = remember { BringIntoViewRequester() }
                 if (isSearchHighlighted) {
                     LaunchedEffect(activeHighlightKey, activeHighlightTitle) {
+                        delay(150L)
+                        runCatching { bringIntoViewRequester.bringIntoView() }
                         delay(2200L)
                         SettingHighlightController.clear()
                     }
@@ -360,6 +367,7 @@ fun Material3SettingsGroup(
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .bringIntoViewRequester(bringIntoViewRequester)
                         .animateContentSize(),
                     shape = shape,
                     colors = CardDefaults.cardColors(

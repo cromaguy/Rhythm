@@ -18,8 +18,10 @@ import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -57,6 +59,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import chromahub.rhythm.app.R
@@ -137,7 +140,6 @@ fun SongShareHost(
 
 private data class SongShareOption(
     val title: String,
-    val subtitle: String,
     val icon: MaterialSymbolIcon,
     val enabled: Boolean = true,
     val isLoading: Boolean = false,
@@ -216,24 +218,9 @@ fun SongShareBottomSheet(
         fallbackShape = RoundedCornerShape(14.dp)
     )
 
-    val lyricsCardSubtitle = when {
-        isLoadingLyrics -> stringResource(R.string.share_lyrics_loading)
-        hasShareableLyrics -> stringResource(R.string.share_option_lyrics_card_desc)
-        else -> stringResource(R.string.share_lyrics_unavailable)
-    }
-    val lyricsTextSubtitle = when {
-        isLoadingLyrics -> stringResource(R.string.share_lyrics_loading)
-        hasShareableLyrics -> stringResource(R.string.share_option_lyrics_text_desc)
-        else -> stringResource(R.string.share_lyrics_unavailable)
-    }
-
     val options = listOf(
         SongShareOption(
             title = stringResource(R.string.share_option_audio_file),
-            subtitle = stringResource(
-                if (canShareAudioFile) R.string.share_option_audio_file_desc
-                else R.string.share_option_audio_file_streaming_desc
-            ),
             icon = RhythmIcons.Music.Audiotrack,
             enabled = canShareAudioFile,
             isAccent = canShareAudioFile,
@@ -244,7 +231,6 @@ fun SongShareBottomSheet(
         ),
         SongShareOption(
             title = stringResource(R.string.share_option_lyrics_card),
-            subtitle = lyricsCardSubtitle,
             icon = RhythmIcons.Player.Lyrics,
             enabled = hasShareableLyrics,
             isLoading = isLoadingLyrics,
@@ -255,7 +241,6 @@ fun SongShareBottomSheet(
         ),
         SongShareOption(
             title = stringResource(R.string.share_option_lyrics_text),
-            subtitle = lyricsTextSubtitle,
             icon = MaterialSymbolIcon("format_quote", filled = true),
             enabled = hasShareableLyrics,
             isLoading = isLoadingLyrics,
@@ -266,7 +251,6 @@ fun SongShareBottomSheet(
         ),
         SongShareOption(
             title = stringResource(R.string.share_option_track_info),
-            subtitle = stringResource(R.string.share_option_track_info_desc),
             icon = RhythmIcons.Info,
             enabled = true,
             onClick = {
@@ -371,95 +355,38 @@ fun SongShareBottomSheet(
                         .padding(start = 24.dp, end = 24.dp + endPadding, top = 4.dp, bottom = 12.dp),
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    options.forEachIndexed { index, option ->
-                        val interactionSource = remember { MutableInteractionSource() }
-                        val isPressed by interactionSource.collectIsPressedAsState()
-                        val scale by animateFloatAsState(
-                            targetValue = if (isPressed && option.enabled) 0.98f else 1f,
-                            animationSpec = spring(
-                                dampingRatio = Spring.DampingRatioMediumBouncy,
-                                stiffness = Spring.StiffnessLow
-                            ),
-                            label = "share_option_scale"
-                        )
-
-                        val containerColor = when {
-                            !option.enabled -> MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.55f)
-                            option.isAccent -> MaterialTheme.colorScheme.primaryContainer
-                            else -> MaterialTheme.colorScheme.surfaceContainerHigh
-                        }
-                        val titleColor = when {
-                            !option.enabled -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.45f)
-                            option.isAccent -> MaterialTheme.colorScheme.onPrimaryContainer
-                            else -> MaterialTheme.colorScheme.onSurface
-                        }
-                        val subtitleColor = when {
-                            !option.enabled -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-                            option.isAccent -> MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.78f)
-                            else -> MaterialTheme.colorScheme.onSurfaceVariant
-                        }
-                        val iconTint = when {
-                            !option.enabled -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f)
-                            option.isAccent -> MaterialTheme.colorScheme.onPrimaryContainer
-                            else -> MaterialTheme.colorScheme.primary
-                        }
-
-                        Card(
-                            onClick = {
-                                if (option.enabled) {
-                                    HapticUtils.performHapticFeedback(context, haptic, HapticType.MEDIUM)
-                                    option.onClick()
-                                }
-                            },
-                            enabled = option.enabled,
-                            shape = groupedBottomSheetItemShape(index, options.size),
-                            colors = CardDefaults.cardColors(
-                                containerColor = containerColor,
-                                disabledContainerColor = containerColor
-                            ),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-                            interactionSource = interactionSource,
+                    options.chunked(2).forEachIndexed { rowIndex, rowOptions ->
+                        Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .graphicsLayer {
-                                    scaleX = scale
-                                    scaleY = scale
-                                }
+                                .height(IntrinsicSize.Max),
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 20.dp, vertical = 16.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    imageVector = option.icon,
-                                    contentDescription = null,
-                                    tint = iconTint,
-                                    modifier = Modifier.size(24.dp)
+                            rowOptions.forEachIndexed { colIndex, option ->
+                                val overallIndex = rowIndex * 2 + colIndex
+                                val interactionSource = remember { MutableInteractionSource() }
+                                val isPressed by interactionSource.collectIsPressedAsState()
+                                val scale by animateFloatAsState(
+                                    targetValue = if (isPressed && option.enabled) 0.98f else 1f,
+                                    animationSpec = spring(
+                                        dampingRatio = Spring.DampingRatioMediumBouncy,
+                                        stiffness = Spring.StiffnessLow
+                                    ),
+                                    label = "share_option_scale"
                                 )
-                                Spacer(modifier = Modifier.width(16.dp))
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        text = option.title,
-                                        style = MaterialTheme.typography.titleSmall,
-                                        fontWeight = FontWeight.SemiBold,
-                                        color = titleColor
-                                    )
-                                    Text(
-                                        text = option.subtitle,
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = subtitleColor
-                                    )
-                                }
-                                if (option.isLoading) {
-                                    Spacer(modifier = Modifier.width(12.dp))
-                                    CircularProgressIndicator(
-                                        strokeWidth = 2.dp,
-                                        modifier = Modifier.size(18.dp),
-                                        color = MaterialTheme.colorScheme.primary
-                                    )
-                                }
+
+                                SongShareGridItem(
+                                    option = option,
+                                    shape = shareGridItemShape(overallIndex, options.size),
+                                    scale = scale,
+                                    interactionSource = interactionSource,
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .fillMaxHeight()
+                                )
+                            }
+                            if (rowOptions.size == 1) {
+                                Spacer(modifier = Modifier.weight(1f))
                             }
                         }
                     }
@@ -488,6 +415,127 @@ fun SongShareBottomSheet(
                     )
                 }
             }
+        }
+    }
+}
+
+private fun shareGridItemShape(index: Int, totalItems: Int): RoundedCornerShape {
+    if (totalItems <= 1) return RoundedCornerShape(24.dp)
+    if (totalItems == 2) {
+        return if (index == 0) {
+            RoundedCornerShape(topStart = 24.dp, topEnd = 8.dp, bottomStart = 24.dp, bottomEnd = 8.dp)
+        } else {
+            RoundedCornerShape(topStart = 8.dp, topEnd = 24.dp, bottomStart = 8.dp, bottomEnd = 24.dp)
+        }
+    }
+
+    val totalRows = (totalItems + 1) / 2
+    val row = index / 2
+    val column = index % 2
+
+    return when {
+        row == 0 -> {
+            if (column == 0) {
+                RoundedCornerShape(topStart = 24.dp, topEnd = 8.dp, bottomStart = 8.dp, bottomEnd = 8.dp)
+            } else {
+                RoundedCornerShape(topStart = 8.dp, topEnd = 24.dp, bottomStart = 8.dp, bottomEnd = 8.dp)
+            }
+        }
+        row == totalRows - 1 -> {
+            if (index == totalItems - 1 && column == 0) {
+                RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp, bottomStart = 24.dp, bottomEnd = 24.dp)
+            } else if (column == 0) {
+                RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp, bottomStart = 24.dp, bottomEnd = 8.dp)
+            } else {
+                RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp, bottomStart = 8.dp, bottomEnd = 24.dp)
+            }
+        }
+        else -> RoundedCornerShape(8.dp)
+    }
+}
+
+@Composable
+private fun SongShareGridItem(
+    option: SongShareOption,
+    shape: RoundedCornerShape,
+    scale: Float,
+    interactionSource: MutableInteractionSource,
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    val haptic = LocalHapticFeedback.current
+
+    val containerColor = when {
+        !option.enabled -> MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.55f)
+        option.isAccent -> MaterialTheme.colorScheme.primaryContainer
+        else -> MaterialTheme.colorScheme.surfaceContainerHigh
+    }
+    val titleColor = when {
+        !option.enabled -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.45f)
+        option.isAccent -> MaterialTheme.colorScheme.onPrimaryContainer
+        else -> MaterialTheme.colorScheme.onSurface
+    }
+    val iconTint = when {
+        !option.enabled -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f)
+        option.isAccent -> MaterialTheme.colorScheme.onPrimaryContainer
+        else -> MaterialTheme.colorScheme.primary
+    }
+
+    Card(
+        onClick = {
+            if (option.enabled) {
+                HapticUtils.performHapticFeedback(context, haptic, HapticType.MEDIUM)
+                option.onClick()
+            }
+        },
+        enabled = option.enabled,
+        shape = shape,
+        colors = CardDefaults.cardColors(
+            containerColor = containerColor,
+            disabledContainerColor = containerColor
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        interactionSource = interactionSource,
+        modifier = modifier.graphicsLayer {
+            scaleX = scale
+            scaleY = scale
+        }
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = option.icon,
+                    contentDescription = null,
+                    tint = iconTint,
+                    modifier = Modifier.size(24.dp)
+                )
+                if (option.isLoading) {
+                    Spacer(modifier = Modifier.weight(1f))
+                    CircularProgressIndicator(
+                        strokeWidth = 2.dp,
+                        modifier = Modifier.size(16.dp),
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Text(
+                text = option.title,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                color = titleColor
+            )
         }
     }
 }

@@ -54,6 +54,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import chromahub.rhythm.app.features.local.domain.library.DuplicateFinder
 import chromahub.rhythm.app.shared.data.model.Song
+import chromahub.rhythm.app.shared.presentation.components.common.ExpressiveCookieEmptyState
 import chromahub.rhythm.app.shared.presentation.components.common.RhythmButtonSize
 import chromahub.rhythm.app.shared.presentation.components.common.RhythmButtonType
 import chromahub.rhythm.app.shared.presentation.components.common.RhythmButtonWeighted
@@ -235,18 +236,21 @@ fun DuplicateTracksSheet(
                 }
             }
         } else if (!isScanning) {
-            Card(
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 24.dp, vertical = 8.dp)
+                    .padding(horizontal = 24.dp)
+                    .padding(vertical = 28.dp),
+                contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = "Your library has zero overlapping duplicate copies.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(20.dp)
+                ExpressiveCookieEmptyState(
+                    title = "No duplicates found",
+                    subtitle = "All ${songs.size} tracks in your library are unique copies.",
+                    mainIcon = MaterialSymbolIcon("content_copy", filled = true),
+                    accentIcon = RhythmIcons.CheckCircle,
+                    cornerIcon = RhythmIcons.MusicNote,
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer
                 )
             }
         }

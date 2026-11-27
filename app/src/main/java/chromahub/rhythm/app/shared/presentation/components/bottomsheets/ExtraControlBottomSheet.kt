@@ -36,6 +36,7 @@ import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.foundation.layout.widthIn
@@ -154,20 +155,6 @@ fun ExtraControlBottomSheet(
     val onTertiary = MaterialTheme.colorScheme.onTertiaryContainer
 
     val actions = buildList {
-        onEditControls?.let { editControls ->
-            add(ControlAction(
-                icon = RhythmIcons.Edit,
-                label = context.getString(R.string.bottomsheet_edit_controls),
-                description = null,
-                containerColor = secondary,
-                iconColor = onSecondary,
-                onClick = {
-                    HapticUtils.performHapticFeedback(context, haptic, HapticType.HEAVY)
-                    dismissAndDo { editControls() }
-                }
-            ))
-        }
-
         add(ControlAction(
             icon = RhythmIcons.AddToPlaylist,
             label = context.getString(R.string.bottomsheet_add_to_playlist),
@@ -329,32 +316,53 @@ fun ExtraControlBottomSheet(
                 .fillMaxWidth()
                 .padding(bottom = 16.dp)
         ) {
-            // Header — matches SongOptionsBottomSheet style
-            Column(
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 16.dp)
+                    .padding(horizontal = 20.dp, vertical = 16.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = stringResource(R.string.settings_shapes_player_controls),
-                    style = MaterialTheme.typography.displayMedium,
-                    fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Box(
-                    modifier = Modifier
-                        .background(
-                            color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                            shape = CircleShape
-                        )
-                ) {
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                        style = MaterialTheme.typography.labelLarge,
-                        text = stringResource(R.string.libraryscreen_more_actions),
+                        text = stringResource(R.string.settings_shapes_player_controls),
+                        style = MaterialTheme.typography.displayMedium,
+                        fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colorScheme.onSurface
                     )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Box(
+                        modifier = Modifier
+                            .background(
+                                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                shape = CircleShape
+                            )
+                    ) {
+                        Text(
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                            style = MaterialTheme.typography.labelLarge,
+                            text = stringResource(R.string.libraryscreen_more_actions),
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                }
+
+                onEditControls?.let { editControls ->
+                    FilledTonalIconButton(
+                        onClick = {
+                            HapticUtils.performHapticFeedback(context, haptic, HapticType.HEAVY)
+                            dismissAndDo { editControls() }
+                        },
+                        shape = CircleShape,
+                        modifier = Modifier
+                            .padding(start = 12.dp)
+                            .size(40.dp)
+                    ) {
+                        Icon(
+                            imageVector = RhythmIcons.Edit,
+                            contentDescription = context.getString(R.string.bottomsheet_edit_controls),
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
                 }
             }
 
