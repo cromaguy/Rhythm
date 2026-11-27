@@ -296,8 +296,8 @@ fun DecoderExtensionsSettingsScreen(
                             add(
                                 SettingItem(
                                     icon = null,
-                                    title = "Media3 FFmpeg Decoder",
-                                    description = "Bundled Jellyfin Media3 extension (v1.9.0+1). Software decoding for AC-4, EAC3-JOC Atmos, AC-3, WMA, ALAC, DTS & TrueHD.",
+                                    title = "FFmpeg Decoder",
+                                    description = "Software decoding for AC-3, AC-4, ALAC, DTS, EAC3, TrueHD, and WMA",
                                     toggleState = ffmpegActive,
                                     onToggleChange = { isChecked ->
                                         HapticUtils.performHapticFeedback(context, haptics, HapticType.LIGHT)
@@ -310,8 +310,8 @@ fun DecoderExtensionsSettingsScreen(
                         add(
                             SettingItem(
                                 icon = null,
-                                title = "Media3 MIDI Synthesizer",
-                                description = "Bundled Media3 MIDI extension (v1.5.0+). Synthesizes Standard MIDI sequences (.mid, .midi).",
+                                title = "MIDI Synthesizer",
+                                description = "Built-in synth for Standard MIDI (.mid, .midi) files",
                                 toggleState = midiActive,
                                 onToggleChange = { isChecked ->
                                     HapticUtils.performHapticFeedback(context, haptics, HapticType.LIGHT)
@@ -324,8 +324,8 @@ fun DecoderExtensionsSettingsScreen(
                             add(
                                 SettingItem(
                                     icon = null,
-                                    title = "Native FLAC Extension",
-                                    description = "Bundled libFLAC architecture fallback for non-standard 24/32-bit FLAC streams.",
+                                    title = "Native FLAC Decoder",
+                                    description = "Software fallback for high-bit-depth FLAC files",
                                     toggleState = flacActive,
                                     onToggleChange = { isChecked ->
                                         HapticUtils.performHapticFeedback(context, haptics, HapticType.LIGHT)
@@ -336,8 +336,8 @@ fun DecoderExtensionsSettingsScreen(
                             add(
                                 SettingItem(
                                     icon = null,
-                                    title = "Native Opus Extension",
-                                    description = "Direct C++ libopus fallback for ultra-low latency & Ogg/WebM streams.",
+                                    title = "Native Opus Decoder",
+                                    description = "Low-latency software decoding for Opus and Ogg files",
                                     toggleState = opusActive,
                                     onToggleChange = { isChecked ->
                                         HapticUtils.performHapticFeedback(context, haptics, HapticType.LIGHT)

@@ -914,8 +914,8 @@ private fun PlaybackQuickSettingsCard(
                 description = {
                     val baseDesc = context.getString(R.string.settings_crossfade_desc)
                     val fullDesc = when {
-                        isOffloadEnforced -> "Disabled under Lite Mode to conserve battery."
-                        isAudioOffloadActive && !crossfadeEnabled -> "$baseDesc\n(Enabling will disable hardware Audio Offload)"
+                        isOffloadEnforced -> "Unavailable in Lite Mode"
+                        isAudioOffloadActive && !crossfadeEnabled -> "Turns off Audio Offload when enabled"
                         else -> baseDesc
                     }
                     Text(text = fullDesc)
@@ -1344,8 +1344,8 @@ private fun AudioEffectsCard(
                 description = {
                     val baseDesc = context.getString(R.string.settings_equalizer_desc)
                     val fullDesc = when {
-                        isOffloadEnforced -> "Disabled under Lite Mode to conserve battery."
-                        isAudioOffloadActive && !equalizerEnabled -> "$baseDesc\n(Enabling will disable hardware Audio Offload)"
+                        isOffloadEnforced -> "Unavailable in Lite Mode"
+                        isAudioOffloadActive && !equalizerEnabled -> "Turns off Audio Offload when enabled"
                         else -> baseDesc
                     }
                     Text(text = fullDesc)
@@ -1378,8 +1378,8 @@ private fun AudioEffectsCard(
                     Column(modifier = Modifier.fillMaxWidth()) {
                         val baseDesc = context.getString(R.string.bass_boost_desc)
                         val fullDesc = when {
-                            isOffloadEnforced -> "Disabled under Lite Mode to conserve battery."
-                            isAudioOffloadActive && !bassBoostEnabled -> "$baseDesc\n(Enabling will disable hardware Audio Offload)"
+                            isOffloadEnforced -> "Unavailable in Lite Mode"
+                            isAudioOffloadActive && !bassBoostEnabled -> "Turns off Audio Offload when enabled"
                             else -> baseDesc
                         }
                         Text(text = fullDesc)
@@ -1442,8 +1442,8 @@ private fun AudioEffectsCard(
                     Column(modifier = Modifier.fillMaxWidth()) {
                         val baseDesc = context.getString(R.string.virtualizer_desc)
                         val fullDesc = when {
-                            isOffloadEnforced -> "Disabled under Lite Mode to conserve battery."
-                            isAudioOffloadActive && !virtualizerEnabled -> "$baseDesc\n(Enabling will disable hardware Audio Offload)"
+                            isOffloadEnforced -> "Unavailable in Lite Mode"
+                            isAudioOffloadActive && !virtualizerEnabled -> "Turns off Audio Offload when enabled"
                             else -> baseDesc
                         }
                         Text(text = fullDesc)

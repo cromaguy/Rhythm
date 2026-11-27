@@ -59,7 +59,7 @@ import kotlin.math.roundToInt
 import kotlin.math.sin
 
 /**
- * Parametric 8-sided rounded star / cookie shape matching PixelPlayer design.
+ * Parametric 8-sided rounded star slider thumb.
  */
 class RoundedStarShape(
     private val sides: Int = 8,
