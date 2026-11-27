@@ -2012,7 +2012,7 @@ fun ExpressivePlayerScreen(
                                                     icon = RhythmIcons.Share,
                                                     iconSize = 20.dp,
                                                     text = null,
-                                                    contentDescription = stringResource(R.string.extrasheet_share_file),
+                                                    contentDescription = stringResource(R.string.action_share),
                                                     containerColor = controlsContainerColor,
                                                     contentColor = defaultContentColor
                                                 )
@@ -2290,7 +2290,7 @@ fun ExpressivePlayerScreen(
                                                     type = RhythmButtonType.Tonal,
                                                     icon = RhythmIcons.Share,
                                                     iconSize = 20.dp,
-                                                    contentDescription = stringResource(R.string.extrasheet_share_file),
+                                                    contentDescription = stringResource(R.string.action_share),
                                                     containerColor = controlsContainerColor,
                                                     contentColor = defaultContentColor
                                                 )

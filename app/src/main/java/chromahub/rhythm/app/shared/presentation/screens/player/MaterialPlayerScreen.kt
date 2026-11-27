@@ -207,9 +207,12 @@ import chromahub.rhythm.app.shared.presentation.components.bottomsheets.ArtistCh
 import chromahub.rhythm.app.shared.presentation.components.bottomsheets.QueueBottomSheet
 import chromahub.rhythm.app.features.local.presentation.screens.LibraryTab
 import chromahub.rhythm.app.shared.presentation.components.bottomsheets.AddToPlaylistBottomSheet
+import chromahub.rhythm.app.shared.presentation.components.bottomsheets.LocalSongShareHandler
 import chromahub.rhythm.app.shared.presentation.components.bottomsheets.PlaybackBottomSheet
 import chromahub.rhythm.app.shared.presentation.components.bottomsheets.SongInfoBottomSheet
 import chromahub.rhythm.app.shared.presentation.components.bottomsheets.PlaybackQualityBottomSheet
+import chromahub.rhythm.app.shared.presentation.components.bottomsheets.SongShareRequest
+import chromahub.rhythm.app.shared.presentation.components.bottomsheets.shareSongAudioFile
 import chromahub.rhythm.app.shared.presentation.screens.settings.AudioRoutingDialog
 import chromahub.rhythm.app.infrastructure.service.MediaPlaybackService
 
@@ -481,17 +484,19 @@ fun MaterialPlayerScreen(
     // Chip visibility state
     var showChips by remember { mutableStateOf(false) }
     
+    val songShareHandler = LocalSongShareHandler.current
     val shareSong: () -> Unit = {
         song?.let { currentSong ->
-            try {
-                val shareIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
-                    type = "audio/*"
-                    putExtra(android.content.Intent.EXTRA_STREAM, currentSong.uri)
-                    addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                }
-                context.startActivity(android.content.Intent.createChooser(shareIntent, "Share ${currentSong.title}"))
-            } catch (e: Exception) {
-                android.widget.Toast.makeText(context, R.string.materialplayerscreen_unable_to_share_file, android.widget.Toast.LENGTH_SHORT).show()
+            val posMs = (progress().coerceIn(0f, 1f) * currentSong.duration).toLong()
+            val request = SongShareRequest(
+                song = currentSong,
+                lyrics = lyrics,
+                currentPositionMs = posMs
+            )
+            if (songShareHandler != null) {
+                songShareHandler(request)
+            } else {
+                shareSongAudioFile(context, currentSong)
             }
         }
     }

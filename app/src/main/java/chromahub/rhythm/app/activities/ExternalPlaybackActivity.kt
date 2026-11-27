@@ -43,7 +43,11 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.ui.graphics.Color
+import chromahub.rhythm.app.shared.presentation.components.bottomsheets.LocalSongShareHandler
 import chromahub.rhythm.app.shared.presentation.components.bottomsheets.RhythmAdaptiveModalSheet
+import chromahub.rhythm.app.shared.presentation.components.bottomsheets.SongShareHost
+import chromahub.rhythm.app.shared.presentation.components.bottomsheets.SongShareRequest
+import chromahub.rhythm.app.shared.presentation.components.bottomsheets.shareSongAudioFile
 import chromahub.rhythm.app.shared.presentation.components.lyrics.ActiveLyricLine
 import chromahub.rhythm.app.shared.presentation.components.icons.Icon
 import chromahub.rhythm.app.shared.presentation.components.icons.MaterialSymbolIcon
@@ -464,7 +468,11 @@ fun ExternalPlaybackBottomSheet(
             dismissSmoothly()
         }
     }
-    RhythmAdaptiveModalSheet(
+    SongShareHost(
+        lyricsResolver = { song -> musicViewModel.fetchLyricsForPreviewSong(song) }
+    ) {
+        val songShareHandler = LocalSongShareHandler.current
+        RhythmAdaptiveModalSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
         containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
@@ -540,15 +548,16 @@ fun ExternalPlaybackBottomSheet(
                                 if (hapticEnabled) {
                                     HapticUtils.performHapticFeedback(context, haptics, HapticType.MEDIUM)
                                 }
-                                try {
-                                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                                        type = "audio/*"
-                                        putExtra(Intent.EXTRA_STREAM, song.uri)
-                                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                    }
-                                    context.startActivity(Intent.createChooser(shareIntent, song.title))
-                                } catch (e: Exception) {
-                                    Toast.makeText(context, R.string.materialplayerscreen_unable_to_share_file, Toast.LENGTH_SHORT).show()
+                                val posMs = ((if (isScrubbing) scrubProgress else progress).coerceIn(0f, 1f) * song.duration).toLong()
+                                val req = SongShareRequest(
+                                    song = song,
+                                    lyrics = lyrics,
+                                    currentPositionMs = posMs
+                                )
+                                if (songShareHandler != null) {
+                                    songShareHandler(req)
+                                } else {
+                                    shareSongAudioFile(context, song)
                                 }
                             },
                             isEnd = true,
@@ -873,6 +882,7 @@ fun ExternalPlaybackBottomSheet(
                 }
             }
         }
+    }
     }
     }
 }

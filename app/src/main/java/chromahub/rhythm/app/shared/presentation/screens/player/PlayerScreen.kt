@@ -69,6 +69,9 @@ import chromahub.rhythm.app.shared.presentation.components.Material3SettingsItem
 import chromahub.rhythm.app.shared.presentation.components.bottomsheets.ArtistChooserBottomSheet
 import chromahub.rhythm.app.shared.presentation.components.bottomsheets.ExtraControlBottomSheet
 import chromahub.rhythm.app.shared.presentation.components.bottomsheets.AddToPlaylistBottomSheet
+import chromahub.rhythm.app.shared.presentation.components.bottomsheets.LocalSongShareHandler
+import chromahub.rhythm.app.shared.presentation.components.bottomsheets.SongShareRequest
+import chromahub.rhythm.app.shared.presentation.components.bottomsheets.shareSongAudioFile
 
 import chromahub.rhythm.app.shared.presentation.components.bottomsheets.PlaybackBottomSheet
 import chromahub.rhythm.app.shared.presentation.components.bottomsheets.QueueBottomSheet
@@ -329,6 +332,21 @@ fun PlayerScreen(
                 null
             }
         }
+        val songShareHandler = LocalSongShareHandler.current
+        val openShareSheet: () -> Unit = {
+            song?.let { currentSong ->
+                val request = SongShareRequest(
+                    song = currentSong,
+                    lyrics = lyrics,
+                    currentPositionMs = currentTimeMs
+                )
+                if (songShareHandler != null) {
+                    songShareHandler(request)
+                } else {
+                    shareSongAudioFile(context, currentSong)
+                }
+            }
+        }
         val writePermissionLauncher = rememberLauncherForActivityResult(
             contract = ActivityResultContracts.StartIntentSenderForResult()
         ) { result ->
@@ -503,20 +521,7 @@ fun PlayerScreen(
             },
             onSleepTimer = { showSleepTimerBottomSheet = true },
             onAddToPlaylist = { showAddToPlaylistSheetInternal = true },
-            onShareFile = {
-                song?.let { currentSong ->
-                    try {
-                        val shareIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
-                            type = "audio/*"
-                            putExtra(android.content.Intent.EXTRA_STREAM, currentSong.uri)
-                            addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                        }
-                        context.startActivity(android.content.Intent.createChooser(shareIntent, "Share ${currentSong.title}"))
-                    } catch (_: Exception) {
-                        Toast.makeText(context, R.string.materialplayerscreen_unable_to_share_file, Toast.LENGTH_SHORT).show()
-                    }
-                }
-            },
+            onShareFile = openShareSheet,
             onEditBottomButtons = { showExpressiveBottomButtonsSheet = true },
             onBack = onBack,
             location = location,
@@ -752,20 +757,7 @@ fun PlayerScreen(
                 },
                 onSongInfo = { showSongInfoSheet = true },
                 onBookmarks = { showBookmarksSheet = true },
-                onShareFile = {
-                    song?.let { currentSong ->
-                        try {
-                            val shareIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
-                                type = "audio/*"
-                                putExtra(android.content.Intent.EXTRA_STREAM, currentSong.uri)
-                                addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                            }
-                            context.startActivity(android.content.Intent.createChooser(shareIntent, "Share ${currentSong.title}"))
-                        } catch (_: Exception) {
-                            Toast.makeText(context, R.string.materialplayerscreen_unable_to_share_file, Toast.LENGTH_SHORT).show()
-                        }
-                    }
-                },
+                onShareFile = openShareSheet,
                 haptic = haptic,
                 isExtraSmallWidth = false,
                 isCompactWidth = false

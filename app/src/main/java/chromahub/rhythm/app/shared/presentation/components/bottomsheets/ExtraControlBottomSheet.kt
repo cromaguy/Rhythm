@@ -297,7 +297,7 @@ fun ExtraControlBottomSheet(
 
         add(ControlAction(
             icon = RhythmIcons.Share,
-            label = context.getString(R.string.extrasheet_share_file),
+            label = context.getString(R.string.action_share),
             description = null,
             containerColor = secondary,
             iconColor = onSecondary,

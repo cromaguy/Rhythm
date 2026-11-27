@@ -84,7 +84,11 @@ import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.rememberModalBottomSheetState
+import chromahub.rhythm.app.shared.presentation.components.bottomsheets.LocalSongShareHandler
 import chromahub.rhythm.app.shared.presentation.components.bottomsheets.SongPickerBottomSheet
+import chromahub.rhythm.app.shared.presentation.components.bottomsheets.SongShareHost
+import chromahub.rhythm.app.shared.presentation.components.bottomsheets.SongShareRequest
+import chromahub.rhythm.app.shared.presentation.components.bottomsheets.shareSongAudioFile
 import chromahub.rhythm.app.shared.presentation.components.common.CollapsibleHeaderScreen
 import chromahub.rhythm.app.shared.presentation.components.common.ExpressiveFilledIconButton
 import chromahub.rhythm.app.shared.presentation.components.common.ExpressiveShapes
@@ -718,6 +722,9 @@ fun LocalNavigation(
     val miniPlayerPaddingValues = PaddingValues(bottom = miniPlayerBottomPadding.coerceAtLeast(0.dp))
 
     CompositionLocalProvider(LocalMiniPlayerPadding provides miniPlayerPaddingValues) {
+        SongShareHost(
+            lyricsResolver = { song -> viewModel.fetchLyricsForPreviewSong(song) }
+        ) {
         if (isTablet) {
             val showDockedRail = showNavBar && !floatingNavigationBar
             val tabletContainerColor = MaterialTheme.colorScheme.surfaceContainer
@@ -909,6 +916,7 @@ fun LocalNavigation(
                 streamingMusicViewModel = streamingMusicViewModel
             )
         }
+        }
     }
     
     // Global Update Bottom Sheet - shows automatically when update is available
@@ -992,6 +1000,7 @@ private fun LocalNavigationContent(
 ) {
     val context = LocalContext.current
     val haptic = LocalHapticFeedback.current
+    val songShareHandler = LocalSongShareHandler.current
 
     val appMode by appSettings.appMode.collectAsState()
     val isStreamingMode = appMode == "STREAMING"
@@ -3592,15 +3601,11 @@ private fun LocalNavigationContent(
                             }
                         },
                         onShare = { song ->
-                            try {
-                                val shareIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
-                                    type = "audio/*"
-                                    putExtra(android.content.Intent.EXTRA_STREAM, song.uri)
-                                    addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                }
-                                context.startActivity(android.content.Intent.createChooser(shareIntent, "Share ${song.title}"))
-                            } catch (e: Exception) {
-                                android.widget.Toast.makeText(context, R.string.materialplayerscreen_unable_to_share_file, android.widget.Toast.LENGTH_SHORT).show()
+                            val req = SongShareRequest(song = song)
+                            if (songShareHandler != null) {
+                                songShareHandler(req)
+                            } else {
+                                shareSongAudioFile(context, song)
                             }
                         }
                     )
@@ -4208,15 +4213,11 @@ private fun LocalNavigationContent(
                                 }
                             },
                             onShare = { song ->
-                                try {
-                                    val shareIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
-                                        type = "audio/*"
-                                        putExtra(android.content.Intent.EXTRA_STREAM, song.uri)
-                                        addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                    }
-                                    context.startActivity(android.content.Intent.createChooser(shareIntent, "Share ${song.title}"))
-                                } catch (e: Exception) {
-                                    android.widget.Toast.makeText(context, R.string.materialplayerscreen_unable_to_share_file, android.widget.Toast.LENGTH_SHORT).show()
+                                val req = SongShareRequest(song = song)
+                                if (songShareHandler != null) {
+                                    songShareHandler(req)
+                                } else {
+                                    shareSongAudioFile(context, song)
                                 }
                             }
                         )
@@ -4642,15 +4643,11 @@ private fun LocalNavigationContent(
                             }
                         },
                         onShare = { song ->
-                            try {
-                                val shareIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
-                                    type = "audio/*"
-                                    putExtra(android.content.Intent.EXTRA_STREAM, song.uri)
-                                    addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                }
-                                context.startActivity(android.content.Intent.createChooser(shareIntent, "Share ${song.title}"))
-                            } catch (e: Exception) {
-                                android.widget.Toast.makeText(context, R.string.materialplayerscreen_unable_to_share_file, android.widget.Toast.LENGTH_SHORT).show()
+                            val req = SongShareRequest(song = song)
+                            if (songShareHandler != null) {
+                                songShareHandler(req)
+                            } else {
+                                shareSongAudioFile(context, song)
                             }
                         },
                         viewModel = viewModel

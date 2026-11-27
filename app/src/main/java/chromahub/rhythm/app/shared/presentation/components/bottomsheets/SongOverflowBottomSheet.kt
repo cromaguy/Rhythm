@@ -135,16 +135,13 @@ fun SongOverflowBottomSheet(
         fallbackShape = rememberExpressiveShape("SUNNY")
     )
 
+    val songShareHandler = LocalSongShareHandler.current
     val finalOnShare = onShare ?: {
-        try {
-            val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                type = "audio/*"
-                putExtra(Intent.EXTRA_STREAM, song.uri)
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            }
-            context.startActivity(Intent.createChooser(shareIntent, context.getString(R.string.action_share)))
-        } catch (e: Exception) {
-            Toast.makeText(context, R.string.materialplayerscreen_unable_to_share_file, Toast.LENGTH_SHORT).show()
+        val request = SongShareRequest(song = song)
+        if (songShareHandler != null) {
+            songShareHandler(request)
+        } else {
+            shareSongAudioFile(context, song)
         }
     }
 

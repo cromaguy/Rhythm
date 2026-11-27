@@ -3105,4 +3105,17 @@
     <string name="settings_rhythm_haptics_mute_external_desc">Pause haptics on USB DACs and Cast</string>
     <string name="settings_rhythm_haptics_system_generator">System Audio Haptics</string>
     <string name="settings_rhythm_haptics_system_generator_desc">Use built-in Android audio vibration</string>
+
+    <!-- Song Share Sheet -->
+    <string name="share_option_audio_file">Share Audio File</string>
+    <string name="share_option_audio_file_desc">Send this audio track to another app</string>
+    <string name="share_option_audio_file_streaming_desc">Available for local or downloaded tracks</string>
+    <string name="share_option_lyrics_card">Share Lyrics Card</string>
+    <string name="share_option_lyrics_card_desc">Create a styled image with selected lines</string>
+    <string name="share_option_lyrics_text">Share Lyrics Text</string>
+    <string name="share_option_lyrics_text_desc">Send the song lyrics as plain text</string>
+    <string name="share_option_track_info">Share Track Info</string>
+    <string name="share_option_track_info_desc">Send song title, artist, and album</string>
+    <string name="share_lyrics_loading">Checking lyrics&#8230;</string>
+    <string name="share_lyrics_unavailable">No lyrics found for this track</string>
 </resources>

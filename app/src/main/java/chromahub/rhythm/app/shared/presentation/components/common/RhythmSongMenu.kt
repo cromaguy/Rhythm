@@ -11,6 +11,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import chromahub.rhythm.app.shared.presentation.components.bottomsheets.LocalSongShareHandler
+import chromahub.rhythm.app.shared.presentation.components.bottomsheets.SongShareRequest
+import chromahub.rhythm.app.shared.presentation.components.bottomsheets.shareSongAudioFile
 import chromahub.rhythm.app.shared.presentation.components.icons.MaterialSymbolIcon
 import chromahub.rhythm.app.shared.presentation.components.icons.RhythmIcons
 import chromahub.rhythm.app.shared.data.model.Song
@@ -47,17 +50,14 @@ fun RhythmSongMenuContent(
     onToggleDownload: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
+    val songShareHandler = LocalSongShareHandler.current
     val finalOnShare = onShare ?: song?.let { s ->
         {
-            try {
-                val shareIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
-                    type = "audio/*"
-                    putExtra(android.content.Intent.EXTRA_STREAM, s.uri)
-                    addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                }
-                context.startActivity(android.content.Intent.createChooser(shareIntent, "Share ${s.title}"))
-            } catch (e: Exception) {
-                android.widget.Toast.makeText(context, R.string.materialplayerscreen_unable_to_share_file, android.widget.Toast.LENGTH_SHORT).show()
+            val request = SongShareRequest(song = s)
+            if (songShareHandler != null) {
+                songShareHandler(request)
+            } else {
+                shareSongAudioFile(context, s)
             }
         }
     }
