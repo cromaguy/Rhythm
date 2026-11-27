@@ -3087,4 +3087,22 @@
     <string name="viper_engine_status_title">Audio Engine Status</string>
     <string name="viper_engine_status_subtitle">ViPER4Android DSP Monitor</string>
     <string name="viper_engine_upstream">ViPER4Android on GitHub</string>
+
+    <!-- Rhythm Haptics -->
+    <string name="settings_rhythm_haptics">Rhythm Haptics</string>
+    <string name="settings_rhythm_haptics_desc">Vibrate in time with music</string>
+    <string name="settings_rhythm_haptics_config">Configuration</string>
+    <string name="settings_rhythm_haptics_mode">Haptic Style</string>
+    <string name="settings_rhythm_haptics_mode_desc">Choose which part of the song triggers vibration</string>
+    <string name="rhythm_haptics_mode_bass_beats">Beats</string>
+    <string name="rhythm_haptics_mode_vocals">Vocals</string>
+    <string name="rhythm_haptics_mode_whole_song">Full Mix</string>
+    <string name="settings_rhythm_haptics_strength">Vibration Strength</string>
+    <string name="settings_rhythm_haptics_strength_desc">Adjust pulse intensity</string>
+    <string name="settings_rhythm_haptics_min">10%</string>
+    <string name="settings_rhythm_haptics_max">100%</string>
+    <string name="settings_rhythm_haptics_mute_external">Mute on External Audio</string>
+    <string name="settings_rhythm_haptics_mute_external_desc">Pause haptics on USB DACs and Cast</string>
+    <string name="settings_rhythm_haptics_system_generator">System Audio Haptics</string>
+    <string name="settings_rhythm_haptics_system_generator_desc">Use built-in Android audio vibration</string>
 </resources>

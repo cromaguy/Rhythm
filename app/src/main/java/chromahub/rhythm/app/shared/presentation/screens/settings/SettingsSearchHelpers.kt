@@ -73,6 +73,7 @@ object SettingsInlineToggleRegistry {
         "autoHideLyricsControls",
         "automix_bpm_sync_enabled",
         "agsl_fluid_backdrop_enabled",
+        "alac_decoder_enabled",
         "batterySaverDisableAutoFetchArtwork",
         "batterySaverDisableHaptics",
         "batterySaverDisableLosslessArtwork",
@@ -106,6 +107,7 @@ object SettingsInlineToggleRegistry {
         "lyricBold",
         "lyricNoAnimation",
         "lyricsApiFallbackRetry",
+        "main_thread_stall_watchdog",
         "monoAudioEnabled",
         "music_haptics_enabled",
         "playerAmbientBackdropEnabled",
@@ -135,6 +137,7 @@ object SettingsInlineToggleRegistry {
         "status_bar_ticker_enabled",
         "stopPlaybackOnAppClose",
         "stopPlaybackOnZeroVolume",
+        "surround_downmix_enabled",
         "trackErrorCheckerEnabled",
         "translationAutoWord",
         "trimLyrics",
@@ -152,11 +155,13 @@ object SettingsInlineToggleRegistry {
         uiPrefs: UiPreferencesStore,
         presetsPrefs: PresetsPreferencesStore
     ): InlineBooleanSettingBinding? = when (key) {
+        "alac_decoder_enabled" -> InlineBooleanSettingBinding(key, playbackPrefs.alacDecoderEnabled, playbackPrefs::setAlacDecoderEnabled)
         "automix_bpm_sync_enabled" -> InlineBooleanSettingBinding(key, playbackPrefs.autoMixBpmSyncEnabled, playbackPrefs::setAutoMixBpmSyncEnabled)
         "agsl_fluid_backdrop_enabled" -> InlineBooleanSettingBinding(key, uiPrefs.agslFluidBackdropEnabled, uiPrefs::setAgslFluidBackdropEnabled)
         "double_precision_peq_enabled" -> InlineBooleanSettingBinding(key, presetsPrefs.doublePrecisionPeqEnabled, presetsPrefs::setDoublePrecisionPeqEnabled)
         "music_haptics_enabled" -> InlineBooleanSettingBinding(key, playbackPrefs.musicHapticsEnabled, playbackPrefs::setMusicHapticsEnabled)
         "status_bar_ticker_enabled" -> InlineBooleanSettingBinding(key, uiPrefs.statusBarTickerEnabled, uiPrefs::setStatusBarTickerEnabled)
+        "surround_downmix_enabled" -> InlineBooleanSettingBinding(key, playbackPrefs.surroundDownmixEnabled, playbackPrefs::setSurroundDownmixEnabled)
         else -> null
     }
 
@@ -209,6 +214,10 @@ object SettingsInlineToggleRegistry {
             "lyricBold" -> InlineBooleanSettingBinding(key, appSettings.lyricBold, appSettings::setLyricBold)
             "lyricNoAnimation" -> InlineBooleanSettingBinding(key, appSettings.lyricNoAnimation, appSettings::setLyricNoAnimation)
             "lyricsApiFallbackRetry" -> InlineBooleanSettingBinding(key, appSettings.lyricsApiFallbackRetry, appSettings::setLyricsApiFallbackRetry)
+            "main_thread_stall_watchdog" -> InlineBooleanSettingBinding(key, appSettings.mainThreadStallMonitorEnabled) { enabled ->
+                appSettings.setMainThreadStallMonitorEnabled(enabled)
+                chromahub.rhythm.app.RhythmApplication.instance.setStallMonitorEnabled(enabled)
+            }
             "monoAudioEnabled" -> InlineBooleanSettingBinding(key, appSettings.monoAudioEnabled, appSettings::setMonoAudioEnabled)
             "playerAmbientBackdropEnabled" -> InlineBooleanSettingBinding(key, appSettings.playerAmbientBackdropEnabled, appSettings::setPlayerAmbientBackdropEnabled)
             "playerAmbientInfiniteZoom" -> InlineBooleanSettingBinding(key, appSettings.playerAmbientInfiniteZoom, appSettings::setPlayerAmbientInfiniteZoom)

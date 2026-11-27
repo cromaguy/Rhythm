@@ -190,7 +190,6 @@ fun PlayerCustomizationSettingsScreen(onBackClick: () -> Unit) {
     val playerAmbientBackdropEnabled by appSettings.playerAmbientBackdropEnabled.collectAsState()
     val playerAmbientBackdropIntensity by appSettings.playerAmbientBackdropIntensity.collectAsState()
     val playerAmbientInfiniteZoom by appSettings.playerAmbientInfiniteZoom.collectAsState()
-    val agslFluidBackdropEnabled by appSettings.uiPrefs.agslFluidBackdropEnabled.collectAsState()
     val playerAccentBackgroundEnabled by appSettings.playerAccentBackgroundEnabled.collectAsState()
     val playerMergeControlsToBottom by appSettings.playerMergeControlsToBottom.collectAsState()
     val playerGlassIntensity by appSettings.playerGlassIntensity.collectAsState()
@@ -425,22 +424,6 @@ fun PlayerCustomizationSettingsScreen(onBackClick: () -> Unit) {
                                 description = if (playerAmbientBackdropEnabled) context.getString(R.string.settings_value_percent, (playerAmbientBackdropIntensity * 100).toInt()) else context.getString(R.string.player_ambient_intensity_requires_ambient),
                                 onClick = { if (playerAmbientBackdropEnabled) showAmbientIntensitySheet = true },
                                 enabled = playerAmbientBackdropEnabled
-                            )
-                        ),
-                        toMaterial3SettingsItem(
-                            context = context,
-                            hapticFeedback = haptics,
-                            item = SettingItem(
-                                icon = MaterialSymbolIcon("water_drop"),
-                                title = "Beat-Sync AGSL Backdrop",
-                                description = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                                    "Fluid GPU mesh backdrop reacting to live bass pulses"
-                                } else {
-                                    "Requires Android 13 or newer"
-                                },
-                                toggleState = agslFluidBackdropEnabled,
-                                enabled = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && playerAmbientBackdropEnabled,
-                                onToggleChange = { appSettings.uiPrefs.setAgslFluidBackdropEnabled(it) }
                             )
                         )
                     ),

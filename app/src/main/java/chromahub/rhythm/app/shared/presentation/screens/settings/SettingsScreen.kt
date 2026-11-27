@@ -196,6 +196,7 @@ object SettingsRoutes {
     const val BATTERY_SAVER = "battery_saver_settings"
     const val REPLAY_GAIN = "replay_gain_settings"
     const val CROSSFADE = "crossfade_settings"
+    const val RHYTHM_HAPTICS = "rhythm_haptics_settings"
     const val NATIVE_CAPABILITIES = "tuner_native_capabilities_settings"
     const val EXTERNAL_CAPABILITIES = "tuner_external_capabilities_settings"
     const val DECODER_EXTENSIONS = "tuner_decoder_extensions_settings"
@@ -1212,6 +1213,10 @@ fun SettingsScreenWrapper(
                             onBackClick = handleBack,
                             onNavigateTo = onNavigateToSubsetting
                         )
+                        SettingsRoutes.RHYTHM_HAPTICS -> RhythmHapticsSettingsScreen(
+                            onBackClick = handleBack,
+                            onNavigateTo = onNavigateToSubsetting
+                        )
                         SettingsRoutes.LYRICS -> LyricsSettingsScreen(onBackClick = handleBack)
                         SettingsRoutes.WIDGET -> WidgetSettingsScreen(onBackClick = handleBack)
                         SettingsRoutes.HOME_SCREEN -> HomeScreenCustomizationSettingsScreen(onBackClick = handleBack)
@@ -1365,6 +1370,10 @@ fun SettingsScreenWrapper(
                     onNavigateTo = onNavigateToSubsetting
                 )
                 SettingsRoutes.CROSSFADE -> CrossfadeSettingsScreen(
+                    onBackClick = handleBack,
+                    onNavigateTo = onNavigateToSubsetting
+                )
+                SettingsRoutes.RHYTHM_HAPTICS -> RhythmHapticsSettingsScreen(
                     onBackClick = handleBack,
                     onNavigateTo = onNavigateToSubsetting
                 )

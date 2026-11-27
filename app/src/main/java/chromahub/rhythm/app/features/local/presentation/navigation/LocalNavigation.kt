@@ -283,6 +283,7 @@ sealed class Screen(val route: String) {
     object TunerGoSettings : Screen("tuner_go_settings")
     object TunerReplayGain : Screen("tuner_replay_gain_settings")
     object TunerCrossfade : Screen("tuner_crossfade_settings")
+    object TunerRhythmHaptics : Screen("tuner_rhythm_haptics_settings")
     object TunerDefaultPlaylists : Screen("tuner_default_playlists_settings")
     object TunerNativeCapabilities : Screen(SettingsRoutes.NATIVE_CAPABILITIES)
     val TunerDeviceCapabilities = TunerNativeCapabilities
@@ -2355,8 +2356,10 @@ private fun LocalNavigationContent(
                     chromahub.rhythm.app.shared.presentation.screens.settings.LabsSettingsScreen(
                         onBackClick = navigateBackOrToSettings,
                         onNavigateTo = { route ->
-                            if (route == SettingsRoutes.VIPER) {
-                                navController.navigate(Screen.TunerViper.route)
+                            when (route) {
+                                SettingsRoutes.VIPER -> navController.navigate(Screen.TunerViper.route)
+                                SettingsRoutes.NATIVE_CAPABILITIES -> navController.navigate(Screen.TunerNativeCapabilities.route)
+                                SettingsRoutes.RHYTHM_HAPTICS -> navController.navigate(Screen.TunerRhythmHaptics.route)
                             }
                         }
                     )
@@ -2567,6 +2570,10 @@ private fun LocalNavigationContent(
 
                 composable(Screen.TunerCrossfade.route) {
                     CrossfadeSettingsScreen(onBackClick = navigateBackOrToSettings)
+                }
+
+                composable(Screen.TunerRhythmHaptics.route) {
+                    RhythmHapticsSettingsScreen(onBackClick = navigateBackOrToSettings)
                 }
 
                 composable(Screen.TunerHomeScreen.route) {

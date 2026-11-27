@@ -225,26 +225,6 @@ fun BackupRestoreSettingsScreen(onBackClick: () -> Unit) {
     var showRestorePassphraseDialog by remember { mutableStateOf(false) }
     var pendingEncryptedPayload by remember { mutableStateOf<String?>(null) }
     var pendingEncryptedSections by remember { mutableStateOf(AppSettings.BackupRestoreSections()) }
-    val hasSafetyRollback = remember(resultSheetState, restoreResult) {
-        musicViewModel.hasSafetyRollbackSnapshot()
-    }
-    val playlistSyncUri by appSettings.playlistSyncUri.collectAsState()
-
-    val m3uSyncFolderLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.OpenDocumentTree()
-    ) { treeUri ->
-        if (treeUri != null) {
-            runCatching {
-                context.contentResolver.takePersistableUriPermission(
-                    treeUri,
-                    Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
-                )
-            }
-            appSettings.setPlaylistSyncUri(treeUri.toString())
-            chromahub.rhythm.app.infrastructure.worker.M3uSyncWorker.enqueue(context)
-            Toast.makeText(context, "Playlist M3U8 sync enabled", Toast.LENGTH_SHORT).show()
-        }
-    }
 
     val isBusy = isCreatingBackup || isPreparingRestore || isRestoringFromFile || isRestoringFromClipboard
 
@@ -704,40 +684,8 @@ fun BackupRestoreSettingsScreen(onBackClick: () -> Unit) {
                                     filePickerLauncher.launch(intent)
                                 }
                             }
-                        ),
-                        SettingItem(
-                            MaterialSymbolIcon("sync"),
-                            "Continuous M3U8 Playlist Sync",
-                            if (playlistSyncUri.isNullOrBlank()) {
-                                "Automatically export updated playlists to a chosen folder"
-                            } else {
-                                "Syncing playlists to selected folder (tap to disable)"
-                            },
-                            onClick = {
-                                HapticUtils.performHapticFeedback(context, haptics, HapticType.LIGHT)
-                                if (playlistSyncUri.isNullOrBlank()) {
-                                    m3uSyncFolderLauncher.launch(null)
-                                } else {
-                                    appSettings.setPlaylistSyncUri(null)
-                                    Toast.makeText(context, "Playlist M3U8 sync disabled", Toast.LENGTH_SHORT).show()
-                                }
-                            }
                         )
-                    ) + if (hasSafetyRollback) {
-                        listOf(
-                            SettingItem(
-                                MaterialSymbolIcon("history"),
-                                "Restore Pre-Restore Rollback",
-                                "Revert to the automatic snapshot captured before the last restore",
-                                onClick = {
-                                    if (!isBusy) {
-                                        HapticUtils.performHapticFeedback(context, haptics, HapticType.HEAVY)
-                                        musicViewModel.restoreLastSafetyRollback()
-                                    }
-                                }
-                            )
-                        )
-                    } else emptyList()
+                    )
                 )
             )
 

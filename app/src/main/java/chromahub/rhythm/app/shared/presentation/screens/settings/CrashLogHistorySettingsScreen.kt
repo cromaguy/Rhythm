@@ -173,7 +173,6 @@ fun CrashLogHistorySettingsScreen(onBackClick: () -> Unit, appSettings: AppSetti
     val context = LocalContext.current
     val hapticFeedback = LocalHapticFeedback.current
     val crashLogHistory by appSettings.crashLogHistory.collectAsState()
-    val stallMonitorEnabled by appSettings.mainThreadStallMonitorEnabled.collectAsState()
     val dateFormat = remember { SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()) }
 
     var showLogDetailDialog by remember { mutableStateOf(false) }
@@ -257,20 +256,6 @@ fun CrashLogHistorySettingsScreen(onBackClick: () -> Unit, appSettings: AppSetti
             item {
                 Material3SettingsGroup(
                     items = listOf(
-                        toMaterial3SettingsItem(
-                            context = context,
-                            hapticFeedback = hapticFeedback,
-                            item = SettingItem(
-                                icon = MaterialSymbolIcon("monitor_heart", filled = true),
-                                title = "Main-thread stall watchdog",
-                                description = "Detect >5s UI stalls and capture native exit tombstones into crash history",
-                                toggleState = stallMonitorEnabled,
-                                onToggleChange = { enabled ->
-                                    appSettings.setMainThreadStallMonitorEnabled(enabled)
-                                    chromahub.rhythm.app.RhythmApplication.instance.setStallMonitorEnabled(enabled)
-                                }
-                            )
-                        ),
                         toMaterial3SettingsItem(
                             context = context,
                             hapticFeedback = hapticFeedback,

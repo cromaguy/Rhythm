@@ -104,6 +104,10 @@ class SettingsSearchHelpersTest {
         val keys = SettingsInlineToggleRegistry.supportedKeys()
         assertTrue("external_player_isolate_preview" in keys)
         assertTrue("unifiedLibraryEnabled" in keys)
+        assertTrue("music_haptics_enabled" in keys)
+        assertTrue("alac_decoder_enabled" in keys)
+        assertTrue("surround_downmix_enabled" in keys)
+        assertTrue("main_thread_stall_watchdog" in keys)
         assertNull(SettingsInlineToggleRegistry.resolveStoreToggle("unknown", playbackPrefs, uiPrefs, presetsPrefs))
     }
 }

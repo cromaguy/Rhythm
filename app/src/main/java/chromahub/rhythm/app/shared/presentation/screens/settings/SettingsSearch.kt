@@ -157,51 +157,191 @@ fun buildSettingsSearchIndex(context: Context): List<SearchableSettingItem> {
             id = "external_player_isolate_preview",
             title = context.getString(R.string.external_player_isolate_preview),
             description = context.getString(R.string.external_player_isolate_preview_desc),
-            keywords = listOf("external player", "isolated preview", "queue", "intent", "preview sheet"),
-            icon = MaterialSymbolIcon("layers"),
-            route = SettingsRoutes.EXTERNAL_PLAYER_CUSTOMIZATION,
-            parentScreen = context.getString(R.string.settings_external_player_customization),
+            keywords = listOf("external player", "isolated preview", "queue", "intent", "preview sheet", "labs"),
+            icon = MaterialSymbolIcon("queue_music"),
+            route = SettingsRoutes.EXPERIMENTAL_FEATURES,
+            parentScreen = context.getString(R.string.settings_labs),
             settingKey = "external_player_isolate_preview"
         ))
         add(SearchableSettingItem(
+            id = "sample_rate_cap_hz",
+            title = "Output Sample Rate Limit",
+            description = "Limit maximum sample rate for audio output",
+            keywords = listOf("sample rate", "resampler", "48khz", "96khz", "192khz", "labs"),
+            icon = MaterialSymbolIcon("speed"),
+            route = SettingsRoutes.LABS,
+            parentScreen = context.getString(R.string.settings_labs),
+            settingKey = "sample_rate_cap_hz"
+        ))
+        add(SearchableSettingItem(
+            id = "surround_downmix_enabled",
+            title = "Surround Stereo Downmix",
+            description = "Mix 5.1 and 7.1 surround tracks to stereo",
+            keywords = listOf("surround", "5.1", "7.1", "downmix", "multichannel", "labs"),
+            icon = MaterialSymbolIcon("surround_sound"),
+            route = SettingsRoutes.LABS,
+            parentScreen = context.getString(R.string.settings_labs),
+            settingKey = "surround_downmix_enabled"
+        ))
+        add(SearchableSettingItem(
+            id = "alac_decoder_enabled",
+            title = "Software ALAC Decoder",
+            description = "Decode Apple Lossless (.m4a) tracks in software",
+            keywords = listOf("alac", "apple lossless", "m4a", "decoder", "labs"),
+            icon = MaterialSymbolIcon("high_quality"),
+            route = SettingsRoutes.LABS,
+            parentScreen = context.getString(R.string.settings_labs),
+            settingKey = "alac_decoder_enabled"
+        ))
+        add(SearchableSettingItem(
             id = "music_haptics_enabled",
-            title = "Beat-Sync Music Haptics",
-            description = "Vibrate gently in sync with low-frequency beats and transient peaks",
-            keywords = listOf("music haptics", "beat sync", "vibration", "tactile", "haptics"),
+            title = context.getString(R.string.settings_rhythm_haptics),
+            description = context.getString(R.string.settings_rhythm_haptics_desc),
+            keywords = listOf("rhythm haptics", "music haptics", "beat sync", "vibration", "tactile", "haptics", "labs"),
             icon = MaterialSymbolIcon("vibration"),
-            route = SettingsRoutes.PLAYBACK,
-            parentScreen = context.getString(R.string.settings_playback),
+            route = SettingsRoutes.RHYTHM_HAPTICS,
+            parentScreen = context.getString(R.string.settings_labs),
             settingKey = "music_haptics_enabled"
         ))
         add(SearchableSettingItem(
-            id = "automix_bpm_sync_enabled",
-            title = "Smart AutoMix (BPM & Bass Swap)",
-            description = "Beat-match crossfades and swap sub-bass across phrasing boundaries",
-            keywords = listOf("automix", "crossfade", "bpm", "dj", "transition", "bass swap"),
+            id = "rhythm_haptics_mode",
+            title = context.getString(R.string.settings_rhythm_haptics_mode),
+            description = context.getString(R.string.settings_rhythm_haptics_mode_desc),
+            keywords = listOf("rhythm haptics", "haptic style", "bass", "beats", "vocals", "mode"),
             icon = MaterialSymbolIcon("tune"),
-            route = SettingsRoutes.CROSSFADE,
-            parentScreen = context.getString(R.string.settings_crossfade),
+            route = SettingsRoutes.RHYTHM_HAPTICS,
+            parentScreen = context.getString(R.string.settings_rhythm_haptics)
+        ))
+        add(SearchableSettingItem(
+            id = "rhythm_haptics_strength",
+            title = context.getString(R.string.settings_rhythm_haptics_strength),
+            description = context.getString(R.string.settings_rhythm_haptics_strength_desc),
+            keywords = listOf("rhythm haptics", "vibration strength", "intensity", "haptics"),
+            icon = MaterialSymbolIcon("bolt"),
+            route = SettingsRoutes.RHYTHM_HAPTICS,
+            parentScreen = context.getString(R.string.settings_rhythm_haptics)
+        ))
+        add(SearchableSettingItem(
+            id = "rhythm_haptics_mute_external",
+            title = context.getString(R.string.settings_rhythm_haptics_mute_external),
+            description = context.getString(R.string.settings_rhythm_haptics_mute_external_desc),
+            keywords = listOf("rhythm haptics", "bluetooth", "wired", "external audio", "mute"),
+            icon = RhythmIcons.Devices.Usb,
+            route = SettingsRoutes.RHYTHM_HAPTICS,
+            parentScreen = context.getString(R.string.settings_rhythm_haptics)
+        ))
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+            add(SearchableSettingItem(
+                id = "rhythm_haptics_system_generator",
+                title = context.getString(R.string.settings_rhythm_haptics_system_generator),
+                description = context.getString(R.string.settings_rhythm_haptics_system_generator_desc),
+                keywords = listOf("rhythm haptics", "system haptics", "audio coupled", "vibration"),
+                icon = MaterialSymbolIcon("graphic_eq"),
+                route = SettingsRoutes.RHYTHM_HAPTICS,
+                parentScreen = context.getString(R.string.settings_rhythm_haptics)
+            ))
+        }
+        add(SearchableSettingItem(
+            id = "automix_bpm_sync_enabled",
+            title = "AutoMix Tempo Transitions",
+            description = "Beat-match crossfades with smooth bass transitions",
+            keywords = listOf("automix", "crossfade", "bpm", "dj", "transition", "bass swap", "labs"),
+            icon = MaterialSymbolIcon("graphic_eq"),
+            route = SettingsRoutes.LABS,
+            parentScreen = context.getString(R.string.settings_labs),
             settingKey = "automix_bpm_sync_enabled"
         ))
         add(SearchableSettingItem(
             id = "status_bar_ticker_enabled",
-            title = "Status-Bar Ticker Lyrics (OEM)",
-            description = "Broadcast the active synced lyric line via OEM status-bar ticker notification",
-            keywords = listOf("status bar", "ticker", "lyrics", "flyme", "hyperos", "miui"),
+            title = "Status-Bar Lyric Ticker",
+            description = "Show synced lyrics in supported status bars",
+            keywords = listOf("status bar", "ticker", "lyrics", "flyme", "hyperos", "miui", "labs"),
             icon = MaterialSymbolIcon("subtitles"),
-            route = SettingsRoutes.LYRICS,
-            parentScreen = context.getString(R.string.settings_lyrics_source),
+            route = SettingsRoutes.LABS,
+            parentScreen = context.getString(R.string.settings_labs),
             settingKey = "status_bar_ticker_enabled"
         ))
         add(SearchableSettingItem(
             id = "agsl_fluid_backdrop_enabled",
-            title = "Beat-Sync AGSL Backdrop",
-            description = "Animate beat-driven multi-stop album art fluid shader on Android 13+",
-            keywords = listOf("agsl", "fluid", "shader", "backdrop", "player"),
-            icon = MaterialSymbolIcon("blur_on"),
-            route = SettingsRoutes.PLAYER_CUSTOMIZATION,
-            parentScreen = context.getString(R.string.settings_player_customization),
+            title = "Fluid Player Backdrop",
+            description = "Animate beat-synced album art shaders on Android 13+",
+            keywords = listOf("agsl", "fluid", "shader", "backdrop", "player", "labs"),
+            icon = MaterialSymbolIcon("water_drop"),
+            route = SettingsRoutes.LABS,
+            parentScreen = context.getString(R.string.settings_labs),
             settingKey = "agsl_fluid_backdrop_enabled"
+        ))
+        add(SearchableSettingItem(
+            id = "listenbrainz_scrobble",
+            title = "ListenBrainz",
+            description = "Connect your ListenBrainz token to log plays",
+            keywords = listOf("listenbrainz", "scrobble", "tracking", "labs"),
+            icon = MaterialSymbolIcon("graphic_eq"),
+            route = SettingsRoutes.LABS,
+            parentScreen = context.getString(R.string.settings_labs),
+            settingKey = "listenbrainz_scrobble"
+        ))
+        add(SearchableSettingItem(
+            id = "librefm_scrobble",
+            title = "Libre.fm",
+            description = "Connect your Libre.fm account to scrobble tracks",
+            keywords = listOf("librefm", "libre.fm", "scrobble", "gnu fm", "labs"),
+            icon = MaterialSymbolIcon("radio"),
+            route = SettingsRoutes.LABS,
+            parentScreen = context.getString(R.string.settings_labs),
+            settingKey = "librefm_scrobble"
+        ))
+        add(SearchableSettingItem(
+            id = "maloja_scrobble",
+            title = "Maloja Server",
+            description = "Connect a self-hosted Maloja scrobbling server",
+            keywords = listOf("maloja", "self-hosted", "scrobble", "server", "labs"),
+            icon = MaterialSymbolIcon("dns"),
+            route = SettingsRoutes.LABS,
+            parentScreen = context.getString(R.string.settings_labs),
+            settingKey = "maloja_scrobble"
+        ))
+        if (chromahub.rhythm.app.infrastructure.network.presence.DiscordPresenceFactory.isSupported()) {
+            add(SearchableSettingItem(
+                id = "discord_rpc_enabled",
+                title = "Discord Rich Presence",
+                description = "Show your current track on your Discord profile",
+                keywords = listOf("discord", "rich presence", "rpc", "ipc", "status", "labs"),
+                icon = MaterialSymbolIcon("sensors"),
+                route = SettingsRoutes.LABS,
+                parentScreen = context.getString(R.string.settings_labs),
+                settingKey = "discord_rpc_enabled"
+            ))
+        }
+        add(SearchableSettingItem(
+            id = "main_thread_stall_watchdog",
+            title = "App Hang Detector",
+            description = "Detect freezes and save diagnostic crash reports",
+            keywords = listOf("watchdog", "anr", "stall", "crash", "tombstone", "diagnostics", "labs"),
+            icon = MaterialSymbolIcon("monitor_heart"),
+            route = SettingsRoutes.LABS,
+            parentScreen = context.getString(R.string.settings_labs),
+            settingKey = "main_thread_stall_watchdog"
+        ))
+        add(SearchableSettingItem(
+            id = "m3u8_playlist_sync",
+            title = "Auto Playlist Sync",
+            description = "Automatically export updated playlists to a folder",
+            keywords = listOf("m3u", "m3u8", "playlist", "sync", "saf", "folder", "labs"),
+            icon = MaterialSymbolIcon("sync"),
+            route = SettingsRoutes.LABS,
+            parentScreen = context.getString(R.string.settings_labs),
+            settingKey = "m3u8_playlist_sync"
+        ))
+        add(SearchableSettingItem(
+            id = "backup_safety_rollback",
+            title = "Restore Previous State",
+            description = "Revert changes made by the last backup restore",
+            keywords = listOf("rollback", "restore", "backup", "snapshot", "labs"),
+            icon = MaterialSymbolIcon("history"),
+            route = SettingsRoutes.LABS,
+            parentScreen = context.getString(R.string.settings_labs),
+            settingKey = "backup_safety_rollback"
         ))
         add(SearchableSettingItem(
             id = "album_bottom_sheet_blur",
@@ -899,10 +1039,10 @@ fun buildSettingsSearchIndex(context: Context): List<SearchableSettingItem> {
             id = "unified_library_enabled",
             title = context.getString(R.string.settings_unified_library),
             description = context.getString(R.string.settings_unified_library_desc),
-            keywords = listOf("unified", "library", "combine", "merge", "local", "streaming", "go mode", "subsonic", "jellyfin"),
+            keywords = listOf("unified", "library", "combine", "merge", "local", "streaming", "go mode", "subsonic", "jellyfin", "labs"),
             icon = MaterialSymbolIcon("layers"),
-            route = SettingsRoutes.LIBRARY_SETTINGS,
-            parentScreen = context.getString(R.string.settings_library_settings),
+            route = SettingsRoutes.EXPERIMENTAL_FEATURES,
+            parentScreen = context.getString(R.string.settings_labs),
             settingKey = "unifiedLibraryEnabled"
         ))
         add(SearchableSettingItem(
@@ -2022,15 +2162,6 @@ fun buildSettingsSearchIndex(context: Context): List<SearchableSettingItem> {
             parentScreen = context.getString(R.string.settings_miniplayer_customization)
         ))
 
-        add(SearchableSettingItem(
-            id = "external_player_isolate_preview",
-            title = context.getString(R.string.external_player_isolate_preview),
-            description = context.getString(R.string.external_player_isolate_preview_desc),
-            keywords = listOf("external", "isolate", "isolated", "preview", "queue", "preserve"),
-            icon = MaterialSymbolIcon("queue_music"),
-            route = SettingsRoutes.EXTERNAL_PLAYER_CUSTOMIZATION,
-            parentScreen = context.getString(R.string.settings_external_player_customization)
-        ))
         add(SearchableSettingItem(
             id = "external_player_continue_playback",
             title = context.getString(R.string.external_player_continue_playback),

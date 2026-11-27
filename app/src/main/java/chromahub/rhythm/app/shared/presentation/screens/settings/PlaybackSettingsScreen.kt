@@ -84,13 +84,6 @@ fun PlaybackSettingsScreen(
 
     val audioRoutingMode by appSettings.audioRoutingMode.collectAsState()
     val isBitPerfect = audioRoutingMode == "app"
-    val alacDecoderEnabled by appSettings.playbackPrefs.alacDecoderEnabled.collectAsState()
-    val surroundDownmixEnabled by appSettings.playbackPrefs.surroundDownmixEnabled.collectAsState()
-    val sampleRateCapHz by appSettings.playbackPrefs.sampleRateCapHz.collectAsState()
-    val musicHapticsEnabled by appSettings.playbackPrefs.musicHapticsEnabled.collectAsState()
-    val musicHapticsIntensity by appSettings.playbackPrefs.musicHapticsIntensity.collectAsState()
-    val musicHapticsMuteOnExternal by appSettings.playbackPrefs.musicHapticsMuteOnExternal.collectAsState()
-    val musicHapticsUseSystemGenerator by appSettings.playbackPrefs.musicHapticsUseSystemGenerator.collectAsState()
 
     CollapsibleHeaderScreen(
         title = context.getString(R.string.settings_playback_title),
@@ -178,8 +171,8 @@ fun PlaybackSettingsScreen(
                         title = context.getString(R.string.settings_skip_silence),
                         description = when {
                             isBitPerfect -> context.getString(R.string.audio_routing_bit_perfect_disabled_effect)
-                            isOffloadEnforced -> "Disabled under Lite Mode to conserve battery."
-                            isAudioOffloadActive && !skipSilenceEnabled -> "${context.getString(R.string.settings_skip_silence_desc)}\n(Enabling will disable hardware Audio Offload)"
+                            isOffloadEnforced -> "Unavailable in Lite Mode"
+                            isAudioOffloadActive && !skipSilenceEnabled -> "Unavailable while Audio Offload is active"
                             else -> context.getString(R.string.settings_skip_silence_desc)
                         },
                         toggleState = if (isOffloadEnforced || isAudioOffloadActive || isBitPerfect) false else skipSilenceEnabled,
@@ -195,9 +188,9 @@ fun PlaybackSettingsScreen(
                         title = context.getString(R.string.settings_crossfade),
                         description = when {
                             isBitPerfect -> context.getString(R.string.audio_routing_bit_perfect_disabled_effect)
-                            isOffloadEnforced -> "Disabled under Lite Mode to conserve battery."
+                            isOffloadEnforced -> "Unavailable in Lite Mode"
                             crossfadeEnabled -> "${context.getString(R.string.status_active)} • ${String.format(java.util.Locale.US, "%.1f", crossfadeDuration)}s"
-                            isAudioOffloadActive -> "${context.getString(R.string.status_disabled)}\n(Enabling will disable hardware Audio Offload)"
+                            isAudioOffloadActive -> "${context.getString(R.string.status_disabled)} • Turns off Audio Offload if enabled"
                             else -> context.getString(R.string.settings_crossfade_desc)
                         },
                         onClick = { if (!isBitPerfect) onNavigateTo(SettingsRoutes.CROSSFADE) },
@@ -208,8 +201,8 @@ fun PlaybackSettingsScreen(
                         title = context.getString(R.string.settings_mono_audio),
                         description = when {
                             isBitPerfect -> context.getString(R.string.audio_routing_bit_perfect_disabled_effect)
-                            isOffloadEnforced -> "Disabled under Lite Mode to conserve battery."
-                            isAudioOffloadActive && !monoAudioEnabled -> "${context.getString(R.string.settings_mono_audio_desc)}\n(Enabling will disable hardware Audio Offload)"
+                            isOffloadEnforced -> "Unavailable in Lite Mode"
+                            isAudioOffloadActive && !monoAudioEnabled -> "Turns off Audio Offload when enabled"
                             else -> context.getString(R.string.settings_mono_audio_desc)
                         },
                         toggleState = if (isOffloadEnforced || isBitPerfect) false else monoAudioEnabled,
@@ -221,8 +214,8 @@ fun PlaybackSettingsScreen(
                         title = context.getString(R.string.replay_gain),
                         description = when {
                             isBitPerfect -> context.getString(R.string.audio_routing_bit_perfect_disabled_effect)
-                            isOffloadEnforced -> "Disabled under Lite Mode to conserve battery."
-                            isAudioOffloadActive && !replayGain -> "${context.getString(R.string.replay_gain_desc)}\n(Enabling will disable hardware Audio Offload)"
+                            isOffloadEnforced -> "Unavailable in Lite Mode"
+                            isAudioOffloadActive && !replayGain -> "Turns off Audio Offload when enabled"
                             else -> context.getString(R.string.replay_gain_desc)
                         },
                         onClick = { if (!isBitPerfect) onNavigateTo(SettingsRoutes.REPLAY_GAIN) },
@@ -232,94 +225,19 @@ fun PlaybackSettingsScreen(
             ),
             SettingGroup(
                 title = context.getString(R.string.settings_section_audio_playback),
-                items = listOfNotNull(
+                items = listOf(
                     SettingItem(
                         icon = MaterialSymbolIcon("bolt", filled = true),
                         title = context.getString(R.string.settingsscreen_audio_offload),
                         description = when {
                             isBitPerfect -> context.getString(R.string.audio_routing_bit_perfect_disabled_effect)
-                            isOffloadEnforced -> "Enforced under Lite Mode to conserve battery."
+                            isOffloadEnforced -> "Always enabled in Lite Mode"
                             else -> context.getString(R.string.settingsscreen_audio_offload_desc)
                         },
                         toggleState = if (isOffloadEnforced) true else if (isBitPerfect) false else audioOffloadEnabled,
                         onToggleChange = { if (!isOffloadEnforced && !isBitPerfect) appSettings.setAudioOffloadEnabled(it) },
                         enabled = !isOffloadEnforced && !isBitPerfect
                     ),
-                    SettingItem(
-                        icon = MaterialSymbolIcon("surround_sound", filled = true),
-                        title = "Surround 5.1 / 7.1 Downmix",
-                        description = "Fold multichannel FLAC/ALAC/EAC3 tracks to stereo using ITU-R BS.775 coefficients",
-                        toggleState = surroundDownmixEnabled && !isBitPerfect,
-                        onToggleChange = { appSettings.playbackPrefs.setSurroundDownmixEnabled(it) },
-                        enabled = !isBitPerfect
-                    ),
-                    SettingItem(
-                        icon = MaterialSymbolIcon("high_quality", filled = true),
-                        title = "Software ALAC Decoder",
-                        description = "Decode 16/24-bit Apple Lossless (.m4a) via native software decoder for gapless bit-depth accuracy",
-                        toggleState = alacDecoderEnabled,
-                        onToggleChange = { appSettings.playbackPrefs.setAlacDecoderEnabled(it) }
-                    ),
-                    SettingItem(
-                        icon = MaterialSymbolIcon("speed", filled = true),
-                        title = "Maximum Output Sample Rate",
-                        description = when (sampleRateCapHz) {
-                            48_000 -> "48 kHz (Standard HAL / Bluetooth friendly)"
-                            96_000 -> "96 kHz (Hi-Res 96 kHz ceiling)"
-                            192_000 -> "192 kHz (Studio Master ceiling)"
-                            else -> "Native (No software sample-rate cap)"
-                        },
-                        onClick = {
-                            val next = when (sampleRateCapHz) {
-                                0 -> 48_000
-                                48_000 -> 96_000
-                                96_000 -> 192_000
-                                else -> 0
-                            }
-                            appSettings.playbackPrefs.setSampleRateCapHz(next)
-                        },
-                        enabled = !isBitPerfect
-                    ),
-                    SettingItem(
-                        icon = MaterialSymbolIcon("vibration", filled = true),
-                        title = "Beat-Sync Music Haptics",
-                        description = if (isBitPerfect) {
-                            context.getString(R.string.audio_routing_bit_perfect_disabled_effect)
-                        } else {
-                            "Pulse gentle vibration synced to bass kicks and vocals (Intensity: ${(musicHapticsIntensity * 100).toInt()}%)"
-                        },
-                        toggleState = musicHapticsEnabled && !isBitPerfect,
-                        onToggleChange = { appSettings.playbackPrefs.setMusicHapticsEnabled(it) },
-                        onClick = if (musicHapticsEnabled && !isBitPerfect) {
-                            {
-                                val next = when {
-                                    musicHapticsIntensity < 0.55f -> 0.7f
-                                    musicHapticsIntensity < 0.85f -> 1.0f
-                                    else -> 0.4f
-                                }
-                                appSettings.playbackPrefs.setMusicHapticsIntensity(next)
-                            }
-                        } else null,
-                        enabled = !isBitPerfect
-                    ),
-                    if (musicHapticsEnabled && !isBitPerfect) {
-                        SettingItem(
-                            icon = MaterialSymbolIcon("usb", filled = true),
-                            title = "Mute Haptics on USB DAC / Cast",
-                            description = "Automatically pause beat vibration when audio routes over USB DAC, HDMI, or external cast devices",
-                            toggleState = musicHapticsMuteOnExternal,
-                            onToggleChange = { appSettings.playbackPrefs.setMusicHapticsMuteOnExternal(it) }
-                        )
-                    } else null,
-                    if (musicHapticsEnabled && !isBitPerfect && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
-                        SettingItem(
-                            icon = MaterialSymbolIcon("graphic_eq", filled = true),
-                            title = "System HapticGenerator (Android 12+)",
-                            description = "Use Android's native audio-coupled haptic synthesizer when supported by device hardware",
-                            toggleState = musicHapticsUseSystemGenerator,
-                            onToggleChange = { appSettings.playbackPrefs.setMusicHapticsUseSystemGenerator(it) }
-                        )
-                    } else null,
                     SettingItem(
                         icon = MaterialSymbolIcon("tune", filled = true),
                         title = context.getString(R.string.settings_category_audio_engine_title),
