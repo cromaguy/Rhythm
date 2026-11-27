@@ -183,7 +183,7 @@ fun ExtraControlBottomSheet(
 
         if ("EQUALIZER" !in hiddenChips) {
             add(ControlAction(
-                icon = MaterialSymbolIcon("graphic_eq", filled = true),
+                icon = RhythmIcons.Equalizer,
                 label = context.getString(R.string.equalizer),
                 description = if (equalizerEnabled) context.getString(R.string.status_enabled) else context.getString(R.string.status_disabled),
                 containerColor = if (equalizerEnabled) tertiary else secondary,

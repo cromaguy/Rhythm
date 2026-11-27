@@ -30,7 +30,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -51,6 +53,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
@@ -82,6 +85,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -594,8 +598,8 @@ fun ExpressivePlayerScreen(
     }
     val accentBg = accentArtScheme.value?.first ?: MaterialTheme.colorScheme.primary
     val accentFg = accentArtScheme.value?.second ?: MaterialTheme.colorScheme.onPrimary
-    val accentGlass = accentFg.copy(alpha = 0.15f)
-    val accentGlassStrong = accentFg.copy(alpha = 0.28f)
+    val accentGlass = accentFg.copy(alpha = 0.22f)
+    val accentGlassStrong = accentFg.copy(alpha = 0.34f)
     val lyricsTextAlign = when (playerLyricsAlignment) {
         "START" -> TextAlign.Start; "END" -> TextAlign.End; else -> TextAlign.Center
     }
@@ -685,15 +689,17 @@ fun ExpressivePlayerScreen(
         } else null
     }
     val artColor = artworkColor.value ?: defaultSongColor
-    // Ambient contrast handling: maintain visibility against backdrop
-    val ambientTextColor = if ((artColor?.luminance() ?: 0f) > 0.65f) Color.Black else Color.White
+    // Ambient contrast handling: the blurred backdrop follows the artwork, so a bright artwork needs
+    // dark text/light frosted containers and a dark artwork needs the opposite.
+    val isLightArtwork = (artColor?.luminance() ?: 0f) > 0.6f
+    val ambientTextColor = if (isLightArtwork) Color.Black else Color.White
 
     val isPlayerActive by remember(swipeToDismissEnabled, expansionFractionProvider) {
         derivedStateOf { if (swipeToDismissEnabled) true else expansionFractionProvider() > 0.5f }
     }
     val isStatusLight = when {
         useAccentBackground -> accentBg.luminance() > 0.5f
-        isBackdropEnabled -> (artColor?.luminance() ?: 0f) > 0.65f
+        isBackdropEnabled -> isLightArtwork
         else -> !isDarkTheme
     }
 
@@ -713,13 +719,22 @@ fun ExpressivePlayerScreen(
     }
 
     val ambientAlpha = if (isBackdropEnabled) playerAmbientBackdropIntensity else 1f
-    val ambientPlayContainer = Color.White
-    val ambientPlayContent = Color.Black
-    val ambientControlContainer = Color.White.copy(alpha = 0.18f)
-    val ambientControlContent = Color.White
+    val ambientPlayContainer = if (isLightArtwork) Color.Black else Color.White
+    val ambientPlayContent = if (isLightArtwork) Color.White else Color.Black
+    // Acrylic glass: translucent but frosted, never a barely-there wash.
+    val ambientControlContainer = if (isLightArtwork) Color.Black.copy(alpha = 0.18f) else Color.White.copy(alpha = 0.28f)
+    val ambientControlContent = if (isLightArtwork) Color.Black else Color.White
+    // Active/selected controls: brighten the frosted glass on dark artwork, darken it on light artwork.
+    val ambientAccentContainer = if (isLightArtwork) Color.Black.copy(alpha = 0.30f) else Color.White.copy(alpha = 0.44f)
     val controlsContainerColor by animateColorAsState(
         targetValue = when {
             useAccentBackground -> accentGlass
+            needsDarkSurfaces && isLightArtwork && artColor != null -> Color(
+                red = (artColor.red * 0.3f + 0.65f).coerceIn(0f, 1f),
+                green = (artColor.green * 0.3f + 0.65f).coerceIn(0f, 1f),
+                blue = (artColor.blue * 0.3f + 0.65f).coerceIn(0f, 1f),
+                alpha = ambientAlpha
+            )
             needsDarkSurfaces && artColor != null -> Color(
                 red = artColor.red * 0.18f + 0.08f,
                 green = artColor.green * 0.18f + 0.08f,
@@ -740,10 +755,6 @@ fun ExpressivePlayerScreen(
         },
         animationSpec = tween(400, easing = FastOutSlowInEasing), label = "outerBoxBgColor"
     )
-    val lyricsScrimColor by animateColorAsState(
-        targetValue = if (useAccentBackground) accentBg else MaterialTheme.colorScheme.surface,
-        animationSpec = tween(400, easing = FastOutSlowInEasing), label = "lyricsScrimColor"
-    )
     val onSurfaceColor by animateColorAsState(
         targetValue = if (useAccentBackground) accentFg else if (isBackdropEnabled) ambientTextColor else MaterialTheme.colorScheme.onSurface,
         animationSpec = tween(400), label = "onSurfaceColor"
@@ -755,6 +766,12 @@ fun ExpressivePlayerScreen(
     val surfaceContainerColor by animateColorAsState(
         targetValue = when {
             useAccentBackground -> accentGlass
+            needsDarkSurfaces && isLightArtwork && artColor != null -> Color(
+                red = (artColor.red * 0.3f + 0.62f).coerceIn(0f, 1f),
+                green = (artColor.green * 0.3f + 0.62f).coerceIn(0f, 1f),
+                blue = (artColor.blue * 0.3f + 0.62f).coerceIn(0f, 1f),
+                alpha = ambientAlpha
+            )
             needsDarkSurfaces && artColor != null -> Color(
                 red = artColor.red * 0.14f + 0.05f,
                 green = artColor.green * 0.14f + 0.05f,
@@ -766,10 +783,32 @@ fun ExpressivePlayerScreen(
         },
         animationSpec = tween(400), label = "surfaceContainerColor"
     )
+    // The top bar chip floats over the canvas in every mode, so it gets its own opaque fill per
+    // mode instead of reusing a translucent container (which read as see-through): ambient glass is
+    // made solid, the accent canvas gets a chip blended towards its foreground, and mono follows the
+    // theme surface.
+    val topBarContainerColor by animateColorAsState(
+        targetValue = when {
+            useAccentBackground -> lerp(accentBg, accentFg, 0.22f)
+            isBackdropEnabled -> controlsContainerColor.copy(alpha = 1f)
+            else -> monoBg
+        },
+        animationSpec = tween(400), label = "topBarContainerColor"
+    )
+    val topBarContentColor by animateColorAsState(
+        targetValue = when {
+            useAccentBackground -> accentFg
+            isBackdropEnabled -> ambientTextColor
+            else -> MaterialTheme.colorScheme.onSurface
+        },
+        animationSpec = tween(400), label = "topBarContentColor"
+    )
     val primaryColor by animateColorAsState(
-        targetValue = if (useAccentBackground) accentFg else if (isBackdropEnabled) Color.White else MaterialTheme.colorScheme.primary,
+        targetValue = if (useAccentBackground) accentFg else if (isBackdropEnabled) ambientTextColor else MaterialTheme.colorScheme.primary,
         animationSpec = tween(400), label = "canvasPrimaryColor"
     )
+    // "On" state for toggles; the accent container has to flip with the artwork luminance too.
+    val accentActiveContainer = if (isBackdropEnabled) ambientAccentContainer else primaryColor.copy(alpha = 0.35f)
     val isCompactWidth = windowScreenWidthDp() < 360
     val isCompactHeight = windowScreenHeightDp() < 640
     val isTablet = windowScreenWidthDp() >= 600
@@ -1037,7 +1076,8 @@ fun ExpressivePlayerScreen(
 
     val unifiedBackground = @Composable { modifier: Modifier ->
         val currentArtworkUri = debouncedSong.value?.artworkUri
-        val gc = Color.Black
+        // Blend/fade colour for the backdrop: light artwork fades into white, dark artwork into black.
+        val gc = if (isLightArtwork) Color.White else Color.Black
         // Crossfade the artwork↔gradient switch to prevent the gradient from flashing
         // momentarily when skipping to a song whose artwork is not yet validated.
         AnimatedContent(
@@ -1073,7 +1113,7 @@ fun ExpressivePlayerScreen(
                                     Brush.verticalGradient(
                                         listOf(
                                             (artworkColor.value ?: Color(0xFF16161A)).copy(alpha = 0.55f),
-                                            Color.Black
+                                            gc
                                         )
                                     )
                                 )
@@ -1160,9 +1200,17 @@ fun ExpressivePlayerScreen(
                             .alpha(lyricsOverlayAlpha)
                             .background(
                                 if (isLandscapeTablet) Brush.horizontalGradient(
-                                    colors = listOf(gc.copy(alpha = 0.65f), gc.copy(alpha = 0.50f), gc.copy(alpha = 0.72f))
+                                    colors = listOf(
+                                        Color.Black.copy(alpha = 0.65f),
+                                        Color.Black.copy(alpha = 0.50f),
+                                        Color.Black.copy(alpha = 0.72f)
+                                    )
                                 ) else Brush.verticalGradient(
-                                    colors = listOf(gc.copy(alpha = 0.72f), gc.copy(alpha = 0.52f), gc.copy(alpha = 0.78f))
+                                    colors = listOf(
+                                        Color.Black.copy(alpha = 0.72f),
+                                        Color.Black.copy(alpha = 0.52f),
+                                        Color.Black.copy(alpha = 0.78f)
+                                    )
                                 )
                             )
                     )
@@ -1211,6 +1259,21 @@ fun ExpressivePlayerScreen(
                 }
             )
         }
+
+        ExpressiveTopBar(
+            onBack = {
+                HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
+                onBack()
+            },
+            containerColor = topBarContainerColor,
+            contentColor = topBarContentColor,
+            // Accent and mono canvases are flat, so the bar only blends into the artwork backdrop.
+            showScrim = isBackdropEnabled,
+            // Collapses away with the sheet instead of floating over a half-expanded player.
+            collapseFraction = if (swipeToDismissEnabled) 1f
+                else ((expansionFractionProvider() - 0.55f) / 0.45f).coerceIn(0f, 1f),
+            modifier = Modifier.align(Alignment.TopCenter).then(swipeMinimizeModifier)
+        )
 
         Column(
             modifier = Modifier.fillMaxSize().statusBarsPadding().then(swipeMinimizeModifier)
@@ -1319,7 +1382,7 @@ fun ExpressivePlayerScreen(
                                             contentDescription = null,
                                             modifier = Modifier.size(if (isSmall) 96.dp else 144.dp),
                                             tint = when {
-                                                showDarkBg -> Color.White.copy(alpha = 0.85f)
+                                                showDarkBg -> ambientTextColor.copy(alpha = 0.85f)
                                                 useAccentBackground -> accentFg
                                                 else -> monoFg
                                             }
@@ -1373,7 +1436,6 @@ fun ExpressivePlayerScreen(
                         activeColor = if (isBackdropEnabled) ambientTextColor else primaryColor,
                         buttonContainerColor = if (useAccentBackground) accentFg else null,
                         buttonContentColor = if (useAccentBackground) accentBg else null,
-                        fadeColor = if (isBackdropEnabled) null else lyricsScrimColor,
                         onNavigateToLyricsSettings = onNavigateToLyricsSettings,
                         modifier = modifier
                     )
@@ -1482,11 +1544,17 @@ fun ExpressivePlayerScreen(
                                         Column(verticalArrangement = Arrangement.Center, modifier = Modifier.fillMaxWidth(),
                                             horizontalAlignment = if (playerMergeControlsToBottom) Alignment.CenterHorizontally else Alignment.Start) {
                                             AutoScrollingTextOnDemand(text = targetTitle, style = targetTextStyle.copy(color = onSurfaceColor),
-                                                gradientEdgeColor = when { showDarkBg -> Color.Black; else -> outerBoxBgColor },
+                                                gradientEdgeColor = when {
+                                                    showDarkBg -> if (isLightArtwork) Color.White else Color.Black
+                                                    else -> outerBoxBgColor
+                                                },
                                                 modifier = Modifier.fillMaxWidth().clickable { HapticUtils.performHapticFeedback(context, haptic, HapticType.MEDIUM); onSongInfoClick() }, respectGlobalSetting = true,
                                                 textAlign = if (playerMergeControlsToBottom) TextAlign.Center else TextAlign.Start)
                                             AutoScrollingTextOnDemand(text = targetArtist, style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Medium, color = onSurfaceVariantColor),
-                                                gradientEdgeColor = when { showDarkBg -> Color.Black; else -> outerBoxBgColor },
+                                                gradientEdgeColor = when {
+                                                    showDarkBg -> if (isLightArtwork) Color.White else Color.Black
+                                                    else -> outerBoxBgColor
+                                                },
                                                 modifier = Modifier.fillMaxWidth().clickable { HapticUtils.performHapticFeedback(context, haptic, HapticType.MEDIUM); onShowArtist() }, respectGlobalSetting = true,
                                                 textAlign = if (playerMergeControlsToBottom) TextAlign.Center else TextAlign.Start)
                                         }
@@ -1514,7 +1582,7 @@ fun ExpressivePlayerScreen(
                                             weight = 1f,
                                             isFirst = false,
                                             isLast = true,
-                                            containerColor = if (isFavorite) primaryColor.copy(alpha = 0.35f) else controlsContainerColor,
+                                            containerColor = if (isFavorite) accentActiveContainer else controlsContainerColor,
                                             contentColor = if (isFavorite) primaryColor else when { needsDarkSurfaces -> ambientControlContent; useAccentBackground -> accentFg; else -> monoFg },
                                             icon = if (isFavorite) MaterialSymbolIcon("thumb_up", filled = true) else MaterialSymbolIcon("thumb_up", filled = false)
                                         )
@@ -1755,7 +1823,7 @@ fun ExpressivePlayerScreen(
                                                     iconSize = 20.dp,
                                                     text = null,
                                                     contentDescription = stringResource(R.string.expressiveplayerscreen_lyrics),
-                                                    containerColor = if (showLyricsView) primaryColor.copy(alpha = 0.35f) else controlsContainerColor,
+                                                    containerColor = if (showLyricsView) accentActiveContainer else controlsContainerColor,
                                                     contentColor = if (showLyricsView) primaryColor else defaultContentColor
                                                 )
                                             }
@@ -1772,7 +1840,7 @@ fun ExpressivePlayerScreen(
                                                     iconSize = 20.dp,
                                                     text = null,
                                                     contentDescription = stringResource(R.string.expressiveplayerscreen_favorite),
-                                                    containerColor = if (isFavorite) primaryColor.copy(alpha = 0.35f) else controlsContainerColor,
+                                                    containerColor = if (isFavorite) accentActiveContainer else controlsContainerColor,
                                                     contentColor = if (isFavorite) primaryColor else defaultContentColor
                                                 )
                                             }
@@ -1855,7 +1923,7 @@ fun ExpressivePlayerScreen(
                                                     iconSize = 20.dp,
                                                     text = null,
                                                     contentDescription = stringResource(R.string.action_shuffle),
-                                                    containerColor = if (isShuffleEnabled) primaryColor.copy(alpha = 0.35f) else controlsContainerColor,
+                                                    containerColor = if (isShuffleEnabled) accentActiveContainer else controlsContainerColor,
                                                     contentColor = if (isShuffleEnabled) primaryColor else defaultContentColor
                                                 )
                                             }
@@ -1877,7 +1945,7 @@ fun ExpressivePlayerScreen(
                                                     iconSize = 20.dp,
                                                     text = null,
                                                     contentDescription = stringResource(R.string.player_chip_repeat),
-                                                    containerColor = if (repeatMode != 0) primaryColor.copy(alpha = 0.35f) else controlsContainerColor,
+                                                    containerColor = if (repeatMode != 0) accentActiveContainer else controlsContainerColor,
                                                     contentColor = if (repeatMode != 0) primaryColor else defaultContentColor
                                                 )
                                             }
@@ -2048,7 +2116,11 @@ fun ExpressivePlayerScreen(
                                                     iconSize = 20.dp,
                                                     text = deviceName,
                                                     textStyle = deviceTextStyle,
-                                                    gradientEdgeColor = when { needsDarkSurfaces -> Color.Black; useAccentBackground -> accentFg; else -> monoBg },
+                                                    gradientEdgeColor = when {
+                                                        needsDarkSurfaces -> if (isLightArtwork) Color.White else Color.Black
+                                                        useAccentBackground -> accentFg
+                                                        else -> monoBg
+                                                    },
                                                     respectMarqueeGlobalSetting = false,
                                                     contentDescription = stringResource(R.string.expressiveplayerscreen_device),
                                                     containerColor = controlsContainerColor,
@@ -2110,7 +2182,7 @@ fun ExpressivePlayerScreen(
                                                     icon = RhythmIcons.Player.Lyrics,
                                                     iconSize = 20.dp,
                                                     contentDescription = stringResource(R.string.expressiveplayerscreen_lyrics),
-                                                    containerColor = if (showLyricsView) primaryColor.copy(alpha = 0.35f) else controlsContainerColor,
+                                                    containerColor = if (showLyricsView) accentActiveContainer else controlsContainerColor,
                                                     contentColor = if (showLyricsView) primaryColor else defaultContentColor
                                                 )
                                             }
@@ -2126,7 +2198,7 @@ fun ExpressivePlayerScreen(
                                                     icon = if (isFavorite) MaterialSymbolIcon("thumb_up", filled = true) else MaterialSymbolIcon("thumb_up", filled = false),
                                                     iconSize = 20.dp,
                                                     contentDescription = stringResource(R.string.expressiveplayerscreen_favorite),
-                                                    containerColor = if (isFavorite) primaryColor.copy(alpha = 0.35f) else controlsContainerColor,
+                                                    containerColor = if (isFavorite) accentActiveContainer else controlsContainerColor,
                                                     contentColor = if (isFavorite) primaryColor else defaultContentColor
                                                 )
                                             }
@@ -2142,7 +2214,7 @@ fun ExpressivePlayerScreen(
                                                     icon = RhythmIcons.Player.Shuffle,
                                                     iconSize = 20.dp,
                                                     contentDescription = stringResource(R.string.action_shuffle),
-                                                    containerColor = if (isShuffleEnabled) primaryColor.copy(alpha = 0.35f) else controlsContainerColor,
+                                                    containerColor = if (isShuffleEnabled) accentActiveContainer else controlsContainerColor,
                                                     contentColor = if (isShuffleEnabled) primaryColor else defaultContentColor
                                                 )
                                             }
@@ -2163,7 +2235,7 @@ fun ExpressivePlayerScreen(
                                                     icon = repeatIcon,
                                                     iconSize = 20.dp,
                                                     contentDescription = stringResource(R.string.player_chip_repeat),
-                                                    containerColor = if (repeatMode != 0) primaryColor.copy(alpha = 0.35f) else controlsContainerColor,
+                                                    containerColor = if (repeatMode != 0) accentActiveContainer else controlsContainerColor,
                                                     contentColor = if (repeatMode != 0) primaryColor else defaultContentColor
                                                 )
                                             }
@@ -2522,7 +2594,7 @@ fun ExpressivePlayerScreen(
                             autoHideAfterMs = if (expressiveQualityBadgeAlwaysVisible) 0L else 5000L,
                             revealTrigger = qualityBadgeRevealToken,
                             tint = when {
-                                showDarkBg -> Color.White
+                                showDarkBg -> ambientTextColor
                                 useAccentBackground -> accentFg
                                 else -> null
                             },
@@ -2626,14 +2698,29 @@ private fun RhythmPlayerLyricsPanel(
     subtitleColor: Color = MaterialTheme.colorScheme.onSurfaceVariant,
     activeColor: Color = MaterialTheme.colorScheme.primary,
     buttonContainerColor: Color? = null,
-    buttonContentColor: Color? = null,
-    fadeColor: Color? = null
+    buttonContentColor: Color? = null
 ) {
     val context = LocalContext.current
     val haptic = LocalHapticFeedback.current
     val hasLyrics = lyrics?.hasLyrics() == true && lyrics.isErrorMessage().not()
 
-    Box(modifier = modifier, contentAlignment = Alignment.Center) {
+    Box(
+        modifier = modifier
+            .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
+            .drawWithContent {
+                drawContent()
+                drawRect(
+                    brush = Brush.verticalGradient(
+                        0f to Color.Transparent,
+                        0.10f to Color.Black,
+                        0.90f to Color.Black,
+                        1f to Color.Transparent
+                    ),
+                    blendMode = BlendMode.DstIn
+                )
+            },
+        contentAlignment = Alignment.Center
+    ) {
         when {
             isLoadingLyrics -> {
                 Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth().padding(vertical = 32.dp)) {
@@ -2738,22 +2825,6 @@ private fun RhythmPlayerLyricsPanel(
                 }
             }
         }
-        if (fadeColor != null) {
-            Box(
-                Modifier
-                    .fillMaxWidth()
-                    .fillMaxHeight(0.14f)
-                    .align(Alignment.TopCenter)
-                    .background(Brush.verticalGradient(listOf(fadeColor, fadeColor.copy(alpha = 0f))))
-            )
-            Box(
-                Modifier
-                    .fillMaxWidth()
-                    .fillMaxHeight(0.14f)
-                    .align(Alignment.BottomCenter)
-                    .background(Brush.verticalGradient(listOf(fadeColor.copy(alpha = 0f), fadeColor)))
-            )
-        }
     }
 }
 
@@ -2773,4 +2844,73 @@ private fun filterPlainLyricsByPreference(rawLyrics: String, showTranslation: Bo
         if (!isBracketTrans && !isBracketRoman) prevNonLatin = chromahub.rhythm.app.util.LyricsParser.hasNonLatinScript(t)
     }
     return filteredLines.joinToString("\n")
+}
+
+private val ExpressiveTopBarHeight = 56.dp
+
+@Composable
+private fun ExpressiveTopBar(
+    onBack: () -> Unit,
+    containerColor: Color,
+    contentColor: Color,
+    collapseFraction: Float = 1f,
+    showScrim: Boolean = true,
+    modifier: Modifier = Modifier
+) {
+    val density = LocalDensity.current
+    val topInset = with(density) { WindowInsets.statusBars.getTop(this).toDp() }
+    val barHeight = topInset + ExpressiveTopBarHeight
+    val collapse = collapseFraction.coerceIn(0f, 1f)
+    // Fade the bar into whatever is behind it: a light scrim over bright artwork, dark otherwise.
+    // Only the artwork backdrop needs this - the accent and mono canvases are already flat, so a
+    // blend there just looked like a dirty band behind the status bar.
+    val scrimColor = if (contentColor.luminance() < 0.5f) Color.White else Color.Black
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(barHeight)
+            .graphicsLayer {
+                alpha = collapse
+                translationY = -(1f - collapse) * barHeight.toPx()
+            }
+    ) {
+        if (showScrim && collapse > 0f) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        Brush.verticalGradient(
+                            0f to scrimColor.copy(alpha = 0.6f * collapse),
+                            0.55f to scrimColor.copy(alpha = 0.28f * collapse),
+                            1f to Color.Transparent
+                        )
+                    )
+            )
+        }
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .statusBarsPadding()
+                .height(ExpressiveTopBarHeight)
+                .padding(horizontal = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = onBack) {
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .background(containerColor),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = RhythmIcons.Back,
+                        contentDescription = "Back",
+                        tint = contentColor,
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
+            }
+        }
+    }
 }

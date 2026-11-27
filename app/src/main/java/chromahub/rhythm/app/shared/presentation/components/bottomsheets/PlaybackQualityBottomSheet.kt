@@ -365,16 +365,9 @@ fun PlaybackQualityBottomSheet(
                         )
                     )
                 }
-                chromahub.rhythm.app.shared.presentation.components.dialogs.SignalPathDialog(
+                SignalPathBottomSheet(
                     report = report,
-                    onDismiss = { showSignalPathDialog = false },
-                    onConfigureOutput = onRouteAudio?.let { action ->
-                        {
-                            showSignalPathDialog = false
-                            onDismissRequest()
-                            action()
-                        }
-                    }
+                    onDismissRequest = { showSignalPathDialog = false }
                 )
             }
         }
