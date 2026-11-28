@@ -95,6 +95,9 @@ import chromahub.rhythm.app.BuildConfig
 import chromahub.rhythm.app.shared.data.model.AppSettings
 import chromahub.rhythm.app.shared.data.model.Playlist
 import chromahub.rhythm.app.shared.data.model.Song
+import chromahub.rhythm.app.shared.presentation.components.bottomsheets.SongSwipeActionBottomSheet
+import chromahub.rhythm.app.shared.presentation.components.common.icon
+import chromahub.rhythm.app.shared.presentation.components.common.label
 import chromahub.rhythm.app.shared.data.repository.PlaybackStatsRepository
 import chromahub.rhythm.app.shared.data.repository.StatsTimeRange
 import chromahub.rhythm.app.util.GsonUtils
@@ -185,6 +188,9 @@ fun GesturesSettingsScreen(onBackClick: () -> Unit) {
 
     // Library Gestures
     val gestureLibrarySwipeTabs by appSettings.gestureLibrarySwipeTabs.collectAsState()
+    val gestureSongSwipeEnabled by appSettings.gestureSongSwipeActionEnabled.collectAsState()
+    val gestureSongSwipeAction by appSettings.gestureSongSwipeAction.collectAsState()
+    var showSongSwipeActionSheet by remember { mutableStateOf(false) }
 
     // Lyrics Gestures
     val tapLyricsToFullScreen by appSettings.tapLyricsToFullScreen.collectAsState()
@@ -346,6 +352,26 @@ fun GesturesSettingsScreen(onBackClick: () -> Unit) {
                             HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
                             appSettings.setGestureLibrarySwipeTabs(it)
                         }
+                    ),
+                    SettingItem(
+                        icon = MaterialSymbolIcon("swipe_right", filled = true),
+                        title = context.getString(R.string.settings_song_swipe_action),
+                        description = context.getString(R.string.settings_song_swipe_action_desc),
+                        toggleState = gestureSongSwipeEnabled,
+                        onToggleChange = {
+                            HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
+                            appSettings.setGestureSongSwipeActionEnabled(it)
+                        }
+                    ),
+                    SettingItem(
+                        icon = gestureSongSwipeAction.icon(),
+                        title = context.getString(R.string.settings_song_swipe_action_choose),
+                        description = gestureSongSwipeAction.label(context),
+                        enabled = gestureSongSwipeEnabled,
+                        onClick = {
+                            HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
+                            showSongSwipeActionSheet = true
+                        }
                     )
                 )
 
@@ -458,6 +484,13 @@ fun GesturesSettingsScreen(onBackClick: () -> Unit) {
 
             item { Spacer(modifier = Modifier.height(24.dp)) }
         }
+    }
+
+    if (showSongSwipeActionSheet) {
+        SongSwipeActionBottomSheet(
+            onDismiss = { showSongSwipeActionSheet = false },
+            appSettings = appSettings
+        )
     }
 }
 

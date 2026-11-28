@@ -5,17 +5,21 @@
 
 package chromahub.rhythm.app.shared.presentation.components.common
 
-import androidx.compose.animation.core.Animatable
+import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.ScrollScope
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxValue
+import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
@@ -25,8 +29,10 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollDispatcher
@@ -36,7 +42,6 @@ import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerInputEventHandler
 import androidx.compose.ui.input.pointer.PointerInputScope
 import androidx.compose.ui.input.pointer.SuspendingPointerInputModifierNode
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.node.CompositionLocalConsumerModifierNode
 import androidx.compose.ui.node.DelegatingNode
@@ -45,19 +50,16 @@ import androidx.compose.ui.node.currentValueOf
 import androidx.compose.ui.node.requireDensity
 import androidx.compose.ui.node.requireLayoutCoordinates
 import androidx.compose.ui.platform.InspectorInfo
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import chromahub.rhythm.app.shared.presentation.components.icons.Icon
 import chromahub.rhythm.app.shared.presentation.components.icons.MaterialSymbolIcon
+import chromahub.rhythm.app.shared.presentation.components.icons.RhythmIcons
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
-private val SwipeToQueueThreshold = 72.dp
 private val DragSelectAutoScrollZone = 56.dp
 private val DragSelectMaxSpeed = 960.dp
 
@@ -100,14 +102,13 @@ fun KeepUnscrolledListAtTop(listState: LazyListState, rows: List<*>) {
 
 private class UnscrolledTracker(var rows: List<*>)
 
-/**
- * Lets a song row slide horizontally past a threshold to enqueue the song immediately.
- * When [onSwipe] is null, zero gesture detector overhead is added.
- */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SwipeToQueueBox(
     onSwipe: (() -> Unit)?,
     modifier: Modifier = Modifier,
+    icon: MaterialSymbolIcon = RhythmIcons.Queue,
+    shape: Shape = RectangleShape,
     content: @Composable (Modifier) -> Unit
 ) {
     if (onSwipe == null) {
@@ -118,55 +119,44 @@ fun SwipeToQueueBox(
     val currentOnSwipe by rememberUpdatedState(onSwipe)
     val haptics = LocalHapticFeedback.current
     val scope = rememberCoroutineScope()
-    val offset = remember { Animatable(0f) }
-    val thresholdPx = with(LocalDensity.current) { SwipeToQueueThreshold.toPx() }
-    val direction = if (LocalLayoutDirection.current == LayoutDirection.Rtl) -1f else 1f
+    val dismissState = rememberSwipeToDismissBoxState()
 
-    Box(modifier) {
-        Icon(
-            imageVector = MaterialSymbolIcon("queue_music"),
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier
-                .align(Alignment.CenterStart)
-                .padding(start = 20.dp)
-                .size(22.dp)
-                .graphicsLayer {
-                    val progress = (offset.value / thresholdPx).coerceIn(0f, 1f)
-                    alpha = progress
-                    scaleX = 0.6f + 0.4f * progress
-                    scaleY = scaleX
+    SwipeToDismissBox(
+        state = dismissState,
+        modifier = modifier,
+        enableDismissFromStartToEnd = true,
+        enableDismissFromEndToStart = true,
+        onDismiss = {
+            haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+            currentOnSwipe()
+            scope.launch { dismissState.reset() }
+        },
+        backgroundContent = {
+            if (dismissState.dismissDirection != SwipeToDismissBoxValue.Settled) {
+                val alignment = if (dismissState.dismissDirection == SwipeToDismissBoxValue.StartToEnd) {
+                    Alignment.CenterStart
+                } else {
+                    Alignment.CenterEnd
                 }
-        )
-        content(
-            Modifier
-                .graphicsLayer { translationX = offset.value * direction }
-                .pointerInput(direction, thresholdPx) {
-                    var dragged = 0f
-                    fun settle() {
-                        dragged = 0f
-                        scope.launch { offset.animateTo(0f) }
-                    }
-                    detectHorizontalDragGestures(
-                        onDragStart = { dragged = 0f },
-                        onDragEnd = {
-                            if (dragged >= thresholdPx) {
-                                currentOnSwipe()
-                            }
-                            settle()
-                        },
-                        onDragCancel = { settle() }
-                    ) { change, dragAmount ->
-                        val next = (dragged + dragAmount * direction).coerceIn(0f, thresholdPx * 1.35f)
-                        if (dragged < thresholdPx && next >= thresholdPx) {
-                            haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                        }
-                        dragged = next
-                        change.consume()
-                        scope.launch { offset.snapTo(next) }
-                    }
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clip(shape)
+                        .background(MaterialTheme.colorScheme.primaryContainer)
+                        .padding(horizontal = 20.dp),
+                    contentAlignment = alignment
+                ) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.size(24.dp)
+                    )
                 }
-        )
+            }
+        }
+    ) {
+        content(Modifier)
     }
 }
 

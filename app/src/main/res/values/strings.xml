@@ -1492,6 +1492,9 @@
     <string name="settings_library_gestures">Library &amp; Navigation</string>
     <string name="settings_library_swipe_tabs">Swipe Between Tabs</string>
     <string name="settings_library_swipe_tabs_desc">Swipe left or right to switch between library tabs</string>
+    <string name="settings_song_swipe_action">Swipe Song Rows</string>
+    <string name="settings_song_swipe_action_desc">Swipe left or right on a song to run a quick action</string>
+    <string name="settings_song_swipe_action_choose">Swipe Action</string>
     <string name="settings_lyrics_gestures">Lyrics Gestures</string>
     <string name="settings_lyrics_tap_seek">Tap Lyrics to Seek</string>
     <string name="settings_lyrics_tap_seek_desc">Tap on any lyric line to jump playback to that position</string>
@@ -2641,6 +2644,10 @@
     <string name="player_ambient_motion_zoom_desc">Gently pan and zoom the blurred cover art</string>
     <string name="player_accent_background">Accent Background</string>
     <string name="player_accent_background_desc">Exact album art color as the background</string>
+    <string name="player_background_style">Player Background</string>
+    <string name="player_background_style_desc">Choose how the expressive player background is drawn</string>
+    <string name="player_background_style_accent">Accent</string>
+    <string name="player_background_style_ambient">Ambient</string>
     <string name="player_merge_controls">Merge Lyrics &amp; Favorite into Bottom Bar</string>
     <string name="player_merge_controls_desc">Move lyrics &amp; favorite to the bottom bar</string>
     <string name="expressiveplayerscreen_lyrics">Toggle lyrics</string>

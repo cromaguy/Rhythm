@@ -218,6 +218,11 @@ import chromahub.rhythm.app.shared.data.model.AlbumViewType
 import chromahub.rhythm.app.shared.data.model.ArtistViewType
 import chromahub.rhythm.app.shared.data.model.PlaylistViewType
 import chromahub.rhythm.app.shared.data.model.AppSettings
+import chromahub.rhythm.app.shared.data.model.SongSwipeAction
+import chromahub.rhythm.app.shared.presentation.components.bottomsheets.LocalSongShareHandler
+import chromahub.rhythm.app.shared.presentation.components.bottomsheets.SongShareRequest
+import chromahub.rhythm.app.shared.presentation.components.bottomsheets.shareSongAudioFile
+import chromahub.rhythm.app.shared.presentation.components.common.icon
 import chromahub.rhythm.app.shared.presentation.components.bottomsheets.AddToPlaylistBottomSheet
 import chromahub.rhythm.app.shared.presentation.components.bottomsheets.SongOverflowBottomSheet
 import chromahub.rhythm.app.shared.presentation.components.dialogs.CreatePlaylistDialog
@@ -2383,6 +2388,9 @@ fun SingleCardSongsContent(
     val context = LocalContext.current
     val appSettings = remember { AppSettings.getInstance(context) }
     val groupByAlbumArtist by appSettings.groupByAlbumArtist.collectAsState()
+    val songSwipeEnabled by appSettings.gestureSongSwipeActionEnabled.collectAsState()
+    val songSwipeAction by appSettings.gestureSongSwipeAction.collectAsState()
+    val songShareHandler = LocalSongShareHandler.current
     
     val selectedSongs = multiSelectionState?.selectedSongs?.collectAsState()?.value ?: emptyList()
     var songForOverflow by remember { mutableStateOf<Song?>(null) }
@@ -2558,11 +2566,30 @@ fun SingleCardSongsContent(
                     AnimateIn(modifier = Modifier.animateItem()) {
                         val isSelected = selectedSongIds.contains(song.id)
                         val selectionIndex = multiSelectionState?.getSelectionIndex(song.id)
+                        val rowShape = groupedLibraryItemShape(index, preparedSongs.size)
                         
                         chromahub.rhythm.app.shared.presentation.components.common.SwipeToQueueBox(
-                            onSwipe = if (!isSelectionMode) {
-                                { onAddToQueue(song) }
-                            } else null
+                            onSwipe = if (!isSelectionMode && songSwipeEnabled) {
+                                {
+                                    when (songSwipeAction) {
+                                        SongSwipeAction.ADD_TO_QUEUE -> onAddToQueue(song)
+                                        SongSwipeAction.PLAY_NEXT -> onPlayNext(song)
+                                        SongSwipeAction.TOGGLE_FAVORITE -> onToggleFavorite?.invoke(song)
+                                        SongSwipeAction.ADD_TO_PLAYLIST -> onAddToPlaylist(song)
+                                        SongSwipeAction.SHOW_SONG_INFO -> onShowSongInfo(song)
+                                        SongSwipeAction.SHARE -> {
+                                            val request = SongShareRequest(song = song)
+                                            if (songShareHandler != null) {
+                                                songShareHandler(request)
+                                            } else {
+                                                shareSongAudioFile(context, song)
+                                            }
+                                        }
+                                    }
+                                }
+                            } else null,
+                            icon = songSwipeAction.icon(),
+                            shape = rowShape
                         ) { swipeModifier ->
                         Box(modifier = swipeModifier) {
                         LibrarySongItemWrapper(
@@ -2626,7 +2653,7 @@ fun SingleCardSongsContent(
                             currentSong = currentSong,
                             isPlaying = isPlaying,
                             haptics = haptics,
-                            itemShape = groupedLibraryItemShape(index, preparedSongs.size),
+                            itemShape = rowShape,
                             isSelected = isSelected,
                             isSelectionMode = isSelectionMode,
                             selectionIndex = selectionIndex,

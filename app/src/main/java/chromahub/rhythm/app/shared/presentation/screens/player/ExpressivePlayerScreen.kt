@@ -2846,7 +2846,7 @@ private fun filterPlainLyricsByPreference(rawLyrics: String, showTranslation: Bo
     return filteredLines.joinToString("\n")
 }
 
-private val ExpressiveTopBarHeight = 56.dp
+private val ExpressiveTopBarHeight = 64.dp
 
 @Composable
 private fun ExpressiveTopBar(
@@ -2892,22 +2892,25 @@ private fun ExpressiveTopBar(
                 .fillMaxWidth()
                 .statusBarsPadding()
                 .height(ExpressiveTopBarHeight)
-                .padding(horizontal = 12.dp),
+                .padding(horizontal = 4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            IconButton(onClick = onBack) {
+            IconButton(
+                onClick = onBack,
+                modifier = Modifier.padding(start = 12.dp)
+            ) {
                 Box(
                     modifier = Modifier
                         .size(40.dp)
-                        .clip(CircleShape)
-                        .background(containerColor),
+                        .clip(RoundedCornerShape(50))
+                        .background(containerColor.copy(alpha = 1f)),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = RhythmIcons.Back,
-                        contentDescription = "Back",
-                        tint = contentColor,
-                        modifier = Modifier.size(22.dp)
+                        contentDescription = stringResource(R.string.cd_back),
+                        tint = contentColor.copy(alpha = 1f),
+                        modifier = Modifier.size(25.dp)
                     )
                 }
             }

@@ -190,7 +190,6 @@ fun PlayerCustomizationSettingsScreen(onBackClick: () -> Unit) {
     val playerAmbientBackdropEnabled by appSettings.playerAmbientBackdropEnabled.collectAsState()
     val playerAmbientBackdropIntensity by appSettings.playerAmbientBackdropIntensity.collectAsState()
     val playerAmbientInfiniteZoom by appSettings.playerAmbientInfiniteZoom.collectAsState()
-    val playerAccentBackgroundEnabled by appSettings.playerAccentBackgroundEnabled.collectAsState()
     val playerMergeControlsToBottom by appSettings.playerMergeControlsToBottom.collectAsState()
     val playerGlassIntensity by appSettings.playerGlassIntensity.collectAsState()
 
@@ -360,16 +359,31 @@ fun PlayerCustomizationSettingsScreen(onBackClick: () -> Unit) {
                 )
                 Material3SettingsGroup(
                     items = listOf(
-                        toMaterial3SettingsItem(
-                            context = context,
-                            hapticFeedback = haptics,
-                            item = SettingItem(
-                                icon = MaterialSymbolIcon("blur_on"),
-                                title = context.getString(R.string.player_ambient_backdrop),
-                                description = context.getString(R.string.player_ambient_desc),
-                                toggleState = playerAmbientBackdropEnabled,
-                                onToggleChange = { appSettings.setPlayerAmbientBackdropEnabled(it) }
-                            )
+                        Material3SettingsItem(
+                            icon = MaterialSymbolIcon("blur_on"),
+                            title = { Text(context.getString(R.string.player_background_style)) },
+                            description = {
+                                Column {
+                                    Text(context.getString(R.string.player_background_style_desc))
+                                    Spacer(modifier = Modifier.height(12.dp))
+                                    ExpressiveButtonGroup(
+                                        items = listOf(
+                                            context.getString(R.string.player_background_style_accent),
+                                            context.getString(R.string.player_background_style_ambient)
+                                        ),
+                                        selectedIndex = if (playerAmbientBackdropEnabled) 1 else 0,
+                                        onItemClick = { index ->
+                                            HapticUtils.performHapticFeedback(context, haptics, HapticType.LIGHT)
+                                            if (index == 1) {
+                                                appSettings.setPlayerAmbientBackdropEnabled(true)
+                                            } else {
+                                                appSettings.setPlayerAccentBackgroundEnabled(true)
+                                            }
+                                        },
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                }
+                            }
                         ),
                         toMaterial3SettingsItem(
                             context = context,
@@ -383,17 +397,7 @@ fun PlayerCustomizationSettingsScreen(onBackClick: () -> Unit) {
                                 enabled = playerAmbientBackdropEnabled
                             )
                         ),
-                        toMaterial3SettingsItem(
-                            context = context,
-                            hapticFeedback = haptics,
-                            item = SettingItem(
-                                icon = MaterialSymbolIcon("colorize"),
-                                title = context.getString(R.string.player_accent_background),
-                                description = context.getString(R.string.player_accent_background_desc),
-                                toggleState = playerAccentBackgroundEnabled,
-                                onToggleChange = { appSettings.setPlayerAccentBackgroundEnabled(it) }
-                            )
-                        ),
+
                         toMaterial3SettingsItem(
                             context = context,
                             hapticFeedback = haptics,

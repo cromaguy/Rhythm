@@ -8154,7 +8154,6 @@ private fun PlayerThemeSettingsSection(
     val playerThumbStyle by appSettings.playerProgressThumbStyle.collectAsState()
     val thumbRotate by appSettings.playerProgressThumbRotate.collectAsState()
     val ambientBackdrop by appSettings.playerAmbientBackdropEnabled.collectAsState()
-    val accentBackground by appSettings.playerAccentBackgroundEnabled.collectAsState()
     val mergeControls by appSettings.playerMergeControlsToBottom.collectAsState()
 
     // Mini player settings
@@ -8239,21 +8238,31 @@ private fun PlayerThemeSettingsSection(
             TourSectionTitle(context.getString(R.string.settings_expressive_player))
             Material3SettingsGroup(
                 items = listOf(
-                    tourToggleItem(
+                    Material3SettingsItem(
                         icon = MaterialSymbolIcon("blur_on"),
-                        title = context.getString(R.string.player_ambient_backdrop),
-                        description = context.getString(R.string.player_ambient_desc),
-                        checked = ambientBackdrop,
-                        context = context,
-                        onCheckedChange = { appSettings.setPlayerAmbientBackdropEnabled(it) }
-                    ),
-                    tourToggleItem(
-                        icon = MaterialSymbolIcon("colorize"),
-                        title = context.getString(R.string.player_accent_background),
-                        description = context.getString(R.string.player_accent_background_desc),
-                        checked = accentBackground,
-                        context = context,
-                        onCheckedChange = { appSettings.setPlayerAccentBackgroundEnabled(it) }
+                        title = { Text(context.getString(R.string.player_background_style)) },
+                        description = {
+                            Column {
+                                Text(context.getString(R.string.player_background_style_desc))
+                                Spacer(modifier = Modifier.height(12.dp))
+                                ExpressiveButtonGroup(
+                                    items = listOf(
+                                        context.getString(R.string.player_background_style_accent),
+                                        context.getString(R.string.player_background_style_ambient)
+                                    ),
+                                    selectedIndex = if (ambientBackdrop) 1 else 0,
+                                    onItemClick = { index ->
+                                        HapticUtils.performHapticFeedback(context, haptic, HapticType.LIGHT)
+                                        if (index == 1) {
+                                            appSettings.setPlayerAmbientBackdropEnabled(true)
+                                        } else {
+                                            appSettings.setPlayerAccentBackgroundEnabled(true)
+                                        }
+                                    },
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
+                        }
                     ),
                     tourToggleItem(
                         icon = MaterialSymbolIcon("merge_type"),

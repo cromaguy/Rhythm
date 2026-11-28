@@ -646,6 +646,8 @@ class AppSettings private constructor(context: Context) {
         private const val KEY_GESTURE_ARTWORK_DOUBLE_TAP = "gesture_artwork_double_tap" // Double tap on artwork to play/pause
         private const val KEY_GESTURE_ARTWORK_SINGLE_TAP = "gesture_artwork_single_tap" // Tap artwork to toggle lyrics
         private const val KEY_GESTURE_QUEUE_SWIPE_TO_REMOVE = "gesture_queue_swipe_to_remove" // Swipe to remove from queue
+        private const val KEY_GESTURE_SONG_SWIPE_ACTION_ENABLED = "gesture_song_swipe_action_enabled" // Swipe a song row to run a quick action
+        private const val KEY_GESTURE_SONG_SWIPE_ACTION = "gesture_song_swipe_action" // Which quick action a song row swipe runs
         private const val KEY_GESTURE_LIBRARY_SWIPE_TABS = "gesture_library_swipe_tabs" // Swipe between library tabs
         private const val KEY_MINIPLAYER_SWIPE_TRACKS = "miniplayer_swipe_tracks" // Swipe horizontally on miniplayer to change tracks
         private const val KEY_MINIPLAYER_SWIPE_DISMISS = "miniplayer_swipe_dismiss" // Swipe vertically on miniplayer to open/dismiss
@@ -5892,14 +5894,19 @@ private val _autoCheckForUpdates = MutableStateFlow(prefs.getBoolean(KEY_AUTO_CH
         _playerLyricsOverlayType.value = prefs.getInt(KEY_PLAYER_LYRICS_OVERLAY_TYPE, 0)
         _playerLyricsOverlayIntensity.value = prefs.getFloat(KEY_PLAYER_LYRICS_OVERLAY_INTENSITY, 0.1f)
         _playerLyricsTransition.value = prefs.getInt(KEY_PLAYER_LYRICS_TRANSITION, 2) // 2 = Scale
-        _playerAmbientBackdropEnabled.value = prefs.getBoolean(KEY_PLAYER_AMBIENT_BACKDROP_ENABLED, false)
+        val legacyAccentChosen = prefs.getBoolean(KEY_PLAYER_ACCENT_BACKGROUND_ENABLED, false)
+        _playerAmbientBackdropEnabled.value = prefs.getBoolean(KEY_PLAYER_AMBIENT_BACKDROP_ENABLED, !legacyAccentChosen)
         _playerAmbientBackdropIntensity.value = prefs.getFloat(KEY_PLAYER_AMBIENT_BACKDROP_INTENSITY, 0.6f)
         _playerAmbientInfiniteZoom.value = prefs.getBoolean(KEY_PLAYER_AMBIENT_INFINITE_ZOOM, true)
-        _playerAccentBackgroundEnabled.value = prefs.getBoolean(KEY_PLAYER_ACCENT_BACKGROUND_ENABLED, true)
+        _playerAccentBackgroundEnabled.value = prefs.getBoolean(KEY_PLAYER_ACCENT_BACKGROUND_ENABLED, false)
         // Normalize legacy state: ambient and accent cannot both be on — ambient wins.
         if (_playerAmbientBackdropEnabled.value && _playerAccentBackgroundEnabled.value) {
             _playerAccentBackgroundEnabled.value = false
             prefs.edit { putBoolean(KEY_PLAYER_ACCENT_BACKGROUND_ENABLED, false) }
+        }
+        if (!_playerAmbientBackdropEnabled.value && !_playerAccentBackgroundEnabled.value) {
+            _playerAmbientBackdropEnabled.value = true
+            prefs.edit { putBoolean(KEY_PLAYER_AMBIENT_BACKDROP_ENABLED, true) }
         }
         _playerMergeControlsToBottom.value = prefs.getBoolean(KEY_PLAYER_MERGE_CONTROLS_TO_BOTTOM, true)
         _playerGlassIntensity.value = prefs.getFloat(KEY_PLAYER_GLASS_INTENSITY, 1.0f)
@@ -6337,7 +6344,7 @@ private val _autoCheckForUpdates = MutableStateFlow(prefs.getBoolean(KEY_AUTO_CH
         prefs.edit { putBoolean(KEY_PLAYER_SHOW_GRADIENT_OVERLAY, value) }
     }
 
-    private val _playerAmbientBackdropEnabled = MutableStateFlow(prefs.getBoolean(KEY_PLAYER_AMBIENT_BACKDROP_ENABLED, false))
+    private val _playerAmbientBackdropEnabled = MutableStateFlow(prefs.getBoolean(KEY_PLAYER_AMBIENT_BACKDROP_ENABLED, true))
     val playerAmbientBackdropEnabled: StateFlow<Boolean> = _playerAmbientBackdropEnabled.asStateFlow()
     fun setPlayerAmbientBackdropEnabled(enabled: Boolean) {
         val disableAccent = enabled && _playerAccentBackgroundEnabled.value
@@ -6350,7 +6357,7 @@ private val _autoCheckForUpdates = MutableStateFlow(prefs.getBoolean(KEY_AUTO_CH
         if (disableAccent) _playerAccentBackgroundEnabled.value = false
     }
 
-    private val _playerAccentBackgroundEnabled = MutableStateFlow(prefs.getBoolean(KEY_PLAYER_ACCENT_BACKGROUND_ENABLED, true))
+    private val _playerAccentBackgroundEnabled = MutableStateFlow(prefs.getBoolean(KEY_PLAYER_ACCENT_BACKGROUND_ENABLED, false))
     val playerAccentBackgroundEnabled: StateFlow<Boolean> = _playerAccentBackgroundEnabled.asStateFlow()
     fun setPlayerAccentBackgroundEnabled(enabled: Boolean) {
         val disableAmbient = enabled && _playerAmbientBackdropEnabled.value
@@ -6773,6 +6780,22 @@ private val _autoCheckForUpdates = MutableStateFlow(prefs.getBoolean(KEY_AUTO_CH
     fun setGestureQueueSwipeToRemove(value: Boolean) {
         _gestureQueueSwipeToRemove.value = value
         prefs.edit { putBoolean(KEY_GESTURE_QUEUE_SWIPE_TO_REMOVE, value) }
+    }
+
+    private val _gestureSongSwipeActionEnabled = MutableStateFlow(prefs.getBoolean(KEY_GESTURE_SONG_SWIPE_ACTION_ENABLED, false))
+    val gestureSongSwipeActionEnabled: StateFlow<Boolean> = _gestureSongSwipeActionEnabled.asStateFlow()
+    fun setGestureSongSwipeActionEnabled(value: Boolean) {
+        _gestureSongSwipeActionEnabled.value = value
+        prefs.edit { putBoolean(KEY_GESTURE_SONG_SWIPE_ACTION_ENABLED, value) }
+    }
+
+    private val _gestureSongSwipeAction = MutableStateFlow(
+        SongSwipeAction.fromKey(prefs.getString(KEY_GESTURE_SONG_SWIPE_ACTION, null))
+    )
+    val gestureSongSwipeAction: StateFlow<SongSwipeAction> = _gestureSongSwipeAction.asStateFlow()
+    fun setGestureSongSwipeAction(value: SongSwipeAction) {
+        _gestureSongSwipeAction.value = value
+        prefs.edit { putString(KEY_GESTURE_SONG_SWIPE_ACTION, value.key) }
     }
 
     private val _gestureLibrarySwipeTabs = MutableStateFlow(prefs.getBoolean(KEY_GESTURE_LIBRARY_SWIPE_TABS, true))
